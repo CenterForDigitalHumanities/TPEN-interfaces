@@ -1,7 +1,7 @@
 // custom element named 'tpen-user'
 
 import '../api/user.mjs'
-class TpenUser extends HTMLElement {
+export default class TpenUser extends HTMLElement {
     static observedAttributes = ['user-id, user-agent']
     constructor() {
         super()
@@ -50,3 +50,4 @@ class TpenUser extends HTMLElement {
     }
 }
 
+customElements.define('tpen-user', TpenUser)
