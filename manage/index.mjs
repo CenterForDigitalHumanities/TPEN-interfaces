@@ -1,6 +1,9 @@
-document.addEventListener("DOMContentLoaded", () => {
+import { User } from "../User/index.mjs"
+
+document.addEventListener("DOMContentLoaded", async () => {
   const buttons = document.querySelectorAll("header button")
   const content = document.getElementById("content")
+  const homeBtn = document.getElementById("home-btn")
 
   buttons.forEach((button) => {
     button.addEventListener("click", async () => {
@@ -14,5 +17,29 @@ document.addEventListener("DOMContentLoaded", () => {
     })
   })
 
-  document.getElementById("collaboration").click()
+  document.getElementById("projects").click()
+
+  homeBtn.onclick = ()=>{ 
+    location.href = "/"
+  }
+
+
+// GET AND DISPLAY PROJECTS
+const localUser = window.TPEN_USER 
+const userObj = new User()
+userObj.authentication = localUser.authorization
+
+const userProjects = await userObj.getProjects()
+
+let projectList = document.getElementsByClassName("other-projects")[0]
+
+userProjects.forEach((project)=>{
+   projectList.innerHTML += `  <li class="project">
+            <div class="title"> testtttttt
+              ${project.title}
+            </div>
+            <div class="delete">&#128465;</div>
+          </li>`
+})
+
 })
