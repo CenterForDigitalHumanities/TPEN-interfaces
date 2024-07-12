@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Line Text Module Import</title>
+    <script src="index.js" type="module"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@digirati/canvas-panel-web-components@latest"></script>
+    <style>
+        canvas-panel, tpen-line-image {
+            border: 1px solid #000;
+            width: 100%;
+            height: 10em;
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Line Image Module Import Example</h1>
+    <p>This is an example of importing the line-image module in HTML.</p>
+    <pre>
+        <code>&lt;tpen-line-image tpen-line-id="URL">&lt;/tpen-line-image></code>
+    </pre>
+
+    or
+
+    <pre>
+        <code>&lt;tpen-line-image iiif-content="base64">&lt;/tpen-line-image></code>
+    </pre>
+
+    <h4>A Line like Newberry TPEN with <code>line.resource["cnt:chars"]</code></h4>
+    <blockquote>
+        <tpen-line-image tpen-line-id="https://store.rerum.io/v1/id/6685af395b48727bae3fc269"></tpen-line-image>
+    </blockquote>
+
+    <h4>A Line from IIIF fixture <code>line.body.value</code> (A TextualBody example)</h4>
+    <blockquote>
+        <tpen-line-image iiif-content="JTdCJTIyaWQlMjIlM0ElMjJodHRwcyUzQSUyRiUyRmlpaWYuaW8lMkZhcGklMkZjb29rYm9vayUyRnJlY2lwZSUyRjAyNjYtZnVsbC1jYW52YXMtYW5ub3RhdGlvbiUyRmNhbnZhcy0xJTJGYW5ub3BhZ2UtMiUyRmFubm8tMSUyMiUyQyUyMnR5cGUlMjIlM0ElMjJBbm5vdGF0aW9uJTIyJTJDJTIybW90aXZhdGlvbiUyMiUzQSUyMmNvbW1lbnRpbmclMjIlMkMlMjJib2R5JTIyJTNBJTdCJTIydHlwZSUyMiUzQSUyMlRleHR1YWxCb2R5JTIyJTJDJTIybGFuZ3VhZ2UlMjIlM0ElMjJkZSUyMiUyQyUyMmZvcm1hdCUyMiUzQSUyMnRleHQlMkZwbGFpbiUyMiUyQyUyMnZhbHVlJTIyJTNBJTIyRyVDMyVCNnR0aW5nZXIlMjBNYXJrdHBsYXR6JTIwbWl0JTIwRyVDMyVBNG5zZWxpZXNlbCUyMEJydW5uZW4lMjIlN0QlMkMlMjJ0YXJnZXQlMjIlM0ElMjJodHRwcyUzQSUyRiUyRmlpaWYuaW8lMkZhcGklMkZjb29rYm9vayUyRnJlY2lwZSUyRjAyNjYtZnVsbC1jYW52YXMtYW5ub3RhdGlvbiUyRmNhbnZhcy0xJTIyJTdE"></tpen-line-image>
+    </blockquote>
+
+    <h4>A Line with a String Literal <code>line.body</code> </h4>
+    <blockquote>
+        <tpen-line-image iiif-content="JTdCJTIyaWQlMjIlM0ElMjJidWglMjIlMkMlMjJ0eXBlJTIyJTNBJTIyQW5ub3RhdGlvbiUyMiUyQyUyMmJvZHklMjIlM0ElMjJBbGlxdWlkJTIwU3RyaW5nJTIyJTJDJTIydGFyZ2V0JTIyJTNBJTIyaHR0cHMlM0ElMkYlMkZpaWlmLmlvJTJGYXBpJTJGY29va2Jvb2slMkZyZWNpcGUlMkYwMjY2LWZ1bGwtY2FudmFzLWFubm90YXRpb24lMkZjYW52YXMtMSUyMiU3RA=="></tpen-line-image>
+    </blockquote>
+
+    <h4>A Line with missing content </h4>
+    <blockquote>
+        <tpen-line-image></tpen-line-image>
+    </blockquote>
+
+    <h4>Direct canvas-panel</h4>
+    <blockquote>
+           <canvas-panel preset='static' canvas-id="https://iiif.wellcomecollection.org/presentation/b28929780/canvases/b28929780_0019.jp2" manifest-id="https://iiif.wellcomecollection.org/presentation/b28929780"></canvas-panel>
+    </blockquote>
+</body>
+
+</html>

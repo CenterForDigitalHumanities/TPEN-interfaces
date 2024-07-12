@@ -1,3 +1,5 @@
+import {} from 'https://cdn.jsdelivr.net/npm/@digirati/canvas-panel-web-components@latest'
+
 //https://iiif.io/api/content-state/1.0/#61-choice-of-encoding-mechanism
 function encodeContentState(plainContentState) {
     let uriEncoded = encodeURIComponent(plainContentState);  // using built in function
