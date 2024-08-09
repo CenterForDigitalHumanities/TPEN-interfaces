@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Line Image Module Import</title>
+    <script src="index.js" type="module"></script>
+    <style>
+        tpen-line-image {
+            position: relative;
+            max-width: 25em;
+            max-height: 10em;
+            display: block;
+            overflow: hidden;
+        }
+        </style>
+</head>
+
+<body>
+    <h1>Line Text Module Import Example</h1>
+    <p>This is an example of importing the line-image module in HTML.</p>
+    <pre>
+        <code>&lt;container iiif-manifest="URL" iiif-canvas="URL">
+            &lt;tpen-line-image tpen-line-id="URL">&lt;/tpen-line-image>
+        &lt;/container></code>
+    </pre>
+
+    <h4>Wiggle Around </h4>
+    <blockquote iiif-manifest="https://newberry.t-pen.org/paleography/project/5535/manifest.json" iiif-canvas="https://iiif.library.utoronto.ca/presentation/v2/paleography:IP_301_001">
+        <tpen-line-image id="wiggle" tpen-line-id="https://store.rerum.io/v1/id/6685af395b48727bae3fc269"></tpen-line-image>
+        <small><code>TpenLineImage.moveTo(x,y,w,h)</code> replaces region.</small>
+    </blockquote>
+    
+    <h4>A Line like Newberry TPEN with <code>xywh=</code></h4>
+    <blockquote iiif-manifest="https://newberry.t-pen.org/paleography/project/5535/manifest.json" iiif-canvas="https://iiif.library.utoronto.ca/presentation/v2/paleography:IP_301_001">
+        <tpen-line-image tpen-line-id="https://store.rerum.io/v1/id/6685af395b48727bae3fc269"></tpen-line-image>
+        <small>Container references Manifest and Canvas with xywh region pulled from annotation.</small>
+    </blockquote>
+    
+    <h4>Presi 3 Newberry</h4>
+    <blockquote iiif-manifest="https://iiif.library.utoronto.ca/presentation/v3/italianpaleography:IP_036/manifest" iiif-canvas="https://iiif.library.utoronto.ca/presentation/v3/italianpaleography:IP_036/canvas/italianpaleography:IP_036_001">
+        <tpen-line-image tpen-line-id="https://store.rerum.io/v1/id/6685af395b48727bae3fc269"></tpen-line-image>
+        <small>CORS prevents the access ot the info.json for a blackout error.</small>
+    </blockquote>
+    
+    <h4>Presi 3 TPEN</h4>
+    <blockquote iiif-manifest="https://t-pen.org/TPEN/manifest/7066?version=3" iiif-canvas="https://t-pen.org/TPEN/canvas/13248868">
+        <tpen-line-image tpen-line-id="https://t-pen.org/TPEN/line/104692228"></tpen-line-image>
+        <small>No good annotation to link at the moment, so the whole page is squeezed in.</small>
+    </blockquote>
+    
+    <h4>A Line with missing content </h4>
+    <blockquote>
+        <tpen-line-image></tpen-line-image>
+        <small>With no information, so errors are shown and no canvas-panel is ever created.</small>
+    </blockquote>
+
+    <script>
+        setInterval(() => {
+            wiggle.moveTo(Math.random() * 500, Math.random() * 1000, (.8 + Math.random() * .4) * 425, (.8 + Math.random() * .4) * 50 )
+        }, 1000);
+    </script>
+</body>
+
+</html>

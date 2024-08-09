@@ -1,3 +1,5 @@
+import {decodeContentState} from '../iiif-tools/index.mjs'
+
 const LINE_TEXT_HTML = `<span></span>`
 
 class TpenLineText extends HTMLElement {
@@ -72,26 +74,4 @@ function validateContent(content,elem,msg) {
         elem.setAttribute('title',msg ?? 'Invalid content')
     }
     return content
-}
-
-//https://iiif.io/api/content-state/1.0/#61-choice-of-encoding-mechanism
-function decodeContentState(encodedContentState) {
-    let base64url = restorePadding(encodedContentState);
-    let base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
-    let base64Decoded = atob(base64);                        // using built in function
-    let uriDecoded = decodeURIComponent(base64Decoded);      // using built in function
-    return uriDecoded;
-}
-
-function restorePadding(s) {
-    // The length of the restored string must be a multiple of 4
-    let pad = s.length % 4;
-    let padding = "";
-    if (pad) {
-        if (pad === 1) {
-            throw new Error('InvalidLengthError: Input base64url string is the wrong length to determine padding');
-        }
-        s += '===='.slice(0, 4 - pad);
-    }
-    return s + padding;
 }
