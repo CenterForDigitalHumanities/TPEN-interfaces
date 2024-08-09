@@ -1,28 +1,76 @@
 import {decodeContentState} from '../iiif-tools/index.mjs'
 
-const LINE_IMAGE_HTML = `<canvas-panel preset='static' manifest-id="https://iiif.wellcomecollection.org/presentation/b28929780"></canvas-panel>`
+const CANVAS_PANEL_SCRIPT = document.createElement('script')
+CANVAS_PANEL_SCRIPT.src = "https://cdn.jsdelivr.net/npm/@digirati/canvas-panel-web-components@latest"
+document.head.appendChild(CANVAS_PANEL_SCRIPT)
+
+const LINE_IMG = () => document.createElement('canvas-panel')
 
 class TpenLineImage extends HTMLElement {
+    #manifestId = this.closest('[iiif-manifest]')?.getAttribute('iiif-manifest') 
+    #canvasId = this.closest('[iiif-canvas]')?.getAttribute('iiif-canvas')
+    #canvasPanel = LINE_IMG()
+
     constructor() {
         super()
         this.attachShadow({ mode: 'open' })
-        this.id = this.getAttribute('tpen-line-id')
-        this.content = this.getAttribute('iiif-content')
+        this._id = this.getAttribute('tpen-line-id')
+        if ("null" === this._id) {
+            const ERR = new Event('tpen-error', { detail: 'Line ID is required' })
+            validateContent(null,this,"Line ID is required")
+            return
+        }
+        this.shadowRoot.append(this.#canvasPanel)
+        this.#canvasPanel.setAttribute("preset","responsive")
+        this.#canvasPanel.setAttribute("manifest-id",this.#manifestId)
+        this.#canvasPanel.setAttribute("canvas-id",this.#canvasId)
+        fetch(this._id).then(res=>res.json()).then(anno=>{
+            const TARGET = (anno.target ?? anno.on)?.split('#xywh=')
+            // this.#canvasPanel.setAttribute("canvas-id",TARGET[0])
+            this.#canvasPanel.setAttribute("region",TARGET[1])
+            this.#canvasPanel.createAnnotationDisplay(anno)
+        })
+        this.addEventListener('canvas-change',ev=>{
+            this.#canvasId = this.#canvasPanel.closest('[iiif-canvas]') ?? this.closest('[iiif-canvas]')
+            this.#canvasPanel.setCanvas(this.#canvasId)
+        })
     }
 
-    connectedCallback() {
-        this.innerHTML = LINE_IMAGE_HTML
-        this.shadowRoot.innerHTML = LINE_IMAGE_HTML
-        const CANVAS = this.shadowRoot.querySelector('canvas-panel')
-        CANVAS.addEventListener('ready',a=>alert(a.detail))
+    connectedCallback() {   
+        if(!this.#canvasPanel.vault) return
 
-        
-        if (!this.id && !this.content) {
-            const ERR = new Event('tpen-error', { detail: 'Line ID is required' })
-            validateContent(null,SPAN,"Line ID is required")
+    }
+
+    async selectImage(){
+        try {
+            new URL(this._id)
+            const TEXT_CONTENT = await loadAnnotation(lineId)
+            this.#canvasPanel.innerText = validateContent(TEXT_CONTENT,this)
+        } catch (error) {
+            console.error(error)
+            return validateContent(null,this,"Fetching Error")
         }
-        
-        // this.content ? loadContent(this.content,CANVAS) : loadImageFragment(this.id,CANVAS)
+    }
+    
+    loadContent(){
+        try {
+            const TEXT_CONTENT = JSON.parse(decodeContentState(this.content))
+            this.innerText = validateContent(TEXT_CONTENT,this)
+        } catch (error) {
+            console.error(error)
+            return validateContent(null,this,"Decoding Error")
+        }
+    }
+
+    moveTo(x,y,width,height) {
+        this.#canvasPanel.transition(tm => {
+            tm.goToRegion({ height, width, x, y }, {
+                transition: {
+                easing: this.#canvasPanel.easingFunctions().easeOutExpo,
+                duration: 1000,
+                },
+            })
+        })
     }
 }
 
@@ -32,26 +80,6 @@ export default {
     TpenLineImage
 }
 
-async function loadImageFragment(lineId,elem){
-    try {
-        new URL(lineId)
-        const TEXT_CONTENT = await loadAnnotation(lineId)
-        elem.innerText = validateContent(TEXT_CONTENT,elem)
-    } catch (error) {
-        console.error(error)
-        return validateContent(null,elem,"Fetching Error")
-    }
-}
-
-function loadContent(b64,elem){
-    try {
-        const TEXT_CONTENT = getText(JSON.parse(decodeContentState(b64)))
-        elem.innerText = validateContent(TEXT_CONTENT,elem)
-    } catch (error) {
-        console.error(error)
-        return validateContent(null,elem,"Decoding Error")
-    }
-}
 
 function loadAnnotation(url){   
     return fetch(url)
@@ -59,16 +87,7 @@ function loadAnnotation(url){
             if(!response.ok) throw new Error("failed to fetch")
             return response.json()
         })        
-        .then(anno => getText(anno))
         .catch(error => console.error(error))
-}
-
-function getText(annotation){
-    // TODO: currently this is a fragile mess
-    let textContent = annotation.body?.value
-    if(annotation.resource) textContent = annotation.resource["cnt:chars"]
-    if(typeof annotation.body === "string") textContent = annotation.body
-    return textContent ?? "weird value"
 }
 
 function validateContent(content,elem,msg) {
