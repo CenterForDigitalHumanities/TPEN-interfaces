@@ -1,0 +1,15 @@
+{
+  "name": "defaultTranscribe",
+  "version": "0.0.1",
+  "description": "The basic transcription module for TPEN 3, based on the https:/t-pen.org/TPEN/transcription.html document",
+  "keywords": [
+    "transcription",
+    "rectilinear",
+    "plaintext",
+    "default"
+  ],
+  "indexPage": "index.html",
+  "author": "cubap@slu.edu",
+  "license": "MIT",
+  "dependencies": {}
+}

@@ -1,0 +1,7 @@
+title: TPEN Interfaces
+description: Useful Interfaces for TPEN 3
+collections: 
+  cookbook:
+    label: TPEN Cookbook
+    output: true
+    directory: cookbook
