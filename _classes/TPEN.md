@@ -12,7 +12,6 @@ initialize the TPEN module and to make calls to the API.
 - [Properties](#properties)
 - [Methods](#methods)
   - [`reset(force)`](#resetforce)
-    - [Returns (Promise)](#returns-promise)
   - [`getUser()`](#getuser)
   - [`getActiveProject()`](#getactiveproject)
   - [`getActiveCollection()`](#getactivecollection)
