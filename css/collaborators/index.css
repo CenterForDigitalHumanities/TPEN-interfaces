@@ -1,0 +1,70 @@
+.collaborators-container #content {
+  margin: 20px 0px;
+}
+.collaborators-container #content .title {
+  color: #B14628;
+  font-size: 17px;
+  font-weight: 300;
+  margin: 10px 0px;
+}
+.collaborators-container .member {
+  margin: 10px 15px;
+}
+.collaborators-container .role {
+  color: #B14628;
+  text-transform: capitalize;
+}
+.collaborators-container .pending {
+  color: #999999;
+  font-style: italic;
+  border: 1px dashed #ccc;
+  padding: 2px;
+}
+.collaborators-container .remove-button {
+  background-color: #ff4d4d;
+  font-size: 10px;
+  color: white;
+  border: none;
+  padding: 5px;
+  cursor: pointer;
+  border-radius: 4px;
+  margin: 0px 10px;
+}
+.collaborators-container .remove-button:hover {
+  background-color: #ff3333;
+}
+.collaborators-container .invite-section {
+  margin: 10px 0px;
+}
+.collaborators-container #invitee-email {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  width: 200px; /* Adjust the width as needed */
+}
+.collaborators-container .submit-btn {
+  background-color: rgba(105, 172, 201, 0.8);
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  color: white;
+}
+.collaborators-container .submit-btn:hover {
+  background-color: rgb(105, 172, 201);
+}
+.collaborators-container .success-message {
+  color: green;
+  background-color: #e6ffe6;
+  padding: 10px;
+  border: 1px solid #c3e6c3;
+  border-radius: 5px;
+  margin-bottom: 10px;
+  text-align: center;
+}
+.collaborators-container .error {
+  color: red;
+}
+.collaborators-container .is-hidden {
+  display: none;
+}/*# sourceMappingURL=index.css.map */
