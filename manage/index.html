@@ -1,46 +1,55 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Manage Interface</title>
-    <link rel="stylesheet" href="../css/manage/index.css" />
-    <link rel="stylesheet" href="../css/manage/projects.css" />
-    <link rel="stylesheet" href="../css/manage/manuscript.css" />
-    <link rel="stylesheet" href="../css/manage/collaboration.css" />
-  </head>
 
-  <body >
-    <div class="tagline">transcription for paleographical and editorial notation</div>
-   <div class="manage-interface">
-    <header class="title" >
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manage Interface</title>
+  <link rel="stylesheet" href="../css/manage/index.css" />
+  <link rel="stylesheet" href="../css/manage/projects.css" />
+  <link rel="stylesheet" href="../css/manage/manuscript.css" />
+  <link rel="stylesheet" href="../css/manage/collaboration.css" />
+  <script type="module" src="./index.mjs"></script>
+  <script src="http://users.t-pen.org/script/tpen_private_auth.js" type="module"></script>
+</head>
+
+<body>
+
+  <auth-button class="container">
+    <button is="auth-button">login</button>
+  </auth-button>
+
+  <div class="tagline">transcription for paleographical and editorial notation</div>
+  <div class="manage-interface">
+    <header class="title">
       <h1>TRANSCRIPTION PROJECT MANAGEMENT</h1>
-          <p>
-       Use this page to coordinate your team, design customized projects from
-       available manuscripts, and make fine adjustments to individual pages.
-     </p>
-     </header>
- 
- <div class="body-bg">
-  <header>
- <div class="buttons">
-  <button id="projects">Projects</button>
-  <button id="manuscripts">Manuscripts</button>
-  <button id="collaboration">Collaboration</button>
-  <button id="options">Options</button>
-  <button id="export">Export</button>
- </div>
- <div class="help">
- <img src="https://t-pen.org/TPEN/images/helpinvert.png" draggable="false" alt="Help">
- </div>
- </header>
- 
- <main id="content"></main>
- 
- <button class="default-btn return-btn ">Return to TPEN Homepage <span class="btn-icon"></span></button>
- </div>
-   </div>
+      <p>
+        Use this page to coordinate your team, design customized projects from
+        available manuscripts, and make fine adjustments to individual pages.
+      </p>
+    </header>
 
-    <script type="module" src="./index.mjs"></script>
-  </body>
+    <div class="body-bg">
+      <header>
+        <div class="buttons">
+          <button id="projectsHighlight">Projects</button>
+          <button id="manuscripts">Manuscripts</button>
+          <button id="collaboration">Collaboration</button>
+          <button id="options">Options</button>
+          <button id="export">Export</button>
+        </div>
+        <div class="help">
+          <img src="https://t-pen.org/TPEN/images/helpinvert.png" draggable="false" alt="Help">
+        </div>
+      </header>
+
+      <main id="content"></main>
+
+      <button class="default-btn return-btn ">Return to TPEN Homepage <span class="btn-icon"></span></button>
+    </div>
+  </div>
+
+
+</body>
+
 </html>
