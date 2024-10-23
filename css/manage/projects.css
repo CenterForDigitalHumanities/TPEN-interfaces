@@ -57,6 +57,10 @@
 .manage-projects-container .red {
   color: #a64129;
 }
+.manage-projects-container .active-project {
+  padding: 0;
+  margin: 0;
+}
 .manage-projects-container .all-projects {
   width: 100%;
   margin: 10px 0px;
@@ -64,7 +68,7 @@
 }
 .manage-projects-container .all-projects .projects-list {
   overflow-y: scroll;
-  height: 400px;
+  max-height: 400px;
 }
 .manage-projects-container .all-projects .projects-list li {
   border: 1px solid #69acc9;
@@ -79,7 +83,7 @@
 .manage-projects-container .all-projects .projects-list li .title {
   width: 98%;
 }
-.manage-projects-container .all-projects .projects-list li .delete {
+.manage-projects-container .delete {
   width: 20px;
   font-weight: 600;
   color: red;
@@ -87,6 +91,13 @@
      -moz-user-select: none;
           user-select: none;
   cursor: pointer;
+}
+.manage-projects-container .loader {
+  width: 100px;
+  height: 100px;
+}
+.manage-projects-container .loader img {
+  width: 100%;
 }
 .manage-projects-container .metadata-summary .btn-icon {
   background-position: -240px -96px;

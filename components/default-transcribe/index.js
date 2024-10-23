@@ -69,7 +69,3 @@ class TpenTranscriptionElement extends HTMLElement {
 }
 
 customElements.define('tpen-transcription', TpenTranscriptionElement)
-
-
-
-

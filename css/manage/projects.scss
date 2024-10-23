@@ -63,14 +63,20 @@
     color: #a64129; 
   }
 
+  .active-project{
+      padding: 0;
+      margin: 0; 
+    }
+
   .all-projects {
     width: 100%;
     margin: 10px 0px;
     padding: 0;
 
+  
     .projects-list {
       overflow-y: scroll;
-      height: 400px;
+      max-height: 400px;
 
       li {
         border: 1px solid #69acc9;
@@ -84,14 +90,22 @@
         .title {
           width: 98%;
         }
-        .delete {
-          width: 20px;
-          font-weight: 600;
-          color: red;
-          user-select: none;
-          cursor: pointer;
-        }
+     
       }
+    }
+  }
+  .delete {
+    width: 20px;
+    font-weight: 600;
+    color: red;
+    user-select: none;
+    cursor: pointer;
+  }
+  .loader{
+    width: 100px;
+    height: 100px;
+    img{
+      width: 100%;
     }
   }
 

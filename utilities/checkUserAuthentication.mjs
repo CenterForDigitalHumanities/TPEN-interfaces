@@ -1,13 +1,19 @@
 export default function checkUserAuthentication() {
-    return new Promise((resolve, reject) => {
-      function check() {
-        if (window.TPEN_USER) {
-          const TPEN_USER = window.TPEN_USER;
-          resolve(TPEN_USER);   
-        } else { 
-          setTimeout(check, 100);
-        }
-      }
-      check();
-    });
-  }
+ try {
+  return new Promise((resolve, reject) => {
+    const authButton = document.querySelector('button[is="auth-button"]')
+
+    if (authButton) {
+      authButton.addEventListener("tpen-authenticated", (event) => {
+        const TPEN_USER = event.detail
+        resolve(TPEN_USER)
+      })
+
+    } else { 
+      reject(new Error('auth-button not found on the page.'))
+    }
+  })
+ } catch (error) {
+  console.log("something happened")
+ }
+}

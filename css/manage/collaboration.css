@@ -62,9 +62,13 @@
   margin: 10px 0px;
   padding: 0;
 }
+.manage-projects-container .all-projects .active-project, .manage-manuscript-container .all-projects .active-project, .manage-collaboration-container .all-projects .active-project {
+  padding: 0;
+  margin: 0;
+}
 .manage-projects-container .all-projects .projects-list, .manage-manuscript-container .all-projects .projects-list, .manage-collaboration-container .all-projects .projects-list {
   overflow-y: scroll;
-  height: 400px;
+  max-height: 400px;
 }
 .manage-projects-container .all-projects .projects-list li, .manage-manuscript-container .all-projects .projects-list li, .manage-collaboration-container .all-projects .projects-list li {
   border: 1px solid #69acc9;
@@ -87,6 +91,13 @@
      -moz-user-select: none;
           user-select: none;
   cursor: pointer;
+}
+.manage-projects-container .loader, .manage-manuscript-container .loader, .manage-collaboration-container .loader {
+  width: 100px;
+  height: 100px;
+}
+.manage-projects-container .loader img, .manage-manuscript-container .loader img, .manage-collaboration-container .loader img {
+  width: 100%;
 }
 .manage-projects-container .metadata-summary .btn-icon, .manage-manuscript-container .metadata-summary .btn-icon, .manage-collaboration-container .metadata-summary .btn-icon {
   background-position: -240px -96px;

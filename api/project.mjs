@@ -1,38 +1,100 @@
-/**
- * Project API Link for user interfaces to import.
- * 
- * @author cubap
- * @type module
- * @version 0.0.1
- */
+import checkUserAuthentication from "../utilities/checkUserAuthentication.mjs"
+
+const baseURL = "http://localhost:3009"
+
 export default class Project {
     constructor(projectID) {
-
-        if (typeof projectID === "object") {
-            // Assume configuration object
-            this.data = projectID
-            return
-        }
-
-        if (typeof projectID === "string") {
-            this.id = projectID
-            return
-        }
-
-        throw new Error("Project ID or configuration is required")
+        this.id = projectID
     }
 
-    // new private function getById()
+    /**
+     * Retrieves the authentication token asynchronously.
+     */
+    async getToken() {
+        if (!this.token) {
+            const TPEN_USER = await checkUserAuthentication()
+            this.token = TPEN_USER.authorization
+        }
+        return this.token
+    }
+
     /**
      * Load project information from TPEN Services about the project 
      * for rendering user interface.
-     * @param {String} projectID short hash id for TPEN project
      */
-
     async loadData() {
-        return await fetch(`/project/${this.id}`)
-            .then(response => response.json())
-            .then(project => this.data = project)
-            .catch(err => new Promise.reject(err))
+        try {
+            const token = await this.getToken()
+            const response = await fetch(`${baseURL}/project/${this.id}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            })
+
+            if (!response.ok) {
+                return Promise.reject(response)
+            }
+
+            this.data = await response.json()
+            return this.data
+        } catch (err) {
+            console.error('Error loading project data:', err)
+            throw err
+        }
+    }
+
+    /**
+     * Add a member to the project by email.
+     * @param {String} email The email of the member to add.
+     */
+    async addMember(email) {
+        try {
+            const token = await this.getToken()
+            const response = await fetch(`${baseURL}/project/${this.id}/invite-member`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                method: "POST",
+                body: JSON.stringify({ email }),
+            })
+
+            if (!response.ok) {
+                const errorData = await response.json()
+                throw new Error(errorData.message || `Failed to invite collaborator: ${response.statusText}`)
+            }
+
+            return await response.json()
+        } catch (error) {
+            console.error('Error inviting member:', error)
+            throw error
+        }
+    }
+
+    /**
+     * Remove a member from the project by userId.
+     * @param {String} userId The ID of the member to remove.
+     */
+    async removeMember(userId) {
+        try {
+            const token = await this.getToken()
+            const response = await fetch(`${baseURL}/project/${this.id}/remove-member`, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ userId }),
+            })
+
+            if (!response.ok) {
+                throw new Error(`Error removing member: ${response.status}`)
+            }
+
+            return await response.json()
+        } catch (error) {
+            console.error('Error removing member:', error)
+            throw error
+        }
     }
 }

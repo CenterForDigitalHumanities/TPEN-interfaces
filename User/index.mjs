@@ -6,7 +6,7 @@ export class User {
   constructor(userId) {
     this.userId = userId
     // this.baseURL = "https://dev.api.t-pen.org" 
-    this.baseURL = "http://localhost:3009" 
+    this.baseURL = "http://localhost:3009"
     if (this.#authentication || this.userId) this.getProfile()
   }
 
@@ -14,10 +14,10 @@ export class User {
    * @param {any} token
    */
   set authentication(token) {
-    let isNewToken = false;
-    if(token != this.#authentication){
+    let isNewToken = false
+    if (token != this.#authentication) {
       isNewToken = true
-    } 
+    }
     this.#authentication = token
     if (isNewToken) this.getProfile()
   }
@@ -26,20 +26,19 @@ export class User {
     if (!this.#authentication && !this.userId)
       throw Error("User ID is required")
 
-    const serviceAPI = `${this.baseURL}/${
-      this.#authentication ? "my/profile" : `user/:${this.userId}`
-    }`
+    const serviceAPI = `${this.baseURL}/${this.#authentication ? "my/profile" : `user/${this.userId}`
+      }`
     const headers = this.#authentication
-      ? new Headers({Authorization: `Bearer ${this.#authentication}`})
+      ? new Headers({ Authorization: `Bearer ${this.#authentication}` })
       : new Headers()
-    fetch(serviceAPI, {headers})
+    fetch(serviceAPI, { headers })
       .then((response) => {
         if (!response.ok) Promise.reject(response)
         const data = response.json()
         // Object.assign(this, data) //
 
         // the public user object has no display_name tag, it has a nme instead, hence the check below
-        this.display_name = this.#authentication?data.display_name:data.name
+        this.display_name = this.#authentication ? data.display_name : data.name
       })
   }
 
@@ -48,7 +47,7 @@ export class User {
       Authorization: `Bearer ${this.#authentication}`
     })
 
-    return fetch(`${this.baseURL}/my/projects`, {headers})
+    return fetch(`${this.baseURL}/my/projects`, { headers })
       .then((response) => {
         if (!response.ok) {
           return Promise.reject(response)
@@ -84,16 +83,25 @@ export class User {
           projects.forEach((project) => {
             const projectTemplate = `
             <li>
-              ${project.title}
+              ${project.name}
               <div class="manage">
-                <span>Resume</span>
-                <span>Manage</span>
+                <span class="resume-btn">Resume</span>
+                <span class="manage-btn" data-project-id="${project._id}">Manage</span>
               </div>
             </li>
           `
 
             projectsList.insertAdjacentHTML("beforeend", projectTemplate)
           })
+
+          const manageButtons = document.querySelectorAll(".manage-btn")
+          manageButtons.forEach((button) => {
+            button.addEventListener("click", (event) => {
+              const projectId = event.target.getAttribute("data-project-id")
+              window.location.href = `/manage?projectID=${projectId}`
+            })
+          })
+
         } else {
           projectsList.innerHTML = "No projects yet. Create one to get started"
         }
@@ -101,7 +109,7 @@ export class User {
       .catch((error) => {
         const errorTemplate = `
           <li>
-            Error ${error.status??500}: ${error.statusText??"Unknown Server error"}
+            Error ${error.status ?? 500}: ${error.statusText ?? "Unknown Server error"}
           </li>
         `
         projectsList.insertAdjacentHTML("beforeend", errorTemplate)
@@ -130,8 +138,8 @@ export class User {
   async addToPublicProfile(data) {
     try {
       const userRecord = await this.getProfile()
-      const publicInfo = {...userRecord?.profile, ...data}
-      const payload = {...userRecord, profile: publicInfo}
+      const publicInfo = { ...userRecord?.profile, ...data }
+      const payload = { ...userRecord, profile: publicInfo }
       const response = await this.updateRecord(payload)
       return response
       // We can either manipulate the data this way and use the the same route to handle all updates or,
@@ -146,5 +154,5 @@ export class User {
   async updatePrivateInformation(data) {
     const response = await this.updateRecord(data)
     return response
-  }
+  } 
 }
