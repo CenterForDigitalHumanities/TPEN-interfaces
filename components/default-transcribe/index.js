@@ -3,6 +3,7 @@ import { fetchProject, userMessage, encodeContentState } from "../iiif-tools/ind
 import "https://cdn.jsdelivr.net/npm/manifesto.js"
 import "../line-image/index.js"
 import "../line-text/index.js"
+import TPEN from "../../TPEN/index.mjs"
 
 class TpenTranscriptionElement extends HTMLElement {
     #projectID = new URLSearchParams(window.location.search).get('projectID')
@@ -10,41 +11,46 @@ class TpenTranscriptionElement extends HTMLElement {
     #manifest
     #activeCanvas
     #activeLine
+    userToken
 
     static get observedAttributes() {
-        return ['tpen-project']
+        return ['tpen-project','tpen-user-id']
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
         if (oldValue !== newValue) {
-            this.#projectID = newValue
-            if(window.TPEN_USER?.authorization) {
-                this.#loadProject()
-            } else {
-                document.addEventListener('tpen-authenticated', this.#loadProject)
+            if(name === 'tpen-user-id') {
+                this.TPEN = new TPEN()
+            }
+            if (name === 'tpen-project') {
+                this.#projectID = newValue
+                if(this.userToken) this.#loadProject()
             }
         }
     }
 
     constructor() {
         super()
+        this.TPEN = new TPEN()
         this.attachShadow({ mode: 'open' })
         this.#transcriptionContainer = document.createElement('div')
         this.#transcriptionContainer.setAttribute('id', 'transcriptionContainer')
         this.shadowRoot.append(this.#transcriptionContainer)
+        this.addEventListener('tpen-authenticated', this.#loadProject)
     }
-
+    
     connectedCallback() {
         if (!this.#projectID) {
             userMessage('No project ID provided')
             return
         }
         this.setAttribute('tpen-project', this.#projectID)
+        TPEN.attachAuthentication(this)
     }
 
     async #loadProject() {
         try {
-            const project = await fetchProject(this.#projectID)
+            const project = await fetchProject(this.#projectID,this.userToken ?? TPEN.getAuthorization())
             console.log(this.#projectID, project)
             this.#transcriptionContainer.setAttribute('iiif-manifest', project.manifest)
             // load project.manifest
@@ -69,7 +75,3 @@ class TpenTranscriptionElement extends HTMLElement {
 }
 
 customElements.define('tpen-transcription', TpenTranscriptionElement)
-
-
-
-
