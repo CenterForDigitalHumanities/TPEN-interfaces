@@ -7,6 +7,7 @@
  * @imports {User, Project, Transcription}
  */
 
+import { getUserFromToken } from '../components/iiif-tools/index.mjs'
 import { User } from '/User/index.mjs'
 // import { Project } from './Project/index.mjs'
 
@@ -99,17 +100,17 @@ export default class TPEN {
             this.login()
             return
         }
+        localStorage.setItem("userToken", token)
         element.setAttribute("require-auth", true)
         element.addEventListener("tpen-authenticated", updateUser)
         element.addEventListener("token-expiration", () => this.classList.add("expired"))
-        document.dispatchEvent(new CustomEvent("tpen-authenticated", { detail: { authorization: token } }))
+        element.dispatchEvent(new CustomEvent("tpen-authenticated", {detail: {authorization: token}}))
     }
 }
 
 function updateUser(event) {
     this.userToken = event.detail.authorization
-    const decodedToken = JSON.parse(atob(this.userToken.split(".")[1]))
-    const userId = decodedToken['http://store.rerum.io/agent'].split("/").pop()
+    const userId = getUserFromToken(this.userToken)
     this.setAttribute("tpen-user-id", userId)
     this.setAttribute("tpen-token-expires", decodedToken.exp)
     this.expiring = setTimeout(() => {        

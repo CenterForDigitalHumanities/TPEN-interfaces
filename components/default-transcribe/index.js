@@ -11,6 +11,7 @@ class TpenTranscriptionElement extends HTMLElement {
     #manifest
     #activeCanvas
     #activeLine
+    userToken
 
     static get observedAttributes() {
         return ['tpen-project','tpen-user-id']
@@ -23,13 +24,14 @@ class TpenTranscriptionElement extends HTMLElement {
             }
             if (name === 'tpen-project') {
                 this.#projectID = newValue
-                this.#loadProject()
+                if(this.userToken) this.#loadProject()
             }
         }
     }
 
     constructor() {
         super()
+        this.TPEN = new TPEN()
         this.attachShadow({ mode: 'open' })
         this.#transcriptionContainer = document.createElement('div')
         this.#transcriptionContainer.setAttribute('id', 'transcriptionContainer')
@@ -48,7 +50,7 @@ class TpenTranscriptionElement extends HTMLElement {
 
     async #loadProject() {
         try {
-            const project = await fetchProject(this.#projectID)
+            const project = await fetchProject(this.#projectID,this.userToken ?? TPEN.getAuthorization())
             console.log(this.#projectID, project)
             this.#transcriptionContainer.setAttribute('iiif-manifest', project.manifest)
             // load project.manifest

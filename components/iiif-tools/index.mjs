@@ -15,31 +15,37 @@ function decodeContentState(encodedContentState) {
     return uriDecoded;
 }
 
+function getUserFromToken(token) {
+    const decodedUser = JSON.parse(atob(restorePadding(token.split('.')[1])))
+    return decodedUser['http://store.rerum.io/agent'].split("/").pop()
+}
+
 function restorePadding(s) {
     // The length of the restored string must be a multiple of 4
     let pad = s.length % 4;
-    let padding = "";
     if (pad) {
         if (pad === 1) {
             throw new Error('InvalidLengthError: Input base64url string is the wrong length to determine padding');
         }
         s += '===='.slice(0, 4 - pad);
     }
-    return s + padding;
+    return s;
 }
 
-function fetchProject(projectID) {
-    const AUTH_TOKEN = window?.TPEN_USER?.authorization
-    return fetch(`https://dev.api.t-pen.org/project/${projectID}`,{
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${AUTH_TOKEN}`
-        }
-    })
-        .then(response => response.ok ? response : Promise.reject(response))
-        .then(response => response.json())
-        .catch(error => userMessage(`${error.status}: ${error.statusText}`))
+async function fetchProject(projectID, AUTH_TOKEN) {
+    try {
+        const response = await fetch(`https://dev.api.t-pen.org/project/${projectID}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${AUTH_TOKEN}`
+            }
+        });
+        const response_1 = response.ok ? response : Promise.reject(response);
+        return await response_1.json();
+    } catch (error) {
+        return userMessage(`${error.status}: ${error.statusText}`);
+    }
 }
 
 /**
@@ -53,4 +59,4 @@ function userMessage(message) {
     document.body.appendChild(modal)
 }
 
-export { encodeContentState, decodeContentState, fetchProject, userMessage }
+export { encodeContentState, decodeContentState, getUserFromToken, fetchProject, userMessage }
