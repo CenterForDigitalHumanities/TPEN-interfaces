@@ -35,8 +35,8 @@ export default class Project {
      */
     async addMember(email) {
         try {
-            const token = await TPEN.getAuthorization()
-            const response = await fetch(`${baseURL}/project/${this.id}/invite-member`, {
+            const token = TPEN.getAuthorization() ?? TPEN.login()
+            const response = await fetch(`${this.TPEN.servicesURL}/project/${this._id}/invite-member`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'application/json',
@@ -52,8 +52,7 @@ export default class Project {
 
             return await response.json()
         } catch (error) {
-            console.error('Error inviting member:', error)
-            throw error
+            userMessage(error.message)
         }
     }
 
@@ -63,8 +62,8 @@ export default class Project {
      */
     async removeMember(userId) {
         try {
-            const token = await TPEN.getAuthorization()
-            const response = await fetch(`${baseURL}/project/${this.id}/remove-member`, {
+            const token =  TPEN.getAuthorization() ?? TPEN.login()
+            const response = await fetch(`${this.TPEN.servicesURL}/project/${this._id}/remove-member`, {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -79,8 +78,7 @@ export default class Project {
 
             return await response.json()
         } catch (error) {
-            console.error('Error removing member:', error)
-            throw error
+            userMessage(error.message)
         }
     }
 }
