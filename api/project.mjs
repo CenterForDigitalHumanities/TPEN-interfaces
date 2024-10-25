@@ -1,3 +1,5 @@
+// I'm copying this to Project/index.mjs and updating it there.
+
 import checkUserAuthentication from "../utilities/checkUserAuthentication.mjs"
 
 const baseURL = "http://localhost:3009"
