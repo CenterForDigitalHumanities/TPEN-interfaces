@@ -7,19 +7,21 @@
  * @imports {User, Project, Transcription}
  */
 
-import { getUserFromToken } from '../components/iiif-tools/index.mjs'
+import { decodeUserToken, getUserFromToken, checkExpired } from '../components/iiif-tools/index.mjs'
 import { User } from '/User/index.mjs'
 // import { Project } from './Project/index.mjs'
 
 export default class TPEN {
     #actionQueue = []
-    #currentUser
-    #activeProject
+    #currentUser = {}
+    #activeProject = {}
     #activeCollection
 
     constructor(tinyThingsURL = "https://dev.tiny.t-pen.org") {
         this.tinyThingsURL = tinyThingsURL
         this.servicesURL = "https://dev.api.t-pen.org"
+        this.currentUser = TPEN.getAuthorization() ? new User(getUserFromToken(TPEN.getAuthorization())) : {}
+        this.activeProject = { _id: new URLSearchParams(window.location.search).get('projectID') }
     }
 
     async reset(force = false) {
@@ -91,12 +93,13 @@ export default class TPEN {
     }
 
     static attachAuthentication(element) {
-        if(Array.isArray(element)) {
+        if (Array.isArray(element)) {
             element.forEach(elem => this.attachAuthentication(elem))
             return
         }
         const token = new URLSearchParams(location.search).get("idToken") ?? this.getAuthorization()
-        if (!token) {
+        history.replaceState(null, "", location.pathname + location.search.replace(/[\?&]idToken=[^&]+/, ''))
+        if (!token || checkExpired(token)) {
             this.login()
             return
         }
@@ -104,7 +107,7 @@ export default class TPEN {
         element.setAttribute("require-auth", true)
         element.addEventListener("tpen-authenticated", updateUser)
         element.addEventListener("token-expiration", () => this.classList.add("expired"))
-        element.dispatchEvent(new CustomEvent("tpen-authenticated", {detail: {authorization: token}}))
+        element.dispatchEvent(new CustomEvent("tpen-authenticated", { detail: { authorization: token } }))
     }
 }
 
@@ -112,9 +115,10 @@ function updateUser(event) {
     this.userToken = event.detail.authorization
     const userId = getUserFromToken(this.userToken)
     this.setAttribute("tpen-user-id", userId)
-    this.setAttribute("tpen-token-expires", decodedToken.exp)
-    this.expiring = setTimeout(() => {        
+    const expires = decodeUserToken(this.userToken)?.exp
+    this.setAttribute("tpen-token-expires", expires)
+    this.expiring = setTimeout(() => {
         this.dispatchEvent(new CustomEvent("token-expiration"))
-      }, newValue - Date.now())
+    }, expires * 1000 - Date.now())
     this.querySelectorAll("[tpen-creator]").forEach(elem => elem.setAttribute("tpen-creator", `https://store.rerum.io/v1/id/${userId}`))
 }
