@@ -3,26 +3,30 @@ import { fetchProject, userMessage, encodeContentState } from "../iiif-tools/ind
 import "https://cdn.jsdelivr.net/npm/manifesto.js"
 import "../line-image/index.js"
 import "../line-text/index.js"
+import TPEN from "../../TPEN/index.mjs"
+import { User } from "../../User/index.mjs"
 
 class TpenTranscriptionElement extends HTMLElement {
-    #projectID = new URLSearchParams(window.location.search).get('projectID')
+    TPEN = new TPEN()
     #transcriptionContainer
-    #manifest
-    #activeCanvas
-    #activeLine
+    #activeCanvas = {}
+    #activeLine = {}
+    userToken
 
     static get observedAttributes() {
-        return ['tpen-project']
+        return ['tpen-project','tpen-user-id']
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
         if (oldValue !== newValue) {
-            this.#projectID = newValue
-            if(window.TPEN_USER?.authorization) {
-                this.#loadProject()
-            } else {
-                document.addEventListener('tpen-authenticated', this.#loadProject)
+            if(name === 'tpen-user-id') {
+                this.TPEN = new TPEN()
+                this.TPEN.currentUser = new User(newValue)
             }
+            if (name === 'tpen-project') {
+                this.TPEN.activeProject = { _id: newValue }
+                }
+        if(this.userToken) this.#loadProject()
         }
     }
 
@@ -32,44 +36,70 @@ class TpenTranscriptionElement extends HTMLElement {
         this.#transcriptionContainer = document.createElement('div')
         this.#transcriptionContainer.setAttribute('id', 'transcriptionContainer')
         this.shadowRoot.append(this.#transcriptionContainer)
+        TPEN.attachAuthentication(this)
     }
-
+    
     connectedCallback() {
-        if (!this.#projectID) {
+        if (!this.TPEN.activeProject._id) {
             userMessage('No project ID provided')
             return
         }
-        this.setAttribute('tpen-project', this.#projectID)
+        this.setAttribute('tpen-project', this.TPEN.activeProject._id)
     }
 
     async #loadProject() {
         try {
-            const project = await fetchProject(this.#projectID)
-            console.log(this.#projectID, project)
+            const project = await fetchProject(this.TPEN.activeProject._id, this.userToken ?? TPEN.getAuthorization())
+            if(!project) return userMessage('Project not found')
             this.#transcriptionContainer.setAttribute('iiif-manifest', project.manifest)
             // load project.manifest
             let manifest = await manifesto.loadManifest(project.manifest)
-            this.#manifest = new manifesto.Manifest(manifest)
+            this.TPEN.activeProject.manifest = new manifesto.Manifest(manifest)
             // page from URL later
-            this.#activeCanvas = this.#manifest?.getSequenceByIndex(0)?.getCanvasByIndex(0)
-            this.#activeLine = this.#activeCanvas?.__jsonld.annotations?.[0]?.items?.[0] ?? this.#activeCanvas?.__jsonld.annotations?.[0] ?? this.#activeCanvas?.getContent()[0]
+            this.#activeCanvas = this.TPEN.activeProject.manifest?.getSequenceByIndex(0)?.getCanvasByIndex(0)
+            this.#activeLine = this.getFirstLine()
             this.#transcriptionContainer.setAttribute('iiif-canvas', this.#activeCanvas?.id)
             this.#transcriptionContainer.setAttribute('tpen-line-id', this.#activeLine?.id)
             this.#transcriptionContainer.setAttribute('iiif-content', encodeContentState(JSON.stringify(this.#activeLine)))
             const imgTop = document.createElement('tpen-line-image')
             imgTop.setAttribute('id', 'imgTop')
-            imgTop.setAttribute('projectID', this.#projectID)
+            imgTop.setAttribute('projectID', this.TPEN.activeProject._id)
             const text = document.createElement('tpen-line-text')
             text.setAttribute('id', 'text')
             this.#transcriptionContainer.append(imgTop, text)
         } catch (err) {
-            return userMessage(err)
+            switch (err.status ?? err.code) {
+                case 401:
+                    return userMessage('Unauthorized')
+                case 403:   
+                    return userMessage('Forbidden')
+                case 404:
+                    return userMessage('Project not found') 
+                default:
+                    return userMessage(err.message ?? err.statusText ?? err.text ?? 'Unknown error')
+            }
         }
+    }
+
+    getAllLines(canvas = this.#activeCanvas) {
+        return canvas?.__jsonld.annotations?.[0]?.items ?? canvas?.__jsonld.annotations?.[0] ?? canvas?.getContent()
+    }
+
+    getLineByIndex(index, canvas = this.#activeCanvas) {
+        return this.getAllLines(canvas)[index]
+    }
+
+    getLineByID(id, canvas = this.#activeCanvas) {
+        return this.getAllLines(canvas).find(line => line.id === id ?? line['@id'] === id)
+    }
+
+    getFirstLine(canvas = this.#activeCanvas) {
+        return this.getAllLines(canvas)[0]
+    }
+
+    getLastModifiedLine(canvas) {
+        return this.getAllLines(canvas).sort((a, b) => new Date(b.modified) - new Date(a.modified))[0]
     }
 }
 
 customElements.define('tpen-transcription', TpenTranscriptionElement)
-
-
-
-
