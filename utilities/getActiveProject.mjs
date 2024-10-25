@@ -1,3 +1,5 @@
+// @deprecated - use TPEN.#activeProject instead
+
 import Project from "../api/project.mjs"
 
 export default async function getActiveProject() {

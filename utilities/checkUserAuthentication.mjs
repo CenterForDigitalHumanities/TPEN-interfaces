@@ -1,3 +1,5 @@
+//@deprecated - use TPEN.getAuthorization() instead
+
 export default function checkUserAuthentication() {
  try {
   return new Promise((resolve, reject) => {
