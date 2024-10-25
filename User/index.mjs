@@ -1,54 +1,50 @@
+import { TPEN } from '../TPEN/index.mjs'
+
 /** Description: to use this class, initialize new class, set authentication token, then call required methods
  * 
  */
 export class User {
-  #authentication
-  baseURL = "https://dev.api.t-pen.org" 
-  
+  TPEN = new TPEN()
+
+  #isTheAuthenticatedUser() {
+    return this._id === TPEN.getAuthorization()
+  } 
   constructor(_id) {
     this._id = _id
     // if (this.#authentication || this._id) this.getProfile()
   }
 
-  /**
-   * @param {any} token
-   */
-  set authentication(token) {
-    let isNewToken = false
-    if (token != this.#authentication) {
-      isNewToken = true
-    }
-    this.#authentication = token
-    if (isNewToken) this.getProfile()
-  }
-
   async getProfile() {
-    if (!this.#authentication && !this._id)
+    if (!this._id)
       throw Error("User ID is required")
 
-    const serviceAPI = `${this.baseURL}/${
-      this.#authentication ? "my/profile" : `user/:${this._id}`
+    const serviceAPI = `${this.TPEN.servicesURL}/${
+      this.#isTheAuthenticatedUser() ? "my/profile" : `user/:${this._id}`
     }`
-    const headers = this.#authentication
-      ? new Headers({ Authorization: `Bearer ${this.#authentication}` })
+    const headers = this.#isTheAuthenticatedUser()
+      ? new Headers({ Authorization: `Bearer ${TPEN.getAuthorization()}` })
       : new Headers()
     fetch(serviceAPI, { headers })
       .then((response) => {
         if (!response.ok) Promise.reject(response)
-        const data = response.json()
-        // Object.assign(this, data) //
-
+        return response
+      })
+      .then((response) => response.json())
+      .then((data) => {
         // the public user object has no display_name tag, it has a nme instead, hence the check below
-        this.display_name = this.#authentication ? data.display_name : data.name
+        this.display_name ??= TPEN.getAuthorization() ? data.display_name : data.name
+        if(data.profile) this.profile = data.profile
+        else Object.assign(this, data)
+        return this
       })
   }
 
   async getProjects() {
     const headers = new Headers({
-      Authorization: `Bearer ${this.#authentication}`
+      Authorization: `Bearer ${TPEN.getAuthorization()}`
     })
 
-    return fetch(`${this.baseURL}/my/projects`, { headers })
+    return fetch(`${this.TPEN.servicesURL}/my/projects`, { headers })
       .then((response) => {
         if (!response.ok) {
           return Promise.reject(response)
@@ -120,11 +116,11 @@ export class User {
 
   async updateRecord(data) {
     try {
-      const response = await fetch(`${this.baseURL}/my/profile/update`, {
+      const response = await fetch(`${this.TPEN.servicesURL}/my/profile/update`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${this.#authentication}`
+          Authorization: `Bearer ${TPEN.getAuthorization()}`
         },
         body: JSON.stringify(data)
       })
