@@ -16,11 +16,11 @@ function decodeContentState(encodedContentState) {
 }
 
 function decodeUserToken(token) {
-    return JSON.parse(atob(restorePadding(token.split('.')[1])))
+    return token ? JSON.parse(atob(restorePadding(token.split('.')[1]))) : {}
 }
 
 function getUserFromToken(token) {
-    return decodeUserToken(token)['http://store.rerum.io/agent'].split("/").pop()
+    return decodeUserToken(token)['http://store.rerum.io/agent']?.split("/").pop()
 }
 
 function restorePadding(s) {

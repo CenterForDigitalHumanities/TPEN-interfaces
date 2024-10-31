@@ -4,7 +4,7 @@ import "https://cdn.jsdelivr.net/npm/manifesto.js"
 import "../line-image/index.js"
 import "../line-text/index.js"
 import TPEN from "../../TPEN/index.mjs"
-import { User } from "../../User/index.mjs"
+import User from "../../User/index.mjs"
 
 class TpenTranscriptionElement extends HTMLElement {
     TPEN = new TPEN()

@@ -21,7 +21,7 @@ export default class Project {
             })
             .then(response => response.ok ? response : Promise.reject(response))
             .then(response => response.json())
-            .then(data => this.data = data)
+            .then(data => Object.assign(this, data))
             .catch(error => { throw error })
         } catch (error) {
             return userMessage(`${error.status}: ${error.statusText}`)
@@ -79,5 +79,8 @@ export default class Project {
         } catch (error) {
             userMessage(error.message)
         }
+    }
+    getLabel() {
+        return this.label ?? this.data?.label ?? this.metadata?.find(m=>m.label === "title")?.value ?? "Untitled"
     }
 }

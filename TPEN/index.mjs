@@ -17,7 +17,10 @@ export default class TPEN {
     constructor(tinyThingsURL = "https://dev.tiny.t-pen.org") {
         this.tinyThingsURL = tinyThingsURL
         this.servicesURL = "https://dev.api.t-pen.org"
-        this.currentUser = {}
+        this.currentUser = {
+            _id: -1,
+            displayName: "Anonymous"
+        }
         this.activeProject = { _id: new URLSearchParams(window.location.search).get('projectID') }
     }
 

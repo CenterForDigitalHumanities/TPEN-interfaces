@@ -1,5 +1,9 @@
- import getActiveProject from "../utilities/getActiveProject.mjs"
  import renderRoles from "../utilities/renderRoles.mjs"
+ import TPEN from "../TPEN/index.mjs"
+ TPEN.getAuthorization() ?? TPEN.login()
+ import User from "../User/index.mjs"
+ window.TPEN_USER = User.fromToken(TPEN.getAuthorization())
+ import Project from "../Project/index.mjs"
 
 let groupTitle = document.querySelector(".project-title")
 let groupMembersElement = document.querySelector(".group-members")
@@ -10,22 +14,12 @@ const inviteForm = document.getElementById("invite-form")
 let errorHTML = document.getElementById("errorHTML")
 
 let isOwnerOrLeader = false
-let project
- 
-document.addEventListener("DOMContentLoaded", async () => { 
-    try {
-        const { projectObj, projectData } = await getActiveProject()
-         project = projectObj
-        renderProjectContributors(projectData)
 
-    } catch (error) {
-        return errorHTML.innerHTML = error.status == 401 ? "Unauthorized request. Please log in to view this resource" : `Error ${error.status ?? ""}: ${error.statusText ?? error.toString()}`
-    }
+const thisTPEN = new TPEN()
+await (thisTPEN.activeProject=new Project(thisTPEN.activeProject?._id)).fetch()
 
-    removeMember()
-
-})
-
+renderProjectContributors()
+   
 inviteForm.addEventListener("submit", async (event) => {
     event.preventDefault()
 
@@ -33,11 +27,11 @@ inviteForm.addEventListener("submit", async (event) => {
         submitButton.textContent = "Inviting..."
         submitButton.disabled = true
 
-        const data = await project.addMember(userEmail.value)
+        await thisTPEN.activeProject.addMember(userEmail.value)
 
         submitButton.textContent = "Submit"
         submitButton.disabled = false
-        renderProjectContributors(data)
+        renderProjectContributors()
         userEmail.value = ""
 
         // Display a success message
@@ -58,29 +52,34 @@ inviteForm.addEventListener("submit", async (event) => {
 
 })
 
-async function renderProjectContributors(project) {
-    const TPEN_USER = await checkUserAuthentication()
+async function renderProjectContributors() {
+    if(!thisTPEN.activeProject) {
+        return errorHTML.innerHTML = "No project"
+    }
   
     const userId = TPEN_USER?._id
     groupMembersElement.innerHTML = ""
 
-    if (project) {
-        const contributors = project.contributors
-        groupTitle.innerHTML = project.name
-
+       const contributors = thisTPEN.activeProject.contributors
+        groupTitle.innerHTML = thisTPEN.activeProject.getLabel()
+        
+        // datafix to remove
+        if (contributors[userId]?.roles.roles) contributors[userId].roles = contributors[userId]?.roles.roles
+        if (contributors[userId]?.roles.includes("OWNER") || contributors[userId]?.roles.includes("LEADER")) {
+            isOwnerOrLeader = true
+        };
         for (const contributorId in contributors) {
-
+            // datafix to remove
+            if (contributors[contributorId]?.roles.roles) contributors[contributorId].roles = contributors[contributorId]?.roles.roles
+            
             const memberData = contributors[contributorId]
-            if (contributors[userId] && (contributors[userId].roles.includes("OWNER") || contributors[userId].roles.includes("LEADER"))) {
-                isOwnerOrLeader = true
-            };
 
             const memberHTML = `
                 <li class="member" data-member-id=${contributorId}> 
-                  ${memberData.displayName ? `<span class="role">${renderRoles(memberData.roles)}</span>` : `<span class="pending">Pending</span>`}
-                  ${memberData.displayName || memberData.email}
+                  <span class="role">${renderRoles(memberData.roles)}</span>
+                  ${memberData.profile.displayName }
  
-                 <button class="remove-button allow-invite is-hidden" id="remove-btn" data-member-id=${contributorId} data-member-name=${memberData.displayName || memberData.email} >Remove</button>
+                 <button class="remove-button allow-invite is-hidden" id="remove-btn" data-member-id=${contributorId} data-member-name=${memberData.profile.displayName } >Remove</button>
  
                 </li>
               `
@@ -91,8 +90,6 @@ async function renderProjectContributors(project) {
             groupMembersElement.appendChild(memberElement)
 
         }
-
-    }
 
     setPermissionBasedVisibility()
 
@@ -111,7 +108,7 @@ async function removeMember() {
                 return
             }
             try {
-                const data = await project.removeMember(memberID)
+                const data = await thisTPEN.activeProject.removeMember(memberID)
                 console.log('Member removed successfully:', data)
                 const memberElements = document.querySelectorAll('.member')
                 memberElements.forEach((element) => {

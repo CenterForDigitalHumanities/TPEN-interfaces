@@ -1,14 +1,15 @@
-import { TPEN } from '../TPEN/index.mjs'
+import TPEN from '../TPEN/index.mjs'
+import { getUserFromToken } from '../components/iiif-tools/index.mjs'
 
 /** Description: to use this class, initialize new class, set authentication token, then call required methods
  * 
  */
-export class User {
+export default class User {
   TPEN = new TPEN()
 
   #isTheAuthenticatedUser() {
-    return this._id === TPEN.getAuthorization()
-  } 
+    return this._id === getUserFromToken(TPEN.getAuthorization())
+  }
   constructor(_id) {
     this._id = _id
     // if (this.#authentication || this._id) this.getProfile()
@@ -152,4 +153,8 @@ export class User {
     const response = await this.updateRecord(data)
     return response
   } 
+
+  static fromToken(token) {
+    return new User(getUserFromToken(token))
+  }
 }
