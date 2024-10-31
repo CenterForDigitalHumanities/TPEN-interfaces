@@ -21,7 +21,7 @@ class TpenTranscriptionElement extends HTMLElement {
         if (oldValue !== newValue) {
             if(name === 'tpen-user-id') {
                 this.TPEN = new TPEN()
-                this.TPEN.currentUser = new User(newValue)
+                this.TPEN.currentUser = new User(newValue).getProfile()
             }
             if (name === 'tpen-project') {
                 this.TPEN.activeProject = { _id: newValue }

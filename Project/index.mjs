@@ -5,7 +5,6 @@ export default class Project {
 
     TPEN = new TPEN()
 
-
     constructor(_id) {
         this._id = _id
     }
@@ -35,10 +34,10 @@ export default class Project {
      */
     async addMember(email) {
         try {
-            const token = TPEN.getAuthorization() ?? TPEN.login()
+            const AUTH_TOKEN = TPEN.getAuthorization() ?? TPEN.login()
             const response = await fetch(`${this.TPEN.servicesURL}/project/${this._id}/invite-member`, {
                 headers: {
-                    Authorization: `Bearer ${token}`,
+                    Authorization: `Bearer ${AUTH_TOKEN}`,
                     'Content-Type': 'application/json',
                 },
                 method: "POST",

@@ -4,12 +4,9 @@
  * @class
  * @example https://centerfordigitalhumanities.github.io/TPEN-interfaces/classes/TPEN
  * @param {String} tinyThingsURL - The URL of the TinyThings API. Defaults to "https://dev.tiny.t-pen.org"
- * @imports {User, Project, Transcription}
  */
 
 import { decodeUserToken, getUserFromToken, checkExpired } from '../components/iiif-tools/index.mjs'
-import { User } from '/User/index.mjs'
-// import { Project } from './Project/index.mjs'
 
 export default class TPEN {
     #actionQueue = []
@@ -20,7 +17,7 @@ export default class TPEN {
     constructor(tinyThingsURL = "https://dev.tiny.t-pen.org") {
         this.tinyThingsURL = tinyThingsURL
         this.servicesURL = "https://dev.api.t-pen.org"
-        this.currentUser = TPEN.getAuthorization() ? new User(getUserFromToken(TPEN.getAuthorization())) : {}
+        this.currentUser = {}
         this.activeProject = { _id: new URLSearchParams(window.location.search).get('projectID') }
     }
 
@@ -40,8 +37,8 @@ export default class TPEN {
     }
 
     set currentUser(user) {
-        // confirm user is a User object
-        if (!(user instanceof User)) {
+        // confirm user is as expected
+        if (!(user?.displayName && user?._id)) {
             throw new Error("Invalid user object")
         }
         this.#currentUser = (this.#currentUser?._id === user._id)
