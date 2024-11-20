@@ -57,14 +57,14 @@
 .manage-projects-container .red, .manage-manuscript-container .red, .manage-collaboration-container .red {
   color: #a64129;
 }
+.manage-projects-container .active-project, .manage-manuscript-container .active-project, .manage-collaboration-container .active-project {
+  padding: 0;
+  margin: 0;
+}
 .manage-projects-container .all-projects, .manage-manuscript-container .all-projects, .manage-collaboration-container .all-projects {
   width: 100%;
   margin: 10px 0px;
   padding: 0;
-}
-.manage-projects-container .all-projects .active-project, .manage-manuscript-container .all-projects .active-project, .manage-collaboration-container .all-projects .active-project {
-  padding: 0;
-  margin: 0;
 }
 .manage-projects-container .all-projects .projects-list, .manage-manuscript-container .all-projects .projects-list, .manage-collaboration-container .all-projects .projects-list {
   overflow-y: scroll;
@@ -83,7 +83,7 @@
 .manage-projects-container .all-projects .projects-list li .title, .manage-manuscript-container .all-projects .projects-list li .title, .manage-collaboration-container .all-projects .projects-list li .title {
   width: 98%;
 }
-.manage-projects-container .all-projects .projects-list li .delete, .manage-manuscript-container .all-projects .projects-list li .delete, .manage-collaboration-container .all-projects .projects-list li .delete {
+.manage-projects-container .delete, .manage-manuscript-container .delete, .manage-collaboration-container .delete {
   width: 20px;
   font-weight: 600;
   color: red;

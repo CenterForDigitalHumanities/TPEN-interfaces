@@ -32,26 +32,104 @@
             <main id="content">
                 <h4 class="title">Existing group members</h4>
 
-                <ol class="group-members"> 
+                <ol class="group-members">
                 </ol>
 
+                <!-- Modal For Managing Roles -->
+                <!-- <div class="role-modal-container">
+                    <div id="roleModal" class="modal hidden">
+                        <div class="modal-content">
+                            <h2 id="modalTitle">Manage Roles</h2>
+                            <p id="modalDescription"></p>
+
+                            <label for="roleInput">Enter roles (comma-separated):</label>
+                            <input type="text" id="roleInput" placeholder="Contributor, Viewer">
+
+                            <div class="modal-actions">
+                                <button id="modalConfirmButton">Confirm</button>
+                                <button id="modalCancelButton">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                </div> -->
+
+                <!-- <div class="role-modal-container">
+                    <div id="roleModal" class="modal hidden">
+                        <div class="modal-content">
+                            <h2 id="modalTitle">Manage Roles</h2>
+                            <p id="modalDescription"></p>
+
+                            <div id="predefinedRoles">
+                                <h3>Select Roles:</h3>
+                                <label><input type="checkbox" value="Contributor"> Contributor</label>
+                                <label><input type="checkbox" value="Leader"> Leader</label>
+                                <label><input type="checkbox" value="Viewer"> Viewer</label>
+                            </div>
+
+                            <div id="customRoleInput">
+                                <h3>Custom Roles:</h3>
+                                <label for="customRoles">Enter custom roles (comma-separated):</label>
+                                <input type="text" id="customRoles" placeholder="e.g., Editor, Reviewer">
+                            </div>
+
+                            <div class="modal-actions">
+                                <button id="modalConfirmButton">Confirm</button>
+                                <button id="modalCancelButton">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                </div> -->
+
+            <div class="role-modal-container">
+                <div id="roleModal" class="modal hidden">
+                    <div class="modal-content">
+                        <h2 id="modalTitle">Manage Roles</h2>
+                        <p id="modalDescription"></p>
+                
+                        <!-- Default Roles -->
+                        <div>
+                            <label for="defaultRoles">Select default roles:</label>
+                            <select id="defaultRoles" multiple>
+                                <option value="CONTRIBUTOR">Contributor</option>
+                                <option value="LEADER">Leader</option>
+                                <option value="VIEWER">Viewer</option>
+                            </select>
+                        </div>
+                
+                        <!-- Custom Roles -->
+                        <div id="customRoleSection">
+                            <h3>Custom Roles</h3>
+                            <div id="customRolesContainer"></div>
+                            <button id="addCustomRoleButton" type="button">+ Add Custom Role</button>
+                        </div>
+                
+                        <!-- Modal Actions -->
+                        <div class="modal-actions">
+                            <button id="modalConfirmButton">Confirm</button>
+                            <button id="modalCancelButton">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+                
                 <div class="allow-invite is-hidden " id="invite-section-container">
                     <h4 class="title">Add a new group member</h4>
                     <p>
-                      If you add an email that is not a current TPEN user, we will invite them to join TPEN and your project
-                    </p> 
+                        If you add an email that is not a current TPEN user, we will invite them to join TPEN and your
+                        project
+                    </p>
 
                     <form id="invite-form">
                         <label for="invitee-email">Invitee's Email</label>
                         <input type="email" name="invitee-email" id="invitee-email" required>
-                        <button type="submit" id="submit" class="submit-btn" >Submit</button>
+                        <button type="submit" id="submit" class="submit-btn">Submit</button>
                         <p id="error" class="error-message"></p>
-                      </form>
+                    </form>
 
 
-                  </div>
+                </div>
 
-                  <div id="errorHTML" class="error"></div>
+                <div id="errorHTML" class="error"></div>
 
             </main>
 

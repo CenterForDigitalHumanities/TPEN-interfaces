@@ -40,7 +40,8 @@
   padding: 10px;
   border: 1px solid #ccc;
   border-radius: 4px;
-  width: 200px; /* Adjust the width as needed */
+  width: 200px;
+  /* Adjust the width as needed */
 }
 .collaborators-container .submit-btn {
   background-color: rgba(105, 172, 201, 0.8);
@@ -67,4 +68,78 @@
 }
 .collaborators-container .is-hidden {
   display: none;
+}
+
+.role.owner {
+  font-weight: bold;
+  color: #ff5733;
+}
+
+.role.leader {
+  font-weight: bold;
+  color: #007bff;
+}
+
+.role.default {
+  color: #333;
+}
+
+.role.custom {
+  color: #6c757d;
+  font-style: italic;
+}
+
+.role-modal-container .modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+.role-modal-container .modal.hidden {
+  display: none;
+}
+.role-modal-container .modal-content {
+  background: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  max-width: 500px;
+  width: 90%;
+  text-align: center;
+}
+.role-modal-container .modal-actions {
+  margin-top: 20px;
+  display: flex;
+  justify-content: space-around;
+}
+.role-modal-container .modal-actions button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.role-modal-container #modalConfirmButton {
+  background-color: #6AABC8;
+  color: white;
+}
+.role-modal-container #modalCancelButton {
+  background-color: #dc3545;
+  color: white;
+}
+.role-modal-container #defaultRoles {
+  width: 100%;
+  height: 100px;
+  margin-top: 10px;
+  padding: 10px;
+}
+.role-modal-container #customRoleSection {
+  margin-top: 20px;
+}
+.role-modal-container .modal-actions button {
+  margin: 10px;
 }/*# sourceMappingURL=index.css.map */

@@ -1,90 +1,178 @@
 .collaborators-container {
-    #content {
-        margin: 20px 0px;
+  #content {
+    margin: 20px 0px;
 
-        .title {
-            color: #B14628;
-            font-size: 17px;
-            font-weight: 300;
-            margin: 10px 0px;
-        }
+    .title {
+      color: #B14628;
+      font-size: 17px;
+      font-weight: 300;
+      margin: 10px 0px;
     }
+  }
 
-    .member {
-        margin: 10px 15px;
+  .member {
+    margin: 10px 15px;
+
+  }
+
+  .role {
+    color: #B14628;
+    text-transform: capitalize;
+  }
+
+  .pending {
+    color: #999999;
+    font-style: italic;
+    border: 1px dashed #ccc;
+    padding: 2px;
+  }
+
+  .remove-button {
+    background-color: #ff4d4d;
+    font-size: 10px;
+    color: white;
+    border: none;
+    padding: 5px;
+    cursor: pointer;
+    border-radius: 4px;
+    margin: 0px 10px;
+
+    &:hover {
+
+      background-color: #ff3333;
+    }
+  }
+
+
+
+
+  .invite-section {
+    margin: 10px 0px;
+  }
+
+  #invitee-email {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 200px;
+    /* Adjust the width as needed */
+  }
+
+  .submit-btn {
+    background-color: rgba(105, 172, 201, .8);
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    color: white;
+
+    &:hover {
+      background-color: rgba(105, 172, 201, 1);
 
     }
+  }
 
-    .role {
-        color: #B14628;  
-        text-transform: capitalize;
-    }
+  .success-message {
+    color: green;
+    background-color: #e6ffe6;
+    padding: 10px;
+    border: 1px solid #c3e6c3;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    text-align: center;
+  }
 
-    .pending {
-        color: #999999;
-        font-style: italic;
-        border: 1px dashed #ccc;
-        padding: 2px;
-    }
-    .remove-button {
-        background-color: #ff4d4d;  
-        font-size: 10px;
-        color: white;
-        border: none;
-        padding: 5px ;
-        cursor: pointer;
-        border-radius: 4px;
-        margin: 0px 10px;
+  .error {
+    color: red;
+  }
 
-        &:hover{
+  .is-hidden {
+    display: none;
+  }
 
-            background-color: #ff3333;
-        }
-      }
-      
-     
+}
 
-       
-    .invite-section {
-        margin: 10px 0px;
-    }
+.role.owner {
+  font-weight: bold;
+  color: #ff5733;
+}
 
-    #invitee-email {
-        padding: 10px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        width: 200px; /* Adjust the width as needed */
-      }
+.role.leader {
+  font-weight: bold;
+  color: #007bff;
+}
 
-    .submit-btn {
-        background-color: rgba(105, 172, 201, .8); 
-        padding: 10px 20px;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        color: white;
-        &:hover{
-            background-color: rgba(105, 172, 201, 1);
+.role.default {
+  color: #333;
+}
 
-        }
-      }
-  
-      .success-message{
-        color: green;
-        background-color: #e6ffe6;  
-        padding: 10px;
-        border: 1px solid #c3e6c3;
-        border-radius: 5px;
-        margin-bottom: 10px;
-        text-align: center;
-      }
+.role.custom {
+  color: #6c757d;
+  font-style: italic;
+}
 
-      .error{
-        color: red;
-      }
+.role-modal-container {
+  .modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
 
-      .is-hidden{
-        display: none;
-      }
+  .modal.hidden {
+    display: none;
+  }
+
+  .modal-content {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    max-width: 500px;
+    width: 90%;
+    text-align: center;
+  }
+
+  .modal-actions {
+    margin-top: 20px;
+    display: flex;
+    justify-content: space-around;
+  }
+
+  .modal-actions button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+
+  #modalConfirmButton {
+    background-color: #6AABC8;
+    color: white;
+  }
+
+  #modalCancelButton {
+    background-color: #dc3545;
+    color: white;
+  }
+#defaultRoles {
+    width: 100%;
+    height: 100px;
+    margin-top: 10px;
+    padding: 10px;
+}
+
+#customRoleSection {
+    margin-top: 20px;
+}
+
+.modal-actions button {
+    margin: 10px;
+}
 
 }
