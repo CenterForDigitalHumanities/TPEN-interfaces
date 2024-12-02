@@ -19,10 +19,10 @@ export default class Project {
                     'Authorization': `Bearer ${AUTH_TOKEN}`
                 }
             })
-            .then(response => response.ok ? response : Promise.reject(response))
-            .then(response => response.json())
-            .then(data => Object.assign(this, data))
-            .catch(error => { throw error })
+                .then(response => response.ok ? response : Promise.reject(response))
+                .then(response => response.json())
+                .then(data => Object.assign(this, data))
+                .catch(error => { throw error })
         } catch (error) {
             return userMessage(`${error.status}: ${error.statusText}`)
         }
@@ -43,7 +43,6 @@ export default class Project {
                 method: "POST",
                 body: JSON.stringify({ email }),
             })
-
             if (!response.ok) {
                 const errorData = await response.json()
                 throw new Error(errorData.message || `Failed to invite collaborator: ${response.statusText}`)
@@ -61,7 +60,7 @@ export default class Project {
      */
     async removeMember(userId) {
         try {
-            const token =  TPEN.getAuthorization() ?? TPEN.login()
+            const token = TPEN.getAuthorization() ?? TPEN.login()
             const response = await fetch(`${this.TPEN.servicesURL}/project/${this._id}/remove-member`, {
                 method: "POST",
                 headers: {
@@ -70,17 +69,16 @@ export default class Project {
                 },
                 body: JSON.stringify({ userId }),
             })
-
             if (!response.ok) {
                 throw new Error(`Error removing member: ${response.status}`)
             }
 
-            return await response.json()
+            return await response
         } catch (error) {
             userMessage(error.message)
         }
     }
     getLabel() {
-        return this.label ?? this.data?.label ?? this.metadata?.find(m=>m.label === "title")?.value ?? "Untitled"
+        return this.label ?? this.data?.label ?? this.metadata?.find(m => m.label === "title")?.value ?? "Untitled"
     }
 }

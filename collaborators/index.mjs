@@ -19,7 +19,6 @@ const thisTPEN = new TPEN()
 await (thisTPEN.activeProject = new Project(thisTPEN.activeProject?._id)).fetch()
 
 renderProjectCollaborators()
-
 inviteForm.addEventListener("submit", async (event) => {
     event.preventDefault()
 
@@ -27,8 +26,8 @@ inviteForm.addEventListener("submit", async (event) => {
         submitButton.textContent = "Inviting..."
         submitButton.disabled = true
 
-        await thisTPEN.activeProject.addMember(userEmail.value)
-
+        const response = await thisTPEN.activeProject.addMember(userEmail.value)
+        if (!response) throw new Error("Invitation failed")
         submitButton.textContent = "Submit"
         submitButton.disabled = false
         renderProjectCollaborators()
@@ -45,6 +44,9 @@ inviteForm.addEventListener("submit", async (event) => {
             successMessage.remove()
         }, 3000)
     } catch (error) {
+        setTimeout(() => {
+            errorHTML.remove()
+        }, 3000)
         errorHTML.innerHTML = error.message
         submitButton.textContent = "Submit"
         submitButton.disabled = false
@@ -114,38 +116,31 @@ async function renderProjectCollaborators() {
 
 }
 
-async function removeMember() {
-    const removeButtons = document.querySelectorAll('.remove-button')
-
-    removeButtons.forEach((button) => {
-        button.addEventListener('click', async () => {
-            const memberID = button.getAttribute("data-member-id")
-            const memberName = button.getAttribute("data-member-name")
-
-            const confirmed = confirm(`This action will remove ${memberName} from your project. Click 'OK' to continue?`)
-            if (!confirmed) {
-                return
-            }
-            try {
-                const data = await thisTPEN.activeProject.removeMember(memberID)
-                console.log('Member removed successfully:', data)
-                const memberElements = document.querySelectorAll('.member')
-                memberElements.forEach((element) => {
-                    const elementMemberId = element.getAttribute('data-member-id')
-                    if (elementMemberId === memberID) {
-                        element.remove()
-                        // renderProjectContributors(data) 
-                        return
-                    }
-                })
-
-
-            } catch (error) {
-                errorHTML.innerHTML = error.toString()
-            }
-        })
-    })
+async function removeMember(memberID, memberName) {
+    const confirmed = confirm(`This action will remove ${memberName} from your project. Click 'OK' to continue?`)
+    if (!confirmed) {
+        return
+    }
+    try {
+        const data = await thisTPEN.activeProject.removeMember(memberID)
+        if (!data) return
+        const element = document.querySelector(`[data-member-id="${memberID}"]`)
+        element.remove()
+        alert('Member removed successfully')
+    } catch (error) {
+        errorHTML.innerHTML = error.toString()
+    }
 }
+
+groupMembersElement.addEventListener("click", async (e) => {
+    const button = e.target
+    const memberID = button.dataset.memberId
+    const memberName = button.dataset.memberName
+
+    if (button.classList.contains('remove-button')) {
+        removeMember(memberID, memberName)
+    }
+})
 
 function setPermissionBasedVisibility() {
     const inviteElements = document.querySelectorAll('.allow-invite')

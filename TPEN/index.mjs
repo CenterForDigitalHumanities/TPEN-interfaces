@@ -41,7 +41,6 @@ export default class TPEN {
     }
 
     set currentUser(user) {
-        console.log(user)
         // confirm user is a User object
         if (!user.displayName || !user._id) {
             throw new Error("Invalid user object")

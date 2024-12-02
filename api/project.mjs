@@ -92,7 +92,7 @@ export default class Project {
                 throw new Error(`Error removing member: ${response.status}`)
             }
 
-            return await response.json()
+            return await response.text()
         } catch (error) {
             console.error('Error removing member:', error)
             throw error
