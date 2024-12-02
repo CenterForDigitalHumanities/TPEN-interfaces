@@ -78,6 +78,113 @@ export default class Project {
             userMessage(error.message)
         }
     }
+
+    async makeLeader(userId) {
+        try {
+            const token = TPEN.getAuthorization() ?? TPEN.login()
+            const response = await fetch(`${this.TPEN.servicesURL}/project/${this._id}/collaborator/${userId}/addRoles`, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(["LEADER"]),
+            })
+            if (!response.ok) {
+                throw new Error(`Error promoting user to LEADER: ${response.status}`)
+            }
+
+            return response
+        } catch (error) {
+            userMessage(error.message)
+        }
+    }
+
+    async demoteLeader(userId) {
+        try {
+            const token = TPEN.getAuthorization() ?? TPEN.login()
+            const response = await fetch(`${this.TPEN.servicesURL}/project/${this._id}/collaborator/${userId}/removeRoles`, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(["LEADER"]),
+            })
+            if (!response.ok) {
+                throw new Error(`Error removing LEADER role: ${response.status}`)
+            }
+
+            return response
+        } catch (error) {
+            userMessage(error.message)
+        }
+    }
+
+
+    async setToViewer(userId) {
+        try {
+            const token = TPEN.getAuthorization() ?? TPEN.login()
+            const response = await fetch(`${this.TPEN.servicesURL}/project/${this._id}/collaborator/${userId}/setRoles`, {
+                method: "PUT",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(["VIEWER"]),
+            })
+            if (!response.ok) {
+                throw new Error(`Error revoking write access: ${response.status}`)
+            }
+
+            return response
+        } catch (error) {
+            userMessage(error.message)
+        }
+    }
+
+    async cherryPickRoles(userId, roles) {
+        try {
+            const token = TPEN.getAuthorization() ?? TPEN.login()
+            const response = await fetch(`${this.TPEN.servicesURL}/project/${this._id}/collaborator/${userId}/setRoles`, {
+                method: "PUT",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ roles }),
+            })
+            if (!response.ok) {
+                throw new Error(`Error setting user roles: ${response.status}`)
+            }
+
+            return response
+        } catch (error) {
+            userMessage(error.message)
+        }
+    }
+
+    async transferOwnership(userId) {
+        try {
+            const token = TPEN.getAuthorization() ?? TPEN.login()
+            const response = await fetch(`${this.TPEN.servicesURL}/project/${this._id}/switch/owner`, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ newOwnerId: userId })
+            })
+
+            if (!response.ok) {
+                throw new Error("Failed to update roles")
+            }
+        } catch (error) {
+            console.error("Error updating roles:", error)
+            alert("Failed to update roles. Please try again.")
+        }
+    }
+
     getLabel() {
         return this.label ?? this.data?.label ?? this.metadata?.find(m => m.label === "title")?.value ?? "Untitled"
     }
