@@ -9,6 +9,75 @@
 }
 .collaborators-container .member {
   margin: 10px 15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 90%;
+  gap: 20px;
+  padding: 10px;
+  border-bottom: 1px solid #ccc;
+}
+.collaborators-container .member .member-info {
+  font-size: 14px;
+  font-weight: 500;
+}
+.collaborators-container .member .actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+.collaborators-container .member .actions button {
+  margin: 5px 2px;
+  background-color: #f0f0f0;
+  color: #333;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+.collaborators-container .member .actions button:hover {
+  background-color: #e0e0e0;
+  color: #000;
+}
+.collaborators-container .member .actions .manage-roles-button {
+  font-weight: bold;
+}
+.collaborators-container .member .actions .remove-button {
+  background-color: #dc3545;
+  color: white;
+}
+.collaborators-container .member .actions .remove-button:hover {
+  background-color: #c82333;
+}
+.collaborators-container .member .actions .make-owner-button {
+  background-color: #ffc107;
+  color: #212529;
+}
+.collaborators-container .member .actions .make-owner-button:hover {
+  background-color: #e0a800;
+}
+.collaborators-container .member .actions .make-leader-button {
+  background-color: #28a745;
+  color: white;
+}
+.collaborators-container .member .actions .make-leader-button:hover {
+  background-color: #218838;
+}
+.collaborators-container .member .actions .demote-leader-button {
+  background-color: #17a2b8;
+  color: white;
+}
+.collaborators-container .member .actions .demote-leader-button:hover {
+  background-color: #138496;
+}
+.collaborators-container .member .actions .set-to-viewer-button {
+  background-color: #6c757d;
+  color: white;
+}
+.collaborators-container .member .actions .set-to-viewer-button:hover {
+  background-color: #5a6268;
 }
 .collaborators-container .role {
   color: #B14628;
@@ -122,24 +191,64 @@
   border: none;
   border-radius: 5px;
   cursor: pointer;
+  width: 50%;
 }
-.role-modal-container #modalConfirmButton {
+
+#modalConfirmButton {
   background-color: #6AABC8;
   color: white;
 }
-.role-modal-container #modalCancelButton {
-  background-color: #dc3545;
-  color: white;
+#modalConfirmButton:hover {
+  background-color: #4596ba;
 }
-.role-modal-container #defaultRoles {
+
+#modalCancelButton {
+  color: black;
+  transition: all 0.2s ease-in-out;
+}
+#modalCancelButton:hover {
+  transition: all 0.3s ease-in-out;
+  background-color: #e6e6e6;
+}
+
+.defaultRoles {
   width: 100%;
-  height: 100px;
   margin-top: 10px;
   padding: 10px;
 }
-.role-modal-container #customRoleSection {
-  margin-top: 20px;
+
+#rolesListContainer {
+  margin: 10px 0;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  background-color: #f9f9f9;
+  max-height: 600px;
+  overflow-y: auto;
 }
-.role-modal-container .modal-actions button {
+#rolesListContainer label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background-color: #ffffff;
+  font-size: 14px;
+  color: #333;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+#rolesListContainer label:hover {
+  background-color: #f0f0f0;
+}
+#rolesListContainer label input[type=checkbox] {
+  width: 16px;
+  height: 16px;
+  accent-color: grey;
+  cursor: pointer;
+}
+
+.modal-actions button {
   margin: 10px;
 }/*# sourceMappingURL=index.css.map */
