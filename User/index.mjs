@@ -109,7 +109,6 @@ export default class User {
         const errorTemplate = `
           <li>
             Error ${error.status ?? 500}: ${error.statusText ?? "Unknown Server error"}
-            Error ${error.status ?? 500}: ${error.statusText ?? "Unknown Server error"}
           </li>
         `
         projectsList.insertAdjacentHTML("beforeend", errorTemplate)
