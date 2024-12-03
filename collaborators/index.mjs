@@ -177,12 +177,9 @@ function toggleRoleManagementButtons(button, memberID) {
 
     // Determine which buttons to render
     const buttons = []
-
-    if (!collaboratorRoles.includes("OWNER")) {
-        // "Make Owner" button appears only for the current owner and under users who aren't owners
-        if (currentUserIsOwner) {
-            buttons.push(`<button class="transfer-ownership-button" data-member-id=${memberID}> Transfer Ownership</button>`)
-        }
+    // "Make Owner" button appears only for the current owner and under users who aren't owners
+    if (!collaboratorRoles.includes("OWNER") && currentUserIsOwner) {
+        buttons.push(`<button class="transfer-ownership-button" data-member-id=${memberID}> Transfer Ownership</button>`)
     }
 
     if (!collaboratorRoles.includes("LEADER")) {
@@ -193,15 +190,18 @@ function toggleRoleManagementButtons(button, memberID) {
         buttons.push(`<button class="demote-leader-button" data-member-id=${memberID}>Demote from Leader</button>`)
     }
 
-    if (!collaboratorRoles.includes("VIEWER")) {
+    // If the user has roles other than VIEWER, show "Revoke Write Access"
+    if (collaboratorRoles.some(role => role !== "VIEWER")) {
         buttons.push(`<button class="set-to-viewer-button" data-member-id=${memberID}>Revoke Write Access</button>`)
     }
 
     // "Set Role" and "Remove" buttons are always available
     buttons.push(
         `<button class="set-role-button" data-member-id=${memberID}>Set Role</button>`,
-        `<button class="remove-button" data-member-id=${memberID}>Remove User</button>`
     )
+    if (!collaboratorRoles.includes("OWNER")) {
+        buttons.push(`<button class="remove-button" data-member-id=${memberID}>Remove User</button>`)
+    }
 
     // Render management buttons
     const roleManagementButtonsHTML = `
@@ -215,6 +215,7 @@ function toggleRoleManagementButtons(button, memberID) {
 
     actionsDiv.appendChild(roleManagementDiv)
 }
+
 
 
 function renderRolesList(rolesObject, container) {
