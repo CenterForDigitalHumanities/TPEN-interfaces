@@ -17,6 +17,7 @@ let isOwnerOrLeader = false
 
 const thisTPEN = new TPEN()
 await (thisTPEN.activeProject = new Project(thisTPEN.activeProject?._id)).fetch()
+const currentUserIsOwner = thisTPEN.activeProject.collaborators[TPEN_USER?._id]?.roles.includes("OWNER")
 
 renderProjectCollaborators()
 inviteForm.addEventListener("submit", async (event) => {
@@ -130,7 +131,7 @@ async function renderProjectCollaborators() {
   </div>
 
   <div class="actions owner-leader-action is-hidden">
-    <button class="manage-roles-button owner-leader-action" data-member-id=${collaboratorId}>
+    <button  class="manage-roles-button owner-leader-action" data-member-id=${collaboratorId}>
       Manage Roles
     </button>
   </div>
@@ -166,9 +167,6 @@ function toggleRoleManagementButtons(button, memberID) {
     const collaborator = thisTPEN.activeProject.collaborators[memberID]
     const collaboratorRoles = collaborator.roles
 
-    // Check if the current user is the owner
-    const currentUserIsOwner = thisTPEN.activeProject.collaborators[TPEN_USER?._id]?.roles.includes("OWNER")
-
     // Clear existing management buttons if they exist
     if (actionsDiv.querySelector(".role-management-buttons")) {
         actionsDiv.querySelector(".role-management-buttons").remove()
@@ -181,21 +179,26 @@ function toggleRoleManagementButtons(button, memberID) {
     if (!collaboratorRoles.includes("OWNER") && currentUserIsOwner) {
         buttons.push(`<button class="transfer-ownership-button" data-member-id=${memberID}> Transfer Ownership</button>`)
     }
-
-    if (!collaboratorRoles.includes("LEADER")) {
+    if (collaboratorRoles.includes("OWNER") && currentUserIsOwner) {
         buttons.push(`<button class="make-leader-button" data-member-id=${memberID}>Promote to Leader</button>`)
+
     }
 
-    if (collaboratorRoles.includes("LEADER")) {
-        buttons.push(`<button class="demote-leader-button" data-member-id=${memberID}>Demote from Leader</button>`)
-    }
 
-    // If the user has roles other than VIEWER, show "Revoke Write Access"
-    if (collaboratorRoles.some(role => role !== "VIEWER")) {
-        buttons.push(`<button class="set-to-viewer-button" data-member-id=${memberID}>Revoke Write Access</button>`)
-    }
 
     if (!collaboratorRoles.includes("OWNER")) {
+        if (!collaboratorRoles.includes("LEADER")) {
+            buttons.push(`<button class="make-leader-button" data-member-id=${memberID}>Promote to Leader</button>`)
+        }
+
+        if (collaboratorRoles.includes("LEADER")) {
+            buttons.push(`<button class="demote-leader-button" data-member-id=${memberID}>Demote from Leader</button>`)
+        }
+
+        // If the user has roles other than VIEWER, show "Revoke Write Access"
+        if (collaboratorRoles.some(role => role !== "VIEWER")) {
+            buttons.push(`<button class="set-to-viewer-button" data-member-id=${memberID}>Revoke Write Access</button>`)
+        }
         buttons.push(
             `<button class="set-role-button" data-member-id=${memberID}>Set Role</button>`,
         )
