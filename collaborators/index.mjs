@@ -129,9 +129,9 @@ async function renderProjectCollaborators() {
     ${memberData.profile?.displayName ?? collaboratorId}
   </div>
 
-  <div class="actions">
-    <button class="manage-roles-button" data-member-id=${collaboratorId}>
-      Manage Roles <i class="fas fa-caret-down"></i>
+  <div class="actions owner-leader-action is-hidden">
+    <button class="manage-roles-button owner-leader-action" data-member-id=${collaboratorId}>
+      Manage Roles
     </button>
   </div>
 </li>
@@ -195,11 +195,10 @@ function toggleRoleManagementButtons(button, memberID) {
         buttons.push(`<button class="set-to-viewer-button" data-member-id=${memberID}>Revoke Write Access</button>`)
     }
 
-    // "Set Role" and "Remove" buttons are always available
-    buttons.push(
-        `<button class="set-role-button" data-member-id=${memberID}>Set Role</button>`,
-    )
     if (!collaboratorRoles.includes("OWNER")) {
+        buttons.push(
+            `<button class="set-role-button" data-member-id=${memberID}>Set Role</button>`,
+        )
         buttons.push(`<button class="remove-button" data-member-id=${memberID}>Remove User</button>`)
     }
 
@@ -254,9 +253,9 @@ async function removeMember(memberID, memberName) {
 
 
 function setPermissionBasedVisibility() {
-    const inviteElements = document.querySelectorAll('.allow-invite')
+    const ownerLeaderActions = document.querySelectorAll('.owner-leader-action')
 
-    inviteElements.forEach(element => {
+    ownerLeaderActions.forEach(element => {
         if (isOwnerOrLeader) {
             element.classList.remove('is-hidden')
         } else {
