@@ -37,18 +37,13 @@ document.addEventListener("DOMContentLoaded", () => {
           const contributor = contributors[contributorId]
           const name = contributor?.displayName ?? contributor?.email
           contributorsListElement.innerHTML += `<li class="red">${name} (${renderRoles(contributor.roles)}) </li> `
-
         } 
-
       } 
-
       if (componentName === "projectsHighlight") {
         const { loadProjects } = await import('./projectsHighlight.mjs')
         loadProjects()
       }
-
     })
   })
   document.getElementById("projectsHighlight").click()
-  // document.getElementById("collaboration").click()
 })

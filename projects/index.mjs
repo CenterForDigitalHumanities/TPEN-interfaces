@@ -8,6 +8,5 @@ document.addEventListener("DOMContentLoaded", async () => {
     let userID = getHash(TPEN_USER.agent)
     const userObj = new User(userID)
     userObj.authentication = token
-
     userObj.renderProjects("projects-container")
 })

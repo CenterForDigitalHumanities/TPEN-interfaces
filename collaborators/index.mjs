@@ -9,20 +9,17 @@ let groupTitle = document.querySelector(".project-title")
 let groupMembersElement = document.querySelector(".group-members")
 let submitButton = document.getElementById("submit")
 let userEmail = document.getElementById("invitee-email")
-
 const inviteForm = document.getElementById("invite-form")
 let errorHTML = document.getElementById("errorHTML")
-
 let isOwnerOrLeader = false
-
 const thisTPEN = new TPEN()
 await (thisTPEN.activeProject = new Project(thisTPEN.activeProject?._id)).fetch()
 const currentUserIsOwner = thisTPEN.activeProject.collaborators[TPEN_USER?._id]?.roles.includes("OWNER")
 
 renderProjectCollaborators()
+
 inviteForm.addEventListener("submit", async (event) => {
     event.preventDefault()
-
     try {
         submitButton.textContent = "Inviting..."
         submitButton.disabled = true
@@ -52,7 +49,6 @@ inviteForm.addEventListener("submit", async (event) => {
         submitButton.textContent = "Submit"
         submitButton.disabled = false
     }
-
 })
 
 groupMembersElement.addEventListener("click", async (e) => {
@@ -102,7 +98,6 @@ groupMembersElement.addEventListener("click", async (e) => {
     }
 })
 
-
 async function renderProjectCollaborators() {
     if (!thisTPEN.activeProject) {
         return (errorHTML.innerHTML = "No project")
@@ -114,7 +109,6 @@ async function renderProjectCollaborators() {
     const collaborators = thisTPEN.activeProject.collaborators
     groupTitle.innerHTML = thisTPEN.activeProject.getLabel()
 
-
     if (collaborators[userId]?.roles.includes("OWNER") || collaborators[userId]?.roles.includes("LEADER")) {
         isOwnerOrLeader = true
     }
@@ -124,24 +118,21 @@ async function renderProjectCollaborators() {
 
         // Single "Manage Roles" button
         const memberHTML = `
-<li class="member" data-member-id=${collaboratorId}>
-  <div class="member-info">
-    <span class="role">${renderRoles(memberData.roles)}</span>
-    ${memberData.profile?.displayName ?? collaboratorId}
-  </div>
+        <li class="member" data-member-id=${collaboratorId}>
+          <div class="member-info">
+            <span class="role">${renderRoles(memberData.roles)}</span>
+            ${memberData.profile?.displayName ?? collaboratorId}
+          </div>
 
-  <div class="actions owner-leader-action is-hidden">
-    <button  class="manage-roles-button owner-leader-action" data-member-id=${collaboratorId}>
-      Manage Roles
-    </button>
-  </div>
-</li>
-
-        `
+          <div class="actions owner-leader-action is-hidden">
+            <button  class="manage-roles-button owner-leader-action" data-member-id=${collaboratorId}>
+              Manage Roles
+            </button>
+          </div>
+        </li>`
 
         const memberElement = document.createElement("div")
         memberElement.innerHTML = memberHTML
-
         groupMembersElement.appendChild(memberElement)
     }
 
@@ -157,7 +148,6 @@ async function renderProjectCollaborators() {
 
     setPermissionBasedVisibility()
 }
-
 
 function toggleRoleManagementButtons(button, memberID) {
     const parentElement = button.closest(".member")
@@ -184,8 +174,6 @@ function toggleRoleManagementButtons(button, memberID) {
 
     }
 
-
-
     if (!collaboratorRoles.includes("OWNER")) {
         if (!collaboratorRoles.includes("LEADER")) {
             buttons.push(`<button class="make-leader-button" data-member-id=${memberID}>Promote to Leader</button>`)
@@ -211,14 +199,10 @@ function toggleRoleManagementButtons(button, memberID) {
             ${buttons.join("")}
         </div>
     `
-
     const roleManagementDiv = document.createElement("div")
     roleManagementDiv.innerHTML = roleManagementButtonsHTML
-
     actionsDiv.appendChild(roleManagementDiv)
 }
-
-
 
 function renderRolesList(rolesObject, container) {
     container.innerHTML = ""
@@ -237,7 +221,6 @@ function renderRolesList(rolesObject, container) {
     })
 }
 
-
 async function removeMember(memberID, memberName) {
     const confirmed = confirm(`This action will remove ${memberName} from your project. Click 'OK' to continue?`)
     if (!confirmed) {
@@ -254,7 +237,6 @@ async function removeMember(memberID, memberName) {
     }
 }
 
-
 function setPermissionBasedVisibility() {
     const ownerLeaderActions = document.querySelectorAll('.owner-leader-action')
 
@@ -266,7 +248,6 @@ function setPermissionBasedVisibility() {
         }
     })
 }
-
 
 function openRoleModal(title, description, confirmCallback) {
     const modal = document.getElementById("roleModal")
@@ -352,7 +333,6 @@ async function handleDemoteLeaderButton(memberID) {
     }
 }
 
-
 async function handleTransferOwnershipButton(memberID) {
     const confirm = window.confirm(`You are about to transfer ownership of this project to ${thisTPEN.activeProject.collaborators[memberID]?.profile?.displayName ?? " contributor " + memberID}. This action is irreversible. Please confirm if you want to proceed.`)
     if (confirm) {
@@ -363,4 +343,3 @@ async function handleTransferOwnershipButton(memberID) {
         }
     }
 }
-
