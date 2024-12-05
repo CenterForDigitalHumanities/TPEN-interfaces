@@ -1,16 +1,63 @@
 <!doctype html>
-<html lang="en">
+<html lang="en-US">
   <head>
     <meta charset="utf-8">
-    <title>Interfaces for TPEN</title>
-    <link rel="stylesheet" href="/css/style.css">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Interfaces for TPEN | TPEN Interfaces</title>
+<meta name="generator" content="Jekyll v4.3.3" />
+<meta property="og:title" content="Interfaces for TPEN" />
+<meta name="author" content="<cubap@slu.edu>" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Useful Interfaces for TPEN 3" />
+<meta property="og:description" content="Useful Interfaces for TPEN 3" />
+<link rel="canonical" href="http://localhost:4000/interfaces/" />
+<meta property="og:url" content="http://localhost:4000/interfaces/" />
+<meta property="og:site_name" content="TPEN Interfaces" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Interfaces for TPEN" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","author":{"@type":"Person","name":"<cubap@slu.edu>"},"description":"Useful Interfaces for TPEN 3","headline":"Interfaces for TPEN","url":"http://localhost:4000/interfaces/"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+    <link rel="stylesheet" href="/assets/css/style.css?v=">
+    <script src="/assets/js/scale.fix.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- start custom head snippets, customize with your own _includes/head-custom.html file -->
+
+<!-- Setup Google Analytics -->
+
+
+
+<!-- You can set your favicon here -->
+<!-- link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" -->
+
+<!-- end custom head snippets -->
+
   </head>
   <body>
-    <nav>
-      <a href="/">Home</a>
-    </nav>
-    <h1>Interfaces for TPEN</h1>
-    <section>
+    <div class="wrapper">
+      <header >
+        <h1>TPEN Interfaces</h1>
+        
+          <p>Useful Interfaces for TPEN 3</p>
+        
+        <p class="view"><a href="">View the Project on GitHub <small></small></a></p>
+        <ul>
+        
+          <li><a href="">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+
       <p>This page is intended for developers and designers who are building interfaces for
 use with the TPEN services at t‑pen.org. The following classes are available for you
 to use with the interfaces library for more easily accessing the services API in
@@ -27,7 +74,7 @@ initialize the TPEN object and to make calls to the API.</p>
 It takes an optional parameter for the URL to the Tiny Things RERUM proxy you are using
 with your applications API key, defaulting to “<a href="https://tiny.t-pen.org">https://tiny.t‑pen.org</a>”.</p>
 
-<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">const</span> <span class="nx">tpen</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">TPEN</span><span class="p">(</span><span class="nx">tinyThingsURL</span><span class="p">?)</span>
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">const</span> <span class="nx">tpen</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">TPEN</span><span class="p">(</span><span class="nx">tinyThingsURL</span><span class="p">?)</span>
 </code></pre></div></div>
 
 <h3 id="properties">Properties</h3>
@@ -77,7 +124,7 @@ with your applications API key, defaulting to “<a href="https://tiny.t-pen.org
 <p>If you are using the TPEN Authentication system, a logged in User will be available as <code class="language-plaintext highlighter-rouge">TPEN.currentUser</code>, which will include
 an authentication token you may pass to the API.</p>
 
-<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">const</span> <span class="nx">user</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">User</span><span class="p">(</span><span class="nx">idString</span><span class="p">)</span>
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">const</span> <span class="nx">user</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">User</span><span class="p">(</span><span class="nx">idString</span><span class="p">)</span>
 </code></pre></div></div>
 
 <h3 id="properties-1">Properties</h3>
@@ -133,7 +180,7 @@ an authentication token you may pass to the API.</p>
   <li>A string that is a valid URI for the public Project stored in RERUM or compatible repository</li>
 </ul>
 
-<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">const</span> <span class="nx">project</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Project</span><span class="p">(</span><span class="nx">idString</span><span class="p">)</span>
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">const</span> <span class="nx">project</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">Project</span><span class="p">(</span><span class="nx">idString</span><span class="p">)</span>
 </code></pre></div></div>
 
 <h3 id="properties-2">Properties</h3>
@@ -212,9 +259,13 @@ While all Projects will have at least an <code class="language-plaintext highlig
 <p>Any changes to a Group may impact other Projects controlled by this group. If this is not
 intended, be sure to fork the group first so that changes are limited to the current project.</p>
 
-    </section>
+
+      </section>
+    </div>
     <footer>
-      &copy; 2024
+    
+      <p>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></p>
     </footer>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
   </body>
 </html>
