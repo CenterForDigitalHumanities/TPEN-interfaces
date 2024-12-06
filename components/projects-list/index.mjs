@@ -1,6 +1,6 @@
-import User from "../../User/index.mjs"
-import TPEN from "../../TPEN/index.mjs"
-import { eventDispatcher } from "../../TPEN/events.mjs"
+import User from "../../api/User.mjs"
+import TPEN from "../../api/TPEN.mjs"
+import { eventDispatcher } from "../../api/events.mjs"
 
 export default class ProjectsList extends HTMLElement {
     static get observedAttributes() {
@@ -8,7 +8,6 @@ export default class ProjectsList extends HTMLElement {
     }
 
     #projects = []
-    #TPEN = new TPEN()
 
     constructor() {
         super()
@@ -34,7 +33,7 @@ export default class ProjectsList extends HTMLElement {
     }
 
     render() {
-        if(!this.#TPEN.currentUser._id) return
+        if(!TPEN.currentUser._id) return
 
         this.innerHTML = `<ul>${this.#projects.reduce((a, project) => 
             a + `<li tpen-project-id="${project._id}">${project.title}
@@ -44,7 +43,7 @@ export default class ProjectsList extends HTMLElement {
     }
 
     async getProjects() {
-        return this.#TPEN.currentUser.getProjects()
+        return TPEN.currentUser.getProjects()
             .then((projects) => {
                 this.#projects = projects
                 return projects
@@ -52,14 +51,14 @@ export default class ProjectsList extends HTMLElement {
     }
 
     get currentUser() {
-        return this.#TPEN.currentUser
+        return TPEN.currentUser
     }
 
     set currentUser(user) {
-        if(this.#TPEN.currentUser?._id !== user._id) {
-            this.#TPEN.currentUser = user
+        if(TPEN.currentUser?._id !== user._id) {
+            TPEN.currentUser = user
         }
-        this.#TPEN.currentUser.getProjects().then((projects) => {
+        TPEN.currentUser.getProjects().then((projects) => {
             this.projects = projects
             this.render()
         })

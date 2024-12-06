@@ -1,11 +1,13 @@
 // projects.mjs
-import User from "../User/index.mjs"
-import Project from "../Project/index.mjs"
+import User from "../api/User.mjs"
+import Project from "../api/Project.mjs"
+import TPEN from "../api/TPEN.mjs"
+import { eventDispatcher } from "../api/events.mjs"
 
 const elem = document.getElementById("manage-class")
 TPEN.attachAuthentication(elem)
 
-TPEN.eventDispatcher.on("tpen-authenticated", loadProjects)
+eventDispatcher.on("tpen-authenticated", loadProjects)
 
 async function fetchProjects() {
     const token = elem.userToken
@@ -45,24 +47,26 @@ async function renderActiveProject(fallbackProjectId) {
     const activeProjectContainer = document.getElementById('active-project')
     activeProjectContainer.innerHTML = ''
 
-    let projectId = new TPEN().activeProject?._id // ?? fallbackProjectId
+    let projectId = TPEN.activeProject?._id // ?? fallbackProjectId
     if(!projectId) {
         // cheat to help other tabs for now
         location.href = `?projectID=${fallbackProjectId ?? 'DEV_ERROR'}`
         return
     }
     
-    let project = new Project(projectId)
-    let projectData = await project.fetch()
-
+    let project = TPEN.activeProject
+    if(!project) {
+        project = new Project(projectId)
+        await project.fetch()
+    }
     activeProjectContainer.innerHTML = `   <p>
     Active project is
-    <span class="red"> "${projectData?.name ?? projectData?.title ?? '[ untitled ]' }"</span>
+    <span class="red"> "${project?.name ?? project?.title ?? '[ untitled ]' }"</span>
 
   </p>
   <p>
     Active project T-PEN I.D.
-    <span class="red">${projectData?._id ?? 'ERR!'}</span>
+    <span class="red">${project?._id ?? 'ERR!'}</span>
   </p>`
 }
 

@@ -3,11 +3,10 @@
  * @author thehabes, cubap
  */
 
-import TPEN from "../../TPEN/index.mjs"
-import { eventDispatcher } from "../../TPEN/events.mjs"
+import TPEN from "../../api/TPEN.mjs"
+import { eventDispatcher } from "../../api/events.mjs"
 
 class AuthButton extends HTMLElement {
-  #TPEN = new TPEN()
 
   constructor() {
     super()

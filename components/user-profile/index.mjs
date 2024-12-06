@@ -1,15 +1,13 @@
-import { eventDispatcher } from '../../TPEN/events.mjs'
-import TPEN from '../../TPEN/index.mjs'
-import User from '../../User/index.mjs'
+import { eventDispatcher } from '../../api/events.mjs'
+import TPEN from '../../api/TPEN.mjs'
+import User from '../../api/User.mjs'
 
 class UserProfile extends HTMLElement {
     static get observedAttributes() {
         return ['tpen-user-id']
     }
 
-    #TPEN = new TPEN()
-
-    user = this.#TPEN.currentUser
+    user = TPEN.currentUser
 
     constructor() {
         super()

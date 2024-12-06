@@ -1,4 +1,4 @@
-import Project from "./project.mjs"
+import Project from "../Project.mjs"
 import { describe, it } from 'node:test'
 import assert from 'node:assert'
 
