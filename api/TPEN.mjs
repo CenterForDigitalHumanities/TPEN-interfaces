@@ -1,5 +1,6 @@
 /**
- * The TPEN class is the main class for accessing the TPEN services API. It is used to initialize the TPEN module and to make calls to the API.
+ * The TPEN class is the main class for accessing the TPEN services API.
+ * It is used to initialize the TPEN module and to make calls to the API.
  * @module TPEN
  * @class
  * @example https://centerfordigitalhumanities.github.io/TPEN-interfaces/classes/TPEN

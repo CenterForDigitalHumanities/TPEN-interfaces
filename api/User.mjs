@@ -1,9 +1,11 @@
+/** 
+ * To use this class, initialize new class, set authentication token, then call required methods
+ */
+
 import { eventDispatcher } from "./events.mjs"
 import TPEN from "./TPEN.mjs"
 import { getUserFromToken } from "../components/iiif-tools/index.mjs"
-/** Description: to use this class, initialize new class, set authentication token, then call required methods
- * 
- */
+
 export default class User {
   #isTheAuthenticatedUser() {
     return this._id === getUserFromToken(TPEN.getAuthorization())
