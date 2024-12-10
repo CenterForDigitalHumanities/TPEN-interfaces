@@ -1,6 +1,7 @@
 import {decodeContentState} from '../iiif-tools/index.mjs'
 
-const LINE_TEXT_HTML = `<span></span>`
+const LINE_TEXT_HTML = `<span><span style="border-radius: 1em; background-color: lightgray; width: 100%; min-width:14em;min-height: 1em; display: inline-block;"></span></span>`
+
 
 class TpenLineText extends HTMLElement {
     #id = () => this.closest('[tpen-line-id]')?.getAttribute('tpen-line-id')
@@ -31,6 +32,7 @@ export default {
 }
 
 async function loadText(lineId,elem){
+    if(!lineId) return
     try {
         new URL(lineId)
         const TEXT_CONTENT = await loadAnnotation(lineId)
