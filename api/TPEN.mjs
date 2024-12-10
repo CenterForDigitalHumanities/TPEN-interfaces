@@ -13,8 +13,9 @@ import { eventDispatcher } from './events.mjs'
 
 class Tpen {
     #actionQueue = []
-    #currentUser = {}
-    #activeProject = {}
+    #currentUser
+    #activeLine
+    #activeProject
     #activeCollection
 
     constructor(tinyThingsURL = "https://dev.tiny.t-pen.org") {
@@ -62,6 +63,14 @@ class Tpen {
             ? Object.assign(this.#currentUser, user)
             : user
         return this
+    }
+
+    set activeLine(line) {
+        this.#activeLine = line
+    }
+
+    get activeLine() {
+        return this.#activeLine
     }
 
     get activeProject() {

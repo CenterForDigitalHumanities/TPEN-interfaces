@@ -20,8 +20,10 @@ class TpenTranscriptionElement extends HTMLElement {
     attributeChangedCallback(name, oldValue, newValue) {
         if (oldValue !== newValue) {
             if(name === 'tpen-user-id') {
-                this.TPEN = new TPEN()
-                this.TPEN.currentUser = new User(newValue).getProfile()
+                TPEN.currentUser = new User(newValue).getProfile()
+            }
+            if (name === 'tpen-project' && newValue !== TPEN.activeProject._id) {
+                this.#loadProject(newValue)
             }
             if (name === 'tpen-project') {
                 this.TPEN.activeProject = { _id: newValue }
@@ -37,30 +39,32 @@ class TpenTranscriptionElement extends HTMLElement {
         this.#transcriptionContainer.setAttribute('id', 'transcriptionContainer')
         this.shadowRoot.append(this.#transcriptionContainer)
         TPEN.attachAuthentication(this)
+        eventDispatcher.on('tpen-project-loaded', () => this.#loadProject()) 
     }
     
-    connectedCallback() {
-        if (!this.TPEN.activeProject._id) {
-            userMessage('No project ID provided')
-            return
-        }
-        this.setAttribute('tpen-project', this.TPEN.activeProject._id)
+    connectedCallback() {}
+
+    set activeCanvas(canvas) {
+        if (canvas === TPEN.activeCanvas) return
+        TPEN.activeCanvas = canvas
     }
 
-    async #loadProject() {
+    set activeLine(line) {
+        if (line === TPEN.activeLine) return
+        TPEN.activeLine = line
+        this.contentState = JSON.stringify(TPEN.activeLine)
+    }
+
+    async #loadProject(projectID) {
         try {
             const project = await fetchProject(this.TPEN.activeProject._id, this.userToken ?? TPEN.getAuthorization())
             if(!project) return userMessage('Project not found')
-            this.#transcriptionContainer.setAttribute('iiif-manifest', project.manifest)
             // load project.manifest
             let manifest = await manifesto.loadManifest(project.manifest)
-            this.TPEN.activeProject.manifest = new manifesto.Manifest(manifest)
+            TPEN.manifest = new manifesto.Manifest(manifest)
             // page from URL later
-            this.#activeCanvas = this.TPEN.activeProject.manifest?.getSequenceByIndex(0)?.getCanvasByIndex(0)
-            this.#activeLine = this.getFirstLine()
-            this.#transcriptionContainer.setAttribute('iiif-canvas', this.#activeCanvas?.id)
-            this.#transcriptionContainer.setAttribute('tpen-line-id', this.#activeLine?.id)
-            this.#transcriptionContainer.setAttribute('iiif-content', encodeContentState(JSON.stringify(this.#activeLine)))
+            TPEN.activeCanvas = TPEN.manifest?.getSequenceByIndex(0)?.getCanvasByIndex(0)
+            TPEN.activeLine = this.getFirstLine()
             const imgTop = document.createElement('tpen-line-image')
             imgTop.setAttribute('id', 'imgTop')
             imgTop.setAttribute('projectID', this.TPEN.activeProject._id)
@@ -81,19 +85,19 @@ class TpenTranscriptionElement extends HTMLElement {
         }
     }
 
-    getAllLines(canvas = this.#activeCanvas) {
+    getAllLines(canvas = TPEN.activeCanvas) {
         return canvas?.__jsonld.annotations?.[0]?.items ?? canvas?.__jsonld.annotations?.[0] ?? canvas?.getContent()
     }
 
-    getLineByIndex(index, canvas = this.#activeCanvas) {
+    getLineByIndex(index, canvas = TPEN.activeCanvas) {
         return this.getAllLines(canvas)[index]
     }
 
-    getLineByID(id, canvas = this.#activeCanvas) {
+    getLineByID(id, canvas = TPEN.activeCanvas) {
         return this.getAllLines(canvas).find(line => line.id === id ?? line['@id'] === id)
     }
 
-    getFirstLine(canvas = this.#activeCanvas) {
+    getFirstLine(canvas = TPEN.activeCanvas) {
         return this.getAllLines(canvas)[0]
     }
 
