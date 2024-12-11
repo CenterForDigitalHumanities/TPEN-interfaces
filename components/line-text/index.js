@@ -5,18 +5,31 @@ const LINE_TEXT_HTML = `<span>
     </span>
 </span>`
 
-
 class TpenLineText extends HTMLElement {
+    static get observedAttributes() {
+        return ['tpen-line-id', 'iiif-content']
+    }
+
+    attributeChangedCallback(name, oldValue, newValue) {
+        if (oldValue !== newValue) {
+            if (name === 'tpen-line-id') {
+                this.loadText(newValue);
+            } else if (name === 'iiif-content') {
+                this.loadContent(newValue)
+            }
+        }
+    }
+
     #id = () => this.closest('[tpen-line-id]')?.getAttribute('tpen-line-id')
     #content = () => this.closest('[iiif-content]')?.getAttribute('iiif-content')
 
     constructor() {
         super()
         this.attachShadow({ mode: 'open' })
+        this.shadowRoot.innerHTML = LINE_TEXT_HTML
     }
 
     connectedCallback() {
-        this.shadowRoot.innerHTML = LINE_TEXT_HTML
         const SPAN = this.shadowRoot.querySelector('span')
         
         if (!this.#id() && !this.#content()) {

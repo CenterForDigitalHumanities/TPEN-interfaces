@@ -41,6 +41,52 @@
     <blockquote>
         <tpen-line-text></tpen-line-text>
     </blockquote>
+
+    <hr>
+
+    <p>The component can also be told directly about a resource by calling <code>elem.drawLineText(text)</code>
+        with a string literal, an Annotation object, a text-containing body, or an array of these.
+    </p>
+    <script>
+
+        const randomObjects = [
+            {
+                "id": "https://store.rerum.io/v1/id/6685af395b48727bae3fc269",
+                "type": "Annotation",
+                "body": {
+                    "type": "TextualBody",
+                    "value": "This is text to include."
+                }
+            },
+            {
+          "@id" : "https://t-pen.org/TPEN/line/104692230",
+          "_tpen_line_id" : "line/104692230",
+          "@type" : "oa:Annotation",
+          "motivation" : "oad:transcribing",
+          "resource" : {
+            "@type" : "cnt:ContentAsText",
+            "cnt:chars" : "doceret et ecclesiam super quam sedet, predicans preceptum  domini "
+          },
+          "on" : "https://t-pen.org/TPEN/canvas/13248868#xywh=125,58,229,10"
+        }, "Just make it a string literal."
+        ]
+
+        function assignSomeWords() {
+            let lineText = document.getElementById("lineText")
+            let text = lineText.innerText
+            do {
+                text = randomObjects[Math.floor(Math.random() * randomObjects.length)]
+            } while (lineText.getText(text) === lineText.innerText)
+            textObj.innerText = JSON.stringify(text, null, 2)
+            lineText.drawLineText(text)
+        }
+    </script>
+    <button role="button" onclick="assignSomeWords()">♻ the content.</button>
+    <blockquote>
+        <tpen-line-text id="lineText"></tpen-line-text>
+    </blockquote>
+    <pre id="textObj"></pre>
+
 </body>
 
 </html>
