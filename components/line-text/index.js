@@ -1,6 +1,9 @@
 import {decodeContentState} from '../iiif-tools/index.mjs'
 
-const LINE_TEXT_HTML = `<span><span style="border-radius: 1em; background-color: lightgray; width: 100%; min-width:14em;min-height: 1em; display: inline-block;"></span></span>`
+const LINE_TEXT_HTML = `<span>
+    <span style="border-radius: 1em; background-color: lightgrey; width: 100%; min-width:14em;min-height: 1em; display: inline-block;">
+    </span>
+</span>`
 
 
 class TpenLineText extends HTMLElement {
@@ -17,11 +20,77 @@ class TpenLineText extends HTMLElement {
         const SPAN = this.shadowRoot.querySelector('span')
         
         if (!this.#id() && !this.#content()) {
-            const ERR = new Event('tpen-error', { detail: 'Line ID is required' })
-            validateContent(null,SPAN,"Line ID is required")
+            this.validateContent(null,SPAN,"Line ID is required")
         }
         
-        this.#content() ? loadContent(this.#content(),SPAN) : loadText(this.#id(),SPAN)
+        this.#content() ? this.loadContent(this.#content(),SPAN) : this.loadText(this.#id(),SPAN)
+    }
+
+    drawLineText(textObj) {
+        const SPAN = this.shadowRoot.querySelector('span')
+        const innerText = this.validateContent(this.getText(textObj))
+        SPAN.innerText = innerText
+    }
+
+    async loadText(lineId){
+        if(!lineId) return
+        try {
+            new URL(lineId)
+            const TEXT_CONTENT = await this.#loadAnnotation(lineId)
+            this.drawLineText(TEXT_CONTENT)
+        } catch (error) {
+            console.error(error)
+            return this.validateContent(null,elem,"Fetching Error")
+        }
+    }
+    
+    loadContent(b64,elem){
+        try {
+            const TEXT_CONTENT = JSON.parse(decodeContentState(b64))
+            this.drawLineText(TEXT_CONTENT)
+        } catch (error) {
+            console.error(error)
+            return this.validateContent(null,elem,"Decoding Error")
+        }
+    }
+    
+    async #loadAnnotation(url){   
+        try {
+            const response = await fetch(url)
+            if(!response.ok) throw new Error("failed to fetch")
+            return await response.json()
+        } catch (error) {
+            console.error(error)
+        }
+    }
+    /**
+     * Extract the text only content from an Annotation or body
+     * @param {any} textBody String, Array, or Object with text content
+     * @returns String with text content, flattened from nested objects
+     */
+    getText(textBody){
+        if(typeof textBody === "string") {
+            return textBody
+        }
+        if(Array.isArray(textBody)){
+            return textBody.map(t=>this.getText(t)).join(' ')
+        }
+        let meaningfulProp = textBody.value ?? textBody.body ?? textBody["cnt:chars"] ?? textBody.bodyValue 
+        ?? textBody.chars ?? textBody.text ?? textBody.resource
+        // possible language mapping
+        ?? textBody[navigator.language] ?? textBody[navigator.language.split('-')[0]] ?? textBody.none
+        if(meaningfulProp) return this.getText(meaningfulProp)
+        // maybe this is a nested object, specific language, etc.
+        console.warn("Unrecognized text body",textBody)
+        return "<>" // this will always look broken
+    }
+    
+    validateContent(content,msg='Invalid content') {
+        if(content==null){
+            this.setAttribute('aria-invalid',true)
+            this.setAttribute('title', msg)
+        }
+        return content
     }
 }
 
@@ -29,52 +98,4 @@ customElements.define('tpen-line-text', TpenLineText)
 
 export default {
     TpenLineText
-}
-
-async function loadText(lineId,elem){
-    if(!lineId) return
-    try {
-        new URL(lineId)
-        const TEXT_CONTENT = await loadAnnotation(lineId)
-        elem.innerText = validateContent(TEXT_CONTENT,elem)
-    } catch (error) {
-        console.error(error)
-        return validateContent(null,elem,"Fetching Error")
-    }
-}
-
-function loadContent(b64,elem){
-    try {
-        const TEXT_CONTENT = getText(JSON.parse(decodeContentState(b64)))
-        elem.innerText = validateContent(TEXT_CONTENT,elem)
-    } catch (error) {
-        console.error(error)
-        return validateContent(null,elem,"Decoding Error")
-    }
-}
-
-function loadAnnotation(url){   
-    return fetch(url)
-        .then(response => {
-            if(!response.ok) throw new Error("failed to fetch")
-            return response.json()
-        })        
-        .then(anno => getText(anno))
-        .catch(error => console.error(error))
-}
-
-function getText(annotation){
-    // TODO: currently this is a fragile mess
-    let textContent = annotation.body?.value
-    if(annotation.resource) textContent = annotation.resource["cnt:chars"]
-    if(typeof annotation.body === "string") textContent = annotation.body
-    return textContent ?? "weird value"
-}
-
-function validateContent(content,elem,msg) {
-    if(content==null){
-        elem.setAttribute('aria-invalid',true)
-        elem.setAttribute('title',msg ?? 'Invalid content')
-    }
-    return content
 }
