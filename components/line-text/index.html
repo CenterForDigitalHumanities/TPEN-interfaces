@@ -25,6 +25,7 @@
     <h4>A Line like Newberry TPEN with <code>line.resource["cnt:chars"]</code></h4>
     <blockquote>
         <tpen-line-text tpen-line-id="https://store.rerum.io/v1/id/6685af395b48727bae3fc269"></tpen-line-text>
+        <code>&lt;tpen-line-text tpen-line-id=&quot;https://store.rerum.io/v1/id/6685af395b48727bae3fc269&quot;&gt;&lt;/tpen-line-text&gt;</code>
     </blockquote>
 
     <h4>A Line from IIIF fixture <code>line.body.value</code> (A TextualBody example)</h4>
@@ -74,10 +75,13 @@
         function assignSomeWords() {
             let lineText = document.getElementById("lineText")
             let text = lineText.innerText
+            let currentIndex = randIndex = lineText.dataset.index
             do {
-                text = randomObjects[Math.floor(Math.random() * randomObjects.length)]
-            } while (lineText.getText(text) === lineText.innerText)
+                randIndex = Math.floor(Math.random() * randomObjects.length)
+            } while (currentIndex == randIndex)
+            text = randomObjects[randIndex]
             textObj.innerText = JSON.stringify(text, null, 2)
+            lineText.dataset.index = randIndex
             lineText.drawLineText(text)
         }
     </script>
