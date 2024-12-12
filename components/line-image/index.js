@@ -20,37 +20,55 @@ class TpenLineImage extends HTMLElement {
 
     async attributeChangedCallback(name, oldValue, newValue) {
         if (name === 'tpen-line-id' && oldValue !== newValue) {
-            this.#line = this.findLine(newValue)
+            this.line = newValue
         }
     }
 
+    set manifest(value) {
+        this.setManifest(value)
+    }
+
+    set canvas(value) {
+        this.setCanvas(value)
+    }
+
+    set line(value) {
+        this.#canvasPanel.createAnnotationDisplay(value)
+    }
+    
     constructor() {
         super()
         this.attachShadow({ mode: 'open' })
         this.#canvasPanel.setAttribute("preset","responsive")
         this.shadowRoot.append(this.#canvasPanel)
         eventDispatcher.on('change-page', ev => {
-            this.#canvasPanel.setManifest(TPEN.manifest)
-            this.#canvasPanel.setCanvas(ev.detail)
+            this.manifest = TPEN.manifest
+            this.canvas = TPEN.activeCanvas
         })
         eventDispatcher.on('change-line', ev => {
-            this.#canvasPanel.setManifest(TPEN.manifest)
-            this.#canvasPanel.setCanvas(TPEN.activeCanvas)
+            this.line = TPEN.activeLine
             try {
                 let anno = TPEN.activeLine
                 const TARGET = ((anno.type ?? anno['@type']).match(/Annotation\b/)) ? (anno.target ?? anno.on)?.split('#xywh=') : (anno.items[0]?.target ?? anno.resources[0]?.on)?.split('#xywh=')
-                this.#canvasPanel.setAttribute("region", TARGET[1])
-                this.#canvasPanel.createAnnotationDisplay(anno)
-                return
+                this.moveTo(TARGET[1])
             } catch (e) { }
         })
     }
     
     connectedCallback() {  
-        return
-        // this.#canvasPanel.setAttribute("manifest-id",this.#manifestId())
-        // this.#canvasPanel.setAttribute("canvas-id",this.#canvasId())
-        TPEN.activeLine = decodeContentState((this.#canvasPanel.closest('[iiif-content]') ?? this.closest('[iiif-content]'))?.getAttribute('iiif-content'))
+        const localIiifContent = this.#canvasPanel.closest('[iiif-content]')?.getAttribute('iiif-content') ?? this.closest('[iiif-content]')?.getAttribute('iiif-content')
+        const localIiifCanvas = this.#canvasPanel.closest('[iiif-canvas]')?.getAttribute('iiif-canvas') ?? this.closest('[iiif-canvas]')?.getAttribute('iiif-canvas')
+        const localIiifManifest = this.#canvasPanel.closest('[iiif-manifest]')?.getAttribute('iiif-manifest') ?? this.closest('[iiif-manifest]')?.getAttribute('iiif-manifest')
+        if(localIiifContent) {
+            this.line = decodeContentState(localIiifContent)
+            console.log(localIiifContent)
+        }
+        if(localIiifManifest) {
+            this.manifest = localIiifManifest
+        }
+        if(localIiifCanvas) {
+            this.canvas = localIiifCanvas
+        }
 
         if (TPEN.activeLine) {
             try {
@@ -112,15 +130,30 @@ class TpenLineImage extends HTMLElement {
         }
     }
 
-    moveTo(x,y,width,height) {
+    moveTo(x,y,width,height,duration=1500) {
+        if(typeof x === 'string') {
+            const [x,y,w,h] = x.split(',')
+            x = parseInt(x)
+            y = parseInt(y)
+            width = parseInt(w)
+            height = parseInt(h)
+        }
         this.#canvasPanel.transition(tm => {
             tm.goToRegion({ height, width, x, y }, {
                 transition: {
                 easing: this.#canvasPanel.easingFunctions().easeOutExpo,
-                duration: 1000,
+                duration,
                 },
             })
         })
+    }
+
+    setManifest(value) {
+        this.#canvasPanel.setAttribute("manifest-id",value)
+    }
+
+    setCanvas(value) {
+        this.#canvasPanel.setAttribute("canvas-id",value)
     }
 }
 
