@@ -1,8 +1,6 @@
 import { decodeContentState } from '../iiif-tools/index.mjs'
 import TPEN from '../../api/TPEN.mjs'
 import { eventDispatcher } from '../../api/events.mjs'
-import "https://cdn.jsdelivr.net/npm/manifesto.js"
-
 
 const CANVAS_PANEL_SCRIPT = document.createElement('script')
 CANVAS_PANEL_SCRIPT.src = "https://cdn.jsdelivr.net/npm/@digirati/canvas-panel-web-components@latest"
@@ -16,10 +14,8 @@ class TpenLineImage extends HTMLElement {
     }
 
     #canvasPanel = LINE_IMG()
-    #manifest = TPEN.manifest ?? manifesto.loadManifest(this.closest('[iiif-manifest]'))
-        .then(manifest=> TPEN.manifest = new manifesto.Manifest(manifest))
-    #canvas = TPEN.activeCanvas ?? manifesto.loadCanvas(this.closest('[iiif-canvas]'))
-        .then(canvas=> TPEN.activeCanvas = new manifesto.Canvas(canvas))
+    #manifest = TPEN.manifest
+    #canvas = TPEN.activeCanvas
     #line = TPEN.activeLine
 
     async attributeChangedCallback(name, oldValue, newValue) {
@@ -103,7 +99,7 @@ class TpenLineImage extends HTMLElement {
         if(this.#canvas) {
             console.log(this.#canvas)
         }
-        return this.#canvasPanel.findLine(id)
+        return false && this.#canvasPanel.findLine(id)
     }
     
     loadContent(){
