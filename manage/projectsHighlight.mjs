@@ -107,6 +107,102 @@ async function loadMetadata(project) {
 }
 
 
+document.getElementById("update-metadata-btn").addEventListener("click", () => {
+    openModal()
+})
+
+document.getElementById("add-field-btn").addEventListener("click", () => {
+    addMetadataField()
+})
+
+document.getElementById("save-metadata-btn").addEventListener("click", () => {
+    updateMetadata()
+})
+
+document.getElementById("cancel-btn").addEventListener("click", () => {
+    closeModal()
+})
+
+function openModal() {
+    const modal = document.getElementById("metadata-modal")
+    const fieldsContainer = document.getElementById("metadata-fields")
+    fieldsContainer.innerHTML = ""
+
+    const project = TPEN.activeProject
+    project.metadata.forEach((data, index) => {
+        addMetadataField(data.label, data.value, index)
+    })
+
+    modal.classList.remove("hidden")
+}
+
+function closeModal() {
+    document.getElementById("metadata-modal").classList.add("hidden")
+}
+
+function addMetadataField(label = "", value = "", index = null) {
+    const fieldsContainer = document.getElementById("metadata-fields")
+    const fieldHTML = `
+      <div class="metadata-field" data-index="${index !== null ? index : 'new'}">
+        <input type="text" name="label" placeholder="Label" value="${label}" />
+        <input type="text" name="value" placeholder="Value" value="${value}" />
+        <button type="button" class="remove-field-btn">X</button>
+      </div>
+    `
+    fieldsContainer.insertAdjacentHTML("beforeend", fieldHTML)
+
+    // Add event listener for the remove button
+    fieldsContainer
+        .querySelector(".metadata-field:last-child .remove-field-btn")
+        .addEventListener("click", (e) => {
+            e.target.parentElement.remove()
+        })
+}
+
+async function updateMetadata() {
+    const fields = document.querySelectorAll(".metadata-field")
+    const updatedMetadata = Array.from(fields).map((field) => {
+        const label = field.querySelector("input[name='label']").value
+        const value = field.querySelector("input[name='value']").value
+        return { label, value }
+    })
+
+
+    try {
+        const response = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject.id}/update-metadata`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ metadata: updatedMetadata }),
+        })
+
+        if (!response.ok) throw new Error("Failed to update metadata")
+
+        closeModal()
+        alert("Metadata updated successfully!")
+
+         refreshMetadataDisplay(updatedMetadata)
+    } catch (error) {
+        console.error(error)
+        alert("An error occurred while updating metadata.")
+    }
+}
+
+function refreshMetadataDisplay(metadata) {
+    const projectMetadata = document.getElementById("project-metadata")
+    projectMetadata.innerHTML = ""  
+
+    metadata.forEach((data) => {
+        projectMetadata.innerHTML += `
+        <li>
+          <span class="title">${data.label}</span>
+          <span class="colon">:</span>
+          ${data.value}
+        </li>
+      `
+    })
+}
+
+
 // This function is called after the "projects" component is loaded
 async function loadProjects() {
     const projects = await fetchProjects()
