@@ -169,14 +169,7 @@ async function updateMetadata() {
 
 
     try {
-        const AUTH_TOKEN = TPEN.getAuthorization() ?? TPEN.login()
-        const response = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/update-metadata`, {
-            method: "PUT",
-            headers: { Authorization: `Bearer ${AUTH_TOKEN}`, "Content-Type": "application/json" },
-            body: JSON.stringify({ metadata: updatedMetadata }),
-        })
-
-        if (!response.ok) throw new Error("Failed to update metadata")
+        await TPEN.activeProject.updateMetadata(updatedMetadata)
 
         closeModal()
         alert("Metadata updated successfully!")
