@@ -169,9 +169,10 @@ async function updateMetadata() {
 
 
     try {
-        const response = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject.id}/update-metadata`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
+        const AUTH_TOKEN = TPEN.getAuthorization() ?? TPEN.login()
+        const response = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/update-metadata`, {
+            method: "PUT",
+            headers: { Authorization: `Bearer ${AUTH_TOKEN}`, "Content-Type": "application/json" },
             body: JSON.stringify({ metadata: updatedMetadata }),
         })
 
@@ -180,7 +181,7 @@ async function updateMetadata() {
         closeModal()
         alert("Metadata updated successfully!")
 
-         refreshMetadataDisplay(updatedMetadata)
+        refreshMetadataDisplay(updatedMetadata)
     } catch (error) {
         console.error(error)
         alert("An error occurred while updating metadata.")
@@ -189,7 +190,7 @@ async function updateMetadata() {
 
 function refreshMetadataDisplay(metadata) {
     const projectMetadata = document.getElementById("project-metadata")
-    projectMetadata.innerHTML = ""  
+    projectMetadata.innerHTML = ""
 
     metadata.forEach((data) => {
         projectMetadata.innerHTML += `
