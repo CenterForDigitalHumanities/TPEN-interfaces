@@ -18,7 +18,7 @@ async function fetchProjects() {
 function renderProjects(projects) {
     const projectsList = document.getElementById('projects-list')
     projectsList.innerHTML = ''
-    if(!projects || !projects.length) {
+    if (!projects || !projects.length) {
         console.log("There are no projects for this user")
         return
     }
@@ -48,26 +48,28 @@ async function renderActiveProject(fallbackProjectId) {
     activeProjectContainer.innerHTML = ''
 
     let projectId = TPEN.activeProject?._id // ?? fallbackProjectId
-    if(!projectId) {
+    if (!projectId) {
         // cheat to help other tabs for now
         location.href = `?projectID=${fallbackProjectId ?? 'DEV_ERROR'}`
         return
     }
-    
+
     let project = TPEN.activeProject
-    if(!project) {
+    if (!project) {
         project = new Project(projectId)
         await project.fetch()
     }
     activeProjectContainer.innerHTML = `   <p>
     Active project is
-    <span class="red"> "${project?.name ?? project?.title ?? '[ untitled ]' }"</span>
+    <span class="red"> "${project?.name ?? project?.title ?? '[ untitled ]'}"</span>
 
   </p>
   <p>
     Active project T-PEN I.D.
     <span class="red">${project?._id ?? 'ERR!'}</span>
   </p>`
+
+    loadMetadata(project)
 }
 
 async function deleteProject(projectID) {
@@ -91,12 +93,26 @@ async function deleteProject(projectID) {
     }
 }
 
+async function loadMetadata(project) {
+    let projectMetada = document.getElementById("project-metadata")
+    const metadata = project.metadata
+    metadata.forEach((data) => {
+
+        projectMetada.innerHTML += `  <li>
+          <span class="title">${data["label"]}</span>
+          <span class="colon">:</span>
+          ${data["value"]}
+        </li>`
+    })
+}
+
 
 // This function is called after the "projects" component is loaded
 async function loadProjects() {
     const projects = await fetchProjects()
     renderActiveProject(projects[0]?._id)
     renderProjects(projects)
+
 }
 
 

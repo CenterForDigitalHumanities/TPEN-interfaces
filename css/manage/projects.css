@@ -122,6 +122,88 @@
   margin-right: 5px;
   font-weight: 600;
 }
+.manage-projects-container .metadata-modal-container .modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.manage-projects-container .metadata-modal-container .modal-content {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 500px;
+}
+.manage-projects-container .metadata-modal-container #add-field-btn {
+  margin: 10px 0px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.manage-projects-container .metadata-modal-container #add-field-btn:hover {
+  background-color: rgba(106, 171, 200, 0.6);
+}
+.manage-projects-container .metadata-modal-container .modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
+}
+.manage-projects-container .metadata-modal-container .modal-actions button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.manage-projects-container .metadata-modal-container .modal-actions #save-metadata-btn {
+  background-color: #6AABC8;
+  color: white;
+}
+.manage-projects-container .metadata-modal-container .modal-actions #save-metadata-btn:hover {
+  background-color: #4596ba;
+}
+.manage-projects-container .metadata-modal-container .hidden {
+  display: none;
+}
+.manage-projects-container .metadata-modal-container .metadata-field {
+  border: 1px solid rgba(128, 128, 128, 0.2);
+  display: flex;
+  justify-content: space-between;
+  margin: 10px 0px;
+}
+.manage-projects-container .metadata-modal-container .metadata-field input {
+  padding: 10px;
+  width: 45%;
+  margin: 5px;
+  border: 1px solid rgba(128, 128, 128, 0.1);
+  border-radius: 4px;
+  outline: none;
+}
+.manage-projects-container .metadata-modal-container .metadata-field input:focus {
+  outline: 1px solid rgba(128, 128, 128, 0.7);
+}
+.manage-projects-container .metadata-modal-container .metadata-field button {
+  color: red;
+  border: none;
+  background-color: transparent;
+  padding: 10px 5px;
+  transition: all 0.3s;
+  font-size: 18px;
+}
+.manage-projects-container .metadata-modal-container .metadata-field button:hover {
+  cursor: pointer;
+  background-color: rgba(128, 128, 128, 0.3);
+}
+.manage-projects-container .metadata-modal-container .metadata-field button:hover .metadata-field {
+  border: 1px solid red;
+}
 .manage-projects-container .add-btn {
   position: relative;
 }
@@ -134,28 +216,36 @@
 }
 
 @media (max-width: 768px) {
-  .manage-projects-container, .manage-manuscript-container {
+  .manage-projects-container,
+  .manage-manuscript-container {
     flex-direction: column;
     gap: 20px;
   }
-  .manage-projects-container section, .manage-manuscript-container section {
+  .manage-projects-container section,
+  .manage-manuscript-container section {
     width: 100% !important;
     min-height: auto;
   }
-  .manage-projects-container section:first-child, .manage-projects-container section:last-child, .manage-manuscript-container section:first-child, .manage-manuscript-container section:last-child {
+  .manage-projects-container section:first-child, .manage-projects-container section:last-child,
+  .manage-manuscript-container section:first-child,
+  .manage-manuscript-container section:last-child {
     width: 100%;
   }
-  .manage-projects-container section .segment, .manage-manuscript-container section .segment {
+  .manage-projects-container section .segment,
+  .manage-manuscript-container section .segment {
     padding: 15px;
   }
-  .manage-projects-container section .resume-transcribing select, .manage-manuscript-container section .resume-transcribing select {
+  .manage-projects-container section .resume-transcribing select,
+  .manage-manuscript-container section .resume-transcribing select {
     width: 100%;
   }
-  .manage-projects-container section .projects-list, .manage-manuscript-container section .projects-list {
+  .manage-projects-container section .projects-list,
+  .manage-manuscript-container section .projects-list {
     height: auto;
     max-height: 300px;
   }
-  .manage-projects-container .all-projects .projects-list, .manage-manuscript-container .all-projects .projects-list {
+  .manage-projects-container .all-projects .projects-list,
+  .manage-manuscript-container .all-projects .projects-list {
     height: 300px;
   }
 }
