@@ -5,8 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TPEN Transcription</title>
     <script type="module" src="index.js"></script>
+    <style>
+        tpen-transcription {
+            display: block;
+            margin: 0 auto;
+            max-width: 35em;
+        }
+    </style>
 </head>
 <body>
-    <tpen-transcription></tpen-transcription>
+    <div tpen-page="https://t-pen.org/TPEN/annotations/13248868/project/7066" iiif-manifest="https://t-pen.org/TPEN/manifest/7066?version=3">
+        <!-- <tpen-pagination></tpen-pagination> -->
+        <tpen-transcription tpen-page="https://t-pen.org/TPEN/annotations/13248868/project/7066"></tpen-transcription>
+    </div>
 </body>
 </html>

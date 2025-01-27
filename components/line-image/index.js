@@ -1,4 +1,4 @@
-import {decodeContentState} from '../iiif-tools/index.mjs'
+import { decodeContentState } from '../iiif-tools/index.mjs'
 
 const CANVAS_PANEL_SCRIPT = document.createElement('script')
 CANVAS_PANEL_SCRIPT.src = "https://cdn.jsdelivr.net/npm/@digirati/canvas-panel-web-components@latest"
@@ -7,89 +7,99 @@ document.head.appendChild(CANVAS_PANEL_SCRIPT)
 const LINE_IMG = () => document.createElement('canvas-panel')
 
 class TpenLineImage extends HTMLElement {
-    #manifestId = ()=>(this.#canvasPanel.closest('[iiif-manifest]') ?? this.closest('[iiif-manifest]'))?.getAttribute('iiif-manifest') 
-    #canvasId = ()=>(this.#canvasPanel.closest('[iiif-canvas]') ?? this.closest('[iiif-canvas]'))?.getAttribute('iiif-canvas')
+    static get observedAttributes() {
+        return ['tpen-line-id','region']
+    }
     #canvasPanel = LINE_IMG()
     #manifest
+    #canvas
     #line
-    #id
+
+    async attributeChangedCallback(name, oldValue, newValue) {
+        if (name === 'tpen-line-id' && oldValue !== newValue) {
+            this.lineId = newValue
+        }
+        if (name === 'region' && oldValue !== newValue) {
+            this.#canvasPanel.setAttribute('region', newValue.split('=').pop())
+        }
+    }
+
+    set manifest(value) {
+        this.setManifest(value)
+    }
+
+    set canvas(value) {
+        this.setCanvas(value)
+    }
+
+    set line(value) {
+        this.#canvasPanel.createAnnotationDisplay(value)
+    }
 
     constructor() {
         super()
         this.attachShadow({ mode: 'open' })
-        this.#canvasPanel.setAttribute("preset","responsive")
+        this.#canvasPanel.setAttribute("preset", "responsive")
         this.shadowRoot.append(this.#canvasPanel)
-        this.addEventListener('canvas-change',ev=>{
-            this.#canvasPanel.setCanvas(this.#canvasId())
-            this.#canvasPanel.setManifest(this.#manifestId())
-        })
-    }
-    
-    connectedCallback() {  
-        this.#canvasPanel.setAttribute("manifest-id",this.#manifestId())
-        this.#canvasPanel.setAttribute("canvas-id",this.#canvasId())
-        this.#line = decodeContentState((this.#canvasPanel.closest('[iiif-content]') ?? this.closest('[iiif-content]'))?.getAttribute('iiif-content'))
-
-        if(this.#line) {
-            try{
-                let anno = JSON.parse(this.#line)
-                const TARGET = ((anno.type ?? anno['@type']).match(/Annotation\b/)) ? (anno.target ?? anno.on)?.split('#xywh=') : (anno.items[0]?.target ?? anno.resources[0]?.on)?.split('#xywh=')
-                this.#canvasPanel.setAttribute("region",TARGET[1])
-                this.#canvasPanel.createAnnotationDisplay(anno)
-                return
-            }catch(e){}
-        }
-
-        this.#id = (this.#canvasPanel.closest('[tpen-line-id]') ?? this.closest('[tpen-line-id]'))?.getAttribute('tpen-line-id')
-
-        if (!this.#id || ("null" === this.#id)) {
-            const ERR = new Event('tpen-error', { detail: 'Line ID is required' })
-            validateContent(null,this,"Line ID is required")
-            return
-        }
-
-        fetch(this.#id).then(res=>res.json()).then(anno=>{
-            const TARGET = ((anno.type ?? anno['@type']).match(/Annotation\b/)) ? (anno.target ?? anno.on)?.split('#xywh=') : (anno.items[0]?.target ?? anno.resources[0]?.on)
-            // this.#canvasPanel.setAttribute("canvas-id",TARGET[0])
-            this.#canvasPanel.setAttribute("region",TARGET[1])
-            this.#canvasPanel.createAnnotationDisplay(anno)
-        })
-        this.addEventListener('canvas-change',ev=>{
-            this.#canvasId = this.#canvasPanel.closest('[iiif-canvas]') ?? this.closest('[iiif-canvas]')
-            this.#canvasPanel.setCanvas(this.#canvasId)
-        })
     }
 
-    async selectImage(){
-        try {
-            new URL(this.#id)
-            const TEXT_CONTENT = await loadAnnotation(lineId)
-            this.#canvasPanel.innerText = validateContent(TEXT_CONTENT,this)
-        } catch (error) {
-            console.error(error)
-            return validateContent(null,this,"Fetching Error")
+    connectedCallback() {
+        const localIiifContent = this.#canvasPanel.closest('[iiif-content]')?.getAttribute('iiif-content') ?? this.closest('[iiif-content]')?.getAttribute('iiif-content')
+        const localIiifCanvas = this.#canvasPanel.closest('[iiif-canvas]')?.getAttribute('iiif-canvas') ?? this.closest('[iiif-canvas]')?.getAttribute('iiif-canvas')
+        const localIiifManifest = this.#canvasPanel.closest('[iiif-manifest]')?.getAttribute('iiif-manifest') ?? this.closest('[iiif-manifest]')?.getAttribute('iiif-manifest')
+        if (localIiifContent) {
+            this.line = decodeContentState(localIiifContent)
+            console.log(localIiifContent)
+        }
+        if (localIiifManifest) {
+            this.manifest = localIiifManifest
+        }
+        if (localIiifCanvas) {
+            this.canvas = localIiifCanvas
         }
     }
-    
-    loadContent(){
+
+    loadContent() {
         try {
             const TEXT_CONTENT = JSON.parse(decodeContentState(this.content))
-            this.innerText = validateContent(TEXT_CONTENT,this)
+            this.innerText = this.validateContent(TEXT_CONTENT)
         } catch (error) {
             console.error(error)
-            return validateContent(null,this,"Decoding Error")
+            return this.validateContent(null, "Decoding Error")
         }
     }
 
-    moveTo(x,y,width,height) {
+    moveTo(x, y, width, height, duration = 1500) {
+        if (typeof x === 'string') {
+            const [x, y, w, h] = x.split(',')
+            x = parseInt(x)
+            y = parseInt(y)
+            width = parseInt(w)
+            height = parseInt(h)
+        }
         this.#canvasPanel.transition(tm => {
             tm.goToRegion({ height, width, x, y }, {
                 transition: {
-                easing: this.#canvasPanel.easingFunctions().easeOutExpo,
-                duration: 1000,
+                    easing: this.#canvasPanel.easingFunctions().easeOutExpo,
+                    duration,
                 },
             })
         })
+    }
+
+    setManifest(value) {
+        this.#canvasPanel.setAttribute("manifest-id", value)
+    }
+
+    setCanvas(value) {
+        this.#canvasPanel.setAttribute("canvas-id", value)
+    }
+    validateContent(content, elem, msg) {
+        if (content == null) {
+            elem.setAttribute('aria-invalid', true)
+            elem.setAttribute('title', msg ?? 'Invalid content')
+        }
+        return content
     }
 }
 
@@ -97,22 +107,4 @@ customElements.define('tpen-line-image', TpenLineImage)
 
 export default {
     TpenLineImage
-}
-
-
-function loadAnnotation(url){   
-    return fetch(url)
-        .then(response => {
-            if(!response.ok) throw new Error("failed to fetch")
-            return response.json()
-        })        
-        .catch(error => console.error(error))
-}
-
-function validateContent(content,elem,msg) {
-    if(content==null){
-        elem.setAttribute('aria-invalid',true)
-        elem.setAttribute('title',msg ?? 'Invalid content')
-    }
-    return content
 }
