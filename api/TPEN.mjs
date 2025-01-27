@@ -19,7 +19,7 @@ class Tpen {
 
     constructor(tinyThingsURL = "https://dev.tiny.t-pen.org") {
         this.tinyThingsURL = tinyThingsURL
-        this.servicesURL = "http://localhost:3012"
+        this.servicesURL = "https://dev.api.t-pen.org"
         this.currentUser
         this.activeProject
 

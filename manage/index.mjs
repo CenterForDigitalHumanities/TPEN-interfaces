@@ -1,5 +1,3 @@
-// import getActiveProject from '../utilities/getActiveProject.mjs'
-// import renderRoles from '../utilities/renderRoles.mjs'
 import Project from "../api/Project.mjs"
 import TPEN from "../api/TPEN.mjs"
 import { eventDispatcher } from "../api/events.mjs"
