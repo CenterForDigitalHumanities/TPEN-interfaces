@@ -134,52 +134,52 @@ function closeModal() {
 }
 
 
-// function openModal() {
-//     const modal = document.getElementById("metadata-modal")
-//     const fieldsContainer = document.getElementById("metadata-fields")
-//     fieldsContainer.innerHTML = ""
-
-//     const project = TPEN.activeProject
-
-//     project.metadata.forEach((data, index) => {
-//         // Handle simple key-value pairs
-//         if (typeof data.label === "string" && typeof data.value === "string") {
-//             addMetadataField("none", data.label, data.value, index)
-//         }
-//         // Handle language map format
-//         else if (typeof data.label === "object" && typeof data.value === "object") {
-//             const labelMap = data.label
-//             const valueMap = data.value
-
-//             Object.keys(labelMap).forEach((lang) => {
-//                 const label = labelMap[lang]?.join(", ") || ""
-//                 const value = valueMap[lang]?.join(", ") || ""
-//                 addMetadataField(lang, label, value, index)
-//             })
-//         }
-//     })
-
-//     modal.classList.remove("hidden")
-// }
-
 function openModal() {
     const modal = document.getElementById("metadata-modal")
     const fieldsContainer = document.getElementById("metadata-fields")
     fieldsContainer.innerHTML = ""
 
     const project = TPEN.activeProject
+
     project.metadata.forEach((data, index) => {
-        // Iterate through labels and values in the object, treating each independently
-        Object.entries(data.label).forEach(([lang, labels]) => {
-            labels.forEach((label, labelIndex) => {
-                const value = data.value[lang]?.[labelIndex] || ""
+        // Handle simple key-value pairs
+        if (typeof data.label === "string" && typeof data.value === "string") {
+            addMetadataField("none", data.label, data.value, index)
+        }
+        // Handle language map format
+        else if (typeof data.label === "object" && typeof data.value === "object") {
+            const labelMap = data.label
+            const valueMap = data.value
+
+            Object.keys(labelMap).forEach((lang) => {
+                const label = labelMap[lang]?.join(", ") || ""
+                const value = valueMap[lang]?.join(", ") || ""
                 addMetadataField(lang, label, value, index)
             })
-        })
+        }
     })
 
     modal.classList.remove("hidden")
 }
+
+// function openModal() {
+//     const modal = document.getElementById("metadata-modal")
+//     const fieldsContainer = document.getElementById("metadata-fields")
+//     fieldsContainer.innerHTML = ""
+
+//     const project = TPEN.activeProject
+//     project.metadata.forEach((data, index) => {
+//         // Iterate through labels and values in the object, treating each independently
+//         Object.entries(data.label).forEach(([lang, labels]) => {
+//             labels.forEach((label, labelIndex) => {
+//                 const value = data.value[lang]?.[labelIndex] || ""
+//                 addMetadataField(lang, label, value, index)
+//             })
+//         })
+//     })
+
+//     modal.classList.remove("hidden")
+// }
 
 
 function addMetadataField(lang = "none", label = "", value = "", index = null) {
