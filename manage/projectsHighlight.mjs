@@ -100,8 +100,8 @@ async function loadMetadata(project) {
 
     metadata.forEach((data) => {
 
-        const label = getLabel(data)
-        const value = getValue(data)
+        const label = decodeURIComponent(getLabel(data))
+        const value = decodeURIComponent(getValue(data))
 
         projectMetada.innerHTML += `  <li>
           <span class="title">${label}</span>
@@ -152,8 +152,8 @@ function openModal() {
             const valueMap = data.value
 
             Object.keys(labelMap).forEach((lang) => {
-                const label = labelMap[lang]?.join(", ") || ""
-                const value = valueMap[lang]?.join(", ") || ""
+                const label = decodeURIComponent(labelMap[lang]?.join(", ") || "")
+                const value = decodeURIComponent(valueMap[lang]?.join(", ") || "")
                 addMetadataField(lang, label, value, index)
             })
         }
@@ -162,24 +162,7 @@ function openModal() {
     modal.classList.remove("hidden")
 }
 
-// function openModal() {
-//     const modal = document.getElementById("metadata-modal")
-//     const fieldsContainer = document.getElementById("metadata-fields")
-//     fieldsContainer.innerHTML = ""
 
-//     const project = TPEN.activeProject
-//     project.metadata.forEach((data, index) => {
-//         // Iterate through labels and values in the object, treating each independently
-//         Object.entries(data.label).forEach(([lang, labels]) => {
-//             labels.forEach((label, labelIndex) => {
-//                 const value = data.value[lang]?.[labelIndex] || ""
-//                 addMetadataField(lang, label, value, index)
-//             })
-//         })
-//     })
-
-//     modal.classList.remove("hidden")
-// }
 
 
 function addMetadataField(lang = "none", label = "", value = "", index = null) {
@@ -222,8 +205,8 @@ async function updateMetadata() {
 
         // Create a new object for each label-value pair
         updatedMetadata.push({
-            label: { [lang]: [label] },
-            value: { [lang]: [value] },
+            label: encodeURIComponent({ [lang]: [label] }),
+            value: encodeURIComponent({ [lang]: [value] }),
         })
     })
 
@@ -247,8 +230,8 @@ function refreshMetadataDisplay(metadata) {
     projectMetadata.innerHTML = ""
 
     metadata.forEach((data) => {
-        const label = getLabel(data)
-        const value = getValue(data)
+        const label = decodeURIComponent(getLabel(data))
+        const value = decodeURIComponent(getValue(data))
         projectMetadata.innerHTML += `
         <li>
           <span class="title">${label}</span>
