@@ -236,10 +236,10 @@ export default class Project {
     }
     async updateMetadata(metadata) {
         const AUTH_TOKEN = TPEN.getAuthorization() ?? TPEN.login()
-        const response = await fetch(`${TPEN.servicesURL}/project/${this._id}/update-metadata`, {
+        const response = await fetch(`${TPEN.servicesURL}/project/${this._id}/metadata`, {
             method: "PUT",
             headers: { Authorization: `Bearer ${AUTH_TOKEN}`, "Content-Type": "application/json" },
-            body: JSON.stringify({ metadata }),
+            body: JSON.stringify(metadata),
         })
 
         if (!response.ok) throw new Error("Failed to update metadata")

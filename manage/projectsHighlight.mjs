@@ -61,7 +61,7 @@ async function renderActiveProject(fallbackProjectId) {
     }
     activeProjectContainer.innerHTML = `   <p>
     Active project is
-    <span class="red"> "${project?.name ?? project?.title ?? '[ untitled ]'}"</span>
+    <span class="red"> "${project?.label ?? project?.title ?? '[ untitled ]'}"</span>
 
   </p>
   <p>
@@ -96,12 +96,17 @@ async function deleteProject(projectID) {
 async function loadMetadata(project) {
     let projectMetada = document.getElementById("project-metadata")
     const metadata = project.metadata
+    // const preferredLang = getPreferredLanguage()
+
     metadata.forEach((data) => {
 
+        const label = getLabel(data)
+        const value = getValue(data)
+
         projectMetada.innerHTML += `  <li>
-          <span class="title">${data["label"]}</span>
+          <span class="title">${label}</span>
           <span class="colon">:</span>
-          ${data["value"]}
+          ${value}
         </li>`
     })
 }
@@ -123,27 +128,52 @@ document.getElementById("cancel-btn").addEventListener("click", () => {
     closeModal()
 })
 
+
+function closeModal() {
+    document.getElementById("metadata-modal").classList.add("hidden")
+}
+
+
 function openModal() {
     const modal = document.getElementById("metadata-modal")
     const fieldsContainer = document.getElementById("metadata-fields")
     fieldsContainer.innerHTML = ""
 
     const project = TPEN.activeProject
+
     project.metadata.forEach((data, index) => {
-        addMetadataField(data.label, data.value, index)
+        // Handle simple key-value pairs
+        if (typeof data.label === "string" && typeof data.value === "string") {
+            addMetadataField("none", data.label, data.value, index)
+        }
+        // Handle language map format
+        else if (typeof data.label === "object" && typeof data.value === "object") {
+            const labelMap = data.label
+            const valueMap = data.value
+
+            Object.keys(labelMap).forEach((lang) => {
+                const label = labelMap[lang]?.join(", ") || ""
+                const value = valueMap[lang]?.join(", ") || ""
+                addMetadataField(lang, label, value, index)
+            })
+        }
     })
 
     modal.classList.remove("hidden")
 }
 
-function closeModal() {
-    document.getElementById("metadata-modal").classList.add("hidden")
-}
 
-function addMetadataField(label = "", value = "", index = null) {
+function addMetadataField(lang = "none", label = "", value = "", index = null) {
     const fieldsContainer = document.getElementById("metadata-fields")
     const fieldHTML = `
       <div class="metadata-field" data-index="${index !== null ? index : 'new'}">
+        <select name="language">
+          <option value="none" ${lang === "none" ? "selected" : ""}>None</option>
+          <option value="en" ${lang === "en" ? "selected" : ""}>English</option>
+          <option value="fr" ${lang === "fr" ? "selected" : ""}>French</option>
+          <!-- Other lnguages to come later, maybe from an API -->
+        </select>
+
         <input type="text" name="label" placeholder="Label" value="${label}" />
         <input type="text" name="value" placeholder="Value" value="${value}" />
         <button type="button" class="remove-field-btn">X</button>
@@ -159,42 +189,89 @@ function addMetadataField(label = "", value = "", index = null) {
         })
 }
 
+
 async function updateMetadata() {
     const fields = document.querySelectorAll(".metadata-field")
-    const updatedMetadata = Array.from(fields).map((field) => {
+    const updatedMetadata = {}
+
+    fields.forEach((field) => {
+        const lang = field.querySelector("select[name='language']").value
         const label = field.querySelector("input[name='label']").value
         const value = field.querySelector("input[name='value']").value
-        return { label, value }
+
+        if (!updatedMetadata[lang]) {
+            updatedMetadata[lang] = { label: [], value: [] }
+        }
+
+        updatedMetadata[lang].label.push(label)
+        updatedMetadata[lang].value.push(value)
     })
 
+    const processedMetadata = Object.entries(updatedMetadata).map(([lang, data]) => ({
+        label: { [lang]: data.label },
+        value: { [lang]: data.value },
+    }))
 
     try {
-        await TPEN.activeProject.updateMetadata(updatedMetadata)
+        await TPEN.activeProject.updateMetadata(processedMetadata)
 
         closeModal()
         alert("Metadata updated successfully!")
-
-        refreshMetadataDisplay(updatedMetadata)
+        refreshMetadataDisplay(processedMetadata)
     } catch (error) {
         console.error(error)
         alert("An error occurred while updating metadata.")
     }
 }
 
+
 function refreshMetadataDisplay(metadata) {
     const projectMetadata = document.getElementById("project-metadata")
     projectMetadata.innerHTML = ""
 
     metadata.forEach((data) => {
+        const label = getLabel(data)
+        const value = getValue(data)
         projectMetadata.innerHTML += `
         <li>
-          <span class="title">${data.label}</span>
+          <span class="title">${label}</span>
           <span class="colon">:</span>
-          ${data.value}
+          ${value}
         </li>
       `
     })
 }
+
+
+
+function getLabel(data) {
+    if (typeof data.label === "string") {
+        return data.label
+    }
+
+    if (typeof data.label === "object") {
+        return Object.entries(data.label)
+            .map(([lang, values]) => `${lang != "none" ? lang + ":" : ""} ${values.join(", ")}`)
+            .join(" | ")
+    }
+
+    return "Unknown Label"
+}
+
+function getValue(data) {
+    if (typeof data.value === "string") {
+        return data.value
+    }
+
+    if (typeof data.value === "object") {
+        return Object.entries(data.value)
+            .map(([lang, values]) => `${values.join(", ")}`)
+            .join(" | ")
+    }
+
+    return "Unknown Value"
+}
+
 
 
 // This function is called after the "projects" component is loaded
