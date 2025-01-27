@@ -16,7 +16,7 @@ The TPEN class is the main class for accessing the TPEN services API. It is used
 initialize the TPEN module and to make calls to the API.
 
 ```javascript
-const tpen = new TPEN(tinyThingsURL?)
+const tpen = new Tpen(tinyThingsURL?)
 ```
 
 ## [User](./User)

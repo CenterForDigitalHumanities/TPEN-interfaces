@@ -3,11 +3,11 @@ import { fetchProject, userMessage, encodeContentState } from "../iiif-tools/ind
 import "https://cdn.jsdelivr.net/npm/manifesto.js"
 import "../line-image/index.js"
 import "../line-text/index.js"
-import TPEN from "../../api/TPEN.mjs"
 import User from "../../api/User.mjs"
+import TPEN from "../../api/TPEN.mjs"
 
 class TpenTranscriptionElement extends HTMLElement {
-    TPEN = new TPEN()
+    TPEN =  TPEN
     #transcriptionContainer
     #activeCanvas = {}
     #activeLine = {}
@@ -20,7 +20,7 @@ class TpenTranscriptionElement extends HTMLElement {
     attributeChangedCallback(name, oldValue, newValue) {
         if (oldValue !== newValue) {
             if(name === 'tpen-user-id') {
-                this.TPEN = new TPEN()
+                this.TPEN =  TPEN
                 this.TPEN.currentUser = new User(newValue).getProfile()
             }
             if (name === 'tpen-project') {

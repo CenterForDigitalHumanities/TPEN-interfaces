@@ -23,7 +23,7 @@ It takes an optional parameter for the URL to the Tiny Things RERUM proxy you ar
 with your applications API key, defaulting to "[https://tiny.t‑pen.org](https://tiny.t-pen.org)".
 
 ```javascript
-const tpen = new TPEN(tinyThingsURL?)
+const tpen = new Tpen(tinyThingsURL?)
 ```
 
 ### Properties
