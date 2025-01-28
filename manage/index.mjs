@@ -56,14 +56,14 @@ function loadManageInterface(){
         } 
         const { projectData } = await getActiveProject()
         console.log(projectData)
-        const contributors = projectData.contributors
+        const contributors = projectData.collaborators
 
         const projectDetailsElement = document.getElementById('project-details')
         const contributorsListElement = projectDetailsElement.querySelector('ul')
 
         for (const contributorId in contributors) {
           const contributor = contributors[contributorId]
-          const name = contributor?.displayName ?? contributor?.email
+          const name = contributor?.profile?.displayName ?? contributor?.profile?.email
           contributorsListElement.innerHTML += `<li class="red">${name} (${renderRoles(contributor.roles)}) </li> `
         } 
       } 
