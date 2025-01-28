@@ -199,14 +199,14 @@ async function updateMetadata() {
     const updatedMetadata = []
 
     fields.forEach((field) => {
-        const lang = field.querySelector("select[name='language']").value
-        const label = field.querySelector("input[name='label']").value
-        const value = field.querySelector("input[name='value']").value
+        const lang = encodeURIComponent(field.querySelector("select[name='language']").value)
+        const label = encodeURIComponent(field.querySelector("input[name='label']").value)
+        const value = encodeURIComponent(field.querySelector("input[name='value']").value)
 
         // Create a new object for each label-value pair
         updatedMetadata.push({
-            label: encodeURIComponent({ [lang]: [label] }),
-            value: encodeURIComponent({ [lang]: [value] }),
+            label: { [lang]: [label] },
+            value: { [lang]: [value] },
         })
     })
 
