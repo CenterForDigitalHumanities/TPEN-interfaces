@@ -1,8 +1,7 @@
 import Project from "../api/Project.mjs"
 import TPEN from "../api/TPEN.mjs"
-import { eventDispatcher } from "../api/events.mjs"
 
-eventDispatcher.on('tpen-project-loaded', loadManageInterface)
+document.addEventListener("DOMContentLoaded", loadManageInterface)
 
 async function getActiveProject() {
     const URLParams = new URLSearchParams(window.location.search)
