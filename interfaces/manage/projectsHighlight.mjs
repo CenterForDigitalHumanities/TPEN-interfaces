@@ -1,8 +1,8 @@
 // projects.mjs
-import User from "../api/User.mjs"
-import Project from "../api/Project.mjs"
-import TPEN from "../api/TPEN.mjs"
-import { eventDispatcher } from "../api/events.mjs"
+import User from "../../api/User.mjs"
+import Project from "../../api/Project.mjs"
+import TPEN from "../../api/TPEN.mjs"
+import { eventDispatcher } from "../../api/events.mjs"
 
 const elem = document.getElementById("manage-class")
 TPEN.attachAuthentication(elem)

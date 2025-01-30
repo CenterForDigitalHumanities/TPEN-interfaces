@@ -1,5 +1,5 @@
-import TPEN from "../api/TPEN.mjs"
-import { eventDispatcher } from "../api/events.mjs"
+import TPEN from "../../api/TPEN.mjs"
+import { eventDispatcher } from "../../api/events.mjs"
 
 let groupTitle = document.querySelector(".project-title")
 let groupMembersElement = document.querySelector(".group-members")

@@ -1,5 +1,5 @@
-import Project from "../api/Project.mjs"
-import TPEN from "../api/TPEN.mjs"
+import Project from "../../api/Project.mjs"
+import TPEN from "../../api/TPEN.mjs"
 
 document.addEventListener("DOMContentLoaded", loadManageInterface)
 
@@ -50,7 +50,7 @@ function loadManageInterface(){
           modifyTeamBtn.addEventListener("click", () => {
             const URLParams = new URLSearchParams(window.location.search)
             const projectID = URLParams.get("projectID")
-            const url = `/collaborators/index.html?projectID=${projectID}`
+            const url = `../collaborators/index.html?projectID=${projectID}`
             window.location.href = url
           })
         } 
