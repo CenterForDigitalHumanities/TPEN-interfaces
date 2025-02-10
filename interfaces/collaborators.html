@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Manage Interface</title>
+    <link rel="stylesheet" href="../css/manage/index.css" />
+    <link rel="stylesheet" href="../css/collaborators/index.css" />
+    <script type="module" src="../components/collaborators/index.mjs"></script>
+</head>
+
+<body>
+    <div class="tagline">transcription for paleographical and editorial notation</div>
+    <div class="manage-interface collaborators-container">
+        <header class="title">
+            <h1>TRANSCRIPTION PROJECT MANAGEMENT</h1>
+            <p>
+                Use this page to coordinate your team, design customized projects from
+                available manuscripts, and make fine adjustments to individual pages.
+            </p>
+        </header>
+        <div class="body-bg">
+            <header>
+                <div class="group-title">
+                    <h1>Project: <span class="project-title"></span></h1>
+                </div>
+            </header>
+            <main id="content">
+                <h4 class="title">Existing group members</h4>
+                <ol class="group-members">
+                </ol>
+                <div class="role-modal-container ">
+                    <div id="roleModal" class=" modal hidden">
+                        <div class="modal-content">
+                            <h2 id="modalTitle"></h2>
+                            <p id="modalDescription"></p>
+                            <!-- Roles List -->
+                            <div id="rolesListContainer" class="defaultRoles"></div>
+                            <!-- Modal Buttons -->
+                            <div class="modal-actions">
+                                <button id="modalConfirmButton">Confirm</button>
+                                <button id="modalCancelButton">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="owner-leader-action is-hidden " id="invite-section-container">
+                    <h4 class="title">Add a new group member</h4>
+                    <p>
+                        If you add an email that is not a current TPEN user, we will invite them to join TPEN and your
+                        project
+                    </p>
+                    <form id="invite-form">
+                        <label for="invitee-email">Invitee's Email</label>
+                        <input type="email" name="invitee-email" id="invitee-email" required>
+                        <button type="submit" id="submit" class="submit-btn">Submit</button>
+                        <p id="error" class="error-message"></p>
+                    </form>
+                </div>
+                <div id="errorHTML" class="error"></div>
+            </main>
+            <button class="default-btn return-btn ">Return to TPEN Homepage <span class="btn-icon"></span></button>
+        </div>
+    </div>
+</body>
+
+</html>
