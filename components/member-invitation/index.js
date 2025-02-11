@@ -2,13 +2,13 @@ import TPEN from "../../api/TPEN.mjs"
 
 class InviteMemberElement extends HTMLElement {
     constructor() {
-        super();
-        this.attachShadow({ mode: 'open' });
+        super()
+        this.attachShadow({ mode: 'open' })
     }
     
     connectedCallback() {
-        this.render();
-        this.addEventListeners();
+        this.render()
+        this.addEventListeners()
     }
 
     render() {
@@ -28,45 +28,45 @@ class InviteMemberElement extends HTMLElement {
             </div>
             <div id="errorHTML" class="error"></div>
 
-        `;
+        `
     }
 
     addEventListeners() {
-        const inviteForm = this.shadowRoot.querySelector("#invite-form");
-        inviteForm.addEventListener("submit", this.inviteUser.bind(this));
+        const inviteForm = this.shadowRoot.querySelector("#invite-form")
+        inviteForm.addEventListener("submit", this.inviteUser.bind(this))
     }
 
     async inviteUser(event) {
-        event.preventDefault();
+        event.preventDefault()
 
         try {
-            this.shadowRoot.querySelector('#submit').textContent = "Inviting...";
-            this.shadowRoot.querySelector('#submit').disabled = true;
+            this.shadowRoot.querySelector('#submit').textContent = "Inviting..."
+            this.shadowRoot.querySelector('#submit').disabled = true
 
-            const response = await TPEN.activeProject.addMember(this.shadowRoot.querySelector('#invitee-email').value);
-            if (!response) throw new Error("Invitation failed");
+            const response = await TPEN.activeProject.addMember(this.shadowRoot.querySelector('#invitee-email').value)
+            if (!response) throw new Error("Invitation failed")
             
-            this.shadowRoot.querySelector('#submit').textContent = "Submit";
-            this.shadowRoot.querySelector('#submit').disabled = false;
-            this.shadowRoot.querySelector('#invitee-email').value = "";
+            this.shadowRoot.querySelector('#submit').textContent = "Submit"
+            this.shadowRoot.querySelector('#submit').disabled = false
+            this.shadowRoot.querySelector('#invitee-email').value = ""
 
-            const successMessage = document.createElement("p");
-            successMessage.textContent = "Invitation sent successfully!";
-            successMessage.classList.add("success-message");
-            this.shadowRoot.querySelector('#invite-form').appendChild(successMessage);
+            const successMessage = document.createElement("p")
+            successMessage.textContent = "Invitation sent successfully!"
+            successMessage.classList.add("success-message")
+            this.shadowRoot.querySelector('#invite-form').appendChild(successMessage)
 
             setTimeout(() => {
-                successMessage.remove();
-            }, 3000);
+                successMessage.remove()
+            }, 3000)
         } catch (error) {
             setTimeout(() => {
-                this.shadowRoot.querySelector('#errorHTML').innerHTML = '';
-            }, 3000);
-            this.shadowRoot.querySelector('#errorHTML').innerHTML = error.message;
-            this.shadowRoot.querySelector('#submit').textContent = "Submit";
-            this.shadowRoot.querySelector('#submit').disabled = false;
+                this.shadowRoot.querySelector('#errorHTML').innerHTML = ''
+            }, 3000)
+            this.shadowRoot.querySelector('#errorHTML').innerHTML = error.message
+            this.shadowRoot.querySelector('#submit').textContent = "Submit"
+            this.shadowRoot.querySelector('#submit').disabled = false
         }
     }
 }
 
-customElements.define('invite-member', InviteMemberElement);
+customElements.define('invite-member', InviteMemberElement)
