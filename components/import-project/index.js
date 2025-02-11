@@ -148,4 +148,4 @@ class ProjectImporter extends HTMLElement {
   }
 }
 
-customElements.define('project-importer', ProjectImporter)
+customElements.define('tpen-project-importer', ProjectImporter)
