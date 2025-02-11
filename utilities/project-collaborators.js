@@ -1,4 +1,4 @@
-import TPEN from "../../api/TPEN.mjs"
+import TPEN from "../api/TPEN.mjs"
 
 let groupTitle = document.querySelector(".project-title")
 let groupMembersElement = document.querySelector(".group-members")
@@ -80,17 +80,14 @@ function toggleRoleManagementButtons(button) {
     const memberID = button.dataset.memberId
     const actionsDiv = button.closest(".member").querySelector(".actions")
 
-    // Clear existing management buttons if they exist
     if (actionsDiv.querySelector(".role-management-buttons")) {
         actionsDiv.querySelector(".role-management-buttons").remove()
-        return // Toggle off
+        return
     }
 
-    // Get the roles of the collaborator
     const collaborator = TPEN.activeProject.collaborators[memberID]
-    const buttons = generateRoleManagementButtons(collaborator, memberID)
+    const buttons = generateRoleManagementButtons(collaborator, button.dataset)
 
-    // Render management buttons
     const roleManagementButtonsHTML = `
         <div class="role-management-buttons">
             ${buttons.join("")}
@@ -102,16 +99,16 @@ function toggleRoleManagementButtons(button) {
     actionsDiv.appendChild(roleManagementDiv)
 }
 
-function generateRoleManagementButtons(collaborator, memberID) {
-    // Check if the current user is the owner
+function generateRoleManagementButtons(collaborator, button) {
     const currentUserID = content.getAttribute("tpen-user-id")
     const currentUserIsOwner = TPEN.activeProject.collaborators[currentUserID]?.roles.includes("OWNER")
 
-    // Determine which buttons to render
+    const memberID = button.memberId
+    const memberName = collaborator.profile?.displayName
+
     const buttons = []
 
     if (!collaborator.roles.includes("OWNER") && currentUserIsOwner) {
-        // "Make Owner" button appears only for the current owner and under users who aren't owners
         buttons.push(`<button class="transfer-ownership-button" data-member-id=${memberID}> Transfer Ownership</button>`)
     }
 
@@ -127,10 +124,9 @@ function generateRoleManagementButtons(collaborator, memberID) {
         buttons.push(`<button class="set-to-viewer-button" data-member-id=${memberID}>Revoke Write Access</button>`)
     }
 
-    // "Set Role" and "Remove" buttons are always available
     buttons.push(
         `<button class="set-role-button" data-member-id=${memberID}>Set Role</button>`,
-        `<button class="remove-button" data-member-id=${memberID}>Remove User</button>`
+        `<button class="remove-button" data-member-id=${memberID} data-member-name=${memberName}>Remove User</button>`
     )
 
     return buttons

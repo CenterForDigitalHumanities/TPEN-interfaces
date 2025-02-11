@@ -5,9 +5,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Manage Interface</title>
+    <script type="module" src="../components/member-invitation/index.js"></script>
+    <script type="module" src="../components/manage-collaborators.js"></script>
     <link rel="stylesheet" href="../css/manage/index.css" />
     <link rel="stylesheet" href="../css/collaborators/index.css" />
-    <script type="module" src="../components/collaborators/index.mjs"></script>
 </head>
 
 <body>
@@ -45,20 +46,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="owner-leader-action is-hidden " id="invite-section-container">
-                    <h4 class="title">Add a new group member</h4>
-                    <p>
-                        If you add an email that is not a current TPEN user, we will invite them to join TPEN and your
-                        project
-                    </p>
-                    <form id="invite-form">
-                        <label for="invitee-email">Invitee's Email</label>
-                        <input type="email" name="invitee-email" id="invitee-email" required>
-                        <button type="submit" id="submit" class="submit-btn">Submit</button>
-                        <p id="error" class="error-message"></p>
-                    </form>
-                </div>
-                <div id="errorHTML" class="error"></div>
+                <invite-member></invite-member>
             </main>
             <button class="default-btn return-btn ">Return to TPEN Homepage <span class="btn-icon"></span></button>
         </div>
