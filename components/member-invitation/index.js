@@ -13,7 +13,72 @@ class InviteMemberElement extends HTMLElement {
 
     render() {
         this.shadowRoot.innerHTML = `
-            <div class="owner-leader-action is-hidden " id="invite-section-container">
+            <style>
+                #invite-section-container {
+                    padding: 20px;
+                    background-color: #ffebb9;
+                    border-radius: 5px;
+                    // box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+                }
+
+                .title {
+                    font-size: 20px;
+                    margin: 10px 0 20px;
+                    font-weight: 500;
+                    color : #b14628;
+                }
+
+                p {
+                    font-size: 0.875rem;
+                    color: #333;
+                }
+
+                #invite-form {
+                    display: flex;
+                    justify-content: flex-start;
+                    align-items: center;
+                    gap: 10px;
+                }
+
+                label {
+                    font-size: 0.9rem;
+                    color: black;
+                }
+
+                input[type="email"] {
+                    padding: 8px;
+                    font-size: 1rem;
+                    border: 1px solid #ccc;
+                    border-radius: 4px;
+                    width: 30%;
+                }
+
+                .submit-btn {
+                    padding: 10px 15px;
+                    font-size: 1rem;
+                    background-color: #69acc9;
+                    color: white;
+                    border: none;
+                    border-radius: 4px;
+                    cursor: pointer;
+                }
+
+                .submit-btn:hover {
+                    background-color: #0056b3;
+                }
+
+                .error-message {
+                    color: red;
+                    font-size: 0.875rem;
+                    display: none; /* Initially hidden */
+                }
+
+                .error {
+                    color: red;
+                    font-size: 0.875rem;
+                }
+            </style>
+            <div class="owner-leader-action is-hidden" id="invite-section-container">
                 <h4 class="title">Add a new group member</h4>
                 <p>
                     If you add an email that is not a current TPEN user, we will invite them to join TPEN and your
