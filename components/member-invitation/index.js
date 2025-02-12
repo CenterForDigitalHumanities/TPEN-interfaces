@@ -105,6 +105,23 @@ class InviteMemberElement extends HTMLElement {
         event.preventDefault()
 
         try {
+            const emailInput = this.shadowRoot.querySelector('#invitee-email');
+            let email = emailInput.value.trim();
+
+            const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+            if (!emailRegex.test(email)) {
+                throw new Error("Please enter a valid email address.");
+            }
+
+            const sqlInjectionRegex = /['";\-\-]/;
+            if (sqlInjectionRegex.test(email)) {
+                throw new Error("Invalid characters detected in the email address.");
+            }
+
+            if (!email) {
+                throw new Error("Email address cannot be empty.");
+            }
+            
             this.shadowRoot.querySelector('#submit').textContent = "Inviting..."
             this.shadowRoot.querySelector('#submit').disabled = true
 
