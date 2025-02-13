@@ -1,4 +1,5 @@
 import TPEN from "../../api/TPEN.mjs"
+import { eventDispatcher } from "../../api/events.mjs"
 
 class RolesHandler extends HTMLElement {
     constructor() {
@@ -61,8 +62,124 @@ class RolesHandler extends HTMLElement {
     }
 
     addEventListeners() {
+        eventDispatcher.on('tpen-project-loaded', () => this.renderProjectCollaborators())
         const groupMembersElement = document.querySelector("project-collaborators").shadowRoot.querySelector(".group-members")
         groupMembersElement.addEventListener('click', this.rolesHandler.bind(this));
+    }
+
+    renderProjectCollaborators() {
+        if (!TPEN.activeProject) {
+            return this.errorHTML.innerHTML = "No project"
+        }
+        
+        const userId = this.getAttribute('tpen-user-id')
+        const collaborators = TPEN.activeProject.collaborators
+        let isOwnerOrLeader = ["OWNER", "LEADER"].some(role => collaborators[userId]?.roles.includes(role))
+
+        const groupMembersElement = document.querySelector("project-collaborators").shadowRoot.querySelector(".group-members") 
+
+        Array.from(groupMembersElement.children).filter(child => {
+            const groupMembersActionsElement = child.querySelector(".actions")
+            for (const collaboratorId in collaborators) {
+                if (groupMembersActionsElement.getAttribute("data-member-id") == collaboratorId) {
+                    const memberData = collaborators[collaboratorId]
+                    const memberHTML = this.createMemberHTML(collaboratorId, memberData)
+                    groupMembersActionsElement.appendChild(memberHTML)
+                }  
+            }
+        })        
+
+        this.manageRoleButtons(isOwnerOrLeader)
+    }
+
+    createMemberHTML(collaboratorId, memberData) {
+        const memberElement = document.createElement("div")
+        memberElement.innerHTML = `
+            <button part="manage-roles-button" class="manage-roles-button" data-member-id=${collaboratorId}>
+                Manage Roles <i class="fas fa-caret-down"></i>
+            </button>
+        `
+        return memberElement
+    }
+
+
+    manageRoleButtons(isOwnerOrLeader) {
+        document.querySelector("project-collaborators").shadowRoot.querySelector('.group-members').addEventListener("click", (e) => {
+            const button = e.target
+            if (button.classList.contains("manage-roles-button")) {
+                this.toggleRoleManagementButtons(button)
+            }
+        })
+
+        this.setPermissionBasedVisibility(isOwnerOrLeader)
+    }
+
+    toggleRoleManagementButtons(button) {
+        const memberID = button.dataset.memberId
+        const actionsDiv = button.closest(".member").querySelector(".actions")
+
+        if (actionsDiv.querySelector(".role-management-buttons")) {
+            actionsDiv.querySelector(".role-management-buttons").remove()
+            return
+        }
+
+        const collaborator = TPEN.activeProject.collaborators[memberID]
+        const buttons = this.generateRoleManagementButtons(collaborator, button.dataset)
+
+        const roleManagementButtonsHTML = `
+            <div part="role-management-buttons" class="role-management-buttons">
+                ${buttons.join("")}
+            </div>
+        `
+
+        const roleManagementDiv = document.createElement("div")
+        roleManagementDiv.innerHTML = roleManagementButtonsHTML
+        actionsDiv.appendChild(roleManagementDiv)
+    }
+
+    generateRoleManagementButtons(collaborator, button) {
+        const currentUserID = this.getAttribute("tpen-user-id")
+        const currentUserIsOwner = TPEN.activeProject.collaborators[currentUserID]?.roles.includes("OWNER")
+
+        const memberID = button.memberId
+        const memberName = collaborator.profile?.displayName
+
+        const buttons = []
+
+        if (!collaborator.roles.includes("OWNER") && currentUserIsOwner) {
+            buttons.push(`<button part="transfer-ownership-button" class="transfer-ownership-button" data-member-id=${memberID}> Transfer Ownership</button>`)
+        }
+
+        if (!collaborator.roles.includes("LEADER")) {
+            buttons.push(`<button part="make-leader-button" class="make-leader-button" data-member-id=${memberID}>Promote to Leader</button>`)
+        }
+
+        if (collaborator.roles.includes("LEADER")) {
+            buttons.push(`<button part="demote-leader-button" class="demote-leader-button" data-member-id=${memberID}>Demote from Leader</button>`)
+        }
+
+        if (!collaborator.roles.includes("VIEWER")) {
+            buttons.push(`<button part="set-to-viewer-button" class="set-to-viewer-button" data-member-id=${memberID}>Revoke Write Access</button>`)
+        }
+
+        buttons.push(
+            `<button part="set-role-button" class="set-role-button" data-member-id=${memberID}>Set Role</button>`,
+            `<button part="remove-button" class="remove-button" data-member-id=${memberID} data-member-name=${memberName}>Remove User</button>`
+        )
+
+        return buttons
+    }
+
+    setPermissionBasedVisibility(isOwnerOrLeader) {
+        const ownerLeaderActions = this.querySelectorAll('.owner-leader-action')
+
+        ownerLeaderActions.forEach(element => {
+            if (isOwnerOrLeader) {
+                element.classList.remove('is-hidden')
+            } else {
+                element.classList.add('is-hidden')
+            }
+        })
     }
 
     async rolesHandler(event) {
