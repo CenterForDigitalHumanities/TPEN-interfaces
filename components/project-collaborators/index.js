@@ -11,11 +11,22 @@ class ProjectCollaborators extends HTMLElement {
     async connectedCallback() {
         this.render()
         this.addEventListeners()
-        TPEN.attachAuthentication(content)
     }
+
+    observedAttributes() {
+        return ["tpen-user-id"]
+    }
+
+    attributeChangedCallback(userID, oldValue, newValue) {
+        console.log(`Attribute ${userID} changed from ${oldValue} to ${newValue}`);
+      }
 
     render() {
         this.shadowRoot.innerHTML = `
+        <div part="group-title" class="group-title">
+            <h1 part="project-title-h1">Project: <span part="project-title" class="project-title"></span></h1>
+        </div>
+        <h4 part="group-members-title" class="title">Existing group members</h4>
         <ol part="group-members" class="group-members"></ol>
         `
     }
@@ -29,13 +40,13 @@ class ProjectCollaborators extends HTMLElement {
             return this.errorHTML.innerHTML = "No project"
         }
 
-        const groupTitle = document.querySelector('.project-title')
         const groupMembersElement = this.shadowRoot.querySelector('.group-members')
-        const userId = content.getAttribute('tpen-user-id')
-
+        const userId = this.getAttribute('tpen-user-id')
         groupMembersElement.innerHTML = ""
-        groupTitle.innerHTML = TPEN.activeProject.getLabel()
-
+        
+        const groupTitle = this.shadowRoot.querySelector('.project-title')
+        groupTitle.innerHTML = TPEN.activeProject.label
+        
         const collaborators = TPEN.activeProject.collaborators
         let isOwnerOrLeader = ["OWNER", "LEADER"].some(role => collaborators[userId]?.roles.includes(role))
 
@@ -78,7 +89,7 @@ class ProjectCollaborators extends HTMLElement {
                 } else if (defaultRoles.includes(role)) {
                     return `<span part="default-roles" class="role default">${role.charAt(0).toUpperCase() + role.slice(1).toLowerCase()}</span>`
                 } else {
-                    return `<span part="custom-role" class="role custom">${role.toLowerCase().replaceAll("_", " ")}</span>`
+                    return `<span part="custom-role" class="role custom">${(role.charAt(0).toUpperCase() + role.slice(1).toLowerCase()).replaceAll("_", " ")}</span>`
                 }
             })
             .join(" ")
@@ -119,7 +130,7 @@ class ProjectCollaborators extends HTMLElement {
     }
 
     generateRoleManagementButtons(collaborator, button) {
-        const currentUserID = content.getAttribute("tpen-user-id")
+        const currentUserID = this.getAttribute("tpen-user-id")
         const currentUserIsOwner = TPEN.activeProject.collaborators[currentUserID]?.roles.includes("OWNER")
 
         const memberID = button.memberId

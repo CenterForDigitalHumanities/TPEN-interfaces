@@ -49,41 +49,10 @@ body {
     margin-top: 10px;
 }
 
-.body-bg {
+#content{
     width: 100%;
     border-radius: 8px;
     padding: 20px;
-}
-
-.group-title {
-    background-color: white;
-    padding: 10px;
-    border-radius: 5px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-
-.group-title h1 {
-    font-size: 1.75rem;
-    color: #333;
-    margin: 0;
-}
-
-.manage-interface .body-bg header {
-    border: none;
-    padding: 10px;
-}
-
-.project-title {
-    font-weight: bold;
-    color: #007BFF;
-}
-
-.collaborators-container #content .title {
-    font-size: 20px;
-    margin: 20px 0;
-    font-weight: 500;
-    color : #b14628;
-    padding: 0 20px;
 }
 
 .collaborators-container .member {
@@ -115,6 +84,32 @@ body {
 
 .return-btn {
     position: relative;
+}
+
+project-collaborators::part(group-title) {
+    background-color: white;
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+project-collaborators::part(project-title-h1) {
+    font-size: 1.75rem;
+    color: #333;
+    margin: 0;
+}
+
+project-collaborators::part(project-title) {
+    font-weight: bold;
+    color: #007BFF;
+}
+
+project-collaborators::part(group-members-title) {
+    font-size: 20px;
+    margin: 20px 0;
+    font-weight: 500;
+    color : #b14628;
+    padding: 0 20px;
 }
 
 project-collaborators::part(group-members) {

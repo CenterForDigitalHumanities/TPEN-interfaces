@@ -10,7 +10,6 @@ class RolesHandler extends HTMLElement {
     connectedCallback() {
         this.render()
         this.addEventListeners()
-        TPEN.attachAuthentication(content)
     }
 
     render() {
