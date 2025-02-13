@@ -16,15 +16,7 @@ class ProjectCollaborators extends HTMLElement {
 
     render() {
         this.shadowRoot.innerHTML = `
-        <style>
-            .group-members {
-            list-style-type: none;
-            padding: 0;
-            width: 100%;
-            margin: 0 auto;
-        }
-        </style>
-        <ol class="group-members"></ol>
+        <ol part="group-members" class="group-members"></ol>
         `
     }
 
@@ -59,66 +51,13 @@ class ProjectCollaborators extends HTMLElement {
     createMemberHTML(collaboratorId, memberData) {
         const memberElement = document.createElement("div")
         memberElement.innerHTML = `
-            <style>
-                .member {
-                    background-color: #f9f9f9;
-                    border: 1px solid #ddd;
-                    margin-bottom: 10px;
-                    padding: 15px;
-                    border-radius: 5px;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                }
-
-                .member-info {
-                    font-size: 1rem;
-                    color: #333;
-                }
-
-                .role {
-                    font-weight: bold;
-                    color: #555;
-                }
-
-                .role.leader {
-                    color: #28a745;
-                }
-
-                .role.owner {
-                    color: #007BFF;
-                }
-
-                .role.default {
-                    color: #6c757d;
-                }
-
-                .actions .manage-roles-button {
-                    background-color: #007BFF;
-                    color: white;
-                    border: none;
-                    padding: 8px 15px;
-                    border-radius: 4px;
-                    cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                }
-
-                .actions .manage-roles-button i {
-                    margin-left: 8px;
-                }
-
-                .actions .manage-roles-button:hover {
-                    background-color: #0056b3;
-                }    
-            </style>
-            <li class="member" data-member-id=${collaboratorId}>
-                <div class="member-info">
-                    <span class="role">${this.renderRoles(memberData.roles)}</span>
-                    ${memberData.profile?.displayName ?? collaboratorId}
+            <li part="member" class="member" data-member-id=${collaboratorId}>
+                <div part="member-info" class="member-info">
+                    <p style="font-weight: bold;">${memberData.profile?.displayName ?? collaboratorId}</p>
+                    <span part="role" class="role">${this.renderRoles(memberData.roles)}</span>
                 </div>
-                <div class="actions">
-                    <button class="manage-roles-button" data-member-id=${collaboratorId}>
+                <div part="actions" class="actions">
+                    <button part="manage-roles-button" class="manage-roles-button" data-member-id=${collaboratorId}>
                         Manage Roles <i class="fas fa-caret-down"></i>
                     </button>
                 </div>
@@ -133,16 +72,16 @@ class ProjectCollaborators extends HTMLElement {
         return roles
             .map(role => {
                 if (role === "OWNER") {
-                    return `<span class="role owner">Owner</span>`
+                    return `<span part="owner" class="role owner">Owner</span>`
                 } else if (role === "LEADER") {
-                    return `<span class="role leader">Leader</span>`
+                    return `<span part="leader" class="role leader">Leader</span>`
                 } else if (defaultRoles.includes(role)) {
-                    return `<span class="role default">${role.toLowerCase()}</span>`
+                    return `<span part="default-roles" class="role default">${role.charAt(0).toUpperCase() + role.slice(1).toLowerCase()}</span>`
                 } else {
-                    return `<span class="role custom">${role.toLowerCase().replaceAll("_", " ")}</span>`
+                    return `<span part="custom-role" class="role custom">${role.toLowerCase().replaceAll("_", " ")}</span>`
                 }
             })
-            .join(", ")
+            .join(" ")
     }
 
     manageRoleButtons(isOwnerOrLeader) {
@@ -169,7 +108,7 @@ class ProjectCollaborators extends HTMLElement {
         const buttons = this.generateRoleManagementButtons(collaborator, button.dataset)
 
         const roleManagementButtonsHTML = `
-            <div class="role-management-buttons">
+            <div part="role-management-buttons" class="role-management-buttons">
                 ${buttons.join("")}
             </div>
         `
@@ -189,24 +128,24 @@ class ProjectCollaborators extends HTMLElement {
         const buttons = []
 
         if (!collaborator.roles.includes("OWNER") && currentUserIsOwner) {
-            buttons.push(`<button class="transfer-ownership-button" data-member-id=${memberID}> Transfer Ownership</button>`)
+            buttons.push(`<button part="transfer-ownership-button" class="transfer-ownership-button" data-member-id=${memberID}> Transfer Ownership</button>`)
         }
 
         if (!collaborator.roles.includes("LEADER")) {
-            buttons.push(`<button class="make-leader-button" data-member-id=${memberID}>Promote to Leader</button>`)
+            buttons.push(`<button part="make-leader-button" class="make-leader-button" data-member-id=${memberID}>Promote to Leader</button>`)
         }
 
         if (collaborator.roles.includes("LEADER")) {
-            buttons.push(`<button class="demote-leader-button" data-member-id=${memberID}>Demote from Leader</button>`)
+            buttons.push(`<button part="demote-leader-button" class="demote-leader-button" data-member-id=${memberID}>Demote from Leader</button>`)
         }
 
         if (!collaborator.roles.includes("VIEWER")) {
-            buttons.push(`<button class="set-to-viewer-button" data-member-id=${memberID}>Revoke Write Access</button>`)
+            buttons.push(`<button part="set-to-viewer-button" class="set-to-viewer-button" data-member-id=${memberID}>Revoke Write Access</button>`)
         }
 
         buttons.push(
-            `<button class="set-role-button" data-member-id=${memberID}>Set Role</button>`,
-            `<button class="remove-button" data-member-id=${memberID} data-member-name=${memberName}>Remove User</button>`
+            `<button part="set-role-button" class="set-role-button" data-member-id=${memberID}>Set Role</button>`,
+            `<button part="remove-button" class="remove-button" data-member-id=${memberID} data-member-name=${memberName}>Remove User</button>`
         )
 
         return buttons

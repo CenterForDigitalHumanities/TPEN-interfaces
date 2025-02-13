@@ -14,84 +14,36 @@ class InviteMemberElement extends HTMLElement {
     render() {
         this.shadowRoot.innerHTML = `
             <style>
-                #invite-section-container {
-                    padding: 20px;
-                    background-color: #ffebb9;
-                    border-radius: 5px;
-                    // box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-                }
-
-                .title {
-                    font-size: 20px;
-                    margin: 10px 0 20px;
-                    font-weight: 500;
-                    color : #b14628;
-                }
-
-                p {
-                    font-size: 0.875rem;
-                    color: #333;
-                }
-
-                #invite-form {
-                    display: flex;
-                    justify-content: flex-start;
-                    align-items: center;
-                    gap: 10px;
-                }
-
-                label {
-                    font-size: 0.9rem;
-                    color: black;
-                }
-
-                input[type="email"] {
-                    padding: 8px;
-                    font-size: 1rem;
-                    border: 1px solid #ccc;
-                    border-radius: 4px;
-                    width: 30%;
-                }
-
-                .submit-btn {
-                    padding: 10px 15px;
-                    font-size: 1rem;
-                    background-color: #69acc9;
-                    color: white;
-                    border: none;
-                    border-radius: 4px;
-                    cursor: pointer;
-                }
-
-                .submit-btn:hover {
-                    background-color: #0056b3;
-                }
-
-                .error-message {
-                    color: red;
-                    font-size: 0.875rem;
-                    display: none; /* Initially hidden */
-                }
-
-                .error {
-                    color: red;
-                    font-size: 0.875rem;
-                }
+            .success-message {
+                color: green;
+                background-color: #e6ffe6;
+                padding: 10px;
+                border: 1px solid #c3e6c3;
+                border-radius: 5px;
+                margin: 0 auto;
+                margin-bottom: 10px;
+                text-align: center;
+                width: 100%;
+            }
+            .error-padding {
+                padding: 10px;
+                border: 1px solid #f87563;
+            }
             </style>
-            <div class="owner-leader-action is-hidden" id="invite-section-container">
-                <h4 class="title">Add a new group member</h4>
-                <p>
+            <div part="invite-section-container" class="owner-leader-action is-hidden" id="invite-section-container">
+                <h4 part="title" class="title">Add a new group member</h4>
+                <p part="description">
                     If you add an email that is not a current TPEN user, we will invite them to join TPEN and your
                     project
                 </p>
-                <form id="invite-form">
-                    <label for="invitee-email">Invitee's Email</label>
-                    <input type="email" name="invitee-email" id="invitee-email" required>
-                    <button type="submit" id="submit" class="submit-btn">Submit</button>
-                    <p id="error" class="error-message"></p>
+                <form part="invite-form" id="invite-form">
+                    <label part="email-label" for="invitee-email">Invitee's Email</label>
+                    <input part="email-input" type="email" name="invitee-email" id="invitee-email" required>
+                    <button part="submit-button" type="submit" id="submit" class="submit-btn">Submit</button>
+                    <p part="error-message" id="error" class="error-message"></p>
                 </form>
             </div>
-            <div id="errorHTML" class="error"></div>
+            <div part="error" id="errorHTML" class="error"></div>
 
         `
     }
@@ -103,7 +55,6 @@ class InviteMemberElement extends HTMLElement {
 
     async inviteUser(event) {
         event.preventDefault()
-
         try {
             const emailInput = this.shadowRoot.querySelector('#invitee-email');
             let email = emailInput.value.trim();
@@ -121,7 +72,7 @@ class InviteMemberElement extends HTMLElement {
             if (!email) {
                 throw new Error("Email address cannot be empty.");
             }
-            
+
             this.shadowRoot.querySelector('#submit').textContent = "Inviting..."
             this.shadowRoot.querySelector('#submit').disabled = true
 
@@ -144,6 +95,7 @@ class InviteMemberElement extends HTMLElement {
             setTimeout(() => {
                 this.shadowRoot.querySelector('#errorHTML').innerHTML = ''
             }, 3000)
+            this.shadowRoot.querySelector('#errorHTML').classList.add("error-padding")
             this.shadowRoot.querySelector('#errorHTML').innerHTML = error.message
             this.shadowRoot.querySelector('#submit').textContent = "Submit"
             this.shadowRoot.querySelector('#submit').disabled = false

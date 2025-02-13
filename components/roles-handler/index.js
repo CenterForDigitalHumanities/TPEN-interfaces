@@ -16,52 +16,44 @@ class RolesHandler extends HTMLElement {
     render() {
         this.shadowRoot.innerHTML = `
         <style>
-
-            .modal-content {
-                background-color: white;
-                padding: 20px;
-                border-radius: 5px;
-                width: 400px;
-            }
-
-            .modal-actions {
-                display: flex;
-                justify-content: space-between;
-                margin-top: 20px;
-            }
-
-            .modal-actions button {
-                padding: 10px 20px;
-                border: none;
-                border-radius: 4px;
-                cursor: pointer;
-            }
-
-            .modal-actions button#modalConfirmButton {
-                background-color: #28a745;
-                color: white;
-            }
-
-            .modal-actions button#modalCancelButton {
-                background-color: #dc3545;
-                color: white;
-            }
-
-            .modal.hidden {
-                display: none;
-            }
+        #rolesListContainer {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            padding: 10px;
+            width: 80%;
+            margin: 0 auto;
+        }
+        .role-modal-container .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .role-modal-container .modal.hidden {
+            display: none;
+        }
+        .modal.hidden {
+            display: none;
+        }
         </style>
-        <div class="role-modal-container">
+        <div part="role-modal-container" class="role-modal-container">
             <div id="roleModal" class="modal hidden">
-                <div class="modal-content">
+                <div part="modal-content" class="modal-content">
                     <h2 id="modalTitle"></h2>
                     <p id="modalDescription"></p>
                     <!-- Roles List -->
                     <div id="rolesListContainer" class="defaultRoles"></div>
                     <!-- Modal Buttons -->
-                    <div class="modal-actions">
-                        <button id="modalConfirmButton">Confirm</button>
-                        <button id="modalCancelButton">Cancel</button>
+                    <div part="modal-actions" class="modal-actions">
+                        <button part="modal-buttons-confirm" id="modalConfirmButton">Confirm</button>
+                        <button part="modal-buttons-cancel" id="modalCancelButton">Cancel</button>
                     </div>
                 </div>
             </div>
@@ -190,7 +182,25 @@ class RolesHandler extends HTMLElement {
         container.innerHTML = ""
         Object.keys(rolesObject).forEach((role) => {
             if (role.toLowerCase() !== "owner") {
-                container.innerHTML += `<div class="role-checkbox"><label><input type="checkbox" value="${role}"/>${role}</label></div>`
+                container.innerHTML += `
+                <style>
+                .role-checkbox {
+                    display: flex;
+                    align-items: center;
+                }
+                .role-checkbox label {
+                    display: flex;
+                    align-items: center;
+                }
+                .role-checkbox input[type="checkbox"] {
+                    margin-right: 5px;
+                }
+                </style>
+                <div class="role-checkbox">
+                    <label>
+                        <input type="checkbox" value="${role}"/>${role}
+                    </label>
+                </div>`
             }
         })
     }
