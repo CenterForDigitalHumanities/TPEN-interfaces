@@ -13,14 +13,6 @@ class ProjectCollaborators extends HTMLElement {
         this.addEventListeners()
     }
 
-    observedAttributes() {
-        return ["tpen-user-id"]
-    }
-
-    attributeChangedCallback(userID, oldValue, newValue) {
-        console.log(`Attribute ${userID} changed from ${oldValue} to ${newValue}`);
-      }
-
     render() {
         this.shadowRoot.innerHTML = `
         <div part="group-title" class="group-title">
