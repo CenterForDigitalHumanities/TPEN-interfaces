@@ -4,7 +4,7 @@ import { eventDispatcher } from "../../api/events.mjs"
 
 export default class ProjectsList extends HTMLElement {
     static get observedAttributes() {
-        return ['tpen-user-id']
+        return ['tpen-user-id', 'show-metadata']
     }
 
     #projects = []
@@ -36,6 +36,8 @@ export default class ProjectsList extends HTMLElement {
                 const loadedUser = new User(newValue)
                 loadedUser.authentication = TPEN.getAuthorization()
                 loadedUser.getProfile()
+            } else if (name === 'show-metadata' || name === 'manage') {
+                this.render()
             }
         }
     }
@@ -43,13 +45,48 @@ export default class ProjectsList extends HTMLElement {
     render() {
         if (!TPEN.currentUser._id) return
 
-        this.innerHTML = `<ul>${this.#projects.reduce((a, project) =>
-            a + `<li tpen-project-id="${project._id}">${project.title ?? project.label}
-            <span class="badge">${project.roles.join(", ").toLowerCase()}</span>
-              </li>`,
+        const isManage = this.hasAttribute('manage') && this.getAttribute('manage') !== 'false'
+        this.innerHTML = `
+
+        <style>
+        li{
+        margin:5px 0px;
+        display:flex; 
+        gap:10px
+        
+        }
+            .delete-btn {
+                background-color: red;
+                color: white;
+                border: none;
+                padding: 5px 10px;
+                cursor: pointer;
+                border-radius: 4px;
+                margin-left: 10px;
+            }
+            .delete-btn:hover {
+                background-color: darkred;
+            }
+        </style>
+        
+        <ul>${this.#projects.reduce((a, project) =>
+            a + `<li tpen-project-id="${project._id}">
+            <div>
+                    ${isManage ? `<a href="/manage/?projectID=${project._id}">${project.title ?? project.label}</a>` : project.title ?? project.label}
+                    <span class="badge">${project.roles.join(", ").toLowerCase()}</span>
+            </div>
+                    ${isManage ? `<button class="delete-btn" data-project-id=${project._id}>Delete</button>` : ''}
+               </li>`,
             ``)}</ul>`
 
+            this.querySelectorAll('.delete-btn').forEach(button => {
+                button.addEventListener("click", (event) => {
+                    const projectId = event.target.getAttribute("data-project-id");
+                    alert(`Delete not implemented for project ID: ${projectId}`);
+                });
+            });
     }
+
 
     /**
      * @deprecated
