@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projects Interface</title>
+    <script type="module" src="../components/profile-info.js"></script>
+    <script type="module" src="../components/project-list.js"></script>
+    <script type="module" src="../components/new-action/index.mjs"></script>
+    <script type="module" src="../components/continue-working/index.mjs"></script>
+    <script type="module" src="../components/projects-list/index.mjs"></script>
+    <script type="module" src="../components/user-profile/index.mjs"></script>
+
+    <style>
+        .container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+            padding: 20px;
+            margin: 25px auto;
+            width: 90%;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        tpen-user-profile {
+            width: 300px;
+            margin-bottom: 10px;
+            padding: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 10px;
+        }
+
+        .card {
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .longer-card {
+            min-width: 500px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">TPEN Logo</div>
+            <tpen-user-profile></tpen-user-profile>
+        </div>
+        <div class="card-container">
+            <tpen-projects-list manage class="card"></tpen-projects-list>
+            <tpen-new-action class="card"></tpen-new-action>
+            <tpen-continue-working class="card longer-card"></tpen-continue-working>
+        </div>
+    </div>
+</body>
+
+</html>
