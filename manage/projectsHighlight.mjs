@@ -111,7 +111,7 @@ async function deleteProject(projectID) {
 async function loadMetadata(project) {
     let projectMetada = document.getElementById("project-metadata")
     const metadata = project.metadata 
-
+    projectMetada.innerHTML = ""
     metadata.forEach((data) => {
 
         const label = decodeURIComponent(getLabel(data))
