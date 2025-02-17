@@ -26,10 +26,17 @@ function renderProjects(projects) {
         const projectItem = document.createElement('li')
         projectItem.classList.add('project')
         projectItem.innerHTML = `
-            <div class="title">${project.name ?? project.title ?? project.label}</div>
+            <div class="title" data-id="${project._id}">${project.name ?? project.title ?? project.label}</div>
             <div class="delete" data-id="${project._id}">&#128465;</div>
         `
         projectsList.appendChild(projectItem)
+    })
+
+    projectsList.addEventListener('click', (event) => {
+        if (event.target.classList.contains('title')) {
+            const projectID = event.target.getAttribute('data-id')
+            reloadNewProject(projectID)
+        }
     })
 
     // Add delete functionality to each delete button
@@ -42,33 +49,41 @@ function renderProjects(projects) {
     })
 }
 
+async function reloadNewProject(projectID) {
+    window.history.pushState({}, "", `?projectID=${projectID}`);
 
-async function renderActiveProject(fallbackProjectId) {
+    const project = new Project(projectID);
+    await project.fetch();
+    TPEN.activeProject = project;
+    const projects = await fetchProjects();
+    renderProjects(projects);
+
+    const activeProjectIndex = projects.findIndex(p => p._id === projectID);
+    if (activeProjectIndex !== -1) {
+        const activeProject = projects.splice(activeProjectIndex, 1)[0];
+        projects.unshift(activeProject);
+    }
+
+    await renderActiveProject(projectID);
+}
+
+async function renderActiveProject(projectId) {
     const activeProjectContainer = document.getElementById('active-project')
     activeProjectContainer.innerHTML = ''
 
-    let projectId = TPEN.activeProject?._id // ?? fallbackProjectId
-    if (!projectId) {
-        // cheat to help other tabs for now
-        location.href = `?projectID=${fallbackProjectId ?? 'DEV_ERROR'}`
-        return
-    }
+    let project = new Project(projectId)
+    await project.fetch()
 
-    let project = TPEN.activeProject
-    if (!project) {
-        project = new Project(projectId)
-        await project.fetch()
-    }
-    activeProjectContainer.innerHTML = `   <p>
-    Active project is
-    <span class="red"> "${project?.label ?? project?.title ?? '[ untitled ]'}"</span>
-
-  </p>
-  <p>
-    Active project T-PEN I.D.
-    <span class="red">${project?._id ?? 'ERR!'}</span>
-  </p>`
-
+    activeProjectContainer.innerHTML = `   
+        <p>
+            Active project is
+            <span class="red"> "${project?.label ?? project?.title ?? '[ untitled ]'}"</span>
+        </p>
+        <p>
+            Active project T-PEN I.D.
+            <span class="red">${project?._id ?? 'ERR!'}</span>
+        </p>
+    `
     loadMetadata(project)
 }
 
@@ -275,10 +290,17 @@ function getValue(data) {
 
 // This function is called after the "projects" component is loaded
 async function loadProjects() {
-    const projects = await fetchProjects()
-    renderActiveProject(projects[0]?._id)
-    renderProjects(projects)
+    const urlParams = new URLSearchParams(window.location.search);
+    const projectIDFromURL = urlParams.get("projectID");
 
+    const projects = await fetchProjects();
+    renderProjects(projects);
+    if (projectIDFromURL) {
+        await renderActiveProject(projectIDFromURL);
+    }
+    else {
+        await renderActiveProject(projects[0]?._id);
+    }
 }
 
 
