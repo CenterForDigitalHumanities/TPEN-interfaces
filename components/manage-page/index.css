@@ -1,0 +1,144 @@
+*{
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  margin: 20px;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  background-color: #69ACC9;
+}
+
+.container {
+  width: 80%;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: auto;
+  gap: 10px;
+  padding: 20px;
+  background-color: #ffebb9;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  border-radius: 5px;
+}
+
+.header {
+  grid-column: span 3;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: auto;
+  text-align: center;
+  font-size: 24px;
+  font-weight: bold;
+  padding: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+
+.header .logo{
+  height: 70px;
+}
+
+.header h1{
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #b14628;
+  background-color: white;
+  padding: 20px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  border-radius: 5px;
+}
+
+.header .resume-btn{
+  background-color: #b14628;
+  color: white;
+  font-weight: bold;
+  border: none;
+  padding: 10px 20px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 4px 2px;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.box {
+  padding: 15px;
+  text-align: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  border-radius: 5px;
+  background-color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  height: 100%;
+}
+
+.box .project-card-headings{
+  font-weight: bold;
+  color: #b14628;
+  font-size: 1.2rem;
+}
+
+.box .project-card p{
+  color: black;
+  font-size: 0.875rem;
+}
+
+.box .project-card p span{
+  color: #b14628;
+  font-weight: bold;
+}
+
+.box .project-card .manuscripts{
+  display: flex;
+  justify-content: space-evenly;
+  align-items: center;
+  margin: 0 auto;
+  
+}
+
+.box .project-card img{
+  width: 50%;
+  height: 150px;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  object-fit: cover;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 auto;
+  padding: 10px;
+}
+
+.box .manage-btn{
+  background-color: #b14628;
+  color: white;
+  font-weight: bold;
+  border: none;
+  padding: 5px 10px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 4px 2px;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+/* Temporary CSS will be removed in the future */
+.box-empty{
+  height: 250px;
+}
+
+.box-footer{
+  height: 100px;
+}

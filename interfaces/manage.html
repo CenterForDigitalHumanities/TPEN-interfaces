@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Dashboard</title>
+    <link rel="stylesheet" href="../components/manage-page/index.css">
+    <script type="module" src="../api/TPEN.mjs"></script>
+    <script type="module" src="../components/manage-page/index.js"></script>
+</head>
+<body>
+    <div id="container" class="container">
+        <div class="header">
+            <img class="logo" src="https://t-pen.org/TPEN/images/tpen_badgeEmergeClear.png" alt="TPEN Logo">
+            <h1 class="project-title"></h1> 
+            <button class="resume-btn">Resume</button>
+        </div>
+        <div class="box">
+            <h4 class="project-card-headings">Project Card</h4>
+            <div class="project-card"></div>
+        </div>
+        <div class="box">Metadata
+            <button class="manage-btn">EDIT</button>
+        </div>
+        <div class="box">Collaborators List
+            <button class="manage-btn">MANAGE</button>
+        </div>
+        <div class="box box-empty">Projects List</div>
+        <div class="box box-empty">Layers & Pages
+            <button class="manage-btn">SEE DETAILS / MODIFY</button>
+        </div>
+        <div class="box box-empty">Permissions Summary</div>
+        <div class="box box-footer">Project Options</div>
+        <div class="box box-footer">Export & Links</div>
+        <div class="box box-footer">Annotations, Tags, Hotkeys, XML Tags</div>
+        <manage-page></manage-page>
+    </div>
+</body>
+</html>
