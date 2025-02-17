@@ -22,6 +22,7 @@ function renderProjects(projects) {
         console.log("There are no projects for this user")
         return
     }
+
     projects.forEach(project => {
         const projectItem = document.createElement('li')
         projectItem.classList.add('project')
@@ -39,32 +40,21 @@ function renderProjects(projects) {
         }
     })
 
-    // Add delete functionality to each delete button
-    const deleteButtons = projectsList.querySelectorAll('.delete')
-    deleteButtons.forEach(button => {
-        button.addEventListener('click', (event) => {
+    projectsList.addEventListener('click', (event) => {
+        if (event.target.classList.contains('delete')) {
             const projectID = event.target.getAttribute('data-id')
             deleteProject(projectID)
-        })
+        }
     })
 }
 
 async function reloadNewProject(projectID) {
-    window.history.pushState({}, "", `?projectID=${projectID}`);
+    window.history.pushState({}, "", `?projectID=${projectID}`)
 
-    const project = new Project(projectID);
-    await project.fetch();
-    TPEN.activeProject = project;
-    const projects = await fetchProjects();
-    renderProjects(projects);
-
-    const activeProjectIndex = projects.findIndex(p => p._id === projectID);
-    if (activeProjectIndex !== -1) {
-        const activeProject = projects.splice(activeProjectIndex, 1)[0];
-        projects.unshift(activeProject);
-    }
-
-    await renderActiveProject(projectID);
+    const project = new Project(projectID)
+    await project.fetch()
+    TPEN.activeProject = project
+    await renderActiveProject(projectID)
 }
 
 async function renderActiveProject(projectId) {
@@ -111,7 +101,7 @@ async function deleteProject(projectID) {
 async function loadMetadata(project) {
     let projectMetada = document.getElementById("project-metadata")
     const metadata = project.metadata 
-    projectMetada.innerHTML = ""
+
     metadata.forEach((data) => {
 
         const label = decodeURIComponent(getLabel(data))
@@ -124,7 +114,6 @@ async function loadMetadata(project) {
         </li>`
     })
 }
-
 
 document.getElementById("update-metadata-btn").addEventListener("click", () => {
     openModal()
@@ -142,11 +131,9 @@ document.getElementById("cancel-btn").addEventListener("click", () => {
     closeModal()
 })
 
-
 function closeModal() {
     document.getElementById("metadata-modal").classList.add("hidden")
 }
-
 
 function openModal() {
     const modal = document.getElementById("metadata-modal")
@@ -176,9 +163,6 @@ function openModal() {
     modal.classList.remove("hidden")
 }
 
-
-
-
 function addMetadataField(lang = "none", label = "", value = "", index = null) {
     const fieldsContainer = document.getElementById("metadata-fields")
     const fieldHTML = `
@@ -204,9 +188,6 @@ function addMetadataField(lang = "none", label = "", value = "", index = null) {
             e.target.parentElement.remove()
         })
 }
-
-
-
 
 async function updateMetadata() {
     const fields = document.querySelectorAll(".metadata-field")
@@ -237,8 +218,6 @@ async function updateMetadata() {
     }
 }
 
-
-
 function refreshMetadataDisplay(metadata) {
     const projectMetadata = document.getElementById("project-metadata")
     projectMetadata.innerHTML = ""
@@ -255,8 +234,6 @@ function refreshMetadataDisplay(metadata) {
       `
     })
 }
-
-
 
 function getLabel(data) {
     if (typeof data.label === "string") {
@@ -286,22 +263,18 @@ function getValue(data) {
     return "Unknown Value"
 }
 
-
-
-// This function is called after the "projects" component is loaded
 async function loadProjects() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const projectIDFromURL = urlParams.get("projectID");
-
-    const projects = await fetchProjects();
-    renderProjects(projects);
+    const urlParams = new URLSearchParams(window.location.search)
+    const projectIDFromURL = urlParams.get("projectID")
+    const projects = await fetchProjects()
+    renderProjects(projects)
+    
     if (projectIDFromURL) {
-        await renderActiveProject(projectIDFromURL);
+        await renderActiveProject(projectIDFromURL)
     }
     else {
-        await renderActiveProject(projects[0]?._id);
+        await renderActiveProject(projects[0]?._id)
     }
 }
-
 
 export { loadProjects }
