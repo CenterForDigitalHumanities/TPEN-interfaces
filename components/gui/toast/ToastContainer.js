@@ -20,7 +20,7 @@ class ToastContainer extends HTMLElement {
         toast.textContent = message
         toast.classList.add(status)
         
-        this.#containerSection.children.length && motionOK ? this.flipToast(toast) : this.#containerSection.appendChild(toast)
+        this.flipToast(toast)
         toast.show()
     }
 
@@ -56,47 +56,30 @@ class ToastContainer extends HTMLElement {
                 pointer-events: none;
             }
             tpen-toast {
-                    --_duration: 3s;
-                    --_travel-distance: 0;
                     display: block;
                     position: relative;
                     bottom: 20px;
-                    left: 50%;
-                    transform: translateX(-50%);
+                    right: 0px;
                     background-color: #333;
                     color: #fff;
                     padding: 10px 20px;
                     border-radius: 5px;
                     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-                    opacity: 0;
-                    height: 0;
+                    opacity: 0.0;
+                    height: 0px;
                     transition: all 0.3s ease-in-out;
-
-                    will-change: transform;
-                    animation: 
-                        fade-in .3s ease,
-                        slide-in .3s ease,
-                        fade-out .3s ease var(--_duration);
                 }
-                    @media (prefers-reduced-motion: no-preference) {
+                    @media (prefers-reduced-motion) {
                         tpen-toast {
-                            --_travel-distance: 5vh;
+                            opacity: 1.0;
+                            height: 18px;
+                            right: 20px;
                         }
                     }
                 tpen-toast.show {
-                    opacity: 1;
+                    opacity: 1.0;
                     height: 18px;
-                }
-                @keyframes fade-in {
-                    from { opacity: 0 }
-                }
-
-                @keyframes fade-out {
-                    to { opacity: 0 }
-                }
-
-                @keyframes slide-in {
-                    from { transform: translateY(var(--_travel-distance, 10px)) }
+                    right: 20px;
                 }
         `
 
