@@ -25,10 +25,13 @@ body {
   border-radius: 5px;
 }
 
-.header {
+manage-project-container {
   grid-column: span 3;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: auto;
+}
+
+manage-project-container::part(header) {
   text-align: center;
   font-size: 24px;
   font-weight: bold;
@@ -39,11 +42,11 @@ body {
   gap: 20px;
 }
 
-.header .logo{
+manage-project-container::part(logo) {
   height: 70px;
 }
 
-.header h1{
+manage-project-container::part(project-title){
   font-size: 1.5rem;
   font-weight: bold;
   color: #b14628;
@@ -53,7 +56,7 @@ body {
   border-radius: 5px;
 }
 
-.header .resume-btn{
+manage-project-container::part(resume-btn) {
   background-color: #b14628;
   color: white;
   font-weight: bold;
@@ -76,29 +79,40 @@ body {
   background-color: white;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
   gap: 20px;
   height: 100%;
 }
 
-.box .project-card-headings{
+.box tpen-project-details::part(project-card) {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+}
+
+.box .project-card-headings {
   font-weight: bold;
   color: #b14628;
   font-size: 1.2rem;
 }
 
-.box .project-card p{
-  color: black;
-  font-size: 0.875rem;
-}
-
-.box .project-card p span{
+.box tpen-project-details::part(project-desc) {
   color: #b14628;
+  font-size: 0.875rem;
   font-weight: bold;
+  margin:0
 }
 
-.box .project-card .manuscripts{
+.box tpen-project-details::part(project-desc-span) {
+  color: #333;
+  font-size: 0.875rem;
+  font-weight: normal;
+}
+
+.box tpen-project-details::part(manuscripts) {
   display: flex;
   justify-content: space-evenly;
   align-items: center;
@@ -106,8 +120,8 @@ body {
   
 }
 
-.box .project-card img{
-  width: 50%;
+.box tpen-project-details::part(manuscript-img) {
+  width: 45%;
   height: 150px;
   border-radius: 5px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
@@ -119,7 +133,72 @@ body {
   padding: 10px;
 }
 
-.box .manage-btn{
+/* Temporary CSS will be removed in the future */
+.box-empty{
+  height: 250px;
+}
+
+.box-footer{
+  height: 100px;
+}
+
+project-collaborators::part(group-title) {
+  display: none;
+}
+
+project-collaborators::part(group-members-title) {
+  display: none;
+}
+
+project-collaborators::part(member) {
+  padding: 0 15px;
+  width: 100%;
+  font-size: 0.875rem;
+}
+
+project-collaborators::part(member-info) {
+  font-size: 0.875rem;
+  color: #333;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 20px;
+}
+
+tpen-project-metadata {
+  width: 100%;
+}
+
+tpen-project-metadata::part(metadata) {
+  width: 90%;
+  font-size: 0.875rem;
+}
+
+tpen-project-metadata::part(metadata-item){
+  list-style: none;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+tpen-project-metadata::part(metadata-title){
+  font-weight: bold;
+  color: #b14628;
+  font-size: 0.875rem;
+  width: 50%;
+  text-align: right;
+  padding: 0 10px 0 0;
+}
+
+tpen-project-metadata::part(metadata-value){
+  color: #333;
+  font-size: 0.875rem;
+  width: 50%;
+  text-align: left;
+}
+
+.box .manage-btn {
   background-color: #b14628;
   color: white;
   font-weight: bold;
@@ -129,16 +208,6 @@ body {
   text-decoration: none;
   display: inline-block;
   font-size: 16px;
-  margin: 4px 2px;
   cursor: pointer;
   border-radius: 5px;
-}
-
-/* Temporary CSS will be removed in the future */
-.box-empty{
-  height: 250px;
-}
-
-.box-footer{
-  height: 100px;
 }
