@@ -4,13 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Project Dashboard</title>
-    <link rel="stylesheet" href="../interfaces/manage-project/index.css">
-    <script type="module" src="../interfaces/manage-project/index.js"></script>
-    <script type="module" src="../components/project-collaborators/index.js"></script>
-    <script type="module" src="../components/project-details/index.js"></script>
-    <script type="module" src="../components/project-metadata/index.js"></script>
+    <link rel="stylesheet" href="./index.css">
+    <script type="module" src="./index.js"></script>
+    <script type="module" src="../../components/project-collaborators/index.js"></script>
+    <script type="module" src="../../components/project-details/index.js"></script>
+    <script type="module" src="../../components/project-metadata/index.js"></script>
 </head>
 <body>
+    <div part="header" class="header">
+        <img part="logo" class="logo" src="https://t-pen.org/TPEN/images/tpen_badgeEmergeClear.png" alt="TPEN Logo">
+        <h1 part="project-title" class="project-title">Project Title TODO</h1> 
+        <button part="resume-btn" class="resume-btn">Resume</button>
+    </div>
     <div id="container" class="container">
         <div class="box">
             <h4 class="project-card-headings">Project Card</h4>
