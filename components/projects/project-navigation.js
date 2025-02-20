@@ -90,13 +90,15 @@ export default class ProjectNavigation extends HTMLElement {
     <nav>
         <section class="labels">
             <div class="project-title">Project Title</div>
-            <div class="canvas-label"><Select>
-                    <option value="">Canvas label</option>
-                </Select></div>
+            <div class="canvas-label">
+                <select>
+                   <option value="">Canvas label</option>
+                </select>
+            </div>
 
         </section>
 
-        <select name="" id="">
+        <select >
             <option value="">Layer 1 label</option>
         </select>
         <div class="line-indicator">Line indicator</div>
@@ -109,8 +111,6 @@ export default class ProjectNavigation extends HTMLElement {
     </nav>
         `
     }
-
-
 }
 
 customElements.define('tpen-project-navigation', ProjectNavigation)
