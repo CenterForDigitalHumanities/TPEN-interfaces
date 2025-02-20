@@ -39,23 +39,35 @@ class TpenFooter extends HTMLElement {
             ul.appendChild(li)
         })
 
+        const logo = document.createElement('img')
+        logo.src = '../../../assets/logo/logo-350w.png'
+        logo.alt = 'TPEN Logo'
+
         nav.appendChild(ul)
         footerContent.appendChild(p)
         footerContent.appendChild(nav)
+        footerContent.appendChild(logo)
         footer.appendChild(footerContent)
         shadow.appendChild(footer)
 
         const style = document.createElement('style')
         style.textContent = `
             .site-footer {
-                /* Add your styles here */
+                width: 100%;
+                border-top: 1px solid var(--primary-color);
+                margin-top: 20px;
+                padding-top: 1em;
             }
             .footer-content {
-                /* Add your styles here */
+                display: flex;
+                align-items: center;
+                justify-content: space-evenly;
             }
             .footer-nav ul {
                 list-style: none;
                 padding: 0;
+                display: flex;
+                flex-direction: column;
             }
             .footer-nav li {
                 display: inline;
