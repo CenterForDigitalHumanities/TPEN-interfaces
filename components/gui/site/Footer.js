@@ -1,11 +1,15 @@
+import TPEN from '../../../api/TPEN.mjs'
+
 class TpenFooter extends HTMLElement {
 
     links = [
-        { href: '/about', text: 'About Us' },
+        { href: '/home', text: 'Home' },
+        { href: '/account', text: 'Account' },
         { href: '/contact', text: 'Contact' },
-        { href: '/privacy', text: 'Privacy Policy' },
-        { href: '/terms', text: 'Terms of Service' }
+        { href: '/about', text: 'About Us' },
     ]
+
+    version =  TPEN?.version ?? '3.0.1a'
     
     constructor() {
         super()
@@ -43,10 +47,15 @@ class TpenFooter extends HTMLElement {
         logo.src = '../../../assets/logo/logo-350w.png'
         logo.alt = 'TPEN Logo'
 
+        const nehLogo = document.createElement('img')
+        nehLogo.src = '../../../assets/logo/NEH.jpg'
+        nehLogo.alt = 'NEH Logo'
+
         nav.appendChild(ul)
         footerContent.appendChild(p)
         footerContent.appendChild(nav)
         footerContent.appendChild(logo)
+        footerContent.appendChild(nehLogo)
         footer.appendChild(footerContent)
         shadow.appendChild(footer)
 
@@ -75,6 +84,9 @@ class TpenFooter extends HTMLElement {
             }
             .footer-nav a {
                 text-decoration: none;
+            }
+            img {
+                mix-blend-mode: multiply;
             }
         `
         shadow.appendChild(style)
