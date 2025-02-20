@@ -35,8 +35,8 @@ class ProjectDetails extends HTMLElement {
             <p part="project-desc">Project Owner <span part="project-desc-span">${projectOwner}</span></p>
             <p part="project-desc">Project Collaborator Count <span part="project-desc-span">${collaboratorCount}</span></p>
             <div part="manuscripts" class="manuscripts">
-                <img part="manuscript-img" src="../assets/images/manuscript_img.webp" />
-                <img part="manuscript-img" src="../assets/images/manuscript.webp" />
+                <img part="manuscript-img" src="../../assets/images/manuscript_img.webp" />
+                <img part="manuscript-img" src="../../assets/images/manuscript.webp" />
             </div>
         `
     }

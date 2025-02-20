@@ -25,13 +25,11 @@ body {
   border-radius: 5px;
 }
 
-manage-project-container {
+
+.header {
   grid-column: span 3;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: auto;
-}
-
-manage-project-container::part(header) {
   text-align: center;
   font-size: 24px;
   font-weight: bold;
@@ -42,11 +40,11 @@ manage-project-container::part(header) {
   gap: 20px;
 }
 
-manage-project-container::part(logo) {
+.header .logo {
   height: 70px;
 }
 
-manage-project-container::part(project-title){
+.header .project-title{
   font-size: 1.5rem;
   font-weight: bold;
   color: #b14628;
@@ -56,7 +54,7 @@ manage-project-container::part(project-title){
   border-radius: 5px;
 }
 
-manage-project-container::part(resume-btn) {
+.header .resume-btn {
   background-color: #b14628;
   color: white;
   font-weight: bold;

@@ -9,14 +9,15 @@
     <script type="module" src="../../components/project-collaborators/index.js"></script>
     <script type="module" src="../../components/project-details/index.js"></script>
     <script type="module" src="../../components/project-metadata/index.js"></script>
+    <script type="module" src="../../components/projects-list/project-list-view.js"></script>
 </head>
 <body>
-    <div part="header" class="header">
-        <img part="logo" class="logo" src="https://t-pen.org/TPEN/images/tpen_badgeEmergeClear.png" alt="TPEN Logo">
-        <h1 part="project-title" class="project-title">Project Title TODO</h1> 
-        <button part="resume-btn" class="resume-btn">Resume</button>
-    </div>
     <div id="container" class="container">
+        <div part="header" class="header">
+            <img part="logo" class="logo" src="https://t-pen.org/TPEN/images/tpen_badgeEmergeClear.png" alt="TPEN Logo">
+            <h1 part="project-title" class="project-title"></h1> 
+            <button part="resume-btn" class="resume-btn">Resume</button>
+        </div>
         <div class="box">
             <h4 class="project-card-headings">Project Card</h4>
             <tpen-project-details></tpen-project-details>
@@ -31,9 +32,9 @@
             <project-collaborators></project-collaborators>
             <button id="manage-collaboration-btn" class="manage-btn">MANAGE</button>
         </div>
-        <div class="box box-empty">
+        <div class="box">
             <h4 class="project-card-headings">Projects List</h4>
-            <tpen-project-list></tpen-project-list>
+            <tpen-projects-view></tpen-projects-view>
         </div>
         <div class="box box-empty">
             <h4 class="project-card-headings">Layers & Pages</h4>
