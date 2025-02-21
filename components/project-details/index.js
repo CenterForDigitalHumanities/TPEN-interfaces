@@ -30,10 +30,24 @@ class ProjectDetails extends HTMLElement {
         const collaboratorCount = Object.keys(TPEN.activeProject.collaborators).length
 
         projectInfo.innerHTML = `
-            <p part="project-desc">Project ID <span part="project-desc-span">${TPEN.activeProject._id}</span></p>
-            <p part="project-desc">Project Title <span part="project-desc-span">${TPEN.activeProject.label}</span></p>
-            <p part="project-desc">Project Owner <span part="project-desc-span">${projectOwner}</span></p>
-            <p part="project-desc">Project Collaborator Count <span part="project-desc-span">${collaboratorCount}</span></p>
+            <div part="project-card-headings" class="project-card-headings">
+                <p part="project-desc">
+                    <span>Project ID</span> 
+                    <span part="project-desc-span">${TPEN.activeProject._id}</span>
+                </p>
+                <p part="project-desc">
+                    <span>Project Title</span> 
+                    <span part="project-desc-span">${TPEN.activeProject.label}</span>
+                </p>
+                <p part="project-desc">
+                    <span>Project Owner</span>  
+                    <span part="project-desc-span">${projectOwner}</span>
+                </p>
+                <p part="project-desc">
+                    <span>Project Collaborator Count</span>  
+                    <span part="project-desc-span">${collaboratorCount}</span>
+                </p>
+            </div>
             <div part="manuscripts" class="manuscripts">
                 <img part="manuscript-img" src="../../assets/images/manuscript_img.webp" />
                 <img part="manuscript-img" src="../../assets/images/manuscript.webp" />

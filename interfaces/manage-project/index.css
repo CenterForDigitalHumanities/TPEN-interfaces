@@ -97,11 +97,22 @@ body {
   font-size: 1.2rem;
 }
 
+.box tpen-project-details::part(project-card-headings) {
+  width: 90%;
+  padding: 0 40px;
+}
+
 .box tpen-project-details::part(project-desc) {
-  color: #b14628;
+  color: black;
   font-size: 0.875rem;
   font-weight: bold;
-  margin:0
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px;
+  margin: 0 auto;
+  border-bottom: 1px solid #ccc;
 }
 
 .box tpen-project-details::part(project-desc-span) {
@@ -131,6 +142,10 @@ body {
   padding: 10px;
 }
 
+.box-w-btn{
+  justify-content: space-between;
+}
+
 /* Temporary CSS will be removed in the future */
 .box-empty{
   height: 250px;
@@ -138,6 +153,11 @@ body {
 
 .box-footer{
   height: 100px;
+}
+
+project-collaborators{
+  width: 100%;
+  padding-right: 15px;
 }
 
 project-collaborators::part(group-title) {
@@ -149,18 +169,28 @@ project-collaborators::part(group-members-title) {
 }
 
 project-collaborators::part(member) {
-  padding: 0 15px;
   width: 100%;
   font-size: 0.875rem;
+  border-bottom: 1px solid #ccc;
 }
 
 project-collaborators::part(member-info) {
   font-size: 0.875rem;
   color: #333;
   display: flex;
-  justify-content: flex-start;
+  justify-content: space-between;
   align-items: center;
   gap: 20px;
+  width: 100%;
+}
+
+project-collaborators::part(member-name) {
+  font-weight: bold;
+  margin: 5px;
+}
+
+project-collaborators::part(role) {
+  margin: 5px;
 }
 
 tpen-project-metadata {
@@ -170,6 +200,9 @@ tpen-project-metadata {
 tpen-project-metadata::part(metadata) {
   width: 90%;
   font-size: 0.875rem;
+  margin: 0 auto;
+  max-height: 200px;
+  overflow-y: auto;
 }
 
 tpen-project-metadata::part(metadata-item){
@@ -178,21 +211,22 @@ tpen-project-metadata::part(metadata-item){
   display: flex;
   justify-content: space-between;
   align-items: center;
+  border-bottom: 1px solid #ccc;
+  padding: 5px 0;
+  text-align: left;
 }
 
 tpen-project-metadata::part(metadata-title){
   font-weight: bold;
-  color: #b14628;
+  color: black;
   font-size: 0.875rem;
-  width: 50%;
   text-align: right;
-  padding: 0 10px 0 0;
+  padding: 0 10px;
 }
 
 tpen-project-metadata::part(metadata-value){
   color: #333;
   font-size: 0.875rem;
-  width: 50%;
   text-align: left;
 }
 
@@ -208,4 +242,29 @@ tpen-project-metadata::part(metadata-value){
   font-size: 16px;
   cursor: pointer;
   border-radius: 5px;
+}
+
+tpen-projects-view::part(project-list-ol) {
+  max-height: 170px;
+  width: 90%;
+  overflow-y: auto;
+  margin: 0 auto;
+  padding-left: 20px;
+  font-size: 0.875rem;
+  list-style-type: decimal;
+}
+
+tpen-projects-view::part(project-list-li) {
+  padding: 5px 0px;
+  display: list-item;
+  text-align: left;
+  border-bottom: 1px solid #ccc;
+  margin: 0 auto;
+}
+
+tpen-projects-view::part(project-list-title) {
+  padding: 5px;
+  font-size: 0.875rem;
+  text-align: left;
+  width:100%;
 }
