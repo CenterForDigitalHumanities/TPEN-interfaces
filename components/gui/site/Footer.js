@@ -44,7 +44,7 @@ class TpenFooter extends HTMLElement {
         })
 
         const logo = document.createElement('img')
-        logo.src = '../../../assets/logo/logo-350w.png'
+        logo.src = '../../../assets/logo/logo-100h.png'
         logo.alt = 'TPEN Logo'
 
         const nehLogo = document.createElement('img')
@@ -52,10 +52,10 @@ class TpenFooter extends HTMLElement {
         nehLogo.alt = 'NEH Logo'
 
         nav.appendChild(ul)
-        footerContent.appendChild(p)
         footerContent.appendChild(nav)
         footerContent.appendChild(logo)
         footerContent.appendChild(nehLogo)
+        footerContent.appendChild(p)
         footer.appendChild(footerContent)
         shadow.appendChild(footer)
 
@@ -87,6 +87,7 @@ class TpenFooter extends HTMLElement {
             }
             img {
                 mix-blend-mode: multiply;
+                height: 100px;
             }
         `
         shadow.appendChild(style)
