@@ -32,7 +32,7 @@ class ProjectDetails extends HTMLElement {
         projectInfo.innerHTML = `
             <div part="project-card-headings" class="project-card-headings">
                 <p part="project-desc">
-                    <span>Project ID</span> 
+                    <span>Project ID</span>
                     <span part="project-desc-span">${TPEN.activeProject._id}</span>
                 </p>
                 <p part="project-desc">
