@@ -52,7 +52,7 @@ class ProjectCollaborators extends HTMLElement {
         memberElement.innerHTML = `
             <li part="member" id="member" class="member" data-member-id=${collaboratorId}>
                 <div part="member-info" class="member-info">
-                    <p style="font-weight: bold;">${memberData.profile?.displayName ?? collaboratorId}</p>
+                    <p part="member-name">${memberData.profile?.displayName ?? collaboratorId}</p>
                     <span part="role" class="role">${this.renderRoles(memberData.roles)}</span>
                 </div>
                 <div part="actions" class="actions" data-member-id=${collaboratorId}>
