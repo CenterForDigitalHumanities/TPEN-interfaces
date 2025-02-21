@@ -7,7 +7,7 @@
     <link href="favicon.ico" rel="icon" type="image/x-icon" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="api/TPEN.mjs" type="module"></script>
-    <script src="components/projects-list/index.mjs" type="module"></script>
+    <script src="components/projects/index.mjs" type="module"></script>
     <script src="components/public-login/index.js" type="module"></script>
     <script src="components/user-profile/index.mjs" type="module"></script>
     <script src="api/events.mjs" type="module"></script>
@@ -21,18 +21,20 @@
     <small>/components/public-login</small>
 
     <h2>User Content</h2>
-    
-    <small>/components/projects-list</small>
+
+    <small>/components/projects</small>
     <h3>Projects (roles)</h3>
     <style scoped>
         .badge::before {
             content: '(';
         }
+
         .badge::after {
             content: ')';
         }
+
         li::after {
-            content: '<'attr(tpen-project-id)'>';
+            content: '<' attr(tpen-project-id)'>';
         }
     </style>
     <tpen-projects-list></tpen-projects-list>
@@ -42,4 +44,5 @@
     <tpen-user-profile></tpen-user-profile>
 
 </body>
+
 </html>

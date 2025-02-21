@@ -1,8 +1,8 @@
-import User from "../../api/User.mjs"
 import TPEN from "../../api/TPEN.mjs"
 import { eventDispatcher } from "../../api/events.mjs"
 
 export default class ProjectsView extends HTMLElement {
+    
     #projects = [];
 
     constructor() {
@@ -34,19 +34,14 @@ export default class ProjectsView extends HTMLElement {
                 li {
                     margin: 5px 0px;
                     display: flex;
+                    gap:10px;
                 }
             </style>
             <ul>
                 ${this.#projects.reduce((a, project) =>
-            a + `<li tpen-project-id="${project._id}">
-                        ${project.title ?? project.label} 
-                        <span class="badge">${project.roles.join(", ").toLowerCase()}</span>
-                    </li>`, ``)}
-
-                         ${this.#projects.reduce((a, project) =>
-                a + `<li tpen-project-id="${project._id}">
-                        ${project.title ?? project.label} 
-                        <span class="badge">${project.roles.join(", ").toLowerCase()}</span>
+            a + `<li tpen-project-id=${project._id}>
+                        ${project.title ?? project.label}  
+                        <span class="badge">(${project.roles.join(", ").toLowerCase()})</span>
                     </li>`, ``)}
             </ul>
         `
