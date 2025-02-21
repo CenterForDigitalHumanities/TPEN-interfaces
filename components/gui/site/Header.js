@@ -111,15 +111,16 @@ class TpenHeader extends HTMLElement {
                         background-color: var(--primary-light);
                     color: var(--darkest);
                 }
+                h1.banner {
+                    background-color: var(--white);
+                    color: var(--link);
+                    border-radius: .125em;
+                    text-align: center;
+                    padding: .125em;
+                    margin: -.125em;
+                }
                 </style>
             <header>
-                <nav>
-                    <ul>
-                        <li><a href="/home">Home</a></li>
-                        <li><a href="#">About</a></li>
-                        <li><tpen-action-link data-description="Whatever the TPEN.actionLink is will be a button-looking link here."><button type=button>Action</button></tpen-action-link></li>
-                    </ul>
-                </nav>
                 <h1 style="margin: 0;">
                     <span>tpen</span>
                     <div class="cube">
@@ -147,6 +148,14 @@ class TpenHeader extends HTMLElement {
                         <div class="back"></div>
                     </div>
                 </h1>
+                <h1 class="banner">${this.getAttribute('title') ?? ""}</h1>
+                <nav>
+                    <ul>
+                        <li><a href="/home">Home</a></li>
+                        <li><a href="#">About</a></li>
+                        <li><tpen-action-link data-description="Whatever the TPEN.actionLink is will be a button-looking link here."><button type=button>Action</button></tpen-action-link></li>
+                    </ul>
+                </nav>
             </header>
         `;
     }
