@@ -113,7 +113,7 @@ class TpenHeader extends HTMLElement {
                 }
                 h1.banner {
                     background-color: var(--white);
-                    color: var(--link);
+                    color: var(--accent);
                     border-radius: .125em;
                     text-align: center;
                     padding: .125em;
@@ -149,11 +149,11 @@ class TpenHeader extends HTMLElement {
                     </div>
                 </h1>
                 <h1 class="banner">${this.getAttribute('title') ?? ""}</h1>
+                <tpen-action-link data-description="Whatever the TPEN.actionLink is will be a button-looking link here."><button type=button>Action</button></tpen-action-link>
                 <nav>
                     <ul>
                         <li><a href="/home">Home</a></li>
                         <li><a href="#">About</a></li>
-                        <li><tpen-action-link data-description="Whatever the TPEN.actionLink is will be a button-looking link here."><button type=button>Action</button></tpen-action-link></li>
                     </ul>
                 </nav>
             </header>
