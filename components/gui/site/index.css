@@ -1,0 +1,77 @@
+/* Basic CSS Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    height: calc(100% - 1em);
+    font-family: Roboto, Avenir, sans-serif;
+}
+
+/* Color Variables */
+:root {
+    --primary-color: hsl(186, 84%, 40%);
+    --primary-light: hsl(186, 84%, 60%);
+    --light-color  : hsl(186, 84%, 90%);
+    --darkest      : #0d0d0d;
+    --dark         : #2d2d2d;
+    --white        : hsl(0, 0%, 100%);
+    --gray         : hsl(0, 0%, 60%);
+    --light-gray   : hsl(0, 0%, 90%);
+    --accent         : hsl(12, 60%, 40%);
+    --link         : hsl(12, 60%, 40%);
+}
+
+/* Dark Theme Variables */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --primary-color: hsl(186, 84%, 40%);
+        --primary-light: hsl(186, 84%, 60%);
+        --light-color: hsl(186, 84%, 90%);
+        --darkest: #0d0d0d;
+        --dark: #2d2d2d;
+        --white: hsl(0, 0%, 100%);
+        --gray: hsl(0, 0%, 60%);
+        --light-gray: hsl(0, 0%, 90%);
+        --link: hsl(12, 60%, 40%);
+    }
+}
+
+html {
+    font-size: 16px;
+    background-color: var(--dark);
+}
+
+body {
+    background-color: var(--light-color);
+    color: var(--dark);
+    margin: 1.5em;
+    padding: 1em;
+    border-radius: 1em;
+}
+
+body.fullscreen {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0;
+    padding: 0;
+}
+
+a {
+    color: var(--link);
+}
+
+button {
+    background-color: var(--primary-light);
+    color: var(--light-color);
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: var(--light-gray);
+}
