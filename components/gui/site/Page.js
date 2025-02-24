@@ -16,14 +16,8 @@ class TpenPageTemplate extends HTMLElement {
             }
         `
         this.prepend(style)
-        let css = this.dataset.css
-        if (css && !css.match(/\.css$/)) {
-            console.error('Invalid CSS file URL fragment:', css)
-            css = null
-        }
 
         shadow.innerHTML = `
-            ${css ? `<link rel="stylesheet" href="${this.dataset.css}">` : '' }
             <tpen-header title="${this.title ?? document.title}"></tpen-header> 
             <div class="page-content" style="padding: 1em; margin: 0 auto; min-height: 40vh;">
                 <slot></slot>

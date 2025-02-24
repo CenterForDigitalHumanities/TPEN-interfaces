@@ -11,17 +11,16 @@
   align-items: center;
   gap: 10px;
   padding: 20px;
-  background-color: var(--white);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
   border-radius: 1em;
 }
 
 .box {
   padding: 15px;
   text-align: center;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
   border-radius: 5px;
-  background-color: white;
+  background-color: var(--white);
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
