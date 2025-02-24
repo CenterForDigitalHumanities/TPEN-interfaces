@@ -38,7 +38,7 @@ class ProjectMetadata extends HTMLElement {
     
             projectMetada.innerHTML += `
             <li part="metadata-item">
-              <span part="metadata-title" class="title">${label}</span>
+              <span part="metadata-title" class="title">${label.charAt(1).toUpperCase() + label.slice(2).toLowerCase()}</span>
               <span part="metadata-value" class="colon"> ${value}</span>
             </li>`
         })
