@@ -14,22 +14,23 @@ body {
 }
 
 .container {
-  width: 80%;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: auto;
-  gap: 10px;
+  width: 85%;
   padding: 20px;
   background-color: #ffebb9;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   border-radius: 5px;
 }
 
+.card-container {  
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
 
 .header {
-  grid-column: span 3;
-  grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: auto;
+  width: 100%;
   text-align: center;
   font-size: 24px;
   font-weight: bold;
@@ -80,7 +81,8 @@ body {
   justify-content: flex-start;
   align-items: center;
   gap: 20px;
-  height: 100%;
+  min-height: 350px;
+  width: 30%;
 }
 
 .box tpen-project-details::part(project-card) {
@@ -110,7 +112,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 4px;
+  padding: 4px 0;
   margin: 0 auto;
   border-bottom: 1px solid #ccc;
 }
@@ -123,10 +125,11 @@ body {
 
 .box tpen-project-details::part(manuscripts) {
   display: flex;
-  justify-content: space-evenly;
+  justify-content: space-between;
   align-items: center;
   margin: 0 auto;
-  
+  width: 90%;
+  box-sizing: content-box;
 }
 
 .box tpen-project-details::part(manuscript-img) {
@@ -135,11 +138,8 @@ body {
   border-radius: 5px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   object-fit: cover;
-  display: flex;
-  justify-content: center;
-  align-items: center;
   margin: 0 auto;
-  padding: 10px;
+  padding: 5px;
 }
 
 .box-w-btn{
@@ -221,7 +221,6 @@ tpen-project-metadata::part(metadata-title){
   color: black;
   font-size: 0.875rem;
   text-align: right;
-  padding: 0 10px;
 }
 
 tpen-project-metadata::part(metadata-value){
@@ -242,6 +241,10 @@ tpen-project-metadata::part(metadata-value){
   font-size: 16px;
   cursor: pointer;
   border-radius: 5px;
+}
+
+tpen-projects-view{
+  padding-top: 20px;
 }
 
 tpen-projects-view::part(project-list-ol) {
@@ -267,4 +270,32 @@ tpen-projects-view::part(project-list-title) {
   font-size: 0.875rem;
   text-align: left;
   width:100%;
+}
+
+@media (max-width: 1350px) {
+  .card-container {
+      flex-direction: row;
+  }
+  .box {
+      width: 45%;
+  }
+}
+
+@media (max-width: 780px) {
+
+  .header .logo {
+    height: 50px;
+  }
+
+  .container{
+    width: 100%;
+  }
+  .card-container {
+      flex-direction: column;
+      width: 100%;
+      align-items: center;
+  }
+  .box{
+    width: 100%;
+  }
 }
