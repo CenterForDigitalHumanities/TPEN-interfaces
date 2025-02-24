@@ -1,0 +1,270 @@
+*{
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  margin: 20px;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  background-color: #69ACC9;
+}
+
+.container {
+  width: 80%;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: auto;
+  gap: 10px;
+  padding: 20px;
+  background-color: #ffebb9;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  border-radius: 5px;
+}
+
+
+.header {
+  grid-column: span 3;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: auto;
+  text-align: center;
+  font-size: 24px;
+  font-weight: bold;
+  padding: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+
+.header .logo {
+  height: 70px;
+}
+
+.header .project-title{
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #b14628;
+  background-color: white;
+  padding: 20px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  border-radius: 5px;
+}
+
+.header .resume-btn {
+  background-color: #b14628;
+  color: white;
+  font-weight: bold;
+  border: none;
+  padding: 10px 20px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 4px 2px;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.box {
+  padding: 15px;
+  text-align: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  border-radius: 5px;
+  background-color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 20px;
+  height: 100%;
+}
+
+.box tpen-project-details::part(project-card) {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+}
+
+.box .project-card-headings {
+  font-weight: bold;
+  color: #b14628;
+  font-size: 1.2rem;
+}
+
+.box tpen-project-details::part(project-card-headings) {
+  width: 90%;
+  padding: 0 40px;
+}
+
+.box tpen-project-details::part(project-desc) {
+  color: black;
+  font-size: 0.875rem;
+  font-weight: bold;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px;
+  margin: 0 auto;
+  border-bottom: 1px solid #ccc;
+}
+
+.box tpen-project-details::part(project-desc-span) {
+  color: #333;
+  font-size: 0.875rem;
+  font-weight: normal;
+}
+
+.box tpen-project-details::part(manuscripts) {
+  display: flex;
+  justify-content: space-evenly;
+  align-items: center;
+  margin: 0 auto;
+  
+}
+
+.box tpen-project-details::part(manuscript-img) {
+  width: 45%;
+  height: 150px;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  object-fit: cover;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 auto;
+  padding: 10px;
+}
+
+.box-w-btn{
+  justify-content: space-between;
+}
+
+/* Temporary CSS will be removed in the future */
+.box-empty{
+  height: 250px;
+}
+
+.box-footer{
+  height: 100px;
+}
+
+project-collaborators{
+  width: 100%;
+  padding-right: 15px;
+}
+
+project-collaborators::part(group-title) {
+  display: none;
+}
+
+project-collaborators::part(group-members-title) {
+  display: none;
+}
+
+project-collaborators::part(member) {
+  width: 100%;
+  font-size: 0.875rem;
+  border-bottom: 1px solid #ccc;
+}
+
+project-collaborators::part(member-info) {
+  font-size: 0.875rem;
+  color: #333;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+}
+
+project-collaborators::part(member-name) {
+  font-weight: bold;
+  margin: 5px;
+}
+
+project-collaborators::part(role) {
+  margin: 5px;
+}
+
+tpen-project-metadata {
+  width: 100%;
+}
+
+tpen-project-metadata::part(metadata) {
+  width: 90%;
+  font-size: 0.875rem;
+  margin: 0 auto;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+tpen-project-metadata::part(metadata-item){
+  list-style: none;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #ccc;
+  padding: 5px 0;
+  text-align: left;
+}
+
+tpen-project-metadata::part(metadata-title){
+  font-weight: bold;
+  color: black;
+  font-size: 0.875rem;
+  text-align: right;
+  padding: 0 10px;
+}
+
+tpen-project-metadata::part(metadata-value){
+  color: #333;
+  font-size: 0.875rem;
+  text-align: left;
+}
+
+.box .manage-btn {
+  background-color: #b14628;
+  color: white;
+  font-weight: bold;
+  border: none;
+  padding: 5px 10px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+tpen-projects-view::part(project-list-ol) {
+  max-height: 170px;
+  width: 90%;
+  overflow-y: auto;
+  margin: 0 auto;
+  padding-left: 20px;
+  font-size: 0.875rem;
+  list-style-type: decimal;
+}
+
+tpen-projects-view::part(project-list-li) {
+  padding: 5px 0px;
+  display: list-item;
+  text-align: left;
+  border-bottom: 1px solid #ccc;
+  margin: 0 auto;
+}
+
+tpen-projects-view::part(project-list-title) {
+  padding: 5px;
+  font-size: 0.875rem;
+  text-align: left;
+  width:100%;
+}
