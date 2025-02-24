@@ -1,5 +1,10 @@
 import TPEN from "../../api/TPEN.mjs"
 import { eventDispatcher } from "../../api/events.mjs"
+import "../../components/project-collaborators/index.js"
+import "../../components/project-details/index.js"
+import "../../components/project-metadata/index.js"
+import "../../components/projects-list/project-list-view.js"
+
 
 eventDispatcher.on('tpen-project-loaded', () => render())
 const container = document.body

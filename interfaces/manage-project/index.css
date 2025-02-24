@@ -4,16 +4,7 @@
   box-sizing: border-box;
 }
 
-body {
-  font-family: Arial, sans-serif;
-  margin: 20px;
-  padding: 0;
-  display: flex;
-  justify-content: center;
-  background-color: #69ACC9;
-}
-
-.container {
+.page-content {
   width: 80%;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -22,50 +13,6 @@ body {
   padding: 20px;
   background-color: #ffebb9;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  border-radius: 5px;
-}
-
-
-.header {
-  grid-column: span 3;
-  grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: auto;
-  text-align: center;
-  font-size: 24px;
-  font-weight: bold;
-  padding: 10px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 20px;
-}
-
-.header .logo {
-  height: 70px;
-}
-
-.header .project-title{
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #b14628;
-  background-color: white;
-  padding: 20px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  border-radius: 5px;
-}
-
-.header .resume-btn {
-  background-color: #b14628;
-  color: white;
-  font-weight: bold;
-  border: none;
-  padding: 10px 20px;
-  text-align: center;
-  text-decoration: none;
-  display: inline-block;
-  font-size: 16px;
-  margin: 4px 2px;
-  cursor: pointer;
   border-radius: 5px;
 }
 
