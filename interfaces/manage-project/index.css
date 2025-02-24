@@ -5,15 +5,15 @@
 }
 
 .page-content {
-  width: 80%;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: auto;
+  align-items: center;
   gap: 10px;
   padding: 20px;
-  background-color: #ffebb9;
+  background-color: var(--white);
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  border-radius: 5px;
+  border-radius: 1em;
 }
 
 .box {
