@@ -98,17 +98,21 @@ class TpenHeader extends HTMLElement {
                 a:hover {
                     text-decoration: underline;
                 }
-                button {
+                .action-button {
                     background-color: var(--primary-color);
                     color: var(--darkest);
                     border: none;
-                    border-radius: .5em;
-                    padding: .5em 1em;
+                    border-radius: 50%;
                     cursor: pointer;
-                    font-size: 1.2em;
-                    }
-                    button:hover {
-                        background-color: var(--primary-light);
+                    font-size: 1.5em;
+                    box-shadow: rgba(0, 0, 0, .5) 0 0 .25em;
+                    position: relative;
+                    bottom: -.25em;
+                    aspect-ratio: 1 / 1;
+                    max-width: 15vw;
+                }
+                button:hover {
+                    background-color: var(--primary-light);
                     color: var(--darkest);
                 }
                 h1.banner {
@@ -118,8 +122,10 @@ class TpenHeader extends HTMLElement {
                     text-align: center;
                     padding: .125em;
                     margin: -.125em;
+                    position: relative;
+                    bottom: .25em;
                 }
-                </style>
+            </style>
             <header>
                 <h1 style="margin: 0;">
                     <span>tpen</span>
@@ -149,7 +155,9 @@ class TpenHeader extends HTMLElement {
                     </div>
                 </h1>
                 <h1 class="banner">${this.getAttribute('title') ?? ""}</h1>
-                <tpen-action-link data-description="Whatever the TPEN.actionLink is will be a button-looking link here."><button type=button>Action</button></tpen-action-link>
+                <tpen-action-link data-description="Whatever the TPEN.actionLink is will be a button-looking link here.">
+                    <button type="button" class="action-button">Action</button>
+                </tpen-action-link>
                 <nav>
                     <ul>
                         <li><a href="/home">Home</a></li>
