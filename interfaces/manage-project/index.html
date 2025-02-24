@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Project Dashboard</title>
     <link rel="stylesheet" href="./index.css">
+    <script type="module" src="../../components/gui/site/index.js"></script>"
     <script type="module" src="./index.js"></script>
     <script type="module" src="../../components/project-collaborators/index.js"></script>
     <script type="module" src="../../components/project-details/index.js"></script>
@@ -12,12 +13,7 @@
     <script type="module" src="../../components/projects-list/project-list-view.js"></script>
 </head>
 <body>
-    <div id="container" class="container">
-        <div part="header" class="header">
-            <img part="logo" class="logo" src="https://t-pen.org/TPEN/images/tpen_badgeEmergeClear.png" alt="TPEN Logo">
-            <h1 part="project-title" class="project-title"></h1> 
-            <button part="resume-btn" class="resume-btn">Resume</button>
-        </div>
+    <tpen-page title="Project Dashboard">
         <div class="box">
             <h4 class="project-card-headings">Project Card</h4>
             <tpen-project-details></tpen-project-details>
@@ -58,6 +54,6 @@
             <h4 class="project-card-headings">Annotations, Tags, Hotkeys, XML Tags</h4>
             <tpen-project-annotations></tpen-project-annotations>
         </div>
-    </div>
+    </tpen-page>
 </body>
 </html>

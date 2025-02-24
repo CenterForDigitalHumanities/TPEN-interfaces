@@ -2,7 +2,7 @@ import TPEN from "../../api/TPEN.mjs"
 import { eventDispatcher } from "../../api/events.mjs"
 
 eventDispatcher.on('tpen-project-loaded', () => render())
-const container = document.getElementById('container')
+const container = document.body
 TPEN.attachAuthentication(container)
 
 document.getElementById('manage-collaboration-btn').addEventListener('click', () => {

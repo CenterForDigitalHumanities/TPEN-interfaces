@@ -6,7 +6,7 @@
 }
 
 html, body {
-    height: calc(100% - 1em);
+    min-height: calc(100% - 1em);
     font-family: Roboto, Avenir, sans-serif;
 }
 

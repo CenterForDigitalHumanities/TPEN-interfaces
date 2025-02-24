@@ -30,7 +30,10 @@ class TpenPageTemplate extends HTMLElement {
         const script = document.createElement('script')
         script.src = 'index.js'
         pageHead.appendChild(script)
-        pageHead.stylesheet = 'index.css'
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = `${window.location.pathname.replace(/\/[^\/]*$/, '/') + 'index.css'}`
+        pageHead.prepend(link)
         document.title = this.title
     }
 }
