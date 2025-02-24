@@ -15,15 +15,16 @@ class TpenPageTemplate extends HTMLElement {
                 display: block;
             }
         `
-        this.prepend(style)
-
+        
         shadow.innerHTML = `
-            <tpen-header title="${this.title ?? document.title}"></tpen-header> 
-            <div class="page-content" style="padding: 1em; margin: 0 auto; min-height: 40vh;">
-                <slot></slot>
-            </div>
-            <tpen-footer></tpen-footer>
+        <link rel="stylesheet" href="${window.location.origin + '/components/gui/site/page-layouts.css'}">
+        <tpen-header title="${this.title ?? document.title}"></tpen-header> 
+        <div class="page-content" style="padding: 1em; margin: 0 auto; min-height: 40vh;">
+        <slot></slot>
+        </div>
+        <tpen-footer></tpen-footer>
         `
+        this.prepend(style)
     }
     connectedCallback() {
         const pageHead = document.getElementsByTagName('head')[0]
