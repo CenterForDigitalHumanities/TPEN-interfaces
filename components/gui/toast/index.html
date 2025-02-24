@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toast Component</title>
+    <script type="module" src="ToastContainer.js"></script>
+</head>
+<body>
+
+<h2>Toast Component</h2>
+<button id="toaster" type="button">Show Toast</button>
+
+<script>
+    const verbs = [
+        "scale", "attack", "consist", "scowl", "stink", "swing", "grade", "sleep", "burst", 
+        "inculcate", "endorse", "string", "contrive", "subscribe", "stop", "agree", "imagine", 
+        "wear", "collapse", "cease", "introduce", "introduce", "resist", "separate", "maintain", 
+        "foretell", "guard", "cook", "roar", "betray", "scowl", "mislead", "enter", "complete", 
+        "tee", "clothe", "celebrate", "chip", "propose", "guide", "tell", "slip", "diminish", 
+        "slip", "crave", "mean", "broadcast", "canvass", "eye", "beautify", "savor", "hug", "hug"
+    ]
+    const nouns = [
+        "father", "tin", "copper", "minister", "wealth", "lizards", "jail", "test", "roof", 
+        "sack", "tomatoes", "stop", "shirt", "trucks", "trucks", "protest", "cobweb", "summer", 
+        "yam", "quarter", "sneeze", "men", "theory", "can", "spiders", "basketball", "print", 
+        "wrist", "locket", "tail", "kettle", "underwear", "skirt", "process", "birth", "game", 
+        "wave", "boy", "current", "scale", "front", "donkey", "box", "pull", "trip", "church", 
+        "toes", "toes", "farm", "celery", "guide", "swing", "butter"
+    ]
+    const sample = (arr) => arr[Math.floor(Math.random() * arr.length)]
+    toaster.onclick = async () => {
+        import('../../../api/events.mjs').then(module => {
+            const message = `${sample(verbs)} ${sample(nouns)}`
+            const toast = {
+                message,
+                status: 'info'
+            }
+            module.eventDispatcher.dispatch('tpen-toast', toast)
+        })
+    }
+</script>
+   
+</body>
+</html>

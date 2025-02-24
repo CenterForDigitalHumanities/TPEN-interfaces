@@ -11,6 +11,10 @@ export default class ProjectsView extends HTMLElement {
         eventDispatcher.on("tpen-user-loaded", ev => this.currentUser = ev.detail)
     }
 
+    static get observedAttributes() {
+        return ['tpen-user-id']
+    }
+
     async connectedCallback() {
         TPEN.attachAuthentication(this)
         if (this.currentUser && this.currentUser._id) {
@@ -26,6 +30,18 @@ export default class ProjectsView extends HTMLElement {
         }
     }
 
+    attributeChangedCallback(name, oldValue, newValue) {
+        if (name === 'tpen-user-id') {
+            if (oldValue !== newValue) {
+                const loadedUser = new User(newValue)
+                loadedUser.authentication = TPEN.getAuthorization()
+                loadedUser.getProfile()
+            } else if (name === 'show-metadata' || name === 'manage') {
+                this.render()
+            }
+        }
+    }
+
     render() {
         if (!TPEN.currentUser._id) return
 
@@ -37,7 +53,7 @@ export default class ProjectsView extends HTMLElement {
                     gap:10px;
                 }
             </style>
-            <ul>
+            <ol part="project-list-ol">
                 ${this.#projects.reduce((a, project) =>
             a + `<li tpen-project-id=${project._id}>
                         ${project.title ?? project.label}  

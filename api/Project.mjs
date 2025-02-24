@@ -61,13 +61,14 @@ export default class Project {
     }
 
     async save() {
-        if (!this.#authentication) {
+        const AUTH_TOKEN = TPEN.getAuthorization() ?? TPEN.login()
+        if (!AUTH_TOKEN) {
             throw new Error("Authentication is required to save a project")
         }
         return fetch(`${TPEN.servicesURL}/project/${this._id}`, {
             method: "PUT",
             headers: new Headers({
-                Authorization: `Bearer ${this.#authentication}`,
+                Authorization: `Bearer ${AUTH_TOKEN}`,
                 "Content-Type": "application/json"
             }),
             body: JSON.stringify(this)
