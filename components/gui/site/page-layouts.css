@@ -8,7 +8,7 @@
 
 :host(.grid) .page-content {
     display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(12em, 30%));
+        grid-template-columns: repeat(auto-fit, minmax(12em, 30em));
         grid-template-rows: auto;
         justify-content: center;
         gap: .5em;
