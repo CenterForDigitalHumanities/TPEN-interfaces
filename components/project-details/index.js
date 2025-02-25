@@ -1,48 +1,14 @@
 import TPEN from "../../api/TPEN.mjs"
 import Project from "../../api/Project.mjs"
+import "../../components/line-image/index.js"
 
 class ProjectDetails extends HTMLElement {
 
     style = `
-    dl.project-desc {
-        color          : var(--dark);
-        width          : 100%;
-        border-bottom  : 1px solid var(--primary-color);
-        }
-        
-        dl.project-desc dt {
-            display        : inline-block;
-            width          : 40%;
-            font-weight    : bold;
-            text-align     : right;
-            }
-            
-            dl.project-desc dd {
-                display        : inline-block;
-                width          : 40%;
-                font-weight    : normal;
-                text-align     : left;
-    }
-
-    .manuscripts {
-        display        : flex;
-        justify-content: space-evenly;
-        align-items    : center;
-        margin         : 0 auto;
-
-    }
-
-    .manuscripts img {
-        width          : 45%;
-        height         : 150px;
-        border-radius  : 5px;
-        box-shadow     : 0 2px 5px rgba(0, 0, 0, 0.1);
-        object-fit     : cover;
-        display        : flex;
-        justify-content: center;
-        align-items    : center;
-        margin         : 0 auto;
-        padding        : 10px;
+    sequence-panel {
+        display: block;
+        margin: 0;
+        max-height: 10em;
     }
     `
 
@@ -76,7 +42,7 @@ class ProjectDetails extends HTMLElement {
         TPEN.eventDispatcher.on('tpen-project-loaded', () => this.render())
     }
 
-    render() {
+    async render() {
         const project = this.Project ?? TPEN.activeProject
         const projectOwner = Object.entries(project.collaborators).find(([userID, u]) => u.roles.includes('OWNER'))?.[1].profile.displayName
         const collaboratorCount = Object.keys(project.collaborators).length
@@ -86,20 +52,11 @@ class ProjectDetails extends HTMLElement {
 
         this.shadowRoot.innerHTML = `
             <style>${this.style}</style>
-            <dl class="project-desc">
-                <dt>Project ID</dt>
-                <dd>${TPEN.screen.projectInQuery}</dd>
-                <dt>Project Title</dt>
-                <dd>${TPEN.screen.title}</dd>
-                <dt>Project Owner</dt>
-                <dd>${projectOwner}</dd>
-                <dt>Project Collaborator Count</dt>
-                <dd>${collaboratorCount}</dd>
-            </dl>
-            <div class="manuscripts">
-                <img part="manuscript-img" src="../../assets/images/manuscript_img.webp" />
-                <img part="manuscript-img" src="../../assets/images/manuscript.webp" />
-            </div>
+            <h3>${TPEN.screen.title}</h3>
+            <small>${TPEN.screen.projectInQuery}</small>
+            <p>${projectOwner}, Owner</p>
+            <p>${collaboratorCount} collaborator${collaboratorCount===1? '' : 's'}</p>
+            <sequence-panel manifest-id="${project.manifest}" preset="responsive"></sequence-panel>
         `
     }
 }
