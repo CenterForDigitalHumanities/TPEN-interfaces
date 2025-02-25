@@ -4,45 +4,11 @@ import Project from "../../api/Project.mjs"
 class ProjectDetails extends HTMLElement {
 
     style = `
-    dl.project-desc {
-        color          : var(--dark);
-        width          : 100%;
-        border-bottom  : 1px solid var(--primary-color);
-        }
-        
-        dl.project-desc dt {
-            display        : inline-block;
-            width          : 40%;
-            font-weight    : bold;
-            text-align     : right;
-            }
-            
-            dl.project-desc dd {
-                display        : inline-block;
-                width          : 40%;
-                font-weight    : normal;
-                text-align     : left;
-    }
-
-    .manuscripts {
-        display        : flex;
-        justify-content: space-evenly;
-        align-items    : center;
-        margin         : 0 auto;
-
-    }
-
-    .manuscripts img {
-        width          : 45%;
-        height         : 150px;
-        border-radius  : 5px;
-        box-shadow     : 0 2px 5px rgba(0, 0, 0, 0.1);
-        object-fit     : cover;
-        display        : flex;
-        justify-content: center;
-        align-items    : center;
-        margin         : 0 auto;
-        padding        : 10px;
+    sequence-panel {
+        display: block;
+        margin: 0;
+        height: 10em;
+        overflow: visible;
     }
     `
 

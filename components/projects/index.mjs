@@ -1,17 +1,14 @@
-import User from "../../api/User.mjs"
 import TPEN from "../../api/TPEN.mjs"
-import { eventDispatcher } from "../../api/events.mjs"
-
 export default class ProjectsList extends HTMLElement {
     static get observedAttributes() {
-        return ['tpen-user-id', 'show-metadata']
+        return ['show-metadata']
     }
 
     #projects = []
 
     constructor() {
         super()
-        eventDispatcher.on("tpen-user-loaded", ev => this.currentUser = ev.detail)
+        TPEN.eventDispatcher.on("tpen-user-loaded", render)
     }
 
     async connectedCallback() {
@@ -43,7 +40,9 @@ export default class ProjectsList extends HTMLElement {
     }
 
     render() {
-        if (!TPEN.currentUser._id) return
+        if (!TPEN.currentUser._id) {
+            return
+        }
 
         const isManage = this.hasAttribute('manage') && this.getAttribute('manage') !== 'false'
         this.innerHTML = `
