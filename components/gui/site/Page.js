@@ -2,8 +2,6 @@ import './Header.js'
 import './Footer.js'
 
 class TpenPageTemplate extends HTMLElement {
-    
-    title = this.getAttribute('title')
 
     constructor() {
         super()
@@ -11,27 +9,27 @@ class TpenPageTemplate extends HTMLElement {
         const style = document.createElement('style')
         style.textContent = `
             tpen-page {
-                margin-top: 3.5em;
+                margin-top: 2.5em !important;
                 display: block;
             }
         `
-        this.prepend(style)
 
         shadow.innerHTML = `
-            <tpen-header title="${this.title ?? document.title}"></tpen-header> 
-            <div class="page-content" style="padding: 1em; margin: 0 auto; min-height: 40vh;">
-                <slot></slot>
-            </div>
-            <tpen-footer></tpen-footer>
+        <link rel="stylesheet" href="${window.location.origin + '/components/gui/site/page-layouts.css'}">
+        <tpen-header title="${this.title}"></tpen-header> 
+        <div class="page-content" style="padding: 1em; margin: 0 auto; min-height: 40vh;">
+            <slot></slot>
+        </div>
+        <tpen-footer></tpen-footer>
         `
+        this.prepend(style)
     }
     connectedCallback() {
         const pageHead = document.getElementsByTagName('head')[0]
-        const script = document.createElement('script')
-        script.src = 'index.js'
-        pageHead.appendChild(script)
-        pageHead.stylesheet = 'index.css'
-        document.title = this.title
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = `${window.location.origin + '/components/gui/site/index.css'}`
+        pageHead.prepend(link)
     }
 }
 
