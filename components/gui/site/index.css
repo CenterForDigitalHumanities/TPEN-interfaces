@@ -51,8 +51,6 @@ body {
     margin: 1.5em;
     padding: 1em;
     border-radius: 1em;
-    opacity: 1;
-    transition: opacity 5s;
 }
 
 body.fullscreen {
