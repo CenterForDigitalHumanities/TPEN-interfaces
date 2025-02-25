@@ -16,6 +16,10 @@ document.getElementById("update-metadata-btn").addEventListener('click', () => {
     window.location.href = `/components/update-metadata/index.html?projectID=${TPEN.activeProject._id}`
 })
 
+document.getElementById("add-custom-role-btn").addEventListener('click', async () => {
+    window.location.href = `/components/add-custom-role/index.html?projectID=${TPEN.activeProject._id}`  
+})
+
 function render() {
     if (!TPEN.activeProject) {
         return projectInfo.innerHTML = "No project"
