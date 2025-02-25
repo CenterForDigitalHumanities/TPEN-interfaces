@@ -8,7 +8,8 @@ class ProjectDetails extends HTMLElement {
     sequence-panel {
         display: block;
         margin: 0;
-        max-height: 10em;
+        height: 10em;
+        overflow: visible;
     }
     `
 

@@ -16,7 +16,7 @@ initialize the TPEN module and to make calls to the API.
   - [`getUser()`](#getuser)
   - [`getActiveProject()`](#getactiveproject)
   - [`getActiveCollection()`](#getactivecollection)
-  - [`getUserProjects()`](#getuserprojects)
+  - [`getUserProjects(idToken)`](#getuserprojectsidtoken)
   - [`getAllPublicProjects()`](#getallpublicprojects)
   - [`logout()`](#logout)
   - [`login()`](#login)
@@ -71,7 +71,7 @@ Returns the currently active [Collection](./Collection), if any.
 
 @alias for `new Project(TPEN.activeCollection)`
 
-### `getUserProjects()`
+### `getUserProjects(idToken)`
 
 Returns a list of all the [Projects the current user](./User.md) has access to.
 
