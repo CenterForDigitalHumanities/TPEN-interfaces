@@ -2,8 +2,16 @@ import './Header.js'
 import './Footer.js'
 
 class TpenPageTemplate extends HTMLElement {
-    
-    title = this.getAttribute('title')
+
+    static get observedAttributes() {
+        return ['title'];
+    }
+
+    attributeChangedCallback(name, oldValue, newValue) {
+        if (name === 'title') {
+            this.shadowRoot.querySelector('tpen-header').setAttribute('title', newValue)
+        }
+    }
 
     constructor() {
         super()
@@ -11,14 +19,14 @@ class TpenPageTemplate extends HTMLElement {
         const style = document.createElement('style')
         style.textContent = `
             tpen-page {
-                margin-top: 3.5em;
+                margin-top: 3.5em !important;
                 display: block;
             }
         `
-        
+
         shadow.innerHTML = `
         <link rel="stylesheet" href="${window.location.origin + '/components/gui/site/page-layouts.css'}">
-        <tpen-header title="${this.title ?? document.title}"></tpen-header> 
+        <tpen-header title="${this.title}"></tpen-header> 
         <div class="page-content" style="padding: 1em; margin: 0 auto; min-height: 40vh;">
         <slot></slot>
         </div>
@@ -32,7 +40,6 @@ class TpenPageTemplate extends HTMLElement {
         link.rel = 'stylesheet'
         link.href = `${window.location.origin + '/components/gui/site/index.css'}`
         pageHead.prepend(link)
-        document.title = this.title
     }
 }
 

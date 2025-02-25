@@ -8,107 +8,38 @@
 
 :host(.grid) .page-content {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: auto;
-    align-items: center;
-    gap: .5em;
-  }
-  ::slotted(.box) {
-    padding: 15px;
-    text-align: center;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-    border-radius: 5px;
-    background-color: var(--white);
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    align-items: center;
-    gap: 20px;
-    height: 100%;
-    min-height: 10em;
-  }
-  
-  ::slotted(.box tpen-project-details::part(project-card)) {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: 4px;
-  }
-  
-  ::slotted(.box .project-card-headings) {
-    font-weight: bold;
-    color: #b14628;
-    font-size: 1.2rem;
-  }
-  
-  ::slotted(.box tpen-project-details::part(project-card-headings)) {
-    width: 90%;
-    padding: 0 40px;
-  }
-  
-  ::slotted(.box tpen-project-details::part(project-desc)) {
-    color: black;
-    font-size: 0.875rem;
-    font-weight: bold;
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 4px;
-    margin: 0 auto;
-    border-bottom: 1px solid #ccc;
-  }
-  
-  ::slotted(.box tpen-project-details::part(project-desc-span)) {
-    color: #333;
-    font-size: 0.875rem;
-    font-weight: normal;
-  }
-  
-  ::slotted(.box tpen-project-details::part(manuscripts)) {
-    display: flex;
-    justify-content: space-evenly;
-    align-items: center;
-    margin: 0 auto;
-    
-  }
-  
-  ::slotted(.box tpen-project-details::part(manuscript-img)) {
-    width: 45%;
-    height: 150px;
-    border-radius: 5px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    object-fit: cover;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin: 0 auto;
-    padding: 10px;
-  }
-  
-  .box-w-btn{
-    justify-content: space-between;
-  }
+        grid-template-columns: repeat(auto-fit, minmax(12em, 25em));
+        grid-template-rows: auto;
+        justify-content: center;
+        gap: .5em;
+}
 
-  :host(.grid) .page-content.fullscreen {
+::slotted(.box) {
+    padding         : 15px;
+    text-align      : center;
+    box-shadow      : 0 2px 5px rgba(0, 0, 0, 0.3);
+    border-radius   : 5px;
+    background-color: var(--white);
+    display         : flex;
+    flex-direction  : column;
+    justify-content : flex-start;
+    align-items     : center;
+    gap             : 20px;
+    height          : 100%;
+    min-height      : 10em;
+    overflow        : hidden;
+}
+
+.box-w-btn {
+    justify-content: space-between;
+}
+
+:host(.grid) .page-content.fullscreen {
     grid-template-columns: 1fr;
-    height: 100vh;
+    height               : 100vh;
 }
 
 :host(.grid) .page-content.mobile {
     grid-template-columns: 1fr;
-    padding: 8px;
-}
-
-@media (min-width: 768px) {
-    :host(.grid) .page-content {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
-
-@media (min-width: 1024px) {
-    :host(.grid) .page-content {
-        grid-template-columns: repeat(3, 1fr);
-    }
+    padding              : 8px;
 }

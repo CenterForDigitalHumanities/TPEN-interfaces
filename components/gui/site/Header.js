@@ -1,4 +1,14 @@
+import TPEN from "../../../api/TPEN.mjs"
 class TpenHeader extends HTMLElement {
+    static get observedAttributes() {
+        return ['title']
+    }
+
+    attributeChangedCallback(name, oldValue, newValue) {
+        if (name === 'title') {
+            this.shadowRoot.querySelector('.banner').textContent = newValue
+        }
+    }
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
@@ -162,10 +172,18 @@ class TpenHeader extends HTMLElement {
                     <ul>
                         <li><a href="/home">Home</a></li>
                         <li><a href="#">About</a></li>
+                        <li><a href="https://three.t-pen.org/logout?returnTo=${location}">Logout</a></li>
                     </ul>
                 </nav>
             </header>
         `;
+    }
+    connectedCallback() {
+        TPEN.eventDispatcher.on('tpen-gui-action', ev => {
+            const btn = this.shadowRoot.querySelector('.action-button')
+            btn.textContent = ev.detail.label
+            btn.addEventListener('click', ev.detail.callback)
+        })
     }
 }
 

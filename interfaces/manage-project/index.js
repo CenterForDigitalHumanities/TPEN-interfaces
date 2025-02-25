@@ -5,7 +5,6 @@ import "../../components/project-details/index.js"
 import "../../components/project-metadata/index.js"
 import "../../components/projects-list/project-list-view.js"
 
-
 eventDispatcher.on('tpen-project-loaded', () => render())
 const container = document.body
 TPEN.attachAuthentication(container)
@@ -22,9 +21,5 @@ document.getElementById("update-metadata-btn").addEventListener('click', () => {
 })
 
 function render() {
-    if (!TPEN.activeProject) {
-        return projectInfo.innerHTML = "No project"
-    }
-    const projectTitle = document.querySelector('.project-title')
-    projectTitle.innerHTML = TPEN.activeProject.label
+    document.querySelector('tpen-project-details').setAttribute('tpen-project-id', TPEN.screen.projectInQuery)
 }
