@@ -103,7 +103,7 @@ class TpenHeader extends HTMLElement {
                 }
                 .action-button {
                     background-color: var(--primary-color);
-                    color: var(--darkest);
+                    color: var(--white);
                     border: none;
                     border-radius: 50%;
                     cursor: pointer;
@@ -113,6 +113,13 @@ class TpenHeader extends HTMLElement {
                     bottom: -.25em;
                     aspect-ratio: 1 / 1;
                     max-width: 15vw;
+                    outline: var(--primary-light) 1px solid;
+                    outline-offset: -3.5px;
+                    transition: all .3s;
+                }
+                .action-button:focus, .action-button:hover {
+                    outline: var(--primary-color) 1px solid;
+                    outline-offset: -1.5px;
                 }
                 button:hover {
                     background-color: var(--primary-light);

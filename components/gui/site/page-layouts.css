@@ -8,30 +8,10 @@
 
 :host(.grid) .page-content {
     display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(12em, 25em));
+        grid-template-columns: repeat(auto-fit, minmax(12em, 30%));
         grid-template-rows: auto;
         justify-content: center;
         gap: .5em;
-}
-
-::slotted(.box) {
-    padding         : 15px;
-    text-align      : center;
-    box-shadow      : 0 2px 5px rgba(0, 0, 0, 0.3);
-    border-radius   : 5px;
-    background-color: var(--white);
-    display         : flex;
-    flex-direction  : column;
-    justify-content : flex-start;
-    align-items     : center;
-    gap             : 20px;
-    height          : 100%;
-    min-height      : 10em;
-    overflow        : hidden;
-}
-
-.box-w-btn {
-    justify-content: space-between;
 }
 
 :host(.grid) .page-content.fullscreen {

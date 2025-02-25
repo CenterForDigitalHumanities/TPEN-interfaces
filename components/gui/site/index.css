@@ -35,6 +35,7 @@ html, body {
         --white: hsl(0, 0%, 100%);
         --gray: hsl(0, 0%, 60%);
         --light-gray: hsl(0, 0%, 90%);
+        --accent         : hsl(12, 60%, 40%);
         --link: hsl(12, 60%, 40%);
     }
 }
