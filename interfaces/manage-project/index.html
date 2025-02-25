@@ -4,62 +4,52 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Project Dashboard</title>
-    <link rel="stylesheet" href="./index.css">
+    <script type="module" src="../../components/gui/site/index.js"></script>
+    <script type="module" src="../../components/gui/card/Card.js"></script>
     <script type="module" src="./index.js"></script>
-    <script type="module" src="../../components/project-collaborators/index.js"></script>
-    <script type="module" src="../../components/project-details/index.js"></script>
-    <script type="module" src="../../components/project-metadata/index.js"></script>
-    <script type="module" src="../../components/projects-list/project-list-view.js"></script>
 </head>
 <body>
-    <div id="container" class="container">
-        <div part="header" class="header">
-            <img part="logo" class="logo" src="https://t-pen.org/TPEN/images/tpen_badgeEmergeClear.png" alt="TPEN Logo">
-            <h1 part="project-title" class="project-title"></h1> 
-            <button part="resume-btn" class="resume-btn">Resume</button>
-        </div>
-        <div class="card-container">
-            <div class="box">
-                <h4 class="project-card-headings">Project Card</h4>
-                <tpen-project-details></tpen-project-details>
-            </div>
-            <div class="box box-w-btn">
-                <h4 class="project-card-headings">Metadata</h4>
-                <tpen-project-metadata></tpen-project-metadata>
-                <button id="update-metadata-btn" class="manage-btn">EDIT</button>
-            </div>
-            <div class="box box-w-btn">
-                <h4 class="project-card-headings">Collaborators List</h4>
-                <project-collaborators></project-collaborators>
-                <button id="manage-collaboration-btn" class="manage-btn">MANAGE</button>
-            </div>
-            <div class="box">
-                <h4 class="project-card-headings">Projects List</h4>
-                <tpen-projects-view></tpen-projects-view>
-            </div>
-            <div class="box box-empty box-w-btn">
-                <h4 class="project-card-headings">Layers & Pages</h4>
-                <tpen-project-layers></tpen-project-layers>
-                <button id="manage-layers-btn" class="manage-btn">SEE DETAILS / MODIFY</button>
-            </div>
-            <div class="box box-w-btn">
-                <h4 class="project-card-headings">Permissions Summary</h4>
-                <tpen-project-permissions></tpen-project-permissions>
-                <button id="add-custom-role-btn" class="manage-btn">ADD ROLE</button>
-            </div>
-            <div class="box box-footer">
-                <h4 class="project-card-headings">Project Options</h4>
-                <tpen-project-options></tpen-project-options>
-            </div>
-            <div class="box box-footer">
-                <h4 class="project-card-headings">Export & Links</h4>
-                <tpen-project-export></tpen-project-export>
-            </div>
-            <div class="box box-footer">
-                <h4 class="project-card-headings">Annotations, Tags, Hotkeys, XML Tags</h4>
-                <tpen-project-annotations></tpen-project-annotations>
-            </div>
-        </div>
-    </div>
+    <tpen-page title="Project Dashboard" class="grid">
+        <tpen-card>
+            <h2 slot="header">This Project</h2>
+            <tpen-project-details slot="body"></tpen-project-details>
+        </tpen-card>
+        <tpen-card>
+            <h2 slot="header">Metadata</h2>
+            <tpen-project-metadata slot="body"></tpen-project-metadata>
+            <button id="update-metadata-btn" slot="footer" type="button">edit metadata</button>
+        </tpen-card>
+        <tpen-card>
+            <h2 slot="header">Collaborators</h2>
+            <project-collaborators slot="body"></project-collaborators>
+            <button id="manage-collaboration-btn" slot="footer" type="button">manage collaborators</button>
+        </tpen-card>
+        <tpen-card>
+            <h2 slot="header">All Projects</h2>
+            <tpen-projects-view slot="body"></tpen-projects-view>
+        </tpen-card>
+        <tpen-card>
+            <h2 slot="header">Layers & Pages</h2>
+            <tpen-project-layers slot="body"></tpen-project-layers>
+            <button id="manage-layers-btn" slot="footer" type="button">SEE DETAILS / MODIFY</button>
+        </tpen-card>
+        <tpen-card>
+            <h2 slot="header">Project Roles</h2>
+            <tpen-project-permissions slot="body"></tpen-project-permissions>
+            <button id="add-custom-role-btn" slot="footer" type="button">ADD ROLE</button>
+        </tpen-card>
+        <tpen-card>
+            <h2 slot="header">Project Options</h2>
+            <tpen-project-options slot="body"></tpen-project-options>
+        </tpen-card>
+        <tpen-card>
+            <h2 slot="header">Export & Links</h2>
+            <tpen-project-export slot="body"></tpen-project-export>
+        </tpen-card>
+        <tpen-card>
+            <h2 slot="header">Misc...</h2>
+            <tpen-project-annotations slot="body">Annotations, Tags, Hotkeys, XML Tags</tpen-project-annotations>
+        </tpen-card>
+    </tpen-page>
 </body>
 </html>

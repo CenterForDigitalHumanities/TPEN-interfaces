@@ -1,4 +1,6 @@
+import TPEN from "../../../api/TPEN.mjs"
 class TpenHeader extends HTMLElement {
+
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
@@ -8,6 +10,7 @@ class TpenHeader extends HTMLElement {
                     position: fixed;
                     background-color: var(--darkest);
                     width: 100%;
+                    height: 4em;
                     z-index: 15;
                     padding: 1em 1em 0 1em;
                     top: 0;
@@ -100,16 +103,23 @@ class TpenHeader extends HTMLElement {
                 }
                 .action-button {
                     background-color: var(--primary-color);
-                    color: var(--darkest);
+                    color: var(--white);
                     border: none;
                     border-radius: 50%;
                     cursor: pointer;
-                    font-size: 1.5em;
+                    font-size: 1.2em;
                     box-shadow: rgba(0, 0, 0, .5) 0 0 .25em;
                     position: relative;
                     bottom: -.25em;
                     aspect-ratio: 1 / 1;
                     max-width: 15vw;
+                    outline: var(--primary-light) 1px solid;
+                    outline-offset: -3.5px;
+                    transition: all .3s;
+                }
+                .action-button:focus, .action-button:hover {
+                    outline: var(--primary-color) 1px solid;
+                    outline-offset: -1.5px;
                 }
                 button:hover {
                     background-color: var(--primary-light);
@@ -162,10 +172,21 @@ class TpenHeader extends HTMLElement {
                     <ul>
                         <li><a href="/home">Home</a></li>
                         <li><a href="#">About</a></li>
+                        <li><a href="https://three.t-pen.org/logout?returnTo=${location}">Logout</a></li>
                     </ul>
                 </nav>
             </header>
         `;
+    }
+    connectedCallback() {
+        TPEN.eventDispatcher.on('tpen-gui-action', ev => {
+            const btn = this.shadowRoot.querySelector('.action-button')
+            btn.textContent = ev.detail.label
+            btn.addEventListener('click', ev.detail.callback)
+        })
+        TPEN.eventDispatcher.on('tpen-gui-title', ev => {
+            this.shadowRoot.querySelector('.banner').textContent = ev.detail
+        })
     }
 }
 

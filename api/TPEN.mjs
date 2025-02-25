@@ -18,6 +18,17 @@ class Tpen {
     #activeProject
     #activeCollection
 
+    eventDispatcher = eventDispatcher
+
+    screen = {
+        projectInQuery: new URLSearchParams(window.location.search).get('projectID'),
+        collectionInQuery: new URLSearchParams(window.location.search).get('collectionID'),
+        lineInQuery: new URLSearchParams(window.location.search).get('lineID'),
+        userInQuery: new URLSearchParams(window.location.search).get('userID'),
+        action: { label: "Action", link: "#" },
+        title: document.title
+    }
+
     constructor(tinyThingsURL = "https://dev.tiny.t-pen.org") {
         this.tinyThingsURL = tinyThingsURL
         this.servicesURL = "https://dev.api.t-pen.org"
@@ -27,11 +38,10 @@ class Tpen {
         eventDispatcher.on("tpen-user-loaded", ev => this.currentUser = ev.detail)
         eventDispatcher.on("tpen-project-loaded", ev => this.activeProject = ev.detail)
 
-        const projectInQuery = new URLSearchParams(window.location.search).get('projectID')
-        if (projectInQuery) {
+        if (this.screen.projectInQuery) {
             try {
                 import('./Project.mjs').then(module => {
-                    new module.default(projectInQuery).fetch()
+                    new module.default(this.screen.projectInQuery).fetch()
                 })
             } catch (error) {
                 console.error(error)
