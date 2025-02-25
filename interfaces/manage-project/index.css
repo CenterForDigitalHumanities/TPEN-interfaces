@@ -26,7 +26,8 @@
   justify-content: flex-start;
   align-items: center;
   gap: 20px;
-  height: 100%;
+  min-height: 350px;
+  width: 30%;
 }
 
 .box tpen-project-details::part(project-card) {
@@ -56,7 +57,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 4px;
+  padding: 4px 0;
   margin: 0 auto;
   border-bottom: 1px solid #ccc;
 }
@@ -69,10 +70,11 @@
 
 .box tpen-project-details::part(manuscripts) {
   display: flex;
-  justify-content: space-evenly;
+  justify-content: space-between;
   align-items: center;
   margin: 0 auto;
-  
+  width: 90%;
+  box-sizing: content-box;
 }
 
 .box tpen-project-details::part(manuscript-img) {
@@ -81,11 +83,8 @@
   border-radius: 5px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   object-fit: cover;
-  display: flex;
-  justify-content: center;
-  align-items: center;
   margin: 0 auto;
-  padding: 10px;
+  padding: 5px;
 }
 
 .box-w-btn{
@@ -167,7 +166,6 @@ tpen-project-metadata::part(metadata-title){
   color: black;
   font-size: 0.875rem;
   text-align: right;
-  padding: 0 10px;
 }
 
 tpen-project-metadata::part(metadata-value){
@@ -188,6 +186,10 @@ tpen-project-metadata::part(metadata-value){
   font-size: 16px;
   cursor: pointer;
   border-radius: 5px;
+}
+
+tpen-projects-view{
+  padding-top: 20px;
 }
 
 tpen-projects-view::part(project-list-ol) {
