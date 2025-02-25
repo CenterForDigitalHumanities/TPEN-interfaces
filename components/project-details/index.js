@@ -11,6 +11,16 @@ class ProjectDetails extends HTMLElement {
         height: 10em;
         overflow: visible;
     }
+    h3 {
+        color: var(--primary-color);
+        font-style: italic;
+        margin-block-end: 0;
+    }
+    small {
+        color: var(--gray);
+        text-align: right;
+        display: block;
+    }
     `
 
     constructor() {
@@ -56,7 +66,9 @@ class ProjectDetails extends HTMLElement {
             <h3>${TPEN.screen.title}</h3>
             <small>${TPEN.screen.projectInQuery}</small>
             <p>${projectOwner}, Owner</p>
-            <p>${collaboratorCount} collaborator${collaboratorCount===1? '' : 's'}</p>
+            <p>
+                ${collaboratorCount < 3 ? "Collaborators: "+Object.entries(project.collaborators).map(([userID, u]) => u.profile.displayName).join(', ') : `${collaboratorCount} collaborator${collaboratorCount===1? '' : 's'}`}
+            </p>
             <sequence-panel manifest-id="${project.manifest}" preset="responsive"></sequence-panel>
         `
     }
