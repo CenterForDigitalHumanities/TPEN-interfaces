@@ -82,8 +82,7 @@ class ProjectDetails extends HTMLElement {
         const collaboratorCount = Object.keys(project.collaborators).length
 
         TPEN.screen.title = project.label ?? project.title ?? project.name
-        const banner = document.querySelector('tpen-page')
-        if(banner) banner.setAttribute('title', TPEN.screen.title)
+        TPEN.eventDispatcher.dispatchEvent(new CustomEvent('tpen-gui-title', { detail: TPEN.screen.title }))
 
         this.shadowRoot.innerHTML = `
             <style>${this.style}</style>

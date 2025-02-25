@@ -3,23 +3,13 @@ import './Footer.js'
 
 class TpenPageTemplate extends HTMLElement {
 
-    static get observedAttributes() {
-        return ['title'];
-    }
-
-    attributeChangedCallback(name, oldValue, newValue) {
-        if (name === 'title') {
-            this.shadowRoot.querySelector('tpen-header').setAttribute('title', newValue)
-        }
-    }
-
     constructor() {
         super()
         const shadow = this.attachShadow({ mode: 'open' })
         const style = document.createElement('style')
         style.textContent = `
             tpen-page {
-                margin-top: 3.5em !important;
+                margin-top: 2.5em !important;
                 display: block;
             }
         `
@@ -28,7 +18,7 @@ class TpenPageTemplate extends HTMLElement {
         <link rel="stylesheet" href="${window.location.origin + '/components/gui/site/page-layouts.css'}">
         <tpen-header title="${this.title}"></tpen-header> 
         <div class="page-content" style="padding: 1em; margin: 0 auto; min-height: 40vh;">
-        <slot></slot>
+            <slot></slot>
         </div>
         <tpen-footer></tpen-footer>
         `

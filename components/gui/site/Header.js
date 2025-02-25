@@ -1,14 +1,6 @@
 import TPEN from "../../../api/TPEN.mjs"
 class TpenHeader extends HTMLElement {
-    static get observedAttributes() {
-        return ['title']
-    }
 
-    attributeChangedCallback(name, oldValue, newValue) {
-        if (name === 'title') {
-            this.shadowRoot.querySelector('.banner').textContent = newValue
-        }
-    }
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
@@ -18,6 +10,7 @@ class TpenHeader extends HTMLElement {
                     position: fixed;
                     background-color: var(--darkest);
                     width: 100%;
+                    height: 4em;
                     z-index: 15;
                     padding: 1em 1em 0 1em;
                     top: 0;
@@ -114,7 +107,7 @@ class TpenHeader extends HTMLElement {
                     border: none;
                     border-radius: 50%;
                     cursor: pointer;
-                    font-size: 1.5em;
+                    font-size: 1.2em;
                     box-shadow: rgba(0, 0, 0, .5) 0 0 .25em;
                     position: relative;
                     bottom: -.25em;
@@ -183,6 +176,9 @@ class TpenHeader extends HTMLElement {
             const btn = this.shadowRoot.querySelector('.action-button')
             btn.textContent = ev.detail.label
             btn.addEventListener('click', ev.detail.callback)
+        })
+        TPEN.eventDispatcher.on('tpen-gui-title', ev => {
+            this.shadowRoot.querySelector('.banner').textContent = ev.detail
         })
     }
 }
