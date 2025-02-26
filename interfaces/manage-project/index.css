@@ -112,6 +112,7 @@ tpen-project-details{
   color: black;
   font-size: 0.875rem;
   font-weight: bold;
+  text-align: left;
   width: 100%;
   display: flex;
   justify-content: space-between;
@@ -125,6 +126,7 @@ tpen-project-details{
   color: #333;
   font-size: 0.875rem;
   font-weight: normal;
+  text-align: right;
 }
 
 .box tpen-project-details::part(manuscripts) {
@@ -224,13 +226,13 @@ tpen-project-metadata::part(metadata-title){
   font-weight: bold;
   color: black;
   font-size: 0.875rem;
-  text-align: right;
+  text-align: left;
 }
 
 tpen-project-metadata::part(metadata-value){
   color: #333;
   font-size: 0.875rem;
-  text-align: left;
+  text-align: right;
 }
 
 .box .manage-btn {
