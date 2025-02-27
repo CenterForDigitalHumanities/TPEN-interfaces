@@ -17,7 +17,7 @@ document.getElementById("update-metadata-btn").addEventListener('click', () => {
 })
 
 document.getElementById("add-custom-role-btn").addEventListener('click', async () => {
-    window.location.href = `/components/add-custom-role/index.html?projectID=${TPEN.activeProject._id}`  
+    window.location.href = `/components/manage-role/index.html?projectID=${TPEN.activeProject._id}`  
 })
 
 function render() {

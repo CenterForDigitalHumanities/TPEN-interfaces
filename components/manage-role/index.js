@@ -1,6 +1,6 @@
 import TPEN from "../../api/TPEN.mjs"
 
-class AddCustomRole extends HTMLElement {
+class ManageRole extends HTMLElement {
     permissions = []
     constructor() {
         super()
@@ -14,24 +14,11 @@ class AddCustomRole extends HTMLElement {
 
     async connectedCallback() {
         this.render()
-        this.addEventListener()
+        this.addEventListeners()
     }
 
     render() {
         this.shadowRoot.innerHTML = `
-            <style>
-                button {
-                    padding: 10px 20px;
-                    font-size: 16px;
-                    cursor: pointer;
-                    background: #516059;
-                    color: #fff;
-                    border: none;
-                }
-                button:hover {
-                    background: #667a71;
-                }
-            </style>
             <label for="role-name">Role Name:</label><br>
             <input type="text" id="role-name" placeholder="Role name"><br><br>
 
@@ -70,7 +57,7 @@ class AddCustomRole extends HTMLElement {
         `
     }
 
-    addEventListener() {
+    addEventListeners() {
         this.shadowRoot.getElementById('add-role').addEventListener('click', () => this.addRole())
         this.shadowRoot.getElementById('add-permissions').addEventListener('click', () => this.addPermissions())
         this.shadowRoot.getElementById('reset').addEventListener('click', () => this.reset())
@@ -88,15 +75,16 @@ class AddCustomRole extends HTMLElement {
     }
 
     async addPermissions() {
-        if (this.shadowRoot.querySelector('input[name="action-permissions"]:checked') && this.shadowRoot.querySelector('input[name="scope-permissions"]:checked') && this.shadowRoot.querySelector('input[name="entity-permissions"]:checked')) {
-            const action = this.shadowRoot.querySelector('input[name="action-permissions"]:checked').value
-            const scope = this.shadowRoot.querySelector('input[name="scope-permissions"]:checked').value
-            const entity = this.shadowRoot.querySelector('input[name="entity-permissions"]:checked').value
-            this.permissions.push(`${action}_${scope}_${entity}`)
+        const action = this.shadowRoot.querySelector('input[name="action-permissions"]:checked')
+        const scope = this.shadowRoot.querySelector('input[name="scope-permissions"]:checked')
+        const entity = this.shadowRoot.querySelector('input[name="entity-permissions"]:checked')
+        const permissionString = this.shadowRoot.getElementById('permission').value
+
+        if (action && scope && entity) {
+            this.permissions.push(`${action.value}_${scope.value}_${entity.value}`)
         }
 
-        if (this.shadowRoot.getElementById('permission').value) {
-            const permissionString = this.shadowRoot.getElementById('permission').value
+        if (permissionString) {
             this.permissions.push(permissionString)
         }
 
@@ -109,10 +97,10 @@ class AddCustomRole extends HTMLElement {
             // this.shadowRoot.getElementById('add-role').setAttribute('readonly', '')
         }
 
-        this.shadowRoot.getElementById('permission').value = ''
-        this.shadowRoot.querySelector('input[name="action-permissions"]:checked').checked = false
-        this.shadowRoot.querySelector('input[name="scope-permissions"]:checked').checked = false
-        this.shadowRoot.querySelector('input[name="entity-permissions"]:checked').checked = false
+        permissionString = ''
+        action.checked = false
+        scope.checked = false
+        entity.checked = false
     }
 
     async addRole() {
@@ -142,4 +130,4 @@ class AddCustomRole extends HTMLElement {
 
 }
 
-customElements.define('add-custom-role', AddCustomRole)
+customElements.define('manage-role', ManageRole)
