@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Hot Keys Component</title>
+    <link rel="stylesheet" href="styles.css"> <!-- Optional -->
+</head>
+
+<body>
+    <!-- Include the Hot Keys Component -->
+    <tpen-hot-keys></tpen-hot-keys>
+
+    <!-- Test Area -->
+    <div style="margin: 20px; text-align: center;">
+        <h3>Test Hotkeys</h3>
+        <textarea id="transcription-box" rows="5" cols="40" placeholder="Type here..."></textarea>
+    </div>
+
+    <!-- Listen for the tpen-hot-keys event -->
+    <script>
+        document.addEventListener('tpen-hot-keys', (event) => {
+            const transcriptionBox = document.getElementById('transcription-box')
+            if (transcriptionBox) {
+                transcriptionBox.value += event.detail.symbol
+            }
+        });
+    </script>
+
+    <!-- Load the Hot Keys Component -->
+    <script src="./hot-keys.js"></script>
+</body>
+
+</html>
