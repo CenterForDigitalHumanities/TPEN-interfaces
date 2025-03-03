@@ -56,7 +56,7 @@ class TpenTestHotkeys extends HTMLElement {
         }
       </style>
       <div class="test-container">
-        <h2>Test Hotkeys</h2>
+        <h2>Transciption Block</h2>
         <textarea id="test-input" rows="5" placeholder="Type here..."></textarea>
         <div class="hotkeys-list" id="hotkeys-display"></div>
       </div>
@@ -111,4 +111,4 @@ class TpenTestHotkeys extends HTMLElement {
   }
 }
 
-customElements.define('tpen-test-hotkeys', TpenTestHotkeys)
+customElements.define('tpen-mock-transcriptions', TpenTestHotkeys)
