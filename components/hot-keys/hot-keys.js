@@ -1,14 +1,21 @@
-// components/tpen-hot-keys.js
 class TpenHotKeys extends HTMLElement {
     constructor() {
         super()
         this.attachShadow({ mode: 'open' })
-        this.hotkeys = []  
+        this.hotkeys = JSON.parse(localStorage.getItem('tpen-hotkeys')) || [] // Load hotkeys from localStorage
     }
 
     connectedCallback() {
         this.render()
         this.setupEventListeners()
+
+        // Listen for changes to localStorage from other tabs
+        window.addEventListener('storage', (event) => {
+            if (event.key === 'tpen-hotkeys') {
+                this.hotkeys = JSON.parse(event.newValue)
+                this.updateHotkeysDisplay()
+            }
+        })
     }
 
     render() {
@@ -77,9 +84,6 @@ class TpenHotKeys extends HTMLElement {
 
         const symbolInput = this.shadowRoot.getElementById('symbol-input')
         symbolInput.addEventListener('input', () => this.updateCharacterPreview())
-
-        // Listen for global keyboard shortcuts
-        document.addEventListener('keydown', (e) => this.handleHotkey(e))
     }
 
     updateCharacterPreview() {
@@ -123,12 +127,18 @@ class TpenHotKeys extends HTMLElement {
         if (symbol) {
             const shortcut = `Ctrl + ${this.hotkeys.length + 1}`
             this.hotkeys.push({ symbol, shortcut })
+            this.saveHotkeys() // Save to localStorage
             this.updateHotkeysDisplay()
             symbolInput.value = ''
             this.shadowRoot.getElementById('character-preview').textContent = ''
         } else {
             alert('Please enter a valid UTF-8 symbol.')
         }
+    }
+
+    saveHotkeys() {
+        // This implementation will change when services endpoints are ready
+        localStorage.setItem('tpen-hotkeys', JSON.stringify(this.hotkeys))
     }
 
     updateHotkeysDisplay() {
@@ -146,26 +156,8 @@ class TpenHotKeys extends HTMLElement {
 
     deleteHotkey(index) {
         this.hotkeys.splice(index, 1)
+        this.saveHotkeys() // Save to localStorage
         this.updateHotkeysDisplay()
-    }
-
-    handleHotkey(event) {
-        if (event.ctrlKey && !isNaN(event.key)) {
-            const index = parseInt(event.key) - 1
-            if (index >= 0 && index < this.hotkeys.length) {
-                const hotkey = this.hotkeys[index]
-                this.dispatchHotkeyEvent(hotkey.symbol)
-            }
-        }
-    }
-
-    dispatchHotkeyEvent(symbol) {
-        const hotkeyEvent = new CustomEvent('tpen-hot-keys', {
-            detail: { symbol },
-            bubbles: true,
-            composed: true,
-        })
-        document.dispatchEvent(hotkeyEvent)
     }
 }
 
