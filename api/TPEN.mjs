@@ -99,8 +99,12 @@ class Tpen {
         this.#activeCollection = collection
     }
 
-    async getUserProjects() {
-        return this.#currentUser.getUserProjects()
+    async getUserProjects(idToken) {
+        const userId = getUserFromToken(idToken)
+        await import('./User.mjs').then(module => {
+            const u = new module.default(userId)
+            return u.getProjects()
+        })
     }
 
     async getAllPublicProjects() {
@@ -147,7 +151,7 @@ class Tpen {
         element.setAttribute("require-auth", true)
         updateUser(element, token)
         eventDispatcher.on("token-expiration", () => element.classList.add("expired"))
-        eventDispatcher.dispatch("tpen-authenticated", { detail: token })
+        eventDispatcher.dispatch("tpen-authenticated", token)
     }
 }
 
