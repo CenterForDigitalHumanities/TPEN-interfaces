@@ -28,7 +28,7 @@ export default class ProjectsView extends HTMLElement {
     }
 
     render() {
-        if (!this.#projects.length) return
+        if (!this.#projects?.length) return
 
         this.shadowRoot.innerHTML = `
             <ol part="project-list-ol">
