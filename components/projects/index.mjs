@@ -8,14 +8,16 @@ export default class ProjectsList extends HTMLElement {
 
     constructor() {
         super()
-        TPEN.eventDispatcher.on("tpen-authenticated", async (ev)=>{
+        TPEN.eventDispatcher.on("tpen-authenticated", async (ev) => {
             try {
                 this.#projects = await TPEN.getUserProjects(ev.detail)
-            } catch(error) {
+            } catch (error) {
                 // Toast error message
                 const toast = new CustomEvent('tpen-toast', {
-                    message: `Error fetching projects: ${error.message}`,
-                    status: error.status
+                    detail: {
+                        message: `Error fetching projects: ${error.message}`,
+                        status: error.status
+                    }
                 })
                 TPEN.eventDispatcher.dispatchEvent(toast)
             }
@@ -29,7 +31,7 @@ export default class ProjectsList extends HTMLElement {
 
     attributeChangedCallback(name, oldValue, newValue) {
         if (name === 'show-metadata' || name === 'manage-project') {
-                this.render()
+            this.render()
         }
     }
 
