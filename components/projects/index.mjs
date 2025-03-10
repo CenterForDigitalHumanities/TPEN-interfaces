@@ -1,41 +1,37 @@
 import TPEN from "../../api/TPEN.mjs"
+import Toast from "../../components/gui/ToastContainer.js"
 export default class ProjectsList extends HTMLElement {
     static get observedAttributes() {
-        return ['show-metadata']
+        return ['show-metadata', 'manage-project']
     }
 
     #projects = []
 
     constructor() {
         super()
-        TPEN.eventDispatcher.on("tpen-user-loaded", render)
+        TPEN.eventDispatcher.on("tpen-user-loaded", async (ev)=>{
+            try {
+                this.#projects = TPEN.currentUser.getProjects()
+            } catch(error) {
+                // Toast error message
+                const toast = new CustomEvent('tpen-toast', {
+                    message: `Error fetching projects: ${error.message}`,
+                    status: error.status
+                })
+                TPEN.eventDispatcher.dispatchEvent(toast)
+            }
+            this.render()
+        })
     }
 
     async connectedCallback() {
         TPEN.attachAuthentication(this)
-        if (this.currentUser && this.currentUser._id) {
-            try {
-                await this.getProjects()
-                this.render()
-            } catch (error) {
-                console.error("Error fetching projects:", error)
-                this.innerHTML = "Failed to load projects."
-            }
-        } else {
-            this.innerHTML = "No user logged in yet"
-        }
     }
 
 
     attributeChangedCallback(name, oldValue, newValue) {
-        if (name === 'tpen-user-id') {
-            if (oldValue !== newValue) {
-                const loadedUser = new User(newValue)
-                loadedUser.authentication = TPEN.getAuthorization()
-                loadedUser.getProfile()
-            } else if (name === 'show-metadata' || name === 'manage') {
+        if (name === 'show-metadata' || name === 'manage-project') {
                 this.render()
-            }
         }
     }
 
@@ -44,7 +40,7 @@ export default class ProjectsList extends HTMLElement {
             return
         }
 
-        const isManage = this.hasAttribute('manage') && this.getAttribute('manage') !== 'false'
+        const isManage = Boolean(this.getAttribute('manage'))
         this.innerHTML = `
 
         <style>
