@@ -6,11 +6,21 @@ export default class ProjectsList extends HTMLElement {
 
     #projects = []
 
+    get projects() {
+        return this.#projects
+    }
+
+    set projects(projects) {
+        this.#projects = projects
+        this.render()
+        return this
+    }
+    
     constructor() {
         super()
         TPEN.eventDispatcher.on("tpen-authenticated", async (ev) => {
             try {
-                this.#projects = await TPEN.getUserProjects(ev.detail)
+                this.projects = await TPEN.getUserProjects(ev.detail)
             } catch (error) {
                 // Toast error message
                 const toast = new CustomEvent('tpen-toast', {
@@ -21,7 +31,6 @@ export default class ProjectsList extends HTMLElement {
                 })
                 TPEN.eventDispatcher.dispatchEvent(toast)
             }
-            this.render()
         })
     }
 
@@ -106,16 +115,6 @@ export default class ProjectsList extends HTMLElement {
         } catch (error) {
             console.error(`Error fetching contributors for project ${projectId}:`, error)
         }
-    }
-
-    get projects() {
-        return this.#projects
-    }
-
-    set projects(projects) {
-        this.#projects = projects
-        this.render()
-        return this
     }
 }
 
