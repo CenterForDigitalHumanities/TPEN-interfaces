@@ -86,26 +86,6 @@ export default class ProjectsList extends HTMLElement {
         })
     }
 
-
-    /**
-     * @deprecated
-     */
-    renderProjectsList() {
-        this.innerHTML = `
-            <h2>Welcome, ${this.currentUser.name}</h2>
-            <ul>
-                ${this.projects.map(project => `
-                    <li data-id="${project._id}" class="project-item">
-                        <strong>${project.title}</strong> (${project.roles.join(", ")})
-                        <button class="details-button">Details</button>
-                    </li>
-                `).join("")}
-            </ul>
-        `
-
-        this.attachDetailsListeners()
-    }
-
     attachDetailsListeners() {
         this.querySelectorAll('.details-button').forEach(button => {
             button.addEventListener('click', (event) => {
@@ -144,32 +124,6 @@ export default class ProjectsList extends HTMLElement {
                 return projects
             })
     }
-    /**
-     * 
-     * @deprecated This method is deprecated. Please use TPEN.activeProject.collaborators instead
-     */
-    async fetchContributors(projectId) {
-        const token = TPEN.getAuthorization()
-        const url = `${TPEN.servicesURL}/project/${projectId}/contributors`
-        console.log(`Fetching contributors from: ${url}`)
-
-        const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        })
-
-        if (!response.ok) {
-            console.error(`Failed to fetch contributors: ${response.statusText}`)
-            throw new Error(`Failed to fetch contributors for project ${projectId}`)
-        }
-
-        const data = await response.json()
-        console.log(`Fetched contributors for project ${projectId}:`, data)
-        return data
-    }
-
 
     get currentUser() {
         return TPEN.currentUser
