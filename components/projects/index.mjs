@@ -1,5 +1,4 @@
 import TPEN from "../../api/TPEN.mjs"
-import Toast from "../../components/gui/ToastContainer.js"
 export default class ProjectsList extends HTMLElement {
     static get observedAttributes() {
         return ['show-metadata', 'manage-project']
@@ -9,9 +8,9 @@ export default class ProjectsList extends HTMLElement {
 
     constructor() {
         super()
-        TPEN.eventDispatcher.on("tpen-user-loaded", async (ev)=>{
+        TPEN.eventDispatcher.on("tpen-authenticated", async (ev)=>{
             try {
-                this.#projects = TPEN.currentUser.getProjects()
+                this.#projects = await TPEN.getUserProjects(ev.detail)
             } catch(error) {
                 // Toast error message
                 const toast = new CustomEvent('tpen-toast', {
@@ -28,7 +27,6 @@ export default class ProjectsList extends HTMLElement {
         TPEN.attachAuthentication(this)
     }
 
-
     attributeChangedCallback(name, oldValue, newValue) {
         if (name === 'show-metadata' || name === 'manage-project') {
                 this.render()
@@ -36,12 +34,8 @@ export default class ProjectsList extends HTMLElement {
     }
 
     render() {
-        if (!TPEN.currentUser._id) {
-            return
-        }
-
-        const isManage = Boolean(this.getAttribute('manage'))
-        this.innerHTML = `
+        const isManage = Boolean(this.getAttribute('manage-project'))
+        this.innerHTML = (!this.#projects?.length) ? `No projects found` : `
 
         <style>
         li{
@@ -91,7 +85,6 @@ export default class ProjectsList extends HTMLElement {
         })
     }
 
-
     async loadContributors(projectId) {
         try {
             const contributors = TPEN.activeProject.collaborators
@@ -113,35 +106,13 @@ export default class ProjectsList extends HTMLElement {
         }
     }
 
-    async getProjects() {
-        return TPEN.currentUser.getProjects()
-            .then((projects) => {
-                this.#projects = projects
-                return projects
-            })
-    }
-
-    get currentUser() {
-        return TPEN.currentUser
-    }
-
-    set currentUser(user) {
-        if (TPEN.currentUser?._id !== user._id) {
-            TPEN.currentUser = user
-        }
-        TPEN.currentUser.getProjects().then((projects) => {
-            this.projects = projects
-            this.render()
-        })
-        return this
-    }
-
     get projects() {
         return this.#projects
     }
 
     set projects(projects) {
         this.#projects = projects
+        this.render()
         return this
     }
 }

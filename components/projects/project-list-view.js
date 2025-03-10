@@ -2,7 +2,16 @@ import TPEN from "../../api/TPEN.mjs"
 
 export default class ProjectsView extends HTMLElement {
     
-    #projects
+    #projects = []
+
+    get projects() {
+        return this.#projects
+    }
+
+    set projects(projects) {
+        this.#projects = projects
+        this.render()
+    }
 
     constructor() {
         super()
@@ -16,9 +25,17 @@ export default class ProjectsView extends HTMLElement {
             }
         `
         this.shadowRoot.appendChild(style)
-        TPEN.eventDispatcher.on("tpen-authenticated", async ev => {
-            this.#projects ??= await TPEN.getUserProjects(ev.detail)
-            this.render()
+        TPEN.eventDispatcher.on("tpen-authenticated", async (ev)=>{
+            try {
+                this.projects = await TPEN.getUserProjects(ev.detail)
+            } catch(error) {
+                // Toast error message
+                const toast = new CustomEvent('tpen-toast', {
+                    message: `Error fetching projects: ${error.message}`,
+                    status: error.status
+                })
+                TPEN.eventDispatcher.dispatchEvent(toast)
+            }
         })
     }
 
@@ -28,9 +45,7 @@ export default class ProjectsView extends HTMLElement {
     }
 
     render() {
-        if (!this.#projects.length) return
-
-        this.shadowRoot.innerHTML = `
+        this.shadowRoot.innerHTML = (!this.#projects.length) ? `No projects found` : `
             <ol part="project-list-ol">
                 ${this.#projects.reduce((a, project) =>
             a + `<li tpen-project-id=${project._id}>

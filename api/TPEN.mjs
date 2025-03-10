@@ -11,6 +11,8 @@
 import { decodeUserToken, getUserFromToken, checkExpired } from '../components/iiif-tools/index.mjs'
 import { eventDispatcher } from './events.mjs'
 
+import "../components/gui/toast/ToastContainer.js"
+
 class Tpen {
     #actionQueue = []
     #currentUser
@@ -101,7 +103,7 @@ class Tpen {
 
     async getUserProjects(idToken) {
         const userId = getUserFromToken(idToken)
-        await import('./User.mjs').then(module => {
+        return import('./User.mjs').then(module => {
             const u = new module.default(userId)
             return u.getProjects()
         })
