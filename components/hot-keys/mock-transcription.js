@@ -41,13 +41,27 @@ class TpenTestHotkeys extends HTMLElement {
           border-radius: 4px;
         }
         .hotkeys-list {
-          margin-top: 20px;
+          margin-top: 20px; 
+          display:flex;
+          flex-wrap:wrap;
+          gap:4px;
+          justify-content:space-evenly
         }
         .hotkeys-list div {
           padding: 8px;
-          border-bottom: 1px solid #eee;
+          border: 1px solid #eee;
           cursor: pointer;
+          display:flex;
+          flex-direction:column;
+          align-items:center
         }
+          .symbol{
+          font-weight:700;
+          font-size:18px
+          }
+        .shortcut{
+        font-size:10px;
+          }
         .hotkeys-list div:last-child {
           border-bottom: none;
         }
@@ -58,7 +72,7 @@ class TpenTestHotkeys extends HTMLElement {
       <div class="test-container">
         <h2>Transciption Block</h2>
         <textarea id="test-input" rows="5" placeholder="Type here..."></textarea>
-        <div class="hotkeys-list" id="hotkeys-display"></div>
+        <div class="hotkeys-list" id="hotkeys-display"</div>
       </div>
     `
   }
@@ -67,8 +81,10 @@ class TpenTestHotkeys extends HTMLElement {
     // Listen for clicks on the hotkeys list
     const hotkeysDisplay = this.shadowRoot.getElementById('hotkeys-display')
     hotkeysDisplay.addEventListener('click', (event) => {
-      if (event.target.tagName === 'DIV') {
-        const index = Array.from(hotkeysDisplay.children).indexOf(event.target)
+      // Find the closest parent div (hotkey container)
+      const hotkeyDiv = event.target.closest('div')
+      if (hotkeyDiv) {
+        const index = Array.from(hotkeysDisplay.children).indexOf(hotkeyDiv)
         const hotkey = this.hotkeys[index]
         if (hotkey) {
           this.insertSymbol(hotkey.symbol)
@@ -85,8 +101,8 @@ class TpenTestHotkeys extends HTMLElement {
     hotkeysDisplay.innerHTML = this.hotkeys
       .map((hotkey) => `
         <div>
-          <span>${hotkey.symbol}</span> - 
-          <span>${hotkey.shortcut}</span>
+          <span class="symbol">${hotkey.symbol}</span> 
+          <span class="shortcut">${hotkey.shortcut}</span>
         </div>
       `)
       .join('')
@@ -100,12 +116,26 @@ class TpenTestHotkeys extends HTMLElement {
   }
 
   handleHotkey(event) {
-    if (event.ctrlKey && !isNaN(event.key)) {
-      const index = parseInt(event.key) - 1
-      if (index >= 0 && index < this.hotkeys.length) {
-        const hotkey = this.hotkeys[index]
-        this.insertSymbol(hotkey.symbol)
-        event.preventDefault()
+    if (event.ctrlKey && !event.altKey && !event.metaKey) {
+      let shortcut = ''
+
+      // Check if a number key (0-9) was pressed
+      if (event.code.startsWith('Digit')) {
+        const number = event.code.replace('Digit', '') // Extract the number from the code
+        if (event.shiftKey) {
+          shortcut = `Ctrl + Shift + ${number}` // Ctrl + Shift + number
+        } else {
+          shortcut = `Ctrl + ${number}` // Ctrl + number
+        }
+      }
+
+      // Find the hotkey with the matching shortcut
+      if (shortcut) {
+        const hotkey = this.hotkeys.find(h => h.shortcut === shortcut)
+        if (hotkey) {
+          event.preventDefault()
+          this.insertSymbol(hotkey.symbol)
+        }
       }
     }
   }

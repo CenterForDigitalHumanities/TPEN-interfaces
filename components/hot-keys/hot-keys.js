@@ -1,26 +1,27 @@
 class TpenHotKeys extends HTMLElement {
-    constructor() {
-        super()
-        this.attachShadow({ mode: 'open' })
-        this.hotkeys = JSON.parse(localStorage.getItem('tpen-hotkeys')) || [] // Load hotkeys from localStorage
-    }
+  constructor() {
+    super()
+    this.attachShadow({ mode: 'open' })
+    this.hotkeys = JSON.parse(localStorage.getItem('tpen-hotkeys')) || [] // Load hotkeys from localStorage
+    this.validShortcuts = this.generateValidShortcuts()
+  }
 
-    connectedCallback() {
-        this.render()
-        this.setupEventListeners()
+  connectedCallback() {
+    this.render()
+    this.setupEventListeners()
+    this.updateHotkeysDisplay()
+
+    // Listen for changes to localStorage from other tabs
+    window.addEventListener('storage', (event) => {
+      if (event.key === 'tpen-hotkeys') {
+        this.hotkeys = JSON.parse(event.newValue)
         this.updateHotkeysDisplay()
+      }
+    })
+  }
 
-        // Listen for changes to localStorage from other tabs
-        window.addEventListener('storage', (event) => {
-            if (event.key === 'tpen-hotkeys') {
-                this.hotkeys = JSON.parse(event.newValue)
-                this.updateHotkeysDisplay()
-            }
-        })
-    }
-
-    render() {
-        this.shadowRoot.innerHTML = `
+  render() {
+    this.shadowRoot.innerHTML = `
         <style>
           /* Add your CSS styles here */
           .hotkeys-container {
@@ -77,89 +78,110 @@ class TpenHotKeys extends HTMLElement {
           </div>
         </div>
       `
+  }
+
+  setupEventListeners() {
+    const addButton = this.shadowRoot.getElementById('add-hotkey')
+    addButton.addEventListener('click', () => this.addHotkey())
+
+    const symbolInput = this.shadowRoot.getElementById('symbol-input')
+    symbolInput.addEventListener('input', () => this.updateCharacterPreview())
+  }
+
+  updateCharacterPreview() {
+    const symbolInput = this.shadowRoot.getElementById('symbol-input')
+    const characterPreview = this.shadowRoot.getElementById('character-preview')
+    const inputValue = symbolInput.value.trim()
+
+    // Parse the input to detect a valid UTF-8 symbol
+    const symbol = this.parseUtf8Symbol(inputValue)
+    if (symbol) {
+      characterPreview.textContent = symbol // Show the symbol
+    } else {
+      characterPreview.textContent = '' // Clear the preview if no valid symbol is found
+    }
+  }
+
+  parseUtf8Symbol(input) {
+    // Use a regular expression to detect HTML entities (e.g., &#9824;) or direct symbols
+    const htmlEntityRegex = /^&#(\d+);$/
+    const match = input.match(htmlEntityRegex)
+
+    if (match) {
+      // Convert the HTML entity to a symbol
+      const codePoint = parseInt(match[1], 10)
+      return String.fromCodePoint(codePoint)
+    } else if (input.length === 1) {
+      // If the input is a single character, assume it's a symbol
+      return input
     }
 
-    setupEventListeners() {
-        const addButton = this.shadowRoot.getElementById('add-hotkey')
-        addButton.addEventListener('click', () => this.addHotkey())
+    return null // No valid symbol detected
+  }
 
-        const symbolInput = this.shadowRoot.getElementById('symbol-input')
-        symbolInput.addEventListener('input', () => this.updateCharacterPreview())
+  generateValidShortcuts() {
+    const shortcuts = []
+    for (let i = 0; i <= 9; i++) {
+      shortcuts.push(`Ctrl + ${i}`) // Ctrl + 0 to Ctrl + 9 
     }
-
-    updateCharacterPreview() {
-        const symbolInput = this.shadowRoot.getElementById('symbol-input')
-        const characterPreview = this.shadowRoot.getElementById('character-preview')
-        const inputValue = symbolInput.value.trim()
-
-        // Parse the input to detect a valid UTF-8 symbol
-        const symbol = this.parseUtf8Symbol(inputValue)
-        if (symbol) {
-            characterPreview.textContent = symbol // Show the symbol
-        } else {
-            characterPreview.textContent = '' // Clear the preview if no valid symbol is found
-        }
+    for (let i = 1; i <= 9; i++) {
+      shortcuts.push(`Ctrl + Shift + ${i}`) // Ctrl + Shift +  to Ctrl + Shift + 9
     }
+    return shortcuts
+  }
 
-    parseUtf8Symbol(input) {
-        // Use a regular expression to detect HTML entities (e.g., &#9824;) or direct symbols
-        const htmlEntityRegex = /^&#(\d+);$/
-        const match = input.match(htmlEntityRegex)
-
-        if (match) {
-            // Convert the HTML entity to a symbol
-            const codePoint = parseInt(match[1], 10)
-            return String.fromCodePoint(codePoint)
-        } else if (input.length === 1) {
-            // If the input is a single character, assume it's a symbol
-            return input
-        }
-
-        return null // No valid symbol detected
+  getAvailableShortcut() {
+    const usedShortcuts = this.hotkeys.map(hotkey => hotkey.shortcut)
+    for (const shortcut of this.validShortcuts) {
+      if (!usedShortcuts.includes(shortcut)) {
+        return shortcut
+      }
     }
+    return ""
+  }
 
-    addHotkey() {
-        const symbolInput = this.shadowRoot.getElementById('symbol-input')
-        const inputValue = symbolInput.value.trim()
+  addHotkey() {
+    const symbolInput = this.shadowRoot.getElementById('symbol-input')
+    const inputValue = symbolInput.value.trim()
 
-        // Parse the input to get the symbol
-        const symbol = this.parseUtf8Symbol(inputValue)
+    // Parse the input to get the symbol
+    const symbol = this.parseUtf8Symbol(inputValue)
 
-        if (symbol) {
-            const shortcut = `Ctrl + ${this.hotkeys.length + 1}`
-            this.hotkeys.push({ symbol, shortcut })
-            this.saveHotkeys() // Save to localStorage
-            this.updateHotkeysDisplay()
-            symbolInput.value = ''
-            this.shadowRoot.getElementById('character-preview').textContent = ''
-        } else {
-            alert('Please enter a valid UTF-8 symbol.')
-        }
+    if (symbol) {
+      const shortcut = this.getAvailableShortcut()
+      this.hotkeys.push({ symbol, shortcut })
+      this.saveHotkeys() // Save to localStorage
+      this.updateHotkeysDisplay()
+      symbolInput.value = ''
+      this.shadowRoot.getElementById('character-preview').textContent = ''
+    } else {
+      alert('Please enter a valid UTF-8 symbol.')
     }
+  }
 
-    saveHotkeys() {
-        // This implementation will change when services endpoints are ready
-        localStorage.setItem('tpen-hotkeys', JSON.stringify(this.hotkeys))
-    }
+  saveHotkeys() {
+    // This implementation will change when services endpoints are ready
+    localStorage.setItem('tpen-hotkeys', JSON.stringify(this.hotkeys))
+  }
 
-    updateHotkeysDisplay() {
-        const hotkeysDisplay = this.shadowRoot.getElementById('hotkeys-display')
-        hotkeysDisplay.innerHTML = this.hotkeys
-            .map((hotkey, index) => `
+  updateHotkeysDisplay() {
+    const hotkeysDisplay = this.shadowRoot.getElementById('hotkeys-display')
+    hotkeysDisplay.innerHTML = this.hotkeys
+      .map((hotkey, index) => `
           <div>
             <span>${hotkey.symbol}</span> - 
             <span>${hotkey.shortcut}</span>
             <button onclick="this.getRootNode().host.deleteHotkey(${index})">Delete</button>
           </div>
         `)
-            .join('')
-    }
+      .join('')
+  }
 
-    deleteHotkey(index) {
-        this.hotkeys.splice(index, 1)
-        this.saveHotkeys() // Save to localStorage
-        this.updateHotkeysDisplay()
-    }
+  deleteHotkey(index) {
+    this.hotkeys.splice(index, 1)
+    this.saveHotkeys() // Save to localStorage
+    this.updateHotkeysDisplay()
+  }
 }
 
 customElements.define('tpen-hot-keys', TpenHotKeys)
