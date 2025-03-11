@@ -103,7 +103,13 @@ class TpenHotKeys extends HTMLElement {
   }
 
   parseUtf8Symbol(input) {
-    // Use a regular expression to detect HTML entities (e.g., &#9824;) or direct symbols
+    // Normalize the input by adding '&#' and ';' if necessary
+    if (/^\d+$/.test(input)) {
+      input = `&#${input};` // Convert "9728" to "&#9728;"
+    } else if (/^&#\d+$/.test(input)) {
+      input = `${input};` // Convert "&#9728" to "&#9728;"
+    }
+ 
     const htmlEntityRegex = /^&#(\d+);$/
     const match = input.match(htmlEntityRegex)
 
