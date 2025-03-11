@@ -8,6 +8,7 @@ class TpenHotKeys extends HTMLElement {
     connectedCallback() {
         this.render()
         this.setupEventListeners()
+        this.updateHotkeysDisplay()
 
         // Listen for changes to localStorage from other tabs
         window.addEventListener('storage', (event) => {
