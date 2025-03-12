@@ -122,10 +122,11 @@ class ProjectPermissions extends HTMLElement {
             })
             .then(res => res.ok ? res.json() : Promise.reject(res.status))
             .then(data => {
-                const roles = Object.entries(data.roles || {}).map(([key, value]) => ({
+                let roles = Object.entries(data.roles || {}).map(([key, value]) => ({
                     id: key,
                     name: value
-                }))  
+                }))
+                roles = roles.filter(role => data.collaborators[this.getAttribute("tpen-user-id")].roles.includes(role.id))
                 roles.forEach(role => {
                     const names = role.name
                     msg.innerHTML += `
