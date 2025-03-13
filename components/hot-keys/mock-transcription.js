@@ -1,20 +1,51 @@
-class TpenTestHotkeys extends HTMLElement {
+import { eventDispatcher } from "../../api/events.mjs"
+import TPEN from "../../api/TPEN.mjs"
+
+class TpenMockTranscription extends HTMLElement {
   constructor() {
     super()
     this.attachShadow({ mode: 'open' })
-    this.hotkeys = JSON.parse(localStorage.getItem('tpen-hotkeys')) || [] // Load hotkeys from localStorage
+    this.hotkeys = [] 
+    this.projectId = "676315c95f0dde3ba56ec54b" // We'd get this from URL or TPEN.activeProject
+    this.tpen = TPEN
+    TPEN.attachAuthentication(this)
+    this.loadHotkeys()
+  }
+
+  async loadHotkeys() {
+    try {
+      const AUTH_TOKEN = this.tpen.getAuthorization()
+      if (!AUTH_TOKEN) {
+        this.tpen.login()
+        return
+      }
+
+      const response = await fetch(`${this.tpen.servicesURL}/project/${this.projectId}/hotkeys`, {
+        headers: {
+          Authorization: `Bearer ${AUTH_TOKEN}`,
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        this.hotkeys = data || []
+        this.updateHotkeysDisplay()
+      } else {
+        console.error("Failed to load hotkeys:", response.statusText)
+      }
+    } catch (error) {
+      console.error("Error loading hotkeys:", error)
+    }
   }
 
   connectedCallback() {
     this.render()
     this.setupEventListeners()
-    this.updateHotkeysDisplay()
-    // Listen for changes to localStorage from other tabs
-    window.addEventListener('storage', (event) => {
-      if (event.key === 'tpen-hotkeys') {
-        this.hotkeys = JSON.parse(event.newValue)
-        this.updateHotkeysDisplay()
-      }
+
+    this.addEventListener('hotkey-insert', (event) => {
+      const { symbol } = event.detail
+      this.insertSymbol(symbol)
     })
   }
 
@@ -55,24 +86,21 @@ class TpenTestHotkeys extends HTMLElement {
           flex-direction:column;
           align-items:center
         }
-          .symbol{
+        .symbol {
           font-weight:700;
           font-size:18px
-          }
-        .shortcut{
-        font-size:10px;
-          }
-        .hotkeys-list div:last-child {
-          border-bottom: none;
+        }
+        .shortcut {
+          font-size:10px;
         }
         .hotkeys-list div:hover {
           background-color: #f0f0f0;
         }
       </style>
       <div class="test-container">
-        <h2>Transciption Block</h2>
+        <h2>Transcription Block</h2>
         <textarea id="test-input" rows="5" placeholder="Type here..."></textarea>
-        <div class="hotkeys-list" id="hotkeys-display"</div>
+        <div class="hotkeys-list" id="hotkeys-display"></div>
       </div>
     `
   }
@@ -81,13 +109,12 @@ class TpenTestHotkeys extends HTMLElement {
     // Listen for clicks on the hotkeys list
     const hotkeysDisplay = this.shadowRoot.getElementById('hotkeys-display')
     hotkeysDisplay.addEventListener('click', (event) => {
-      // Find the closest parent div (hotkey container)
       const hotkeyDiv = event.target.closest('div')
       if (hotkeyDiv) {
         const index = Array.from(hotkeysDisplay.children).indexOf(hotkeyDiv)
-        const hotkey = this.hotkeys[index]
-        if (hotkey) {
-          this.insertSymbol(hotkey.symbol)
+        const symbol = this.hotkeys[index]
+        if (symbol) {
+          this.dispatchInsertEvent(symbol)
         }
       }
     })
@@ -96,23 +123,15 @@ class TpenTestHotkeys extends HTMLElement {
     document.addEventListener('keydown', (e) => this.handleHotkey(e))
   }
 
-  updateHotkeysDisplay() {
-    const hotkeysDisplay = this.shadowRoot.getElementById('hotkeys-display')
-    hotkeysDisplay.innerHTML = this.hotkeys
-      .map((hotkey) => `
-        <div>
-          <span class="symbol">${hotkey.symbol}</span> 
-          <span class="shortcut">${hotkey.shortcut}</span>
-        </div>
-      `)
-      .join('')
-  }
-
-  insertSymbol(symbol) {
-    const testInput = this.shadowRoot.getElementById('test-input')
-    if (testInput) {
-      testInput.value += symbol
-    }
+  dispatchInsertEvent(symbol) {
+    // Dispatch a custom event to insert the symbol
+    const event = new CustomEvent('hotkey-insert', {
+      detail: { symbol },
+      bubbles: true,
+      composed: true,
+    })
+    eventDispatcher.dispatch(event)
+    // this.dispatchEvent(event)
   }
 
   handleHotkey(event) {
@@ -131,14 +150,59 @@ class TpenTestHotkeys extends HTMLElement {
 
       // Find the hotkey with the matching shortcut
       if (shortcut) {
-        const hotkey = this.hotkeys.find(h => h.shortcut === shortcut)
-        if (hotkey) {
-          event.preventDefault()
-          this.insertSymbol(hotkey.symbol)
+        const index = this.getIndexFromShortcut(shortcut)
+        if (index !== -1) {
+          const symbol = this.hotkeys[index]
+          if (symbol) {
+            event.preventDefault()
+            this.dispatchInsertEvent(symbol)
+          }
         }
       }
     }
   }
+
+  getIndexFromShortcut(shortcut) {
+    // Extract the number from the shortcut string
+    const numberMatch = shortcut.match(/\d+/)
+    if (numberMatch) {
+      const number = parseInt(numberMatch[0], 10)
+      if (shortcut.includes('Shift')) {
+        return number + 9 // For Ctrl + Shift + 1, return index 10, etc.
+      } else {
+        return number - 1 // For Ctrl + 1, return index 0, etc.
+      }
+    }
+    return -1 // No match found
+  }
+
+  updateHotkeysDisplay() {
+    const hotkeysDisplay = this.shadowRoot.getElementById('hotkeys-display')
+    hotkeysDisplay.innerHTML = this.hotkeys
+      .map((symbol, index) => `
+        <div>
+          <span class="symbol">${symbol}</span>
+          <span class="shortcut">${this.generateShortcut(index)}</span>
+        </div>
+      `)
+      .join('')
+  }
+
+  generateShortcut(index) {
+    // Generate shortcuts like Ctrl + 1, Ctrl + 2, etc.
+    if (index < 10) {
+      return `Ctrl + ${index + 1}`
+    } else {
+      return `Ctrl + Shift + ${index - 9}` // For indices >= 10, use Ctrl + Shift + 1, etc.
+    }
+  }
+
+  insertSymbol(symbol) {
+    const testInput = this.shadowRoot.getElementById('test-input')
+    if (testInput) {
+      testInput.value += symbol
+    }
+  }
 }
 
-customElements.define('tpen-mock-transcriptions', TpenTestHotkeys)
+customElements.define('tpen-mock-transcription', TpenMockTranscription)
