@@ -1,23 +1,84 @@
+import TPEN from "../../api/TPEN.mjs"
+
 class TpenHotKeys extends HTMLElement {
   constructor() {
     super()
     this.attachShadow({ mode: 'open' })
-    this.hotkeys = JSON.parse(localStorage.getItem('tpen-hotkeys')) || [] // Load hotkeys from localStorage
-    this.validShortcuts = this.generateValidShortcuts()
+    this._hotkeys = [] // Internal hotkeys array
+    this.projectId = "676315c95f0dde3ba56ec54b" // Replace with the actual project ID
+    this.tpen = TPEN // Use the shared TPEN instance
+    TPEN.attachAuthentication(this) // Attach authentication
+    this.loadHotkeys() // Load hotkeys from the database
+  }
+
+  // Getter and setter for hotkeys to trigger updates
+  get hotkeys() {
+    return this._hotkeys
+  }
+
+  set hotkeys(value) {
+    this._hotkeys = value
+    this.updateHotkeysDisplay() // Re-render the hotkeys list whenever the array changes
+  }
+
+  async loadHotkeys() {
+    try {
+      const AUTH_TOKEN = this.tpen.getAuthorization()
+      if (!AUTH_TOKEN) {
+        this.tpen.login() // Redirect to login if no token is found
+        return
+      }
+
+      const response = await fetch(`${this.tpen.servicesURL}/project/${this.projectId}/hotkeys`, {
+        headers: {
+          Authorization: `Bearer ${AUTH_TOKEN}`,
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        this.hotkeys = data // Use the setter to trigger a re-render
+      } else {
+        console.error("Failed to load hotkeys:", response.statusText)
+      }
+    } catch (error) {
+      console.error("Error loading hotkeys:", error)
+    }
+  }
+
+  async saveHotkeys() {
+    try {
+      const AUTH_TOKEN = this.tpen.getAuthorization()
+      if (!AUTH_TOKEN) {
+        this.tpen.login() // Redirect to login if no token is found
+        return
+      }
+
+      const method = this.hotkeys.length > 0 ? "PUT" : "POST" // Use PUT if hotkeys exist, POST otherwise
+      const response = await fetch(`${this.tpen.servicesURL}/project/${this.projectId}/hotkeys`, {
+        method,
+        headers: {
+          Authorization: `Bearer ${AUTH_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ symbols: this.hotkeys }), // Send symbols array in the request body
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        console.error("Failed to save hotkeys:", error.message)
+        alert(`Failed to save hotkeys: ${error.message}`) // Show error message to the user
+      }
+    } catch (error) {
+      console.error("Error saving hotkeys:", error)
+      alert("An error occurred while saving hotkeys. Please try again.") // Show generic error message
+    }
   }
 
   connectedCallback() {
     this.render()
     this.setupEventListeners()
-    this.updateHotkeysDisplay()
-
-    // Listen for changes to localStorage from other tabs
-    window.addEventListener('storage', (event) => {
-      if (event.key === 'tpen-hotkeys') {
-        this.hotkeys = JSON.parse(event.newValue)
-        this.updateHotkeysDisplay()
-      }
-    })
   }
 
   render() {
@@ -64,6 +125,10 @@ class TpenHotKeys extends HTMLElement {
             font-size: 24px;
             margin-left: 10px;
           }
+          .loading {
+            color: #888;
+            font-style: italic;
+          }
         </style>
         <div class="hotkeys-container">
           <h2>Hot Keys Manager</h2>
@@ -74,7 +139,9 @@ class TpenHotKeys extends HTMLElement {
           </div>
           <div class="hotkeys-list">
             <h3>Saved Hotkeys</h3>
-            <div id="hotkeys-display"></div>
+            <div id="hotkeys-display">
+              ${this.hotkeys.length === 0 ? '<div class="loading">Loading hotkeys...</div>' : ''}
+            </div>
           </div>
         </div>
       `
@@ -109,7 +176,7 @@ class TpenHotKeys extends HTMLElement {
     } else if (/^&#\d+$/.test(input)) {
       input = `${input};` // Convert "&#9728" to "&#9728;"
     }
- 
+
     const htmlEntityRegex = /^&#(\d+);$/
     const match = input.match(htmlEntityRegex)
 
@@ -125,28 +192,16 @@ class TpenHotKeys extends HTMLElement {
     return null // No valid symbol detected
   }
 
-  generateValidShortcuts() {
-    const shortcuts = []
-    for (let i = 0; i <= 9; i++) {
-      shortcuts.push(`Ctrl + ${i}`) // Ctrl + 0 to Ctrl + 9 
+  generateShortcut(index) {
+    // Generate shortcuts like Ctrl + 1, Ctrl + 2, etc.
+    if (index < 10) {
+      return `Ctrl + ${index + 1}`
+    } else {
+      return `Ctrl + Shift + ${index - 9}` // For indices >= 10, use Ctrl + Shift + 1, etc.
     }
-    for (let i = 1; i <= 9; i++) {
-      shortcuts.push(`Ctrl + Shift + ${i}`) // Ctrl + Shift +  to Ctrl + Shift + 9
-    }
-    return shortcuts
   }
 
-  getAvailableShortcut() {
-    const usedShortcuts = this.hotkeys.map(hotkey => hotkey.shortcut)
-    for (const shortcut of this.validShortcuts) {
-      if (!usedShortcuts.includes(shortcut)) {
-        return shortcut
-      }
-    }
-    return ""
-  }
-
-  addHotkey() {
+  async addHotkey() {
     const symbolInput = this.shadowRoot.getElementById('symbol-input')
     const inputValue = symbolInput.value.trim()
 
@@ -154,10 +209,8 @@ class TpenHotKeys extends HTMLElement {
     const symbol = this.parseUtf8Symbol(inputValue)
 
     if (symbol) {
-      const shortcut = this.getAvailableShortcut()
-      this.hotkeys.push({ symbol, shortcut })
-      this.saveHotkeys() // Save to localStorage
-      this.updateHotkeysDisplay()
+      this.hotkeys = [...this.hotkeys, symbol] // Use the setter to trigger a re-render
+      await this.saveHotkeys() // Save to the database
       symbolInput.value = ''
       this.shadowRoot.getElementById('character-preview').textContent = ''
     } else {
@@ -165,28 +218,22 @@ class TpenHotKeys extends HTMLElement {
     }
   }
 
-  saveHotkeys() {
-    // This implementation will change when services endpoints are ready
-    localStorage.setItem('tpen-hotkeys', JSON.stringify(this.hotkeys))
-  }
-
   updateHotkeysDisplay() {
     const hotkeysDisplay = this.shadowRoot.getElementById('hotkeys-display')
     hotkeysDisplay.innerHTML = this.hotkeys
-      .map((hotkey, index) => `
+      .map((symbol, index) => `
           <div>
-            <span>${hotkey.symbol}</span> - 
-            <span>${hotkey.shortcut}</span>
+            <span>${symbol}</span> - 
+            <span>${this.generateShortcut(index)}</span>
             <button onclick="this.getRootNode().host.deleteHotkey(${index})">Delete</button>
           </div>
         `)
       .join('')
   }
 
-  deleteHotkey(index) {
-    this.hotkeys.splice(index, 1)
-    this.saveHotkeys() // Save to localStorage
-    this.updateHotkeysDisplay()
+  async deleteHotkey(index) {
+    this.hotkeys = this.hotkeys.filter((_, i) => i !== index) // Use the setter to trigger a re-render
+    await this.saveHotkeys() // Save to the database
   }
 }
 
