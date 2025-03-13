@@ -1,223 +1,145 @@
 import TPEN from "../../api/TPEN.mjs"
-import { eventDispatcher } from "../../api/events.mjs"
 
-class ManageRole extends HTMLElement {
+TPEN.eventDispatcher.on('tpen-project-loaded', () => render())
+const container = document.body
+TPEN.attachAuthentication(container)
+
+let permissions = []
+let action = document.querySelector('input[name="action-permissions"]:checked')
+let scope = document.querySelector('input[name="scope-permissions"]:checked')
+let entity = document.querySelector('input[name="entity-permissions"]:checked')
+let permissionString = document.getElementById('permission')
+const permissionsDiv = document.getElementById('permissions')
+const role = document.getElementById('role-name')
+
+
+document.getElementById('add-role').addEventListener('click', () => addRole())
+document.getElementById("add-permissions").addEventListener('click', () => addPermissions())
+document.getElementById("resetPermissions").addEventListener('click', () => resetPermissions())
+document.getElementById("edit-role-name").addEventListener('click', () => editRoleName())
+
+function render() {
+    document.querySelector('.tpen-project-manage-permissions').setAttribute('tpen-project-id', TPEN.screen.projectInQuery)
+}
+
+function editRoleName() {
+    role.disabled = false
+}
+
+function checkedValues() {
+    if (action) {
+        action.checked = false
+    }
+    
+    if (scope) {
+        scope.checked = false
+    }
+    
+    if (entity) {
+        entity.checked = false
+    }
+}
+
+function resetPermissions() {
     permissions = []
-    constructor() {
-        super()
-        this.attachShadow({ mode: 'open' })
-        TPEN.attachAuthentication(this)
+    role.value = ''
+    role.disabled = false
+    checkedValues()
+    permissionString.value = ''
+    permissionsDiv.innerHTML = 'Permissions List: []'
+}
+
+function isValidPermissionText(permissionText) {
+    const regex = /^[A-Z]+_[A-Z]+[A-Z]/
+    return regex.test(permissionText)
+}
+
+function inPermissionList(permissionValue) {
+    if (permissions.includes(permissionValue)) {
+        return true
+    }
+    return false
+}
+
+function addPermissions() {
+    if (!action && !scope && !entity && !permissionString.value) {
+        return alert('Please select an action, scope, entity or permission text')
     }
 
-    static get observedAttributes() {
-        return ['tpen-user-id']
+    if (permissionString.value && !isValidPermissionText(permissionString.value)) {
+        permissionString.value = ''
+        checkedValues()
+        return alert('Invalid permission text')
     }
 
-    async connectedCallback() {
-        this.addEventListeners()
-        this.render()
-    }
-
-    render() {
-        this.shadowRoot.innerHTML = `
-            <label for="action-permissions">Action Permissions:</label><br><br>
-            <label for="scope-permissions">Scope Permissions:</label><br><br>
-            <label for="entity-permissions">Entity Permissions:</label><br><br>
-        `
-    }
-
-    async getPermissions() {
-        let action = []
-        let scope = []
-        let entity = []
-
-        if (!TPEN.activeProject) {
-            return this.innerHTML = "No project"
+    if (permissionString.value) {
+        if (inPermissionList(permissionString.value)) {
+            permissionString.value = ''
+            checkedValues()
+            return alert('Permission already in list')
         }
-        else {
-            const token = TPEN.getAuthorization()
-            await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            })
-            .then(res => res.ok ? res.json() : Promise.reject(res.status))
-            .then(data => {
-                let roles = Object.entries(data.roles || {}).map(([key, value]) => ({
-                    id: key,
-                    name: value
-                }))
-                roles = roles.filter(role => data.collaborators[this.getAttribute("tpen-user-id")].roles.includes(role.id))
-                roles.forEach(role => {
-                    const names = role.name
-                    names.map(name => {
-                        const nameSplit = name.split("_")
-                        action.push(nameSplit[0])
-                        scope.push(nameSplit[1])
-                        entity.push(nameSplit[2])
-                    })
-                    scope = [...new Set(scope)]
-                    entity = [...new Set(entity)]
-                    action = [...new Set(action)]
-                })
-            })
-            const actionRadio = this.shadowRoot.querySelector(`label[for="action-permissions"]`)
-            const scopeRadio = this.shadowRoot.querySelector(`label[for="scope-permissions"]`)
-            const entityRadio = this.shadowRoot.querySelector(`label[for="entity-permissions"]`)
-            
-            if(action.includes("*")){
-                actionRadio.innerHTML += `
-                    <br><input type="radio" name="action-permissions" value="CREATE"> CREATE <br>
-                    <input type="radio" name="action-permissions" value="READ"> READ <br>
-                    <input type="radio" name="action-permissions" value="UPDATE"> UPDATE <br>
-                    <input type="radio" name="action-permissions" value="DELETE"> DELETE <br>
-                    <input type="radio" name="action-permissions" value="*"> ALL
-                    `
-            } else {
-                for (let i = 0; i < action.length; i++) {
-                    actionRadio.innerHTML += `<br><input type="radio" name="action-permissions" value="${action[i]}">${action[i]}`
-                }
-            }
+        permissions.push(permissionString.value)
+        permissionString.value = ''
+        permissionsDiv.innerText = `Permissions List: [${permissions} ]`
+    }
 
-            if(scope.includes("*")){
-                scopeRadio.innerHTML += `
-                    <br><input type="radio" name="scope-permissions" value="METADATA"> METADATA <br>
-                    <input type="radio" name="scope-permissions" value="TEXT"> TEXT <br>
-                    <input type="radio" name="scope-permissions" value="ORDER"> ORDER <br>
-                    <input type="radio" name="scope-permissions" value="SELECTOR"> SELECTOR <br>
-                    <input type="radio" name="scope-permissions" value="DESCRIPTION"> DESCRIPTION <br>
-                    <input type="radio" name="scope-permissions" value="*"> ALL
-                    `
-            } else {
-                for (let i = 0; i < scope.length; i++) {
-                    scopeRadio.innerHTML += `<br><input type="radio" name="scope-permissions" value="${scope[i]}">${scope[i]}`
-                }
-            }
-
-            if(entity.includes("*")){
-                entityRadio.innerHTML += `
-                    <br><input type="radio" name="entity-permissions" value="PROJECT"> PROJECT <br>
-                    <input type="radio" name="entity-permissions" value="MEMBER"> MEMBER <br>
-                    <input type="radio" name="entity-permissions" value="LAYER"> LAYER <br>
-                    <input type="radio" name="entity-permissions" value="PAGE"> PAGE <br>
-                    <input type="radio" name="entity-permissions" value="LINE"> LINE <br>
-                    <input type="radio" name="entity-permissions" value="ROLE"> ROLE <br>
-                    <input type="radio" name="entity-permissions" value="PERMISSION"> PERMISSION <br>
-                    <input type="radio" name="entity-permissions" value="*"> ALL
-                    `
-            } else {
-                for (let i = 0; i < entity.length; i++) {
-                    entityRadio.innerHTML += `<br><input type="radio" name="entity-permissions" value="${entity[i]}">${entity[i]}`
-                }
-            }
+    if (action || scope || entity) {
+        if (!action || !scope || !entity) {
+            permissionString.value = ''
+            checkedValues()
+            return alert('Please select an action, scope and entity')
         }
     }
 
-    addEventListeners() {
-        this.getPermissions()
-        eventDispatcher.on('tpen-project-loaded', () => this.getPermissions()    )
-        document.getElementById('add-role').addEventListener('click', () => this.addRole())
-        document.getElementById('add-permissions').addEventListener('click', () => this.addPermissions())
-        document.getElementById('reset').addEventListener('click', () => this.reset())
-        document.getElementById('edit-role-name').addEventListener('click', () => this.editRoleName())
-    }
-
-    editRoleName() {
-        document.getElementById('role-name').disabled = false
-    }
-
-    checkedValues() {
-        const actionValue = this.shadowRoot.querySelector('input[name="action-permissions"]:checked')
-        const scopeValue = this.shadowRoot.querySelector('input[name="scope-permissions"]:checked')
-        const entityValue = this.shadowRoot.querySelector('input[name="entity-permissions"]:checked')
-        
-        if (actionValue) {
-            actionValue.checked = false
-        }
-        
-        if (scopeValue) {
-            scopeValue.checked = false
-        }
-        
-        if (entityValue) {
-            entityValue.checked = false
-        }
-    }
-
-    reset() {
-        this.permissions = []
-        document.getElementById('role-name').value = ''
-        document.getElementById('role-name').disabled = false
-        this.checkedValues()
-        const permissionsDiv = document.getElementById('permissions')
-        permissionsDiv.innerHTML = 'Permissions List: []'
-    }
-
-    async addPermissions() {
-        let action = this.shadowRoot.querySelector('input[name="action-permissions"]:checked')
-        let scope = this.shadowRoot.querySelector('input[name="scope-permissions"]:checked')
-        let entity = this.shadowRoot.querySelector('input[name="entity-permissions"]:checked')
-        let permissionString = document.getElementById('permission').value
-
-        if (action && scope && entity) {
-            this.permissions.push(` ${action.value}_${scope.value}_${entity.value}`)
+    if (action && scope && entity) {
+        if (inPermissionList(`${action.value}_${scope.value}_${entity.value}`)) {
             action.checked = false
             scope.checked = false
             entity.checked = false
+            return alert('Permission already in list')
         }
-        else {
-            alert('Please select an action, scope, and entity')
-        }
-
-        if (permissionString) {
-            this.permissions.push(permissionString)
-            permissionString = ''
-        }
-
-        const permissionsDiv = document.getElementById('permissions')
-        permissionsDiv.innerText = `Permissions List: [${this.permissions} ]`
-
-        if (document.getElementById('role-name').value) {
-            document.getElementById('role-name').disabled = true
-        }
+        permissions.push(`${action.value}_${scope.value}_${entity.value}`)
+        action.checked = false
+        scope.checked = false
+        entity.checked = false
+        permissionsDiv.innerText = `Permissions List: [${permissions} ]`
     }
 
-    async addRole() {
-        if (!document.getElementById('role-name').value) {
-            alert('Role name is required')
-            return
-        }
-
-        if (this.permissions.length === 0) {
-            alert('At least one permission is required')
-            return
-        }
-
-        const role = document.getElementById('role-name').value
-        await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/addCustomRoles`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${TPEN.getAuthorization()}`
-            },
-            body: JSON.stringify({
-                roles: {
-                    [role]: this.permissions
-                }
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                console.log('Custom roles added successfully')
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error)
-        })
+    if (role.value) {
+        role.disabled = true
     }
-
 }
 
-customElements.define('manage-role', ManageRole)
+async function addRole() {
+    if (!role) {
+        alert('Role name is required')
+        return
+    }
+
+    if (permissions.length === 0) {
+        alert('At least one permission is required')
+        return
+    }
+
+    await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/addCustomRoles`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${TPEN.getAuthorization()}`
+        },
+        body: JSON.stringify({
+            roles: {
+                [role]: permissions
+            }
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('Custom roles added successfully')
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error)
+    })
+}

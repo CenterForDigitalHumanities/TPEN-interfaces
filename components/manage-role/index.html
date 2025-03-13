@@ -4,21 +4,46 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="./index.js" type="module"></script>
-    <title>Manage Role</title>
+    <title>Manage Roles</title>
 </head>
 <body>
-    <label for="role-name">Role Name:</label><br>
-    <input type="text" id="role-name" placeholder="Role name"><br><br>
+    <div class="tpen-project-manage-permissions">
+        <label for="role-name">Role Name:</label>
+        <input type="text" id="role-name" placeholder="Role name">
+        <button id="edit-role-name">Edit Role Name</button>
 
-    <label for="permission">Permissions:</label><br>
-    <input type="text" id="permission" placeholder="Permission"><br><br>
+        <label for="permission">Permissions:</label>
+        <input type="text" id="permission" placeholder="Permission">
 
-    <manage-role></manage-role>
-   
-    <button id="reset">Reset</button>
-    <button id="edit-role-name">Edit Role Name</button>
-    <button id="add-permissions">Add permissions to List</button>
-    <button id="add-role">Add custom role</button>
-    <div id="permissions">Permissions List: []</div>
+        <label for="action-permissions">Action Permissions:</label>
+        <input type="radio" name="action-permissions" value="CREATE">CREATE
+        <input type="radio" name="action-permissions" value="READ">READ
+        <input type="radio" name="action-permissions" value="UPDATE">UPDATE
+        <input type="radio" name="action-permissions" value="DELETE">DELETE
+        <input type="radio" name="action-permissions" value="*">ALL
+
+        <label for="scope-permissions">Scope Permissions:</label>
+        <input type="radio" name="scope-permissions" value="METADATA">METADATA
+        <input type="radio" name="scope-permissions" value="TEXT">TEXT
+        <input type="radio" name="scope-permissions" value="ORDER">ORDER
+        <input type="radio" name="scope-permissions" value="SELECTOR">SELECTOR
+        <input type="radio" name="scope-permissions" value="DESCRIPTION">DESCRIPTION
+        <input type="radio" name="scope-permissions" value="*">ALL
+
+        <label for="entity-permissions">Entity Permissions:</label>
+        <input type="radio" name="entity-permissions" value="PROJECT">PROJECT
+        <input type="radio" name="entity-permissions" value="MEMBER">MEMBER
+        <input type="radio" name="entity-permissions" value="LAYER">LAYER
+        <input type="radio" name="entity-permissions" value="PAGE">PAGE
+        <input type="radio" name="entity-permissions" value="LINE">LINE
+        <input type="radio" name="entity-permissions" value="ROLE">ROLE
+        <input type="radio" name="entity-permissions" value="PERMISSION">PERMISSION
+        <input type="radio" name="entity-permissions" value="*">ALL
+    
+        <button id="resetPermissions">Reset</button>
+        <button id="add-permissions">Add permissions to List</button>
+        <button id="add-role">Add custom role</button>
+        <div id="permissions">Permissions List: []</div>
+    </div>
 </body>
 </html>
