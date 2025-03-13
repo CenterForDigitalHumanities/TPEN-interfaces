@@ -5,7 +5,7 @@ class TpenMockTranscription extends HTMLElement {
   constructor() {
     super()
     this.attachShadow({ mode: 'open' })
-    this.hotkeys = [] 
+    this.hotkeys = []
     this.projectId = "676315c95f0dde3ba56ec54b" // We'd get this from URL or TPEN.activeProject
     this.tpen = TPEN
     TPEN.attachAuthentication(this)
@@ -43,7 +43,7 @@ class TpenMockTranscription extends HTMLElement {
     this.render()
     this.setupEventListeners()
 
-    this.addEventListener('hotkey-insert', (event) => {
+    eventDispatcher.on('hotkey-insert', (event) => {
       const { symbol } = event.detail
       this.insertSymbol(symbol)
     })
@@ -114,7 +114,7 @@ class TpenMockTranscription extends HTMLElement {
         const index = Array.from(hotkeysDisplay.children).indexOf(hotkeyDiv)
         const symbol = this.hotkeys[index]
         if (symbol) {
-          this.dispatchInsertEvent(symbol)
+          eventDispatcher.dispatch('hotkey-insert', { symbol })
         }
       }
     })
@@ -123,16 +123,6 @@ class TpenMockTranscription extends HTMLElement {
     document.addEventListener('keydown', (e) => this.handleHotkey(e))
   }
 
-  dispatchInsertEvent(symbol) {
-    // Dispatch a custom event to insert the symbol
-    const event = new CustomEvent('hotkey-insert', {
-      detail: { symbol },
-      bubbles: true,
-      composed: true,
-    })
-    eventDispatcher.dispatch(event)
-    // this.dispatchEvent(event)
-  }
 
   handleHotkey(event) {
     if (event.ctrlKey && !event.altKey && !event.metaKey) {
@@ -140,7 +130,7 @@ class TpenMockTranscription extends HTMLElement {
 
       // Check if a number key (0-9) was pressed
       if (event.code.startsWith('Digit')) {
-        const number = event.code.replace('Digit', '') // Extract the number from the code
+        const number = event.code.replace('Digit', '')
         if (event.shiftKey) {
           shortcut = `Ctrl + Shift + ${number}` // Ctrl + Shift + number
         } else {
@@ -155,7 +145,7 @@ class TpenMockTranscription extends HTMLElement {
           const symbol = this.hotkeys[index]
           if (symbol) {
             event.preventDefault()
-            this.dispatchInsertEvent(symbol)
+            eventDispatcher.dispatch('hotkey-insert', { symbol })
           }
         }
       }
@@ -189,11 +179,10 @@ class TpenMockTranscription extends HTMLElement {
   }
 
   generateShortcut(index) {
-    // Generate shortcuts like Ctrl + 1, Ctrl + 2, etc.
     if (index < 10) {
       return `Ctrl + ${index + 1}`
     } else {
-      return `Ctrl + Shift + ${index - 9}` // For indices >= 10, use Ctrl + Shift + 1, etc.
+      return `Ctrl + Shift + ${index - 9}`
     }
   }
 
