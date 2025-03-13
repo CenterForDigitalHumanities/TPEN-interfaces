@@ -5,13 +5,9 @@ const container = document.body
 TPEN.attachAuthentication(container)
 
 let permissions = []
-let action = document.querySelector('input[name="action-permissions"]:checked')
-let scope = document.querySelector('input[name="scope-permissions"]:checked')
-let entity = document.querySelector('input[name="entity-permissions"]:checked')
 let permissionString = document.getElementById('permission')
 const permissionsDiv = document.getElementById('permissions')
 const role = document.getElementById('role-name')
-
 
 document.getElementById('add-role').addEventListener('click', () => addRole())
 document.getElementById("add-permissions").addEventListener('click', () => addPermissions())
@@ -27,6 +23,10 @@ function editRoleName() {
 }
 
 function checkedValues() {
+    let action = document.querySelector('input[name="action-permissions"]:checked')
+    let scope = document.querySelector('input[name="scope-permissions"]:checked')
+    let entity = document.querySelector('input[name="entity-permissions"]:checked')
+
     if (action) {
         action.checked = false
     }
@@ -50,7 +50,7 @@ function resetPermissions() {
 }
 
 function isValidPermissionText(permissionText) {
-    const regex = /^[A-Z]+_[A-Z]+[A-Z]/
+    const regex = /^[A-Z*]+_[A-Z*]+_[A-Z*]+$/
     return regex.test(permissionText)
 }
 
@@ -62,6 +62,14 @@ function inPermissionList(permissionValue) {
 }
 
 function addPermissions() {
+    let action = document.querySelector('input[name="action-permissions"]:checked')
+    let scope = document.querySelector('input[name="scope-permissions"]:checked')
+    let entity = document.querySelector('input[name="entity-permissions"]:checked')
+
+    if (role.value) {
+        role.disabled = true
+    }
+
     if (!action && !scope && !entity && !permissionString.value) {
         return alert('Please select an action, scope, entity or permission text')
     }
@@ -80,7 +88,7 @@ function addPermissions() {
         }
         permissions.push(permissionString.value)
         permissionString.value = ''
-        permissionsDiv.innerText = `Permissions List: [${permissions} ]`
+        permissionsDiv.innerText = `Permissions List: [${permissions}]`
     }
 
     if (action || scope || entity) {
@@ -102,16 +110,12 @@ function addPermissions() {
         action.checked = false
         scope.checked = false
         entity.checked = false
-        permissionsDiv.innerText = `Permissions List: [${permissions} ]`
-    }
-
-    if (role.value) {
-        role.disabled = true
+        permissionsDiv.innerText = `Permissions List: [${permissions}]`
     }
 }
 
 async function addRole() {
-    if (!role) {
+    if (!role.value) {
         alert('Role name is required')
         return
     }
@@ -129,7 +133,7 @@ async function addRole() {
         },
         body: JSON.stringify({
             roles: {
-                [role]: permissions
+                [role.value]: permissions
             }
         })
     })
