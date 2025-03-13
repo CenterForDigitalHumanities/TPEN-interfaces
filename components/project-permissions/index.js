@@ -66,7 +66,13 @@ class ProjectPermissions extends HTMLElement {
             rolesList.innerHTML += `
                 <li>
                     <span id="roleID">${role.id}</span>
-                    <span><ol class="name-ol">${role.name.map(name => `<li class="name-li">${this.getReadablePermission(name).toLowerCase()}</li>`).join("")}</ol></span>
+                    <span>
+                        <ol class="name-ol">
+                            ${role.name.map(name => 
+                            `<li class="name-li">${this.getReadablePermission(name).toLowerCase()}</li>`)
+                            .join("")}
+                        </ol>
+                    </span>
                 </li>
             `
         })
