@@ -1,5 +1,4 @@
 import TPEN from "../../api/TPEN.mjs"
-import { eventDispatcher } from "../../api/events.mjs"
 
 class ProjectPermissions extends HTMLElement {
     constructor() {
@@ -9,7 +8,7 @@ class ProjectPermissions extends HTMLElement {
 
     connectedCallback() {
         TPEN.attachAuthentication(this)
-        eventDispatcher.on("tpen-project-loaded", () => this.render())
+        TPEN.eventDispatcher.on("tpen-project-loaded", () => this.render())
     }
 
     async render() {
