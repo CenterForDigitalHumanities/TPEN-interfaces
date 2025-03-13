@@ -4,11 +4,10 @@ class TpenHotKeys extends HTMLElement {
   constructor() {
     super()
     this.attachShadow({ mode: 'open' })
-    this._hotkeys = [] // Internal hotkeys array
-    this.projectId = "676315c95f0dde3ba56ec54b" // Replace with the actual project ID
-    this.tpen = TPEN // Use the shared TPEN instance
-    TPEN.attachAuthentication(this) // Attach authentication
-    this.loadHotkeys() // Load hotkeys from the database
+    this._hotkeys = []
+    this.projectId = "676315c95f0dde3ba56ec54b" // to be replaced with ID from URL or TPEN.activeProject
+    TPEN.attachAuthentication(this)
+    this.loadHotkeys()
   }
 
   // Getter and setter for hotkeys to trigger updates
@@ -18,18 +17,18 @@ class TpenHotKeys extends HTMLElement {
 
   set hotkeys(value) {
     this._hotkeys = value
-    this.updateHotkeysDisplay() // Re-render the hotkeys list whenever the array changes
+    this.updateHotkeysDisplay()
   }
 
   async loadHotkeys() {
     try {
-      const AUTH_TOKEN = this.tpen.getAuthorization()
+      const AUTH_TOKEN = TPEN.getAuthorization()
       if (!AUTH_TOKEN) {
-        this.tpen.login() // Redirect to login if no token is found
+        TPEN.login() // Redirect to login if no token is found
         return
       }
 
-      const response = await fetch(`${this.tpen.servicesURL}/project/${this.projectId}/hotkeys`, {
+      const response = await fetch(`${TPEN.servicesURL}/project/${this.projectId}/hotkeys`, {
         headers: {
           Authorization: `Bearer ${AUTH_TOKEN}`,
           'Content-Type': 'application/json',
@@ -49,30 +48,30 @@ class TpenHotKeys extends HTMLElement {
 
   async saveHotkeys() {
     try {
-      const AUTH_TOKEN = this.tpen.getAuthorization()
+      const AUTH_TOKEN = TPEN.getAuthorization()
       if (!AUTH_TOKEN) {
-        this.tpen.login() // Redirect to login if no token is found
+        TPEN.login()
         return
       }
 
       const method = this.hotkeys.length > 0 ? "PUT" : "POST" // Use PUT if hotkeys exist, POST otherwise
-      const response = await fetch(`${this.tpen.servicesURL}/project/${this.projectId}/hotkeys`, {
+      const response = await fetch(`${TPEN.servicesURL}/project/${this.projectId}/hotkeys`, {
         method,
         headers: {
           Authorization: `Bearer ${AUTH_TOKEN}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ symbols: this.hotkeys }), // Send symbols array in the request body
+        body: JSON.stringify({ symbols: this.hotkeys }),
       })
 
       if (!response.ok) {
         const error = await response.json()
         console.error("Failed to save hotkeys:", error.message)
-        alert(`Failed to save hotkeys: ${error.message}`) // Show error message to the user
+        alert(`Failed to save hotkeys: ${error.message}`)
       }
     } catch (error) {
       console.error("Error saving hotkeys:", error)
-      alert("An error occurred while saving hotkeys. Please try again.") // Show generic error message
+      alert("An error occurred while saving hotkeys. Please try again.")
     }
   }
 
@@ -189,15 +188,15 @@ class TpenHotKeys extends HTMLElement {
       return input
     }
 
-    return null // No valid symbol detected
+    return null
   }
 
   generateShortcut(index) {
-    // Generate shortcuts like Ctrl + 1, Ctrl + 2, etc.
+    // This doesn't really have to be here since we use shortcuts in the transcription interface, we may only render it there as well
     if (index < 10) {
       return `Ctrl + ${index + 1}`
     } else {
-      return `Ctrl + Shift + ${index - 9}` // For indices >= 10, use Ctrl + Shift + 1, etc.
+      return `Ctrl + Shift + ${index - 9}`
     }
   }
 
@@ -205,12 +204,11 @@ class TpenHotKeys extends HTMLElement {
     const symbolInput = this.shadowRoot.getElementById('symbol-input')
     const inputValue = symbolInput.value.trim()
 
-    // Parse the input to get the symbol
     const symbol = this.parseUtf8Symbol(inputValue)
 
     if (symbol) {
-      this.hotkeys = [...this.hotkeys, symbol] // Use the setter to trigger a re-render
-      await this.saveHotkeys() // Save to the database
+      this.hotkeys = [...this.hotkeys, symbol]
+      await this.saveHotkeys()
       symbolInput.value = ''
       this.shadowRoot.getElementById('character-preview').textContent = ''
     } else {
@@ -232,8 +230,8 @@ class TpenHotKeys extends HTMLElement {
   }
 
   async deleteHotkey(index) {
-    this.hotkeys = this.hotkeys.filter((_, i) => i !== index) // Use the setter to trigger a re-render
-    await this.saveHotkeys() // Save to the database
+    this.hotkeys = this.hotkeys.filter((_, i) => i !== index)
+    await this.saveHotkeys()
   }
 }
 
