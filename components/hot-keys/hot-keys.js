@@ -5,7 +5,7 @@ class TpenHotKeys extends HTMLElement {
     super()
     this.attachShadow({ mode: 'open' })
     this._hotkeys = []
-    this.projectId = "67d45d74855ec5031daac0b5" // to be replaced with ID from URL or TPEN.activeProject
+    this.projectId = new URLSearchParams(window.location.search).get("projectID")
     TPEN.attachAuthentication(this)
     this.loadHotkeys()
   }
