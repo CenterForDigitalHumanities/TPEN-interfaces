@@ -51,7 +51,6 @@ class TpenMockTranscription extends HTMLElement {
   render() {
     this.shadowRoot.innerHTML = `
       <style>
-        /* Add your CSS styles here */
         .test-container {
           font-family: Arial, sans-serif;
           padding: 20px;

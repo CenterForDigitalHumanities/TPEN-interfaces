@@ -11,7 +11,7 @@ class TpenHotKeys extends HTMLElement {
     this.loadHotkeys()
   }
 
-  // Getter and setter for hotkeys to trigger updates
+
   get hotkeys() {
     return this._hotkeys
   }
@@ -25,7 +25,7 @@ class TpenHotKeys extends HTMLElement {
     try {
       const AUTH_TOKEN = TPEN.getAuthorization()
       if (!AUTH_TOKEN) {
-        TPEN.login() // Redirect to login if no token is found
+        TPEN.login() 
         return
       }
 
@@ -38,7 +38,7 @@ class TpenHotKeys extends HTMLElement {
 
       if (response.ok) {
         const data = await response.json()
-        this.hotkeys = data // Use the setter to trigger a re-render
+        this.hotkeys = data 
       } else {
         console.error("Failed to load hotkeys:", response.statusText)
       }
@@ -135,6 +135,34 @@ class TpenHotKeys extends HTMLElement {
           .hotkeys-list div:last-child {
             border-bottom: none;
           }
+
+          .hotkey-row{
+          display:flex;
+          gap:10px;
+          align-items:center;
+          }
+
+          .hotkey{
+          display:flex;
+          flex-direction:column;
+          align-items:center;
+          }
+
+          .symbol {
+          font-weight:700;
+          font-size:18px
+        }
+        .shortcut {
+          font-size:10px;
+        }
+  .delete {
+    width: 20px;
+    font-weight: 600;
+    color: red;
+    user-select: none;
+    cursor: pointer;
+  }
+
           .special-characters {
             margin-top: 20px;
           }
@@ -359,10 +387,12 @@ class TpenHotKeys extends HTMLElement {
     const hotkeysDisplay = this.shadowRoot.getElementById('hotkeys-display')
     hotkeysDisplay.innerHTML = this.hotkeys
       .map((symbol, index) => `
-          <div>
-            <span>${symbol}</span> - 
-            <span>${this.generateShortcut(index)}</span>
-            <button onclick="this.getRootNode().host.deleteHotkey(${index})">Delete</button>
+          <div class="hotkey-row">
+          <div class="hotkey">
+            <span class="symbol">${symbol}</span> 
+            <span class="shortcut">${this.generateShortcut(index)}</span>
+          </div>
+          <div onclick="this.getRootNode().host.deleteHotkey(${index})" class="delete">&#128465;</div>
           </div>
         `)
       .join('')
