@@ -1,3 +1,4 @@
+import { eventDispatcher } from "../../api/events.mjs"
 import TPEN from "../../api/TPEN.mjs"
 
 class TpenHotKeys extends HTMLElement {
@@ -49,6 +50,7 @@ class TpenHotKeys extends HTMLElement {
   async saveHotkeys() {
     try {
       const AUTH_TOKEN = TPEN.getAuthorization()
+
       if (!AUTH_TOKEN) {
         TPEN.login()
         return
@@ -64,16 +66,27 @@ class TpenHotKeys extends HTMLElement {
         body: JSON.stringify({ symbols: this.hotkeys }),
       })
 
+      let toast = { message: "", status: "" }
+
       if (!response.ok) {
         const error = await response.json()
-        console.error("Failed to save hotkeys:", error.message)
-        alert(`Failed to save hotkeys: ${error.message}`)
+        toast.message = `Failed to save hotkeys: ${error.message}`
+        toast.status = "error"
+      } else {
+        toast.message = "Hotkeys updated successfully"
+        toast.status = "info"
       }
+
+      eventDispatcher.dispatch("tpen-toast", toast)
+      return response
     } catch (error) {
-      console.error("Error saving hotkeys:", error)
-      alert("An error occurred while saving hotkeys. Please try again.")
+      eventDispatcher.dispatch("tpen-toast", {
+        message: error.toString(),
+        status: "error"
+      })
     }
   }
+
 
   connectedCallback() {
     this.render()
@@ -291,8 +304,6 @@ class TpenHotKeys extends HTMLElement {
     const addButton = this.shadowRoot.getElementById('add-hotkey')
     addButton.addEventListener('click', () => this.addHotkey())
 
-    // const symbolInput = this.shadowRoot.getElementById('symbol-input')
-    // symbolInput.addEventListener('input', () => this.updateCharacterPreview())
 
     // Event listeners for accordions
     const accordionHeaders = this.shadowRoot.querySelectorAll('.accordion-header')
@@ -309,7 +320,12 @@ class TpenHotKeys extends HTMLElement {
       char.addEventListener('click', () => {
         const symbol = char.getAttribute('data-symbol')
         navigator.clipboard.writeText(symbol).then(() => {
-          alert(`Copied ${symbol} to clipboard!`)
+
+          const toast = {
+            message: `Copied ${symbol} to clipboard!`,
+            status: 'info'
+          }
+          eventDispatcher.dispatch("tpen-toast", toast)
         })
       })
     })
@@ -331,7 +347,8 @@ class TpenHotKeys extends HTMLElement {
 
     if (symbol) {
       this.hotkeys = [...this.hotkeys, symbol]
-      await this.saveHotkeys()
+      const resp = await this.saveHotkeys()
+      if (!resp) this.hotkeys = this.hotkeys.filter(item => item !== symbol)
       symbolInput.value = ''
     } else {
       alert('Please enter a valid UTF-8 symbol.')
