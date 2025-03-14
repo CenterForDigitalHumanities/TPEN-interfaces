@@ -6,21 +6,20 @@ class TpenMockTranscription extends HTMLElement {
     super()
     this.attachShadow({ mode: 'open' })
     this.hotkeys = []
-    this.projectId = "676315c95f0dde3ba56ec54b" // We'd get this from URL or TPEN.activeProject
-    this.tpen = TPEN
+    this.projectId = "67d45d74855ec5031daac0b5" // We'd get this from URL or TPEN.activeProject
     TPEN.attachAuthentication(this)
     this.loadHotkeys()
   }
 
   async loadHotkeys() {
     try {
-      const AUTH_TOKEN = this.tpen.getAuthorization()
+      const AUTH_TOKEN = TPEN.getAuthorization()
       if (!AUTH_TOKEN) {
-        this.tpen.login()
+        TPEN.login()
         return
       }
 
-      const response = await fetch(`${this.tpen.servicesURL}/project/${this.projectId}/hotkeys`, {
+      const response = await fetch(`${TPEN.servicesURL}/project/${this.projectId}/hotkeys`, {
         headers: {
           Authorization: `Bearer ${AUTH_TOKEN}`,
           'Content-Type': 'application/json',
@@ -32,10 +31,10 @@ class TpenMockTranscription extends HTMLElement {
         this.hotkeys = data || []
         this.updateHotkeysDisplay()
       } else {
-        console.error("Failed to load hotkeys:", response.statusText)
+        console.log("Failed to load hotkeys:", response.statusText)
       }
     } catch (error) {
-      console.error("Error loading hotkeys:", error)
+      console.log("Error loading hotkeys:", error)
     }
   }
 
