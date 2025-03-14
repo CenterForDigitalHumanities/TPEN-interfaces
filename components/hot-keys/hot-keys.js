@@ -80,72 +80,6 @@ class TpenHotKeys extends HTMLElement {
     this.setupEventListeners()
   }
 
-  // render() {
-  //   this.shadowRoot.innerHTML = `
-  //       <style>
-  //         /* Add your CSS styles here */
-  //         .hotkeys-container {
-  //           font-family: Arial, sans-serif;
-  //           padding: 20px;
-  //           border: 1px solid #ccc;
-  //           border-radius: 8px;
-  //           max-width: 400px;
-  //           margin: 20px auto;
-  //         }
-  //         .hotkeys-container h2 {
-  //           margin-top: 0;
-  //         }
-  //         .hotkeys-form input {
-  //           width: 100%;
-  //           padding: 8px;
-  //           margin-bottom: 10px;
-  //           border: 1px solid #ccc;
-  //           border-radius: 4px;
-  //         }
-  //         .hotkeys-form button {
-  //           padding: 8px 16px;
-  //           background-color: #007bff;
-  //           color: white;
-  //           border: none;
-  //           border-radius: 4px;
-  //           cursor: pointer;
-  //         }
-  //         .hotkeys-list {
-  //           margin-top: 20px;
-  //         }
-  //         .hotkeys-list div {
-  //           padding: 8px;
-  //           border-bottom: 1px solid #eee;
-  //         }
-  //         .hotkeys-list div:last-child {
-  //           border-bottom: none;
-  //         }
-  //         .character-preview {
-  //           font-size: 24px;
-  //           margin-left: 10px;
-  //         }
-  //         .loading {
-  //           color: #888;
-  //           font-style: italic;
-  //         }
-  //       </style>
-  //       <div class="hotkeys-container">
-  //         <h2>Hot Keys Manager</h2>
-  //         <div class="hotkeys-form">
-  //           <input type="text" id="symbol-input" maxLength="2" placeholder="Enter a symbol (UTF-8)">
-  //           <span class="character-preview" id="character-preview"></span>
-  //           <button id="add-hotkey">Add Hotkey</button>
-  //         </div>
-  //         <div class="hotkeys-list">
-  //           <h3>Saved Hotkeys</h3>
-  //           <div id="hotkeys-display">
-  //             ${this.hotkeys.length === 0 ? '<div class="loading">Loading hotkeys...</div>' : ''}
-  //           </div>
-  //         </div>
-  //       </div>
-  //     `
-  // }
-
   render() {
     this.shadowRoot.innerHTML = `
         <style>
@@ -187,10 +121,6 @@ class TpenHotKeys extends HTMLElement {
           }
           .hotkeys-list div:last-child {
             border-bottom: none;
-          }
-          .character-preview {
-            font-size: 24px;
-            margin-left: 10px;
           }
           .special-characters {
             margin-top: 20px;
@@ -235,8 +165,8 @@ class TpenHotKeys extends HTMLElement {
         <section>
           <h2>Hot Keys Manager</h2>
           <div class="hotkeys-form">
-            <input type="text" id="symbol-input" placeholder="Enter a symbol (UTF-8)">
-            <span class="character-preview" id="character-preview"></span>
+            <input type="text" id="symbol-input" maxLength="2" placeholder="Enter a symbol (UTF-8)">
+
             <button id="add-hotkey">Add Hotkey</button>
           </div>
           <div class="hotkeys-list">
@@ -357,15 +287,12 @@ class TpenHotKeys extends HTMLElement {
       .join("")
   }
 
-
-
-
   setupEventListeners() {
     const addButton = this.shadowRoot.getElementById('add-hotkey')
     addButton.addEventListener('click', () => this.addHotkey())
 
-    const symbolInput = this.shadowRoot.getElementById('symbol-input')
-    symbolInput.addEventListener('input', () => this.updateCharacterPreview())
+    // const symbolInput = this.shadowRoot.getElementById('symbol-input')
+    // symbolInput.addEventListener('input', () => this.updateCharacterPreview())
 
     // Event listeners for accordions
     const accordionHeaders = this.shadowRoot.querySelectorAll('.accordion-header')
@@ -376,53 +303,16 @@ class TpenHotKeys extends HTMLElement {
       })
     })
 
-      // Add event listeners for special characters
-      const specialCharacters = this.shadowRoot.querySelectorAll('.special-character')
-      specialCharacters.forEach((char) => {
-        char.addEventListener('click', () => {
-          const symbol = char.getAttribute('data-symbol')
-          navigator.clipboard.writeText(symbol).then(() => {
-            alert(`Copied ${symbol} to clipboard!`)
-          })
+    // Add event listeners for special characters
+    const specialCharacters = this.shadowRoot.querySelectorAll('.special-character')
+    specialCharacters.forEach((char) => {
+      char.addEventListener('click', () => {
+        const symbol = char.getAttribute('data-symbol')
+        navigator.clipboard.writeText(symbol).then(() => {
+          alert(`Copied ${symbol} to clipboard!`)
         })
       })
-  }
-
-  updateCharacterPreview() {
-    const symbolInput = this.shadowRoot.getElementById('symbol-input')
-    const characterPreview = this.shadowRoot.getElementById('character-preview')
-    const inputValue = symbolInput.value.trim()
-
-    // Parse the input to detect a valid UTF-8 symbol
-    const symbol = this.parseUtf8Symbol(inputValue)
-    if (symbol) {
-      characterPreview.textContent = symbol // Show the symbol
-    } else {
-      characterPreview.textContent = '' // Clear the preview if no valid symbol is found
-    }
-  }
-
-  parseUtf8Symbol(input) {
-    // Normalize the input by adding '&#' and ';' if necessary
-    if (/^\d+$/.test(input)) {
-      input = `&#${input};` // Convert "9728" to "&#9728;"
-    } else if (/^&#\d+$/.test(input)) {
-      input = `${input};` // Convert "&#9728" to "&#9728;"
-    }
-
-    const htmlEntityRegex = /^&#(\d+);$/
-    const match = input.match(htmlEntityRegex)
-
-    if (match) {
-      // Convert the HTML entity to a symbol
-      const codePoint = parseInt(match[1], 10)
-      return String.fromCodePoint(codePoint)
-    } else if (input.length === 1) {
-      // If the input is a single character, assume it's a symbol
-      return input
-    }
-
-    return null
+    })
   }
 
   generateShortcut(index) {
@@ -436,15 +326,13 @@ class TpenHotKeys extends HTMLElement {
 
   async addHotkey() {
     const symbolInput = this.shadowRoot.getElementById('symbol-input')
-    const inputValue = symbolInput.value.trim()
+    const symbol = symbolInput.value.trim()
 
-    const symbol = this.parseUtf8Symbol(inputValue)
 
     if (symbol) {
       this.hotkeys = [...this.hotkeys, symbol]
       await this.saveHotkeys()
       symbolInput.value = ''
-      this.shadowRoot.getElementById('character-preview').textContent = ''
     } else {
       alert('Please enter a valid UTF-8 symbol.')
     }
