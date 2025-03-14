@@ -61,12 +61,26 @@ function inPermissionList(permissionValue) {
     return false
 }
 
+function checkRoleName() {
+    const defaultRoles = ['OWNER', 'LEADER', 'CONTRIBUTOR', 'VIEWER']
+    if (defaultRoles.includes(role.value)) {
+        return true
+    }
+    return false
+}
+
 function addPermissions() {
     let action = document.querySelector('input[name="action-permissions"]:checked')
     let scope = document.querySelector('input[name="scope-permissions"]:checked')
     let entity = document.querySelector('input[name="entity-permissions"]:checked')
 
     if (role.value) {
+        if (checkRoleName()) {
+            role.value = ''
+            permissionString.value = ''
+            checkedValues()
+            return alert('Default roles cannot be edited')
+        }
         role.disabled = true
     }
 
