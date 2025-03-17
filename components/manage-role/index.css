@@ -95,8 +95,14 @@
 }
 
 .add-role {
-    width: 60%;
+    width: 20%;
     margin: 0 auto;
+    background-color: green;
+    border-radius: 20px;
+}
+
+.hide-div {
+    display: none;
 }
 
 #permissions {

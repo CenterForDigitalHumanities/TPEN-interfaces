@@ -47,6 +47,8 @@ function resetPermissions() {
     checkedValues()
     permissionString.value = ''
     permissionsDiv.innerHTML = 'Permissions List: []'
+    document.getElementById('edit-role-name').classList.add('hide-div')
+    document.getElementById('add-role').classList.add('hide-div')
 }
 
 function isValidPermissionText(permissionText) {
@@ -69,6 +71,14 @@ function checkRoleName() {
     return false
 }
 
+function checkExistingRole() {
+    const existingRoles = Object.keys(TPEN.activeProject.roles)
+    if (existingRoles.includes(role.value)) {
+        return true
+    }
+    return false
+}
+
 function addPermissions() {
     let action = document.querySelector('input[name="action-permissions"]:checked')
     let scope = document.querySelector('input[name="scope-permissions"]:checked')
@@ -81,6 +91,13 @@ function addPermissions() {
             checkedValues()
             return alert('Default roles cannot be edited')
         }
+        if (checkExistingRole()) {
+            role.value = ''
+            permissionString.value = ''
+            checkedValues()
+            return alert('Role already exists')
+        }
+        document.getElementById('edit-role-name').classList.remove('hide-div')
         role.disabled = true
     }
 
@@ -126,11 +143,27 @@ function addPermissions() {
         entity.checked = false
         permissionsDiv.innerText = `Permissions List: [${permissions}]`
     }
+
+    if(permissions.length > 0) {
+        document.getElementById('add-role').classList.remove('hide-div')
+    }
 }
 
 async function addRole() {
     if (!role.value) {
         alert('Role name is required')
+        return
+    }
+
+    if (checkRoleName()) {
+        role.value = ''
+        alert('Default roles cannot be edited')
+        return
+    }
+
+    if (checkExistingRole()) {
+        role.value = ''
+        alert('Role already exists')
         return
     }
 
@@ -154,10 +187,21 @@ async function addRole() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            console.log('Custom roles added successfully')
+            const toast = new CustomEvent('tpen-toast', {
+                detail: {
+                    message: `Custom role added successfully`
+                }
+            })
+            return TPEN.eventDispatcher.dispatchEvent(toast)
         }
     })
     .catch(error => {
-        console.error('Error:', error)
+        const toast = new CustomEvent('tpen-toast', {
+            detail: {
+                message: `Error fetching projects: ${error.message}`,
+                status: error.status
+            }
+        })
+        return TPEN.eventDispatcher.dispatchEvent(toast)
     })
 }
