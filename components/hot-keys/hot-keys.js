@@ -25,7 +25,7 @@ class TpenHotKeys extends HTMLElement {
   }
 
   async loadHotkeys() {
-    const incomingKeys = TPEN.activeProject.hotkeys ?? []
+    const incomingKeys = TPEN.activeProject.options.hotkeys ?? []
     if (incomingKeys.length > 0) {
       this.#method = "PUT"
       this.hotkeys = incomingKeys
@@ -48,7 +48,9 @@ class TpenHotKeys extends HTMLElement {
 
       if (!response.ok) {
         throw response
-      } 
+      }
+
+      this.#method = this.hotkeys.length > 0 ? "PUT" : "POST"
 
       eventDispatcher.dispatch("tpen-toast", {
         message: "Hotkeys updated successfully",
