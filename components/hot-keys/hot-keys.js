@@ -1,14 +1,17 @@
-import { eventDispatcher } from "../../api/events.mjs"
 import TPEN from "../../api/TPEN.mjs"
 
+const eventDispatcher = TPEN.eventDispatcher
+
 class TpenHotKeys extends HTMLElement {
+  #method
+
   constructor() {
     super()
     this.attachShadow({ mode: 'open' })
     this._hotkeys = []
-    this.projectId = new URLSearchParams(window.location.search).get("projectID")
+    this.projectId = TPEN.screen.projectInQuery
     TPEN.attachAuthentication(this)
-    this.loadHotkeys()
+    eventDispatcher.on("tpen-project-loaded", () => this.loadHotkeys())
   }
 
 
@@ -22,62 +25,35 @@ class TpenHotKeys extends HTMLElement {
   }
 
   async loadHotkeys() {
-    try {
-      const AUTH_TOKEN = TPEN.getAuthorization()
-      if (!AUTH_TOKEN) {
-        TPEN.login() 
-        return
-      }
-
-      const response = await fetch(`${TPEN.servicesURL}/project/${this.projectId}/hotkeys`, {
-        headers: {
-          Authorization: `Bearer ${AUTH_TOKEN}`,
-          'Content-Type': 'application/json',
-        },
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        this.hotkeys = data 
-      } else {
-        console.error("Failed to load hotkeys:", response.statusText)
-      }
-    } catch (error) {
-      console.error("Error loading hotkeys:", error)
+    const incomingKeys = TPEN.activeProject.hotkeys ?? []
+    if (incomingKeys.length > 0) {
+      this.#method = "PUT"
+      this.hotkeys = incomingKeys
+      return
     }
+    this.#method = "POST"
+    this.hotkeys = []
   }
 
   async saveHotkeys() {
     try {
-      const AUTH_TOKEN = TPEN.getAuthorization()
-
-      if (!AUTH_TOKEN) {
-        TPEN.login()
-        return
-      }
-
-      const method = this.hotkeys.length > 0 ? "PUT" : "POST" // Use PUT if hotkeys exist, POST otherwise
       const response = await fetch(`${TPEN.servicesURL}/project/${this.projectId}/hotkeys`, {
-        method,
+        method : this.#method,
         headers: {
-          Authorization: `Bearer ${AUTH_TOKEN}`,
+          Authorization: `Bearer ${TPEN.getAuthorization()}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ symbols: this.hotkeys }),
       })
 
-      let toast = { message: "", status: "" }
-
       if (!response.ok) {
-        const error = await response.json()
-        toast.message = `Failed to save hotkeys: ${error.message}`
-        toast.status = "error"
-      } else {
-        toast.message = "Hotkeys updated successfully"
-        toast.status = "info"
-      }
+        throw response
+      } 
 
-      eventDispatcher.dispatch("tpen-toast", toast)
+      eventDispatcher.dispatch("tpen-toast", {
+        message: "Hotkeys updated successfully",
+        status: "success"
+      })
       return response
     } catch (error) {
       eventDispatcher.dispatch("tpen-toast", {
@@ -372,15 +348,26 @@ class TpenHotKeys extends HTMLElement {
     const symbolInput = this.shadowRoot.getElementById('symbol-input')
     const symbol = symbolInput.value.trim()
 
-
-    if (symbol) {
-      this.hotkeys = [...this.hotkeys, symbol]
-      const resp = await this.saveHotkeys()
-      if (!resp) this.hotkeys = this.hotkeys.filter(item => item !== symbol)
-      symbolInput.value = ''
-    } else {
-      alert('Please enter a valid UTF-8 symbol.')
+    if (!symbol) {
+      TPEN.eventDispatcher.dispatch("tpen-toast", {
+        message: "Please enter a valid UTF-8 symbol.",
+        status: "error"
+      })
+      return
     }
+    
+    if (this.hotkeys.includes(symbol)) {
+      TPEN.eventDispatcher.dispatch("tpen-toast", {
+        message: "This symbol is already in the hotkeys list.",
+        status: "error"
+      })
+      return
+    }
+
+    this.hotkeys = [...this.hotkeys, symbol]
+    const resp = await this.saveHotkeys()
+    if (!resp) this.hotkeys = this.hotkeys.filter(item => item !== symbol)
+    symbolInput.value = ''
   }
 
   updateHotkeysDisplay() {
