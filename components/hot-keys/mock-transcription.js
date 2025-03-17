@@ -8,39 +8,17 @@ class TpenMockTranscription extends HTMLElement {
     this.hotkeys = []
     this.projectId = new URLSearchParams(window.location.search).get("projectID")
     TPEN.attachAuthentication(this)
-    this.loadHotkeys()
-  }
-
-  async loadHotkeys() {
-    try {
-      const AUTH_TOKEN = TPEN.getAuthorization()
-      if (!AUTH_TOKEN) {
-        TPEN.login()
-        return
-      }
-
-      const response = await fetch(`${TPEN.servicesURL}/project/${this.projectId}/hotkeys`, {
-        headers: {
-          Authorization: `Bearer ${AUTH_TOKEN}`,
-          'Content-Type': 'application/json',
-        },
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        this.hotkeys = data || []
-        this.updateHotkeysDisplay()
-      } else {
-        console.log("Failed to load hotkeys:", response.statusText)
-      }
-    } catch (error) {
-      console.log("Error loading hotkeys:", error)
-    }
   }
 
   connectedCallback() {
     this.render()
     this.setupEventListeners()
+
+    eventDispatcher.on('tpen-project-loaded', (event) => {
+      const project = event.detail
+      this.hotkeys = project.options.hotkeys ?? []
+      this.updateHotkeysDisplay()
+    })
 
     eventDispatcher.on('hotkey-insert', (event) => {
       const { symbol } = event.detail
