@@ -1,0 +1,25 @@
+/* DEFAULT */
+
+.page-content {
+    display: block;
+}
+
+/* GRID */
+
+:host(.grid) .page-content {
+    display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(12em, 30em));
+        grid-template-rows: auto;
+        justify-content: center;
+        gap: .5em;
+}
+
+:host(.grid) .page-content.fullscreen {
+    grid-template-columns: 1fr;
+    height               : 100vh;
+}
+
+:host(.grid) .page-content.mobile {
+    grid-template-columns: 1fr;
+    padding              : 8px;
+}

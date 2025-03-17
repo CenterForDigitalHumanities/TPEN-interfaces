@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Details</title>
+    <script src="./index.js" type="module"></script>
+    <style type="text/css">
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        tpen-project-details {
+            width: clamp(12em, 20em, 30vw);
+        }
+    </style>
+</head>
+<body>
+    <tpen-project-details style="width: clamp(12em, 30vw);"></tpen-project-details>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        if (!urlParams.has('projectID')) {
+            window.location.href += '?projectID=test-cubap';
+        }
+    </script>
+</body>
+</html>

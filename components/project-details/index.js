@@ -1,57 +1,75 @@
 import TPEN from "../../api/TPEN.mjs"
-import { eventDispatcher } from "../../api/events.mjs"
+import Project from "../../api/Project.mjs"
+import "../../components/line-image/index.js"
 
 class ProjectDetails extends HTMLElement {
+
+    style = `
+    sequence-panel {
+        display: block;
+        margin: 0;
+        height: 10em;
+        overflow: visible;
+    }
+    h3 {
+        color: var(--primary-color);
+        font-style: italic;
+        margin-block-end: 0;
+    }
+    small {
+        color: var(--gray);
+        text-align: right;
+        display: block;
+    }
+    `
+
     constructor() {
         super()
         this.attachShadow({ mode: 'open' })
     }
 
     static get observedAttributes() {
-        return ['tpen-user-id']
+        return ['tpen-project-id']
+    }
+
+    async attributeChangedCallback(name, oldValue, newValue) {
+        if (name === 'tpen-project-id' && oldValue !== newValue) {
+            if(newValue === null) return
+            this.Project = (newValue === TPEN.activeProject._id) 
+                ? TPEN.activeProject 
+                : await(new Project(newValue).fetch())
+            this.render()
+            TPEN.eventDispatcher.dispatchEvent(new CustomEvent('tpen-gui-action', { detail:
+                { 
+                    label: "Resume",
+                    callback: () => location.href = `/transcribe?projectID=${this.Project._id}`
+                }
+             }))
+        }
     }
 
     connectedCallback() {
-        eventDispatcher.on('tpen-project-loaded', () => this.render())
         TPEN.attachAuthentication(this)
+        TPEN.eventDispatcher.on('tpen-project-loaded', () => this.render())
     }
 
-    render() {
+    async render() {
+        const project = this.Project ?? TPEN.activeProject
+        const projectOwner = Object.entries(project.collaborators).find(([userID, u]) => u.roles.includes('OWNER'))?.[1].profile.displayName
+        const collaboratorCount = Object.keys(project.collaborators).length
+
+        TPEN.screen.title = project.label ?? project.title ?? project.name
+        TPEN.eventDispatcher.dispatchEvent(new CustomEvent('tpen-gui-title', { detail: TPEN.screen.title }))
+
         this.shadowRoot.innerHTML = `
-            <div part="project-card" class="project-card"></div>
-        `
-        this.renderProjectDetails()
-    }
-
-    renderProjectDetails() {
-        const projectInfo = this.shadowRoot.querySelector('.project-card')
-        const userId = this.getAttribute('tpen-user-id')
-        const projectOwner = TPEN.activeProject.collaborators[userId].profile.displayName
-        const collaboratorCount = Object.keys(TPEN.activeProject.collaborators).length
-
-        projectInfo.innerHTML = `
-            <div part="project-card-headings" class="project-card-headings">
-                <p part="project-desc">
-                    <span>Project ID</span>
-                    <span part="project-desc-span">${TPEN.activeProject._id}</span>
-                </p>
-                <p part="project-desc">
-                    <span>Project Title</span> 
-                    <span part="project-desc-span">${TPEN.activeProject.label}</span>
-                </p>
-                <p part="project-desc">
-                    <span>Project Owner</span>  
-                    <span part="project-desc-span">${projectOwner}</span>
-                </p>
-                <p part="project-desc">
-                    <span>Project Collaborator Count</span>  
-                    <span part="project-desc-span">${collaboratorCount}</span>
-                </p>
-            </div>
-            <div part="manuscripts" class="manuscripts">
-                <img part="manuscript-img" src="../../assets/images/manuscript_img.webp" />
-                <img part="manuscript-img" src="../../assets/images/manuscript.webp" />
-            </div>
+            <style>${this.style}</style>
+            <h3>${TPEN.screen.title}</h3>
+            <small>${TPEN.screen.projectInQuery}</small>
+            <p>${projectOwner}, Owner</p>
+            <p>
+                ${collaboratorCount < 3 ? "Collaborators: "+Object.entries(project.collaborators).map(([userID, u]) => u.profile.displayName).join(', ') : `${collaboratorCount} collaborator${collaboratorCount===1? '' : 's'}`}
+            </p>
+            <sequence-panel manifest-id="${project.manifest}" preset="responsive"></sequence-panel>
         `
     }
 }
