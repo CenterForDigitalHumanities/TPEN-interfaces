@@ -1,5 +1,6 @@
 import TPEN from "../../api/TPEN.mjs"
 import Project from "../../api/Project.mjs"
+import "../../components/line-image/index.js"
 
 class ProjectDetails extends HTMLElement {
 
@@ -9,6 +10,16 @@ class ProjectDetails extends HTMLElement {
         margin: 0;
         height: 10em;
         overflow: visible;
+    }
+    h3 {
+        color: var(--primary-color);
+        font-style: italic;
+        margin-block-end: 0;
+    }
+    small {
+        color: var(--gray);
+        text-align: right;
+        display: block;
     }
     `
 
@@ -42,7 +53,7 @@ class ProjectDetails extends HTMLElement {
         TPEN.eventDispatcher.on('tpen-project-loaded', () => this.render())
     }
 
-    render() {
+    async render() {
         const project = this.Project ?? TPEN.activeProject
         const projectOwner = Object.entries(project.collaborators).find(([userID, u]) => u.roles.includes('OWNER'))?.[1].profile.displayName
         const collaboratorCount = Object.keys(project.collaborators).length
@@ -52,20 +63,13 @@ class ProjectDetails extends HTMLElement {
 
         this.shadowRoot.innerHTML = `
             <style>${this.style}</style>
-            <dl class="project-desc">
-                <dt>Project ID</dt>
-                <dd>${TPEN.screen.projectInQuery}</dd>
-                <dt>Project Title</dt>
-                <dd>${TPEN.screen.title}</dd>
-                <dt>Project Owner</dt>
-                <dd>${projectOwner}</dd>
-                <dt>Project Collaborator Count</dt>
-                <dd>${collaboratorCount}</dd>
-            </dl>
-            <div class="manuscripts">
-                <img part="manuscript-img" src="../../assets/images/manuscript_img.webp" />
-                <img part="manuscript-img" src="../../assets/images/manuscript.webp" />
-            </div>
+            <h3>${TPEN.screen.title}</h3>
+            <small>${TPEN.screen.projectInQuery}</small>
+            <p>${projectOwner}, Owner</p>
+            <p>
+                ${collaboratorCount < 3 ? "Collaborators: "+Object.entries(project.collaborators).map(([userID, u]) => u.profile.displayName).join(', ') : `${collaboratorCount} collaborator${collaboratorCount===1? '' : 's'}`}
+            </p>
+            <sequence-panel manifest-id="${project.manifest}" preset="responsive"></sequence-panel>
         `
     }
 }
