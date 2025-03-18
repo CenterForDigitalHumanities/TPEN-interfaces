@@ -12,7 +12,7 @@ customElements.define('tpen-project-export', class extends HTMLElement {
     }
     
     async render() {
-        const url = `https://raw.githubusercontent.com/CenterForDigitalHumanities/TPEN-Static-Dev/main/${TPEN.activeProject._id}/manifest.json`
+        const url = `https://dev.static.t-pen.org/${TPEN.activeProject._id}/manifest.json`
         this.shadowRoot.innerHTML = `
             <style>
                 a {
