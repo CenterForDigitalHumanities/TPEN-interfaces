@@ -36,6 +36,7 @@ class TpenHotKeys extends HTMLElement {
   }
 
   async saveHotkeys() {
+    if(this.hotkeys.length === 0) { this.#method = "DELETE" }
     try {
       const response = await fetch(`${TPEN.servicesURL}/project/${this.projectId}/hotkeys`, {
         method : this.#method,
