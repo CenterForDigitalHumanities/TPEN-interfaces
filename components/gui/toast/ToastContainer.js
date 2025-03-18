@@ -1,5 +1,5 @@
 import './Toast.js'
-import { eventDispatcher } from '../../../api/events.mjs'
+import { eventDispatcher } from '../../../api/events.js'
 
 class ToastContainer extends HTMLElement {
     #containerSection

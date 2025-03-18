@@ -1,5 +1,5 @@
-import TPEN from "../../api/TPEN.mjs"
-import { eventDispatcher } from "../../api/events.mjs"
+import TPEN from "../../api/TPEN.js"
+import { eventDispatcher } from "../../api/events.js"
 
 class ProjectCollaborators extends HTMLElement {
     constructor() {

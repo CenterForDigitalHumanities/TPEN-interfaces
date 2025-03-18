@@ -1,4 +1,4 @@
-import TPEN from '../../api/TPEN.mjs'
+import TPEN from '../../api/TPEN.js'
 
 customElements.define('tpen-project-export', class extends HTMLElement {
     constructor() {

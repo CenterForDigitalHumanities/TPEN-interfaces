@@ -1,6 +1,6 @@
-import { eventDispatcher } from '../../api/events.mjs'
-import TPEN from '../../api/TPEN.mjs'
-import User from '../../api/User.mjs'
+import { eventDispatcher } from '../../api/events.js'
+import TPEN from '../../api/TPEN.js'
+import User from '../../api/User.js'
 
 class UserProfile extends HTMLElement {
     static get observedAttributes() {

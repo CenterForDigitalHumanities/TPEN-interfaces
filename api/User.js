@@ -2,9 +2,9 @@
  * To use this class, initialize new class, set authentication token, then call required methods
  */
 
-import { eventDispatcher } from "./events.mjs"
-import TPEN from "./TPEN.mjs"
-import { getUserFromToken } from "../components/iiif-tools/index.mjs"
+import { eventDispatcher } from "./events.js"
+import TPEN from "./TPEN.js"
+import { getUserFromToken } from "../components/iiif-tools/index.js"
 
 export default class User {
   #isTheAuthenticatedUser() {

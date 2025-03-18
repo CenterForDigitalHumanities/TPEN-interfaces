@@ -30,7 +30,7 @@
     ]
     const sample = (arr) => arr[Math.floor(Math.random() * arr.length)]
     toaster.onclick = async () => {
-        import('../../../api/events.mjs').then(module => {
+        import('../../../api/events.js').then(module => {
             const message = `${sample(verbs)} ${sample(nouns)}`
             const toast = {
                 message,

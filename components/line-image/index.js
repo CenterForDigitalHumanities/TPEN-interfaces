@@ -1,4 +1,4 @@
-import { decodeContentState } from '../iiif-tools/index.mjs'
+import { decodeContentState } from '../iiif-tools/index.js'
 
 const CANVAS_PANEL_SCRIPT = document.createElement('script')
 CANVAS_PANEL_SCRIPT.src = "https://cdn.jsdelivr.net/npm/@digirati/canvas-panel-web-components@latest"

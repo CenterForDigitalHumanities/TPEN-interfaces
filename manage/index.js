@@ -1,5 +1,5 @@
-import Project from "../api/Project.mjs"
-import TPEN from "../api/TPEN.mjs"
+import Project from "../api/Project.js"
+import TPEN from "../api/TPEN.js"
 
 document.addEventListener("DOMContentLoaded", loadManageInterface)
 
@@ -68,7 +68,7 @@ function loadManageInterface(){
         } 
       } 
       if (componentName === "projectsHighlight") {
-        const { loadProjects } = await import('./projectsHighlight.mjs')
+        const { loadProjects } = await import('./projectsHighlight.js')
         loadProjects()
       }
     })

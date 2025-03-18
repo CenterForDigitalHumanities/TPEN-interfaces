@@ -8,8 +8,8 @@
  * @imports { EventDispatcher }
  */
 
-import { decodeUserToken, getUserFromToken, checkExpired } from '../components/iiif-tools/index.mjs'
-import { eventDispatcher } from './events.mjs'
+import { decodeUserToken, getUserFromToken, checkExpired } from '../components/iiif-tools/index.js'
+import { eventDispatcher } from './events.js'
 
 import "../components/gui/toast/ToastContainer.js"
 
@@ -42,7 +42,7 @@ class Tpen {
 
         if (this.screen.projectInQuery) {
             try {
-                import('./Project.mjs').then(module => {
+                import('./Project.js').then(module => {
                     new module.default(this.screen.projectInQuery).fetch()
                 })
             } catch (error) {
@@ -103,7 +103,7 @@ class Tpen {
 
     async getUserProjects(idToken) {
         const userId = getUserFromToken(idToken)
-        return import('./User.mjs').then(module => {
+        return import('./User.js').then(module => {
             const u = new module.default(userId)
             return u.getProjects()
         })

@@ -1,4 +1,4 @@
-import TPEN from '../../TPEN/index.mjs';
+import TPEN from '../../TPEN/index.js';
 
 const PROJECT_FORM = document.getElementById("projectId");
 

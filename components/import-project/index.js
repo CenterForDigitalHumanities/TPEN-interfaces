@@ -1,4 +1,4 @@
-import TPEN from "../../api/TPEN.mjs"
+import TPEN from "../../api/TPEN.js"
 
 class ProjectImporter extends HTMLElement {
   constructor() {

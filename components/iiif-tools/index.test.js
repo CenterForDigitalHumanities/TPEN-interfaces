@@ -1,4 +1,4 @@
-import {encodeContentState, decodeContentState} from './index.mjs'
+import {encodeContentState, decodeContentState} from './index.js'
 
 function test_encodeContentState() {
 

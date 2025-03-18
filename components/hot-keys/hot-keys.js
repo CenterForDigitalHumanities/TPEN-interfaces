@@ -1,4 +1,4 @@
-import TPEN from "../../api/TPEN.mjs"
+import TPEN from "../../api/TPEN.js"
 
 const eventDispatcher = TPEN.eventDispatcher
 

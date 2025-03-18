@@ -1,5 +1,5 @@
-import { eventDispatcher } from "../../api/events.mjs"
-import TPEN from "../../api/TPEN.mjs"
+import { eventDispatcher } from "../../api/events.js"
+import TPEN from "../../api/TPEN.js"
 
 class TpenMockTranscription extends HTMLElement {
   constructor() {

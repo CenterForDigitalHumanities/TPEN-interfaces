@@ -1,5 +1,5 @@
 // custom element named 'tpen-transcription' with a custom template built from the querystring 'projectID' parameter
-import { userMessage, encodeContentState } from "../iiif-tools/index.mjs"
+import { userMessage, encodeContentState } from "../iiif-tools/index.js"
 import "../line-image/index.js"
 import "../line-text/index.js"
 import { Vault } from 'https://cdn.jsdelivr.net/npm/@iiif/helpers/+esm'

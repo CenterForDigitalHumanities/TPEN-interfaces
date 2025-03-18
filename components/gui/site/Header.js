@@ -1,4 +1,4 @@
-import TPEN from "../../../api/TPEN.mjs"
+import TPEN from "../../../api/TPEN.js"
 class TpenHeader extends HTMLElement {
 
     constructor() {

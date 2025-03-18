@@ -1,4 +1,4 @@
-import TPEN from "../../api/TPEN.mjs"
+import TPEN from "../../api/TPEN.js"
 import "../../components/project-collaborators/index.js"
 import "../../components/project-details/index.js"
 import "../../components/project-metadata/index.js"

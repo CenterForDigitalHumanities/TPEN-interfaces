@@ -3,5 +3,5 @@
  */
 console.warn('Deprecated: use and update the file in /api instead')
 
-import { eventDispatcher } from '../api/events.mjs'
+import { eventDispatcher } from '../api/events.js'
 export default eventDispatcher

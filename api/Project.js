@@ -17,9 +17,9 @@
  * @type module
  * @version 0.0.1
  */
-import TPEN from './TPEN.mjs'
-import { eventDispatcher } from './events.mjs'
-import { userMessage } from "../components/iiif-tools/index.mjs"
+import TPEN from './TPEN.js'
+import { eventDispatcher } from './events.js'
+import { userMessage } from "../components/iiif-tools/index.js"
 
 export default class Project {
 

@@ -1,6 +1,6 @@
-import User from "../../api/User.mjs"
-import TPEN from "../../api/TPEN.mjs"
-import { eventDispatcher } from "../../api/events.mjs"
+import User from "../../api/User.js"
+import TPEN from "../../api/TPEN.js"
+import { eventDispatcher } from "../../api/events.js"
 
 export default class ProjectsManager extends HTMLElement {
     #projects = [];

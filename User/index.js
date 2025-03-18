@@ -3,5 +3,5 @@
  */
 
 console.warn('Deprecated: use and update the file in /api instead')
-import TPEN from '../api/TPEN.mjs'
-export default TPEN
+import User from '../api/User.js'
+export default User

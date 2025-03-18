@@ -1,5 +1,5 @@
-import TPEN from "../../api/TPEN.mjs"
-import Project from "../../api/Project.mjs"
+import TPEN from "../../api/TPEN.js"
+import Project from "../../api/Project.js"
 import "../../components/line-image/index.js"
 
 class ProjectDetails extends HTMLElement {
