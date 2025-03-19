@@ -19,6 +19,10 @@ document.getElementById("update-metadata-btn").addEventListener('click', () => {
     window.location.href = `/components/update-metadata/index.html?projectID=${TPEN.screen.projectInQuery}`
 })
 
+document.getElementById('manage-layers-btn').addEventListener('click', () => {
+    window.location.href = `/components/manage-layers/index.html?projectID=${TPEN.screen.projectInQuery}`
+})
+
 document.getElementById('export-project-btn').addEventListener('click', async () => {
     await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/manifest`, {
         method: 'GET',
