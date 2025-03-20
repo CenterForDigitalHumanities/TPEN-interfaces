@@ -10,12 +10,27 @@ class ProjectLayers extends HTMLElement {
     render() {
         TPEN.attachAuthentication(this)
         const layers = TPEN.activeProject.layers
+        console.log(TPEN.activeProject)
         this.shadowRoot.innerHTML = `
             <style>
-                .container {
+                .layer-title {
+                    text-align: center;
+                    margin: 10px 0;
+                    font-size: 20px;
+                    color: #007bff;
+                    font-weight: bold;
+                    text-transform: uppercase;
+                    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+                    padding: 20px;
+                }
+                .layer-container {
                     display: flex;
                     flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
                     gap: 10px;
+                    width: 80%;
+                    margin: 0 auto;
                 }
                 .layer-card {
                     background: #fff;
@@ -25,12 +40,20 @@ class ProjectLayers extends HTMLElement {
                     border-left: 5px solid #007bff;
                     cursor: move;
                     user-select: none;
+                    margin: 0 auto;
+                    width: 60%;
+                    text-align: center;
                 }
-                p {
+                .layer-page {
                     margin: 5px 0;
                     font-size: 14px;
                 }
-                button {
+                .layer-actions {
+                    display: flex;
+                    justify-content: flex-end;
+                    width: 100%;
+                }
+                .layer-btn {
                     margin-top: 10px;
                     padding: 5px 10px;
                     border: none;
@@ -40,13 +63,22 @@ class ProjectLayers extends HTMLElement {
                 .delete-layer {
                     background: #dc3545;
                     color: white;
+                    width: 20%;
                 }
                 .delete-layer:hover {
                     background: #c82333;
                 }
+                .save-layers {
+                    background: #007bff;
+                    color: white;
+                    width: 20%;
+                }
+                .save-layers:hover {
+                    background: #0069d9;
+                }
             </style>
-
-            <div class="container">
+            <h1 class="layer-title">Manage Layers</h1>
+            <div class="layer-container">
                 ${layers
                     .map(
                         (layer, layerIndex) => `
@@ -55,13 +87,16 @@ class ProjectLayers extends HTMLElement {
                             ${layer.pages
                                 .map(
                                     (page) =>
-                                        `<p>Page: ${page["@id"] ?? page.id}</p>`
+                                        `<p class="layer-page">Page: ${page["@id"] ?? page.id}</p>`
                                 )
                                 .join("")}
-                            <button class="delete-layer" data-index="${layerIndex}">Delete Layer</button>
+                            <div class="layer-actions">
+                                <button class="layer-btn delete-layer" data-index="${layerIndex}">Delete Layer</button>
+                            </div>
                         </div>`
                     )
                     .join("")}
+                    <button class="layer-btn save-layers">Save Layers</button>
             </div>
         `
 
@@ -73,6 +108,38 @@ class ProjectLayers extends HTMLElement {
                     this.render()
                 }
             })
+        })
+
+        this.shadowRoot.querySelector(".save-layers").addEventListener("click", async() => {
+            const response = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/layers`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${TPEN.getAuthorization()}`,
+                },
+                body: JSON.stringify(TPEN.activeProject.layers),
+            })
+            .then(response => {
+                if (response.ok) {
+                    const toast = new CustomEvent('tpen-toast', {
+                        detail: {
+                            message: 'Successfully saved layers',
+                            status: 200
+                        }
+                    })
+                    return TPEN.eventDispatcher.dispatchEvent(toast)
+                }
+                else {
+                    const toast = new CustomEvent('tpen-toast', {
+                        detail: {
+                            message: 'Error saving layers',
+                            status: 500
+                        }
+                    })
+                    return TPEN.eventDispatcher.dispatchEvent(toast)
+                }
+            })
+            this.render()
         })
 
         const cards = this.shadowRoot.querySelectorAll(".layer-card")
