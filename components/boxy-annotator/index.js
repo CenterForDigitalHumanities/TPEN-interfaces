@@ -40,20 +40,22 @@
 // customElements.define('tpen-boxy-annotator', BoxyAnnotator)
 
 
-const imageContainer = document.getElementById("imageContainer")
-const uploadedImage = document.getElementById("uploadedImage")
-const drawTool = document.getElementById("drawTool")
-const eraseTool = document.getElementById("eraseTool")
+let imageContainer, uploadedImage, drawTool, eraseTool
 let isDrawing = false
 let startX = 0
 let startY = 0
 let currentRectangle
 
-imageContainer.addEventListener("mousedown", switchOperation) 
-imageContainer.addEventListener("mouseup", endDrawing)
-
-drawTool.addEventListener("change", toggleDrawingMode)
-eraseTool.addEventListener("change", toggleEraseMode)
+document.addEventListener("DOMContentLoaded", (event) => {
+    imageContainer = document.getElementById("imageContainer")
+    uploadedImage = document.getElementById("uploadedImage")
+    drawTool = document.getElementById("drawTool")
+    eraseTool = document.getElementById("eraseTool")
+    imageContainer.addEventListener("mousedown", switchOperation) 
+    imageContainer.addEventListener("mouseup", endDrawing)
+    drawTool.addEventListener("change", toggleDrawingMode)
+    eraseTool.addEventListener("change", toggleEraseMode)
+})
 
 async function loadCanvas(event) {
     const canvas = canvasURI.value
@@ -73,9 +75,14 @@ async function loadCanvas(event) {
         err = new Error("Cannot Resolve Canvas or Image", {"cause":"The Canvas is 404 or unresolvable."})
         throw err
     }
+    const type = resolvedCanvas["@type"] ?? resolvedCanvas.type
+    if(type !== "Canvas"){
+        err = new Error(`Provided URI did not resolve a 'Canvas'.  It resolved a '${type}'`, {"cause":"URI must point to a Canvas."})
+        throw err
+    }
     let image = resolvedCanvas?.items[0]?.items[0]?.body?.id
     if(!image){
-        err = new Error("Cannot Resolve Canvas or Image", {"cause":"The Canvas is 404 or unresolvable."})
+        err = new Error("Cannot Resolve Canvas or Image", {"cause":"The Image is 404 or unresolvable."})
         throw err
     }
     if(!image.includes("default.jpg")) {
@@ -222,7 +229,7 @@ function deleteRectangle(id) {
     const target = imageCanvas.getAttribute("canvas") + selector
 
     let anno = {
-        "@context": "http://www.w3.org/ns/anno.jsonld"
+        "@context": "http://www.w3.org/ns/anno.jsonld",
         "type": "Annotation",
         "motivation": "transcribing",
         "body": {
