@@ -63,8 +63,6 @@ function render(image, canvas){
   // https://annotorious.dev/guides/openseadragon-iiif/
   // with this cannot use 'https://iiif.io/api/image/3.0/example/reference/15f769d62ca9a3a2deca390efed75d73-3_titlepage1/'
 
-
-
  let viewer = OpenSeadragon({
     element: document.getElementById('annotator-container'),
     tileSources: {
@@ -127,6 +125,7 @@ function render(image, canvas){
   })
   
   anno.on('createAnnotation', function(annotation) {
+    anno.target = "makeItThe#selector"
     console.log('Annotation Created:', annotation)
   })
 
