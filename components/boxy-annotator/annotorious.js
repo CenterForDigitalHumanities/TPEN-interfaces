@@ -5,13 +5,9 @@
     * Annotorious licensing information can be found at https://github.com/annotorious/annotorious
 */
 
-import { eventDispatcher } from '../../api/events.js'
 import TPEN from '../../api/TPEN.js'
-import User from '../../api/User.js'
 
 class BoxyAnnotator extends HTMLElement {
-    #OpenSeadragon = null
-    #AnnotoriousOSD = null
 
     static get observedAttributes() {
         return ["canvas", "image"]
@@ -20,12 +16,19 @@ class BoxyAnnotator extends HTMLElement {
     constructor() {
         super()
         TPEN.attachAuthentication(this)
+        TPEN.eventDispatcher.on("tpen-user-loaded", ev => this.currentUser = ev.detail)
         this.attachShadow({ mode: 'open' })
     }
 
-    async connectedCallback() {
+    connectedCallback() {
+        const osdScript = document.createElement("script")
+        osdScript.src = "https://cdn.jsdelivr.net/npm/openseadragon@5.0/build/openseadragon/openseadragon.min.js"
+        const annotoriousScript = document.createElement("script")
+        annotoriousScript.src = "https://cdn.jsdelivr.net/npm/@annotorious/openseadragon@latest/dist/annotorious-openseadragon.js"
+
         this.shadowRoot.innerHTML = `
         <style>
+          @import url("https://cdn.jsdelivr.net/npm/@annotorious/openseadragon@latest/dist/annotorious-openseadragon.css");
           #annotator-container {
             height:  100vh;
           }
@@ -44,6 +47,8 @@ class BoxyAnnotator extends HTMLElement {
         loadButton.addEventListener("click", (e) => {
             this.setAttribute("canvas", inputElem.value)
         })
+        this.shadowRoot.appendChild(osdScript)
+        this.shadowRoot.appendChild(annotoriousScript)
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
@@ -52,70 +57,59 @@ class BoxyAnnotator extends HTMLElement {
         }
     }
 
-    async render(image, canvas) {
-
-      // Full example, may be a bit extra
-      //   let viewer = OpenSeadragon({
-      //   element: this.shadowRoot.getElementById('annotator-container'),
-      //   tileSources: {
-      //    "@context":"http://iiif.io/api/image/3/context.json",
-      //    "id":"https://iiif.io/api/image/3.0/example/reference/15f769d62ca9a3a2deca390efed75d73-3_titlepage1",
-      //    "height":7230,
-      //    "width":5428,
-      //    "profile":"level1",
-      //    "protocol":"http://iiif.io/api/image",
-      //    "tiles":[
-      //       {
-      //          "height":512,
-      //          "scaleFactors":[
-      //             1,
-      //             2,
-      //             4,
-      //             8
-      //          ],
-      //          "width":512
-      //       }
-      //    ]
-      //   }
-      // })
-
-      // https://annotorious.dev/guides/openseadragon-iiif/
-      // with this cannot use 'https://iiif.io/api/image/3.0/example/reference/15f769d62ca9a3a2deca390efed75d73-3_titlepage1/'
-
-    // try {
-    //     this.#OpenSeadragon = await import("https://cdn.jsdelivr.net/npm/openseadragon@5.0/build/openseadragon/openseadragon.min.js")
-    //     this.#AnnotoriousOSD = await import("https://cdn.jsdelivr.net/npm/@annotorious/openseadragon@latest/dist/annotorious-openseadragon.js")
-    // } catch (error) {
-    //     console.error(error)
-    // }
-    console.log("how can I know OpenSeadDragon and AnnotoriousOSD here.")
-    let viewer = OpenSeadragon({
-        element: this.shadowRoot.getElementById('annotator-container'),
-        tileSources: {
-          type: 'image',
-          url: image
+    async render(resolvedCanvas) {
+        let canvasID = resolvedCanvas["@id"] ?? resolvedCanvas.id
+        let fullImage = resolvedCanvas?.items[0]?.items[0]?.body?.id
+        let imageService = resolvedCanvas?.items[0]?.items[0]?.body?.service?.id
+        if(!fullImage){
+            err = new Error("Cannot Resolve Canvas or Image", {"cause":"The Image is 404 or unresolvable."})
+            throw err
         }
-    })
+        this.setAttribute("image", fullImage)
+        let imageInfo = {
+          type: "image",
+          url: fullImage
+        }
+
+        // Try to get the info.json
+        if(imageService){
+            const lastchar = imageService[imageService.length-1]
+            if(lastchar !== "/") imageService += "/"
+            imageInfo = await fetch(imageService+"info.json").then(resp => resp.json()).catch(err => { return false })
+        }
+        
+        let viewer = OpenSeadragon({
+            element: this.shadowRoot.getElementById('annotator-container'),
+            tileSources: imageInfo
+        })
 
       // @see https://annotorious.dev/api-reference/openseadragon-annotator/ for all the available methods of this annotator.
-      let annotorious = AnnotoriousOSD.createOSDAnnotator(viewer, {
-        adapter: AnnotoriousOSD.W3CImageFormat(canvas),
-        drawingEnabled: true,
-        drawingMode: "drag",
-        // https://annotorious.dev/api-reference/drawing-style/
-        style: {
-         fill: "#ff0000",
-         fillOpacity: 0.25
-        },
-        userSelectAction: "EDIT"
-        // EXAMPLE: Only allow me to edit my own annotations
-        // userSelectAction: (annotation) => {
-        //   const isMe = annotation.target.creator?.id === 'aboutgeo';
-        //   return isMe ? 'EDIT' : 'SELECT';
-        // }
+        let annotorious = AnnotoriousOSD.createOSDAnnotator(viewer, {
+            adapter: AnnotoriousOSD.W3CImageFormat(canvasID),
+            drawingEnabled: true,
+            drawingMode: "drag",
+            // https://annotorious.dev/api-reference/drawing-style/
+            style: {
+             fill: "#ff0000",
+             fillOpacity: 0.25
+            },
+            userSelectAction: "EDIT"
+            // EXAMPLE: Only allow me to edit my own annotations
+            // userSelectAction: (annotation) => {
+            //   const isMe = annotation.target.creator?.id === 'aboutgeo';
+            //   return isMe ? 'EDIT' : 'SELECT';
+            // }
 
-      })
-      this.listenTo(annotorious)
+        })
+        // anno.setUser({
+        //   id: 'aboutgeo',
+        //   name: 'Rainer',
+        //   avatar: 'https://example.com/lego-saruman.jpg'
+        // })
+        console.log(TPEN.currentUser)
+        console.log(this.currentUser)
+        annotorious.setUser(TPEN.currentUser)
+        this.listenTo(annotorious)
     }
 
     /**
@@ -128,16 +122,16 @@ class BoxyAnnotator extends HTMLElement {
     listenTo(annotator) {
 
       // A click event on a drawn Annotation.  The annotation data is known and available as a parameter.
-      anno.on('clickAnnotation', (annotation, originalEvent) => {
+      annotator.on('clickAnnotation', (annotation, originalEvent) => {
         console.log('Annotation clicked: ' + annotation.id);
       })
 
       // A mouseenter event on a drawn Annotation.  The annotation data is known and available as a parameter.
-      anno.on('mouseEnterAnnotation', (annotation, originalEvent) => {
+      annotator.on('mouseEnterAnnotation', (annotation, originalEvent) => {
         console.log('Mouse entered: ' + annotation.id)
       })
 
-      anno.on('mouseLeaveAnnotation', (annotation, originalEvent) => {
+      annotator.on('mouseLeaveAnnotation', (annotation, originalEvent) => {
         console.log('Mouse left: ' + annotation.id)
       })
 
@@ -146,7 +140,7 @@ class BoxyAnnotator extends HTMLElement {
         * However, only single annotation will be returned currently.
         * When the user de-selects an annotation, the event will be fired with an empty array.
       */
-      anno.on('selectionChanged', (annotations, originalEvent) => {
+      annotator.on('selectionChanged', (annotations, originalEvent) => {
         console.log('Selected annotations', annotations)
       })
 
@@ -155,7 +149,7 @@ class BoxyAnnotator extends HTMLElement {
         * This event is only available on the OpenSeadragonAnnotator and will respond to zooming and panning 
         * of the OpenSeadragon image.
       */
-      anno.on('viewportIntersect', (annotations, originalEvent) => {
+      annotator.on('viewportIntersect', (annotations, originalEvent) => {
         console.log('Annotations in viewport', annotations)
       })
 
@@ -163,8 +157,8 @@ class BoxyAnnotator extends HTMLElement {
       /**
         * Fired after a new annotation is created and available as a shape in the DOM.
         */
-      anno.on('createAnnotation', function(annotation) {
-        anno.target = "makeItThe#selector"
+      annotator.on('createAnnotation', function(annotation) {
+        //annotations.target = "makeItThe#selector"
         console.log('Annotation Created:', annotation)
       })
 
@@ -172,17 +166,17 @@ class BoxyAnnotator extends HTMLElement {
        * Fired when an existing annotation is modified. Provides both the updated annotation and the previous state
        * of the annotation.
       */
-      anno.on('updateAnnotation', (annotation, previous) => {
+      annotator.on('updateAnnotation', (annotation, previous) => {
         console.log('Annotation before update: ' + previous)
         console.log('Annotation after update: ' + annotation)
       })
 
-      anno.on('deleteAnnotation', (annotation) => {
+      annotator.on('deleteAnnotation', (annotation) => {
         console.log('Annotation Deleted:', annotation)
       })
 
       // Load existing Annotations.  Not sure of the AnnotationPage. Not sure about Content Negotiation yet.
-      // anno.loadAnnotations('./annotations.json');
+      // annotator.loadAnnotations('./annotations.json');
     }
 
     // Presumes the canvas URI supplied is to a IIIF Presentation API 3 Canvas.  
@@ -214,31 +208,8 @@ class BoxyAnnotator extends HTMLElement {
           err = new Error(`Provided URI did not resolve a 'Canvas'.  It resolved a '${type}'`, {"cause":"URI must point to a Canvas."})
           throw err
       }
-      let image = resolvedCanvas?.items[0]?.items[0]?.body?.id
-
-      if(!image){
-          err = new Error("Cannot Resolve Canvas or Image", {"cause":"The Image is 404 or unresolvable."})
-          throw err
-      }
-      let imageApiService = resolvedCanvas.items[0].items[0].body.service.type
-      const lastchar = image[image.length-1]
-      // TODO some content negotiation here.  Need to know presi2 or presi3
-      if(imageApiService === "ImageService3"){
-        if(!image.includes("default.jpg")) {
-            if(lastchar !== "/") image += "/"
-            image += "full/max/0/default.jpg"
-        }  
-      }
-      else if (imageApiService === "ImageService2") {
-        if(!image.includes("default.jpg")) {
-            if(lastchar !== "/") image += "/"
-            image += "full/full/0/default.jpg"
-        }  
-      }
-      this.setAttribute("image", image)
-      this.render(image, canvas)
+      this.render(resolvedCanvas)
     }
-
 }
 
 customElements.define('tpen-boxy-annotator', BoxyAnnotator)
