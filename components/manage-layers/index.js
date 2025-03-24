@@ -53,6 +53,21 @@ class ProjectLayers extends HTMLElement {
                     justify-content: flex-end;
                     width: 100%;
                 }
+                .layer-div {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 10px;
+                    width: 80%;
+                    margin: 0 auto;
+                }
+                .layer-div input {
+                    width: 70%;
+                    padding: 5px;
+                    border: 1px solid #ccc;
+                    border-radius: 4px;
+                }
                 .layer-btn {
                     margin-top: 10px;
                     padding: 5px 10px;
@@ -68,14 +83,6 @@ class ProjectLayers extends HTMLElement {
                 .delete-layer:hover {
                     background: #c82333;
                 }
-                .save-layers {
-                    background: #007bff;
-                    color: white;
-                    width: 20%;
-                }
-                .save-layers:hover {
-                    background: #0069d9;
-                }
                 .add-layer {
                     background: #28a745;
                     color: white;
@@ -85,41 +92,71 @@ class ProjectLayers extends HTMLElement {
                     background: #1e7e34;
                 }
             </style>
+
+            <h1 class="layer-title">Add Layers</h1>
+            <div class="layer-div">
+                <div>
+                    <label for="layerLabel">Label:</label>
+                    <input type="text" id="layerLabel" placeholder="Layer Label">
+                </div>
+                <button class="layer-btn add-layer">Add Layer</button>
+            </div>
+            
             <h1 class="layer-title">Manage Layers</h1>
             <div class="layer-container">
-                ${layers
-                    .map(
-                        (layer, layerIndex) => `
-                        <div class="layer-card" draggable="true" data-index="${layerIndex}">
-                            <p><strong>Layer ID:</strong> ${layer["@id"] ?? layer.id}</p>
-                            ${layer.label ? `<p><strong>Label:</strong> ${layer.label}</p>` : ``}
-                            ${layer.pages
-                                .map(
-                                    (page) =>
-                                        `<p class="layer-page"> ${page["@id"] ?? page.id ?? page.map((page) => page["@id"] ?? page.id ).join("<br>")}</p>`
-                                    )
-                                .join("")}
-                            <div class="layer-actions">
-                                <button class="layer-btn delete-layer" data-index="${layerIndex}">Delete Layer</button>
-                            </div>
-                        </div>`
-                    )
-                    .join("")}
-                    <button class="layer-btn save-layers">Save Layers</button>
-                    
-                    <label for="layerLabel">Layer Label:</label>
-                    <input type="text" id="layerLabel" placeholder="Layer Label">
-                    <button class="layer-btn add-layer">Add Layer</button>
+            ${layers
+                .map(
+                    (layer, layerIndex) => `
+                    <div class="layer-card" draggable="true" data-index="${layerIndex}">
+                        <p><strong>Layer ID:</strong> ${layer["@id"] ?? layer.id}</p>
+                        ${layer.label ? `<p><strong>Label:</strong> ${layer.label}</p>` : ``}
+                        ${layer.pages
+                            .map(
+                                (page) =>
+                                    `<p class="layer-page"> ${page["@id"] ?? page.id ?? page.map((page) => page["@id"] ?? page.id ).join("<br>")}</p>`
+                                )
+                            .join("")}
+                        <div class="layer-actions">
+                            <button class="layer-btn delete-layer" data-layer-id="${layer["@id"] ?? layer.id}">Delete Layer</button>
+                        </div>
+                    </div>`
+                )
+                .join("")}     
             </div>
         `
 
         this.shadowRoot.querySelectorAll(".delete-layer").forEach((button) => {
-            button.addEventListener("click", (event) => {
-                const index = event.target.dataset.index
-                if (index !== undefined) {
-                    TPEN.activeProject.layers.splice(index, 1)
-                    this.render()
-                }
+            button.addEventListener("click", async (event) => {
+                const layerIndex = event.target.getAttribute("data-index")
+                TPEN.activeProject.layers.splice(layerIndex, 1)
+                const layerId = event.target.getAttribute("data-layer-id")
+                await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/layer/${layerId}`, {
+                    method: "DELETE",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${TPEN.getAuthorization()}`,
+                    },
+                })
+                .then(response => {
+                    if (response.ok) {
+                        const toast = new CustomEvent('tpen-toast', {
+                            detail: {
+                                message: 'Successfully deleted layer',
+                                status: 200
+                            }
+                        })
+                        return TPEN.eventDispatcher.dispatchEvent(toast)
+                    }
+                    else {
+                        const toast = new CustomEvent('tpen-toast', {
+                            detail: {
+                                message: 'Error deleting layer',
+                                status: 500
+                            }
+                        })
+                        return TPEN.eventDispatcher.dispatchEvent(toast)
+                    }
+                })
             })
         })
 
@@ -134,7 +171,7 @@ class ProjectLayers extends HTMLElement {
             if (layerLabel === "") {
                 layerLabel = null
             }
-            const response = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/layers`, {
+            await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/layer`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
