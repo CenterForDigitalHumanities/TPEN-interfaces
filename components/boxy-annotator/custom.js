@@ -7,20 +7,20 @@ class BoxyAnnotator extends HTMLElement {
     #currentRectangle = null
     #startX = null
     #startY = null
+    #creatorURI = null
     static get observedAttributes() {
         return ['canvas-uri, image-uri']
     }
 
     constructor() {
         super()
+        TPEN.attachAuthentication(this)
         this.attachShadow({ mode: 'open' })
-        //eventDispatcher.on("tpen-user-loaded", ev => this.currentUser = ev.detail)
     }
 
     connectedCallback() {
         // If we have a good image or a good canvas
-        //TPEN.attachAuthentication(this)
-        //if(TPEN.currentUser?._id) this.render()
+        // TODO get user
         this.#isDrawing = false
         this.render()
     }
@@ -321,4 +321,4 @@ class BoxyAnnotator extends HTMLElement {
      }
 }
 
-customElements.define('tpen-boxy-annotator', BoxyAnnotator)
+customElements.define('tpen-custom-annotator', BoxyAnnotator)
