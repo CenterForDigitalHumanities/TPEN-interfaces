@@ -4,12 +4,13 @@ import User from '../../api/User.js'
 
 class BoxyAnnotator extends HTMLElement {
     #isDrawing = false
-    #currentRectangle = null
-    #startX = null
-    #startY = null
-    #creatorURI = null
+    #currentRectangle
+    #startX
+    #startY
+    #creatorURI
+    #knownAnnotationPage
     static get observedAttributes() {
-        return ['canvas-uri, image-uri']
+        return ['annotationpage']
     }
 
     constructor() {
@@ -19,18 +20,20 @@ class BoxyAnnotator extends HTMLElement {
     }
 
     connectedCallback() {
-        // If we have a good image or a good canvas
-        // TODO get user
+        if(!this.#creatorURI) {
+          let tpenUserProfile = await User.fromToken(this.userToken).getProfile()
+          this.#creatorURI = tpenUserProfile.agent.replace("http://", "https://")
+        }
         this.#isDrawing = false
+        this.#knownAnnotationPage = getAnnotationPageFromURL()
         this.render()
+        this.setAttribute("annotationpage", this.#knownAnnotationPage)
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
-        if (name === 'canvas-uri') {
-            
-        }
-        else if (name === 'image-uri'){
-
+        if(newValue === oldValue) return
+        if (name === 'annotationpage') {
+            this.processAnnotationPage(newValue)
         }
     }
 
@@ -83,8 +86,6 @@ class BoxyAnnotator extends HTMLElement {
             }
         </style>
         <div class="container">
-            <label>Enter Canvas ID to Annotate</label><input id="canvasURI" type="text" placeholder="IIIF Canvas URI" /><br>
-            <input id="loadCanvasButton" type="button" value="Load Canvas" />
             <div class="tools-container">
               <label for="drawTool">Drawing Tool:
                <input  type="checkbox" id="drawTool">
@@ -114,59 +115,6 @@ class BoxyAnnotator extends HTMLElement {
         imageContainer.addEventListener("mouseup", () => this.endDrawing())
         drawTool.addEventListener("change", () => this.toggleDrawingMode())
         eraseTool.addEventListener("change", () => this.toggleEraseMode())
-    }
-
-    async loadCanvas(event) {
-        let canvasURI = this.shadowRoot.getElementById("canvasURI")
-        let imageCanvas = this.shadowRoot.getElementById("imageCanvas")
-        let uploadedImage = this.shadowRoot.getElementById("uploadedImage")
-        const canvas = canvasURI.value
-        const ctx = imageCanvas.getContext("2d")
-        let err
-        if(!canvas) return
-        const resolvedCanvas = await fetch(canvas)
-            .then(r => {
-                if(!r.ok) throw r
-                return r.json()
-            })
-            .catch(e => {
-                throw e
-            })
-        const id = resolvedCanvas["@id"] ?? resolvedCanvas.id
-        if(!id) {
-            err = new Error("Cannot Resolve Canvas or Image", {"cause":"The Canvas is 404 or unresolvable."})
-            throw err
-        }
-        const type = resolvedCanvas["@type"] ?? resolvedCanvas.type
-        if(type !== "Canvas"){
-            err = new Error(`Provided URI did not resolve a 'Canvas'.  It resolved a '${type}'`, {"cause":"URI must point to a Canvas."})
-            throw err
-        }
-        let image = resolvedCanvas?.items[0]?.items[0]?.body?.id
-        if(!image){
-            err = new Error("Cannot Resolve Canvas or Image", {"cause":"The Image is 404 or unresolvable."})
-            throw err
-        }
-        if(!image.includes("default.jpg")) {
-            const lastchar = image[image.length-1]
-            if(lastchar !== "/") image += "/"
-            image += "full/max/0/default.jpg"
-        }
-        imageCanvas.setAttribute("canvas", canvas)
-        uploadedImage.addEventListener("load", (e) => {
-            // Note the CSS capping height/width to 96vh/vw
-            let h = uploadedImage.height
-            let w = uploadedImage.width
-            imageCanvas.setAttribute("height", h)
-            imageCanvas.setAttribute("width", w)
-            ctx.drawImage(uploadedImage, 0, 0)
-        })
-        uploadedImage.setAttribute("src", image)
-        
-        return {
-            "canvasURI" : canvas,
-            "imageURI" : image
-        }
     }
 
     switchOperation(event) {
@@ -319,6 +267,144 @@ class BoxyAnnotator extends HTMLElement {
         console.log("Annotation Generated")
         console.log(anno)
      }
+
+     async processAnnotationPage(page) {
+      if(!page) return
+      let resolvedPage = await fetch(canvas)
+        .then(r => {
+            if(!r.ok) throw r
+            return r.json()
+        })
+        .catch(e => {
+            throw e
+        })
+      const context = resolvedPage["@context"]
+      if(!(context.includes("iiif.io/api/presentation/3/context.json") || context.includes("w3.org/ns/anno.jsonld"))) {
+        console.warn("The AnnotationPage object did not have the IIIF Presentation API 3 context and may not be parseable.")
+      }
+      const id = resolvedPage["@id"] ?? resolvedPage.id
+      if(!id) {
+          err = new Error("Cannot Resolve AnnotationPage", {"cause":"The AnnotationPage is 404 or unresolvable."})
+          throw err
+      }
+      const type = resolvedPage["@type"] ?? resolvedPage.type
+      if(type !== "AnnotationPage"){
+          err = new Error(`Provided URI did not resolve an 'AnnotationPage'.  It resolved a '${type}'`, {"cause":"URI must point to an AnnotationPage."})
+          throw err
+      }
+      let targetCanvas = resolvedPage.target
+      if(!targetCanvas) {
+        err = new Error(`The AnnotationPage object did not have a target Canvas.  There is no image to load.`, {"cause":"AnnotationPage.target must have a value."})
+        throw err
+      }
+      // Note this will process the id from embedded Canvas objects to pass forward and be resolved.
+      const canvasURI = this.processPageTarget(targetCanvas)
+      this.loadCanvas(canvasURI)
+
+    }
+
+    /**
+     * Process the string URI from an AnnotationPage.target value.  This means an Array, a JSON Object, or a String URI already.
+     * Process it if possible.  Attempt to determine a single Canvas URI.
+     *
+     * @param pageTarget an Array, a JSON Object, or a String URI value from some AnnotationPage.target
+     * @return The URI from the input pageTarget
+    */ 
+    processPageTarget(pageTarget) {
+      let canvasURI
+      let err
+      if(Array.isArray(pageTarget)){
+        err = new Error(`The AnnotationPage object has multiple targets.  We cannot process this yet, and nothing will load.`, {"cause":"AnnotationPage.target is an Array."})
+        throw err
+      }
+      else if(typeof pageTarget === "object") {
+        try{
+          JSON.parse(JSON.stringify(target))
+        }
+        catch(err){
+          err = new Error(`The AnnotationPage target is not processable.`, {"cause":"AnnotationPage.target"})
+          throw err
+        }
+        const tcid = pageTarget["@id"] ?? pageTarget.id
+        if(!tcid) {
+          err = new Error(`The target of the AnnotationPage does not contain an id.  This Canvas cannot be loaded, and so there is no image to load.`, {"cause":"AnnotationPage.target must be a Canvas and must have an id."})
+          throw err
+        }
+        // For now we don't trust the embedded Canvas and are going to take the id forward to resolve.
+        canvasURI = tcid
+      }
+      else if (typeof pageTarget === "string") {
+        // Just use it then
+        canvasURI = pageTarget
+      }
+      let uricheck
+      try {
+        uricheck = new URL(canvasURI)
+      } 
+      catch (_) {}
+      if(!(uricheck?.protocol === "http:" || uricheck?.protocol === "https:")){
+        console.warn("AnnotationPage.target string is not a URI")
+        err = new Error(`AnnotationPage.target string is not a URI`, {"cause":"AnnotationPage.target string must be a URI."})
+        throw err
+      }
+      return canvasURI
+    }
+
+    getAnnotationPageFromURL() {
+        const urlParams = new URLSearchParams(window.location.search)
+        const page = urlParams.get("page")
+        if (!page) {
+            alert("You must provide a ?page= in the URL.  The value should be the URI of an existing AnnotationPage.")
+            return
+        }
+        return page
+    }
+
+    async loadCanvas(canvas) {
+        let imageCanvas = this.shadowRoot.getElementById("imageCanvas")
+        let uploadedImage = this.shadowRoot.getElementById("uploadedImage")
+        const ctx = imageCanvas.getContext("2d")
+        let err
+        if(!canvas) return
+        const resolvedCanvas = await fetch(canvas)
+            .then(r => {
+                if(!r.ok) throw r
+                return r.json()
+            })
+            .catch(e => {
+                throw e
+            })
+        const id = resolvedCanvas["@id"] ?? resolvedCanvas.id
+        if(!id) {
+            err = new Error("Cannot Resolve Canvas or Image", {"cause":"The Canvas is 404 or unresolvable."})
+            throw err
+        }
+        const type = resolvedCanvas["@type"] ?? resolvedCanvas.type
+        if(type !== "Canvas"){
+            err = new Error(`Provided URI did not resolve a 'Canvas'.  It resolved a '${type}'`, {"cause":"URI must point to a Canvas."})
+            throw err
+        }
+        let image = resolvedCanvas?.items[0]?.items[0]?.body?.id
+        if(!image){
+            err = new Error("Cannot Resolve Canvas or Image", {"cause":"The Image is 404 or unresolvable."})
+            throw err
+        }
+        if(!image.includes("default.jpg")) {
+            const lastchar = image[image.length-1]
+            if(lastchar !== "/") image += "/"
+            image += "full/max/0/default.jpg"
+        }
+        imageCanvas.setAttribute("canvas", canvas)
+        uploadedImage.addEventListener("load", (e) => {
+            // Note the CSS capping height/width to 96vh/vw
+            let h = uploadedImage.height
+            let w = uploadedImage.width
+            imageCanvas.setAttribute("height", h)
+            imageCanvas.setAttribute("width", w)
+            ctx.drawImage(uploadedImage, 0, 0)
+        })
+        uploadedImage.setAttribute("src", image)
+    }
 }
 
 customElements.define('tpen-custom-annotator', BoxyAnnotator)
