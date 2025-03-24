@@ -5,11 +5,11 @@ class ProjectLayers extends HTMLElement {
     constructor() {
         super()
         this.attachShadow({ mode: "open" })
+        TPEN.attachAuthentication(this)
         TPEN.eventDispatcher.on("tpen-project-loaded", () => this.render())
     }
 
     render() {
-        TPEN.attachAuthentication(this)
         const layers = TPEN.activeProject.layers
         this.shadowRoot.innerHTML = `
             <style>
@@ -138,24 +138,13 @@ class ProjectLayers extends HTMLElement {
                     },
                 })
                 .then(response => {
-                    if (response.ok) {
-                        const toast = new CustomEvent('tpen-toast', {
-                            detail: {
-                                message: 'Successfully deleted layer',
-                                status: 200
-                            }
-                        })
-                        return TPEN.eventDispatcher.dispatchEvent(toast)
-                    }
-                    else {
-                        const toast = new CustomEvent('tpen-toast', {
-                            detail: {
-                                message: 'Error deleting layer',
-                                status: 500
-                            }
-                        })
-                        return TPEN.eventDispatcher.dispatchEvent(toast)
-                    }
+                    const toast = new CustomEvent('tpen-toast', {
+                    detail: {
+                        message: (response.ok) ? 'Successfully deleted layer' : 'Error deleting layer',
+                        status: (response.ok) ? 200 : 500
+                        }
+                    })
+                    return TPEN.eventDispatcher.dispatchEvent(toast)
                 })
             })
         })
@@ -183,24 +172,13 @@ class ProjectLayers extends HTMLElement {
                 }), 
             })
             .then(response => {
-                if (response.ok) {
-                    const toast = new CustomEvent('tpen-toast', {
-                        detail: {
-                            message: 'Successfully added layer',
-                            status: 200
-                        }
-                    })
-                    return TPEN.eventDispatcher.dispatchEvent(toast)
-                }
-                else {
-                    const toast = new CustomEvent('tpen-toast', {
-                        detail: {
-                            message: 'Error adding layer',
-                            status: 500
-                        }
-                    })
-                    return TPEN.eventDispatcher.dispatchEvent(toast)
-                }
+                const toast = new CustomEvent('tpen-toast', {
+                detail: {
+                    message: (response.ok) ? 'Successfully added layer' : 'Error adding layer',
+                    status: (response.ok) ? 200 : 500
+                    }
+                })
+                return TPEN.eventDispatcher.dispatchEvent(toast)
             })
             this.render()
         })
