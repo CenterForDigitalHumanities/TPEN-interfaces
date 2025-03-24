@@ -1,6 +1,7 @@
 import TPEN from "../../api/TPEN.js"
 
 class ProjectLayers extends HTMLElement {
+    canvases = []
     constructor() {
         super()
         this.attachShadow({ mode: "open" })
@@ -10,7 +11,6 @@ class ProjectLayers extends HTMLElement {
     render() {
         TPEN.attachAuthentication(this)
         const layers = TPEN.activeProject.layers
-        console.log(TPEN.activeProject)
         this.shadowRoot.innerHTML = `
             <style>
                 .layer-title {
@@ -45,7 +45,7 @@ class ProjectLayers extends HTMLElement {
                     text-align: center;
                 }
                 .layer-page {
-                    margin: 5px 0;
+                    margin: 0 auto;
                     font-size: 14px;
                 }
                 .layer-actions {
@@ -76,6 +76,14 @@ class ProjectLayers extends HTMLElement {
                 .save-layers:hover {
                     background: #0069d9;
                 }
+                .add-layer {
+                    background: #28a745;
+                    color: white;
+                    width: 20%;
+                }
+                .add-layer:hover {
+                    background: #1e7e34;
+                }
             </style>
             <h1 class="layer-title">Manage Layers</h1>
             <div class="layer-container">
@@ -84,11 +92,12 @@ class ProjectLayers extends HTMLElement {
                         (layer, layerIndex) => `
                         <div class="layer-card" draggable="true" data-index="${layerIndex}">
                             <p><strong>Layer ID:</strong> ${layer["@id"] ?? layer.id}</p>
+                            ${layer.label ? `<p><strong>Label:</strong> ${layer.label}</p>` : ``}
                             ${layer.pages
                                 .map(
                                     (page) =>
-                                        `<p class="layer-page">Page: ${page["@id"] ?? page.id}</p>`
-                                )
+                                        `<p class="layer-page"> ${page["@id"] ?? page.id ?? page.map((page) => page["@id"] ?? page.id ).join("<br>")}</p>`
+                                    )
                                 .join("")}
                             <div class="layer-actions">
                                 <button class="layer-btn delete-layer" data-index="${layerIndex}">Delete Layer</button>
@@ -97,6 +106,10 @@ class ProjectLayers extends HTMLElement {
                     )
                     .join("")}
                     <button class="layer-btn save-layers">Save Layers</button>
+                    
+                    <label for="layerLabel">Layer Label:</label>
+                    <input type="text" id="layerLabel" placeholder="Layer Label">
+                    <button class="layer-btn add-layer">Add Layer</button>
             </div>
         `
 
@@ -110,20 +123,33 @@ class ProjectLayers extends HTMLElement {
             })
         })
 
-        this.shadowRoot.querySelector(".save-layers").addEventListener("click", async() => {
+        this.shadowRoot.querySelector(".add-layer").addEventListener("click", async() => {
+            const layers = TPEN.activeProject.layers
+            layers.map(layer => layer.pages.map(page => {
+                if (!this.canvases.includes(page.canvas) && page.canvas) {
+                    this.canvases.push(page.canvas)
+                }
+            }))
+            let layerLabel = this.shadowRoot.getElementById("layerLabel").value
+            if (layerLabel === "") {
+                layerLabel = null
+            }
             const response = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/layers`, {
-                method: "PUT",
+                method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${TPEN.getAuthorization()}`,
                 },
-                body: JSON.stringify(TPEN.activeProject.layers),
+                body: JSON.stringify({
+                    label: layerLabel,
+                    canvases : this.canvases
+                }), 
             })
             .then(response => {
                 if (response.ok) {
                     const toast = new CustomEvent('tpen-toast', {
                         detail: {
-                            message: 'Successfully saved layers',
+                            message: 'Successfully added layer',
                             status: 200
                         }
                     })
@@ -132,7 +158,7 @@ class ProjectLayers extends HTMLElement {
                 else {
                     const toast = new CustomEvent('tpen-toast', {
                         detail: {
-                            message: 'Error saving layers',
+                            message: 'Error adding layer',
                             status: 500
                         }
                     })
