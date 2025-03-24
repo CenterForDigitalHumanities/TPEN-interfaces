@@ -1,5 +1,5 @@
 /**
-    * The Annotation generation and UI is powered in part by Annotorious.  The TPEN3 team hereby acknowledges
+    * The Annotation generation UI is powered in part by Annotorious.  The TPEN3 team hereby acknowledges
     * and thanks the Annotorious development team for this open source software.
     * @see https://annotorious.dev/
     * Annotorious licensing information can be found at https://github.com/annotorious/annotorious
@@ -434,13 +434,11 @@ class BoxyAnnotator extends HTMLElement {
       else { this.hideAnnotations() }
     }
 
-    //hmm doesn't do what I expect
     // https://annotorious.dev/api-reference/openseadragon-annotator/#setvisible
     showAnnotations() {
       this.#annotoriousInstance.setVisible(true)
     }
 
-    //hmm doesn't do what I expect
     // https://annotorious.dev/api-reference/openseadragon-annotator/#setvisible
     hideAnnotations() {
       this.#annotoriousInstance.setVisible(false)
