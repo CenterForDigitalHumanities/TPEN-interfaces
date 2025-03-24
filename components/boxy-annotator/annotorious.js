@@ -232,7 +232,7 @@ class BoxyAnnotator extends HTMLElement {
         * Fired after a new annotation is created and available as a shape in the DOM.
         */
       annotator.on('createAnnotation', function(annotation) {
-        // console.log('Annotation Created:', annotation)
+        console.log('Annotation Created:', annotation)
         _this.#annotoriousInstance.cancelSelected(annotation)  
       })
 
@@ -336,8 +336,22 @@ class BoxyAnnotator extends HTMLElement {
     */
     setInitialAnnotations() {
       if(!this.#resolvedAnnotationPage) return
-      let annotations = JSON.parse(JSON.stringify(this.#resolvedAnnotationPage.items))
-      this.#annotoriousInstance.setAnnotations(annotations, false)
+      let allAnnotations = JSON.parse(JSON.stringify(this.#resolvedAnnotationPage.items))
+      allAnnotations.map(annotation => {
+        annotation.body = [annotation.body]
+        const tarsel = annotation.target.split("#")
+        const target = {
+          source: tarsel[0],
+          selector: {
+            conformsTo: "http://www.w3.org/TR/media-frags/",
+            type: "FragmentSelector",
+            value: tarsel[1]
+          }
+        }
+        annotation.target = target
+        return annotation
+      })
+      this.#annotoriousInstance.setAnnotations(allAnnotations, false)
     }
 
     /**
@@ -354,7 +368,7 @@ class BoxyAnnotator extends HTMLElement {
       console.log("Save these Annotations")
       console.log(allAnnotations)
       allAnnotations.map(annotation => {
-        annotation.body = {}
+        //annotation.body = {}
         const sel = "#"+annotation.target.selector.value.replace("pixel:", "")
         const tar = annotation.target.source + sel
         annotation.target = tar
