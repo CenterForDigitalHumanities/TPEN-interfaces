@@ -171,14 +171,20 @@ class BoxyAnnotator extends HTMLElement {
       const annotator = _this.#annotoriousInstance
       // A click event on a drawn Annotation.  The annotation data is known and available as a parameter.
       annotator.on('clickAnnotation', (annotation, originalEvent) => {
-        console.log('Annotation clicked: ' + annotation.id)
+        // console.log('Annotation clicked: ' + annotation.id)
+        if(!annotation) return
+        // A click on a drawn Annotation in erase mode means erase the Annotation.
+        // FIXME if the user holds the mouse down there is some goofy UX.
         if(_this.#isErasing) {
           setTimeout(()=>{
             // Timeout required in order to let the click-and-focus native functionality to complete.
+            // Also stops the goofy UX for naturally slow clickers.
             let c = confirm("Are you sure you want to remove this?")
             if(c) {
-              _this.#annotoriousInstance.cancelSelected()
               _this.#annotoriousInstance.removeAnnotation(annotation)  
+            }
+            else{
+              _this.#annotoriousInstance.cancelSelected()
             }
           }, 500)
         }
@@ -186,11 +192,11 @@ class BoxyAnnotator extends HTMLElement {
 
       // A mouseenter event on a drawn Annotation.  The annotation data is known and available as a parameter.
       annotator.on('mouseEnterAnnotation', (annotation, originalEvent) => {
-        console.log('Mouse entered: ' + annotation.id)
+        // console.log('Mouse entered: ' + annotation.id)
       })
 
       annotator.on('mouseLeaveAnnotation', (annotation, originalEvent) => {
-        console.log('Mouse left: ' + annotation.id)
+        // console.log('Mouse left: ' + annotation.id)
       })
 
       /**
@@ -199,7 +205,7 @@ class BoxyAnnotator extends HTMLElement {
         * When the user de-selects an annotation, the event will be fired with an empty array.
       */
       annotator.on('selectionChanged', (annotations, originalEvent) => {
-        console.log('Selected annotations', annotations)
+        // console.log('Selected annotations', annotations)
       })
 
       /**
@@ -208,7 +214,7 @@ class BoxyAnnotator extends HTMLElement {
         * of the OpenSeadragon image.
       */
       annotator.on('viewportIntersect', (annotations, originalEvent) => {
-        console.log('Annotations in viewport', annotations)
+        // console.log('Annotations in viewport', annotations)
       })
 
       
@@ -216,7 +222,7 @@ class BoxyAnnotator extends HTMLElement {
         * Fired after a new annotation is created and available as a shape in the DOM.
         */
       annotator.on('createAnnotation', function(annotation) {
-        console.log('Annotation Created:', annotation)
+        // console.log('Annotation Created:', annotation)
         _this.#annotoriousInstance.cancelSelected(annotation)  
       })
 
@@ -225,12 +231,12 @@ class BoxyAnnotator extends HTMLElement {
        * of the annotation.
       */
       annotator.on('updateAnnotation', (annotation, previous) => {
-        console.log('Annotation before update: ' + previous)
-        console.log('Annotation after update: ' + annotation)
+        // console.log('Annotation before update: ' + previous)
+        // console.log('Annotation after update: ' + annotation)
       })
 
       annotator.on('deleteAnnotation', (annotation) => {
-        console.log('Annotation Deleted:', annotation)
+        // console.log('Annotation Deleted:', annotation)
       })
 
       // Load existing Annotations.  Not sure of the AnnotationPage. Not sure about Content Negotiation yet.
