@@ -362,7 +362,8 @@ class BoxyAnnotator extends HTMLElement {
       console.log("Save these Annotations")
       console.log(allAnnotations)
       allAnnotations.map(annotation => {
-        annotations.body = annotations.body.length ? annotations.body[0] : []
+        // Careful here.  Consider targets when the Canvas and Image have differing dimensions.
+        annotation.body = annotation.body.length ? annotation.body[0] : []
         const tar = annotation.target.source
         const sel = "#"+annotation.target.selector.value.replace("pixel:", "")
         annotation.target = tar + sel
@@ -374,6 +375,8 @@ class BoxyAnnotator extends HTMLElement {
         // delete annotation.modified
         return annotation
       })
+      // collectionInQuery, lineInQuery, annotationPageInQuery to use TPEN to get it out.
+      // TODO what do I do to the AnnotationPage with these new Annotations now?  Just announce them out?
     }
 
     /**
