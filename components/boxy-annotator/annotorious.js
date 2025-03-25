@@ -1,5 +1,5 @@
 /**
-    * The Annotation generation UI is powered in part by Annotorious.  The TPEN3 team hereby acknowledges
+    * The Annotation generation UI is powered by Annotorious.  The TPEN3 team hereby acknowledges
     * and thanks the Annotorious development team for this open source software.
     * @see https://annotorious.dev/
     * Annotorious licensing information can be found at https://github.com/annotorious/annotorious
@@ -67,10 +67,10 @@ class BoxyAnnotator extends HTMLElement {
         const eraseTool = this.shadowRoot.getElementById("eraseTool")
         const seeTool = this.shadowRoot.getElementById("seeTool")
         const saveButton = this.shadowRoot.getElementById("saveBtn")
-        saveButton.addEventListener("click", (e) => this.saveAnnotations(e))
         drawTool.addEventListener("change", (e) => this.toggleDrawingMode(e))
         eraseTool.addEventListener("change", (e) => this.toggleErasingMode(e))
         seeTool.addEventListener("change", (e) => this.toggleAnnotationVisibility(e))
+        saveButton.addEventListener("click", (e) => this.saveAnnotations(e))
         this.shadowRoot.appendChild(osdScript)
         this.shadowRoot.appendChild(annotoriousScript)
     }
@@ -90,7 +90,7 @@ class BoxyAnnotator extends HTMLElement {
     attributeChangedCallback(name, oldValue, newValue) {
       if(newValue === oldValue) return
       if (name === 'canvas') {
-          this.loadCanvas(newValue)
+          this.processCanvas(newValue)
       }
       if (name === 'annotationpage') {
           this.processAnnotationPage(newValue)
@@ -163,10 +163,6 @@ class BoxyAnnotator extends HTMLElement {
         this.#annotoriousInstance.setUser(this.#userForAnnotorious)
         this.#annotoriousInstance.setDrawingTool("rectangle")
         this.setInitialAnnotations()
-        if(this.#annotationPageURI){
-          // hmm this does not anticipate an AnnotationPage URI.  It anticpates a JSON Array URI.
-          //this.#annotoriousInstance.loadAnnotations(this.#annotationPageURI, false)
-        }
         this.listenTo(this)
     }
 
@@ -249,42 +245,6 @@ class BoxyAnnotator extends HTMLElement {
         // console.log('Annotation Deleted:', annotation)
       })
 
-      // Load existing Annotations.  Not sure of the AnnotationPage. Not sure about Content Negotiation yet.
-      // annotator.loadAnnotations('./annotations.json');
-    }
-
-    /**
-     * Fetch a Canvas URI and check that it is a Canvas object.  Pass it forward to render the Image into the interface.
-     *
-     * @param uri A String Canvas URI
-    */
-    async loadCanvas(uri) {
-      let err
-      const canvas = uri
-      if(!canvas) return
-      const resolvedCanvas = await fetch(canvas)
-        .then(r => {
-            if(!r.ok) throw r
-            return r.json()
-        })
-        .catch(e => {
-            throw e
-        })
-      const context = resolvedCanvas["@context"]
-      if(!context.includes("iiif.io/api/presentation/3/context.json")){
-        console.warn("The Canvas object did not have the IIIF Presentation API 3 context and may not be parseable.")
-      }
-      const id = resolvedCanvas["@id"] ?? resolvedCanvas.id
-      if(!id) {
-          err = new Error("Cannot Resolve Canvas or Image", {"cause":"The Canvas is 404 or unresolvable."})
-          throw err
-      }
-      const type = resolvedCanvas["@type"] ?? resolvedCanvas.type
-      if(type !== "Canvas"){
-          err = new Error(`Provided URI did not resolve a 'Canvas'.  It resolved a '${type}'`, {"cause":"URI must point to a Canvas."})
-          throw err
-      }
-      this.render(resolvedCanvas)
     }
 
     /**
@@ -327,7 +287,41 @@ class BoxyAnnotator extends HTMLElement {
       }
       // Note this will process the id from embedded Canvas objects to pass forward and be resolved.
       const canvasURI = this.processPageTarget(targetCanvas)
-      this.loadCanvas(canvasURI)
+      this.processCanvas(canvasURI)
+    }
+
+    /**
+     * Fetch a Canvas URI and check that it is a Canvas object.  Pass it forward to render the Image into the interface.
+     *
+     * @param uri A String Canvas URI
+    */
+    async processCanvas(uri) {
+      let err
+      const canvas = uri
+      if(!canvas) return
+      const resolvedCanvas = await fetch(canvas)
+        .then(r => {
+            if(!r.ok) throw r
+            return r.json()
+        })
+        .catch(e => {
+            throw e
+        })
+      const context = resolvedCanvas["@context"]
+      if(!context.includes("iiif.io/api/presentation/3/context.json")){
+        console.warn("The Canvas object did not have the IIIF Presentation API 3 context and may not be parseable.")
+      }
+      const id = resolvedCanvas["@id"] ?? resolvedCanvas.id
+      if(!id) {
+          err = new Error("Cannot Resolve Canvas or Image", {"cause":"The Canvas is 404 or unresolvable."})
+          throw err
+      }
+      const type = resolvedCanvas["@type"] ?? resolvedCanvas.type
+      if(type !== "Canvas"){
+          err = new Error(`Provided URI did not resolve a 'Canvas'.  It resolved a '${type}'`, {"cause":"URI must point to a Canvas."})
+          throw err
+      }
+      this.render(resolvedCanvas)
     }
 
     /**
@@ -368,10 +362,16 @@ class BoxyAnnotator extends HTMLElement {
       console.log("Save these Annotations")
       console.log(allAnnotations)
       allAnnotations.map(annotation => {
-        //annotation.body = {}
+        annotations.body = annotations.body.length ? annotations.body[0] : []
         const sel = "#"+annotation.target.selector.value.replace("pixel:", "")
         const tar = annotation.target.source + sel
         annotation.target = tar
+        // stop undefined from appearing on previously existing Annotations
+        if(!annotation.creator) delete annotation.creator
+        // We already track this in __rerum.createdAt
+        delete annotation.created
+        // hmm
+        // delete annotation.modified
         return annotation
       })
     }
@@ -395,7 +395,7 @@ class BoxyAnnotator extends HTMLElement {
           JSON.parse(JSON.stringify(target))
         }
         catch(err){
-          err = new Error(`The AnnotationPage target is not processable.`, {"cause":"AnnotationPage.target"})
+          err = new Error(`The AnnotationPage target is not processable.`, {"cause":"AnnotationPage.target is not JSON."})
           throw err
         }
         const tcid = pageTarget["@id"] ?? pageTarget.id
