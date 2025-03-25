@@ -1,10 +1,17 @@
-/**
-    * The Annotation generation UI is powered by Annotorious.  The TPEN3 team hereby acknowledges
-    * and thanks the Annotorious development team for this open source software.
-    * @see https://annotorious.dev/
-    * Annotorious licensing information can be found at https://github.com/annotorious/annotorious
-*/
 
+/**
+ * A plain Annotorious Annotator that can draw Rectangles.  It is able to draw Polygons, but this ability is not exposed to the user.
+ * It assigns all Annotations to the provided AnnotationPage (does not make or track more than one page at a time)
+ *
+ * It is exposed to the user at /interfaces/annotator/index.html and so is our 'default annotator'.
+ *
+ * The Annotation generation UI is powered by Annotorious.  The TPEN3 team hereby acknowledges
+ * and thanks the Annotorious development team for this open source software.
+ * @see https://annotorious.dev/
+ * Annotorious licensing information can be found at https://github.com/annotorious/annotorious
+ */
+
+import { eventDispatcher } from '../../api/events.js'
 import TPEN from '../../api/TPEN.js'
 import User from '../../api/User.js'
 
@@ -78,9 +85,7 @@ class BoxyAnnotator extends HTMLElement {
     async connectedCallback() {
         if(!this.#userForAnnotorious) {
           let tpenUserProfile = await User.fromToken(this.userToken).getProfile()
-          //tpenUserProfile.id = tpenUserProfile.agent
-          //tpenUserProfile.name = tpenUserProfile.displayName
-          //this.#userForAnnotorious = tpenUserProfile
+          // Whatever value is here becomes the value of 'creator' on the Annotations.
           this.#userForAnnotorious = tpenUserProfile.agent.replace("http://", "https://")
         }
         this.#annotationPageURI = this.getAnnotationPageFromURL()
@@ -119,7 +124,12 @@ class BoxyAnnotator extends HTMLElement {
             imageInfo = await fetch(imageService+"info.json").then(resp => resp.json()).catch(err => { return false })
         }
         
-        // https://openseadragon.github.io/docs/OpenSeadragon.html#.Options
+        /**
+         * An instance of OpenSeaDragon with customization options that help our desired
+         * "draw new annotation", "edit existing drawn annotation", "delete drawn annotation" UX.
+         * The interface folder contains an /images/ folder with all the OpenSeaDragon icons.
+         * @see https://openseadragon.github.io/docs/OpenSeadragon.html#.Options for all options and their description.
+        */
         this.#osd = OpenSeadragon({
             element: this.shadowRoot.getElementById('annotator-container'),
             tileSources: imageInfo,
@@ -142,7 +152,11 @@ class BoxyAnnotator extends HTMLElement {
             }
         })
 
-        // @see https://annotorious.dev/api-reference/openseadragon-annotator/ for all the available methods of this annotator.
+        /**
+         * An instance of an OpenSeaDragon Annotorious Annotation with customization options that help our desired
+         * "draw new annotation", "edit existing drawn annotation", "delete drawn annotation" UX.
+         * @see https://annotorious.dev/api-reference/openseadragon-annotator/ for all the available methods of this annotator.
+        */
         this.#annotoriousInstance = AnnotoriousOSD.createOSDAnnotator(this.#osd, {
             adapter: AnnotoriousOSD.W3CImageFormat(canvasID),
             drawingEnabled: false,
@@ -155,23 +169,24 @@ class BoxyAnnotator extends HTMLElement {
             userSelectAction: "EDIT"
             // EXAMPLE: Only allow me to edit my own annotations
             // userSelectAction: (annotation) => {
-            //   const isMe = annotation.target.creator?.id === 'aboutgeo';
+            //   const isMe = annotation.target.creator?.id === 'my_id';
             //   return isMe ? 'EDIT' : 'SELECT';
             // }
 
         })
         this.#annotoriousInstance.setUser(this.#userForAnnotorious)
+        // "polygon" is another available option
         this.#annotoriousInstance.setDrawingTool("rectangle")
         this.setInitialAnnotations()
         this.listenTo(this)
     }
 
     /**
-        * Listeners on all available Annotorious instance events.  See inline comments for details.
-        * Here we can catch events, then do TPEN things with the Annotations from those events.
-        * Lifecycle Events API is available at https://annotorious.dev/api-reference/events/
-        *
-        * @param annotator - An established instance of a AnnotoriousOSD.createOSDAnnotator
+      * Listeners on all available Annotorious instance events.  See inline comments for details.
+      * Here we can catch events, then do TPEN things with the Annotations from those events.
+      * Lifecycle Events API is available at https://annotorious.dev/api-reference/events/
+      *
+      * @param annotator - An established instance of a AnnotoriousOSD.createOSDAnnotator
     */ 
     listenTo(_this) {
       const annotator = _this.#annotoriousInstance
@@ -351,6 +366,8 @@ class BoxyAnnotator extends HTMLElement {
     /**
       * This page renders because of a known AnnotationPage.  Existing Annotations in that AnnotationPage were drawn.
       * There have been edits to the Annotations and those edits need to be saved.
+      *
+      * TODO
       * Announce the AnnotationPage with the changes that needs to be updated.
       * OR
       * Announce the AnnotationPage after it has been updated with the changes
@@ -380,7 +397,7 @@ class BoxyAnnotator extends HTMLElement {
     }
 
     /**
-     * Process the string URI from an AnnotationPage.target value.  This means an Array, a JSON Object, or a String URI already.
+     * Process the string URI from an AnnotationPage.target value.  This value may be an Array, a JSON Object, or a String URI.
      * Process it if possible.  Attempt to determine a single Canvas URI.
      *
      * @param pageTarget an Array, a JSON Object, or a String URI value from some AnnotationPage.target
@@ -413,13 +430,13 @@ class BoxyAnnotator extends HTMLElement {
         // Just use it then
         canvasURI = pageTarget
       }
+
       let uricheck
       try {
         uricheck = new URL(canvasURI)
       } 
       catch (_) {}
       if(!(uricheck?.protocol === "http:" || uricheck?.protocol === "https:")){
-        console.warn("AnnotationPage.target string is not a URI")
         err = new Error(`AnnotationPage.target string is not a URI`, {"cause":"AnnotationPage.target string must be a URI."})
         throw err
       }
@@ -451,12 +468,18 @@ class BoxyAnnotator extends HTMLElement {
       else { this.hideAnnotations() }
     }
 
-    // https://annotorious.dev/api-reference/openseadragon-annotator/#setvisible
+    /**
+     * Use Annotorious to show all known Annotations
+     * https://annotorious.dev/api-reference/openseadragon-annotator/#setvisible
+    */
     showAnnotations() {
       this.#annotoriousInstance.setVisible(true)
     }
 
-    // https://annotorious.dev/api-reference/openseadragon-annotator/#setvisible
+    /**
+     * Use Annotorious to hide all visible Annotations (except the one in focus, if any)
+     * https://annotorious.dev/api-reference/openseadragon-annotator/#setvisible
+    */
     hideAnnotations() {
       this.#annotoriousInstance.setVisible(false)
     }
