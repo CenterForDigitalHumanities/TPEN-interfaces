@@ -109,8 +109,8 @@ class ProjectLayers extends HTMLElement {
                     (layer, layerIndex) => `
                     <div class="layer-card" draggable="true" data-index="${layerIndex}">
                         <p><strong>Layer ID:</strong> ${layer["@id"] ?? layer.id}</p>
-                        ${layer.label ? `<p><strong>Label:</strong> ${layer.label}</p>` : ``}
-                        ${layer.pages
+                        ${layer.label ? `<p><strong>Label:</strong> ${layer.label.none}</p>` : ``}
+                        ${(layer.pages ?? layer.items)
                             .map(
                                 (page) =>
                                     `<p class="layer-page"> ${page["@id"] ?? page.id ?? page.map((page) => page["@id"] ?? page.id ).join("<br>")}</p>`
@@ -129,7 +129,8 @@ class ProjectLayers extends HTMLElement {
             button.addEventListener("click", async (event) => {
                 const layerIndex = event.target.getAttribute("data-index")
                 TPEN.activeProject.layers.splice(layerIndex, 1)
-                const layerId = event.target.getAttribute("data-layer-id")
+                const url = event.target.getAttribute("data-layer-id")
+                const layerId = url.substring(url.lastIndexOf("/") + 1)
                 await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/layer/${layerId}`, {
                     method: "DELETE",
                     headers: {
@@ -151,7 +152,7 @@ class ProjectLayers extends HTMLElement {
 
         this.shadowRoot.querySelector(".add-layer").addEventListener("click", async() => {
             const layers = TPEN.activeProject.layers
-            layers.map(layer => layer.pages.map(page => {
+            layers.map(layer => (layer.pages ?? layer.items).map(page => {
                 if (!this.canvases.includes(page.canvas) && page.canvas) {
                     this.canvases.push(page.canvas)
                 }
