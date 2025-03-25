@@ -1,3 +1,14 @@
+
+/**
+ * A plain TPEN Annotator that can draw Rectangles.
+ * This is legacy code that was componentized and brought forward.  It was meant to be a simple annotator.
+ * We are using Annotorious for this now instead.  However, it is likely we will run into a 'parsing interface'
+ * for which we will need a completely custom annotator.
+ * 
+ * It is exposed to the user through /interfaces/annotator/custom.html
+ */
+
+
 import { eventDispatcher } from '../../api/events.js'
 import TPEN from '../../api/TPEN.js'
 import User from '../../api/User.js'
@@ -17,28 +28,6 @@ class BoxyAnnotator extends HTMLElement {
         super()
         TPEN.attachAuthentication(this)
         this.attachShadow({ mode: 'open' })
-    }
-
-    connectedCallback() {
-        if(!this.#creatorURI) {
-          let tpenUserProfile = await User.fromToken(this.userToken).getProfile()
-          this.#creatorURI = tpenUserProfile.agent.replace("http://", "https://")
-        }
-        this.#isDrawing = false
-        this.#knownAnnotationPage = getAnnotationPageFromURL()
-        this.render()
-        this.setAttribute("annotationpage", this.#knownAnnotationPage)
-    }
-
-    attributeChangedCallback(name, oldValue, newValue) {
-        if(newValue === oldValue) return
-        if (name === 'annotationpage') {
-            this.processAnnotationPage(newValue)
-        }
-    }
-
-    // This component uses Annotorious to draw Annotations and TPEN Services to save Annotations.
-    render() {
         this.shadowRoot.innerHTML = `
         <style>
             #uploadedImage {
@@ -104,12 +93,29 @@ class BoxyAnnotator extends HTMLElement {
         this.listen()
     }
 
+    async connectedCallback() {
+        if(!this.#creatorURI) {
+          const tpenUserProfile = await User.fromToken(this.userToken).getProfile()
+          this.#creatorURI = tpenUserProfile.agent.replace("http://", "https://")
+        }
+        this.#isDrawing = false
+        this.#knownAnnotationPage = this.getAnnotationPageFromURL()
+        this.setAttribute("annotationpage", this.#knownAnnotationPage)
+    }
+
+    attributeChangedCallback(name, oldValue, newValue) {
+        if(newValue === oldValue) return
+        if (name === 'annotationpage') {
+            this.processAnnotationPage(newValue)
+        }
+    }
+
     listen() {
-        let imageContainer = this.shadowRoot.getElementById("imageContainer")
-        let uploadedImage = this.shadowRoot.getElementById("uploadedImage")
-        let drawTool = this.shadowRoot.getElementById("drawTool")
-        let eraseTool = this.shadowRoot.getElementById("eraseTool")
-        let loadButton = this.shadowRoot.getElementById("loadCanvasButton")
+        const imageContainer = this.shadowRoot.getElementById("imageContainer")
+        const uploadedImage = this.shadowRoot.getElementById("uploadedImage")
+        const drawTool = this.shadowRoot.getElementById("drawTool")
+        const eraseTool = this.shadowRoot.getElementById("eraseTool")
+        const loadButton = this.shadowRoot.getElementById("loadCanvasButton")
         loadButton.addEventListener("click", () => this.loadCanvas())
         imageContainer.addEventListener("mousedown", (ev) => this.switchOperation(ev)) 
         imageContainer.addEventListener("mouseup", () => this.endDrawing())
@@ -118,8 +124,8 @@ class BoxyAnnotator extends HTMLElement {
     }
 
     switchOperation(event) {
-        let eraseTool = this.shadowRoot.getElementById("eraseTool")
-        let drawTool = this.shadowRoot.getElementById("drawTool")
+        const eraseTool = this.shadowRoot.getElementById("eraseTool")
+        const drawTool = this.shadowRoot.getElementById("drawTool")
         if (eraseTool.checked) {
           this.handleErase(event)
         } else if (drawTool.checked) {
@@ -129,7 +135,7 @@ class BoxyAnnotator extends HTMLElement {
 
     startDrawing(event) { 
         this.#isDrawing = true
-        let imageContainer = this.shadowRoot.getElementById("imageContainer")
+        const imageContainer = this.shadowRoot.getElementById("imageContainer")
         const rect = imageContainer.getBoundingClientRect()
         // If the client location is clearly outside the bounds don't be drawing.
         if(event.clientX < rect.x || event.clientX > (rect.x + rect.width)) {
@@ -148,7 +154,7 @@ class BoxyAnnotator extends HTMLElement {
 
     updateRectangleSize(event) {
         if (!this.#currentRectangle) return
-        let imageContainer = this.shadowRoot.getElementById("imageContainer")
+        const imageContainer = this.shadowRoot.getElementById("imageContainer")
         const rect = imageContainer.getBoundingClientRect()
 
         // If the client location is clearly outside the bounds don't be drawing.
@@ -166,11 +172,10 @@ class BoxyAnnotator extends HTMLElement {
         this.#currentRectangle.style.height = Math.abs(height) + "%"
         this.#currentRectangle.style.left = (width >= 0 ? this.#startX : this.#startX + width) + "%"
         this.#currentRectangle.style.top = (height >= 0 ? this.#startY : this.#startY + height) + "%"
-        console.log("SIZES")
     }
 
     drawRectangle(event) {
-        let drawTool = this.shadowRoot.getElementById("drawTool")
+        const drawTool = this.shadowRoot.getElementById("drawTool")
         if (!this.#isDrawing || !drawTool.checked) return
         this.updateRectangleSize(event)
     }
@@ -184,8 +189,8 @@ class BoxyAnnotator extends HTMLElement {
 
     toggleDrawingMode() {
         let allRects = this.shadowRoot.querySelectorAll(".drawn-shape")
-        let drawTool = this.shadowRoot.getElementById("drawTool")
-        let eraseTool = this.shadowRoot.getElementById("eraseTool")
+        const drawTool = this.shadowRoot.getElementById("drawTool")
+        const eraseTool = this.shadowRoot.getElementById("eraseTool")
         if (drawTool.checked) {
           eraseTool.checked = false
           allRects.forEach((rect) => {
@@ -195,8 +200,8 @@ class BoxyAnnotator extends HTMLElement {
     }
 
     toggleEraseMode() {
-        let drawTool = this.shadowRoot.getElementById("drawTool")
-        let eraseTool = this.shadowRoot.getElementById("eraseTool")
+        const drawTool = this.shadowRoot.getElementById("drawTool")
+        const eraseTool = this.shadowRoot.getElementById("eraseTool")
         let allRects = document.querySelectorAll(".drawn-shape")
         if (eraseTool.checked) {
           drawTool.checked = false
@@ -207,8 +212,8 @@ class BoxyAnnotator extends HTMLElement {
     }
 
     handleErase(event) {
-        let drawTool = this.shadowRoot.getElementById("drawTool")
-        let imageContainer = this.shadowRoot.getElementById("imageContainer")
+        const drawTool = this.shadowRoot.getElementById("drawTool")
+        const imageContainer = this.shadowRoot.getElementById("imageContainer")
         if (!eraseTool.checked) return
         const target = event.target
         if (target.classList.contains("rectangle")) {
@@ -250,7 +255,7 @@ class BoxyAnnotator extends HTMLElement {
         const selector = `#xywh=${x},${y},${w},${h}`
         const target = imageCanvas.getAttribute("canvas") + selector
 
-        let anno = {
+        const anno = {
             "@context": "http://www.w3.org/ns/anno.jsonld",
             "type": "Annotation",
             "motivation": "transcribing",
@@ -270,7 +275,7 @@ class BoxyAnnotator extends HTMLElement {
 
      async processAnnotationPage(page) {
       if(!page) return
-      let resolvedPage = await fetch(canvas)
+      const resolvedPage = await fetch(canvas)
         .then(r => {
             if(!r.ok) throw r
             return r.json()
@@ -292,7 +297,7 @@ class BoxyAnnotator extends HTMLElement {
           err = new Error(`Provided URI did not resolve an 'AnnotationPage'.  It resolved a '${type}'`, {"cause":"URI must point to an AnnotationPage."})
           throw err
       }
-      let targetCanvas = resolvedPage.target
+      const targetCanvas = resolvedPage.target
       if(!targetCanvas) {
         err = new Error(`The AnnotationPage object did not have a target Canvas.  There is no image to load.`, {"cause":"AnnotationPage.target must have a value."})
         throw err
@@ -361,8 +366,8 @@ class BoxyAnnotator extends HTMLElement {
     }
 
     async loadCanvas(canvas) {
-        let imageCanvas = this.shadowRoot.getElementById("imageCanvas")
-        let uploadedImage = this.shadowRoot.getElementById("uploadedImage")
+        const imageCanvas = this.shadowRoot.getElementById("imageCanvas")
+        const uploadedImage = this.shadowRoot.getElementById("uploadedImage")
         const ctx = imageCanvas.getContext("2d")
         let err
         if(!canvas) return
@@ -396,7 +401,6 @@ class BoxyAnnotator extends HTMLElement {
         }
         imageCanvas.setAttribute("canvas", canvas)
         uploadedImage.addEventListener("load", (e) => {
-            // Note the CSS capping height/width to 96vh/vw
             let h = uploadedImage.height
             let w = uploadedImage.width
             imageCanvas.setAttribute("height", h)

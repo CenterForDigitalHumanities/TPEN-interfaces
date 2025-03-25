@@ -84,7 +84,7 @@ class BoxyAnnotator extends HTMLElement {
 
     async connectedCallback() {
         if(!this.#userForAnnotorious) {
-          let tpenUserProfile = await User.fromToken(this.userToken).getProfile()
+          const tpenUserProfile = await User.fromToken(this.userToken).getProfile()
           // Whatever value is here becomes the value of 'creator' on the Annotations.
           this.#userForAnnotorious = tpenUserProfile.agent.replace("http://", "https://")
         }
@@ -104,9 +104,9 @@ class BoxyAnnotator extends HTMLElement {
 
     async render(resolvedCanvas) {
         this.shadowRoot.getElementById('annotator-container').innerHTML = ""
-        let canvasID = resolvedCanvas["@id"] ?? resolvedCanvas.id
-        let fullImage = resolvedCanvas?.items[0]?.items[0]?.body?.id
-        let imageService = resolvedCanvas?.items[0]?.items[0]?.body?.service?.id
+        const canvasID = resolvedCanvas["@id"] ?? resolvedCanvas.id
+        const fullImage = resolvedCanvas?.items[0]?.items[0]?.body?.id
+        const imageService = resolvedCanvas?.items[0]?.items[0]?.body?.service?.id
         if(!fullImage){
             err = new Error("Cannot Resolve Canvas or Image", {"cause":"The Image is 404 or unresolvable."})
             throw err
@@ -295,7 +295,7 @@ class BoxyAnnotator extends HTMLElement {
           err = new Error(`Provided URI did not resolve an 'AnnotationPage'.  It resolved a '${type}'`, {"cause":"URI must point to an AnnotationPage."})
           throw err
       }
-      let targetCanvas = this.#resolvedAnnotationPage.target
+      const targetCanvas = this.#resolvedAnnotationPage.target
       if(!targetCanvas) {
         err = new Error(`The AnnotationPage object did not have a target Canvas.  There is no image to load.`, {"cause":"AnnotationPage.target must have a value."})
         throw err
