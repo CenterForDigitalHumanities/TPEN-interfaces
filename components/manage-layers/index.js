@@ -23,16 +23,16 @@ class ProjectLayers extends HTMLElement {
                     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
                     padding: 20px;
                 }
-                .layer-container {
+                .layer-container, .layer-container-outer {
                     display: flex;
                     flex-direction: column;
                     align-items: center;
                     justify-content: center;
                     gap: 10px;
-                    width: 80%;
+                    width: 100%;
                     margin: 0 auto;
                 }
-                .layer-card {
+                .layer-card, .layer-card-outer {
                     background: #fff;
                     border-radius: 8px;
                     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
@@ -52,6 +52,7 @@ class ProjectLayers extends HTMLElement {
                     display: flex;
                     justify-content: flex-end;
                     width: 100%;
+                    gap: 10px;
                 }
                 .layer-div {
                     display: flex;
@@ -83,6 +84,14 @@ class ProjectLayers extends HTMLElement {
                 .delete-layer:hover {
                     background: #c82333;
                 }
+                .manage-pages {
+                    background: #007bff;
+                    color: white;
+                    width: 20%;
+                }
+                .manage-pages:hover {
+                    background: #0069d9;
+                }
                 .add-layer {
                     background: #28a745;
                     color: white;
@@ -103,27 +112,64 @@ class ProjectLayers extends HTMLElement {
             </div>
             
             <h1 class="layer-title">Manage Layers</h1>
-            <div class="layer-container">
+            <div class="layer-container-outer">
             ${layers
                 .map(
                     (layer, layerIndex) => `
-                    <div class="layer-card" draggable="true" data-index="${layerIndex}">
+                    <div class="layer-card-outer" data-index="${layerIndex}">
                         <p><strong>Layer ID:</strong> ${layer["@id"] ?? layer.id}</p>
                         ${layer.label ? `<p><strong>Label:</strong> ${layer.label.none}</p>` : ``}
+                        <div class="layer-pages">
                         ${(layer.pages ?? layer.items)
                             .map(
                                 (page) =>
-                                    `<p class="layer-page"> ${page["@id"] ?? page.id ?? page.map((page) => page["@id"] ?? page.id ).join("<br>")}</p>`
+                                    `<p class="layer-page">${page["@id"] ?? page.id ?? page.map((page) => page["@id"] ?? page.id ).join(`</p><p class='layer-page' data-index="${layerIndex}">`)}</p>`
                                 )
                             .join("")}
-                        <div class="layer-actions">
-                            <button class="layer-btn delete-layer" data-layer-id="${layer["@id"] ?? layer.id}">Delete Layer</button>
                         </div>
+                        ${(String(layer.id) ?? String(layer["@id"])).includes("https") ?
+                        `<div class="layer-actions">
+                            <button class="layer-btn manage-pages" data-index="${layerIndex}" data-layer-id="${layer["@id"] ?? layer.id}">Manage Pages</button>
+                            <button class="layer-btn delete-layer" data-index="${layerIndex}" data-layer-id="${layer["@id"] ?? layer.id}">Delete Layer</button>
+                        </div>`
+                        : ``}
                     </div>`
                 )
                 .join("")}     
             </div>
         `
+        
+        this.shadowRoot.querySelectorAll(".manage-pages").forEach((button) => {
+            button.addEventListener("click", async (event) => {
+                this.shadowRoot.querySelector(`.layer-card-outer[data-index="${event.target.getAttribute("data-index")}"] .layer-pages`).classList.add("layer-container")
+                this.shadowRoot.querySelectorAll(`.layer-card-outer[data-index="${event.target.getAttribute("data-index")}"] .layer-page`)
+                .forEach(el => { 
+                    el.classList.add("layer-card")
+                    el.setAttribute("draggable", "true")}
+                )
+                const layerIndex = event.target.getAttribute("data-index")
+                this.rearrangePages(layerIndex)
+                const layerId = event.target.getAttribute("data-layer-id")
+                const layer = TPEN.activeProject.layers[layerIndex]
+                // await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/layer/${layerId}`, {
+                //     method: "PUT",
+                //     headers: {
+                //         "Content-Type": "application/json",
+                //         Authorization: `Bearer ${TPEN.getAuthorization()}`,
+                //     },
+                //     body: JSON.stringify(layer),
+                // })
+                // .then(response => {
+                //     const toast = new CustomEvent('tpen-toast', {
+                //     detail: {
+                //         message: (response.ok) ? 'Successfully updated layer' : 'Error updating layer',
+                //         status: (response.ok) ? 200 : 500
+                //         }
+                //     })
+                //     return TPEN.eventDispatcher.dispatchEvent(toast)
+                // })
+            })
+        })
 
         this.shadowRoot.querySelectorAll(".delete-layer").forEach((button) => {
             button.addEventListener("click", async (event) => {
@@ -183,7 +229,9 @@ class ProjectLayers extends HTMLElement {
             })
             this.render()
         })
+    }
 
+    rearrangePages(layerIndex) {
         const cards = this.shadowRoot.querySelectorAll(".layer-card")
 
         cards.forEach((card) => {
@@ -209,13 +257,16 @@ class ProjectLayers extends HTMLElement {
                 event.preventDefault()
                 const draggedIndex = event.dataTransfer.getData("text/plain")
                 const targetIndex = card.dataset.index
+                const layer = TPEN.activeProject.layers[layerIndex]
 
-                if (draggedIndex !== targetIndex) {
-                    const draggedLayer = TPEN.activeProject.layers[draggedIndex]
-                    TPEN.activeProject.layers.splice(draggedIndex, 1)
-                    TPEN.activeProject.layers.splice(targetIndex, 0, draggedLayer)
-                    this.render()
-                }
+                console.log(draggedIndex, targetIndex)
+
+                // if (draggedIndex !== targetIndex) {
+                //     const draggedPage = layer.items[draggedIndex]
+                //     layer.items.splice(draggedIndex, 1)
+                //     layer.items.splice(targetIndex, 0, draggedPage)
+                //     this.render()
+                // }
 
                 card.style.border = "none"
             })
