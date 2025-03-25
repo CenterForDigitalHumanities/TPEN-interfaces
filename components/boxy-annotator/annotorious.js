@@ -363,9 +363,9 @@ class BoxyAnnotator extends HTMLElement {
       console.log(allAnnotations)
       allAnnotations.map(annotation => {
         annotations.body = annotations.body.length ? annotations.body[0] : []
+        const tar = annotation.target.source
         const sel = "#"+annotation.target.selector.value.replace("pixel:", "")
-        const tar = annotation.target.source + sel
-        annotation.target = tar
+        annotation.target = tar + sel
         // stop undefined from appearing on previously existing Annotations
         if(!annotation.creator) delete annotation.creator
         // We already track this in __rerum.createdAt
