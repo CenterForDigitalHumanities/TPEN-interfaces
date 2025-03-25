@@ -82,6 +82,7 @@ class BoxyAnnotator extends HTMLElement {
               <label>
                <input type="checkbox" id="eraseTool"> Shape Eraser
              </label> 
+             <input id="saveButton" type="button" value="Save" />
             </div>
             <div id="imageContainer" class="image-container" canvas="">
               <img id="uploadedImage" draggable="false" src="" alt="Uploaded Image">
@@ -115,8 +116,9 @@ class BoxyAnnotator extends HTMLElement {
         const uploadedImage = this.shadowRoot.getElementById("uploadedImage")
         const drawTool = this.shadowRoot.getElementById("drawTool")
         const eraseTool = this.shadowRoot.getElementById("eraseTool")
-        const loadButton = this.shadowRoot.getElementById("loadCanvasButton")
-        loadButton.addEventListener("click", () => this.loadCanvas())
+        const saveButton = this.shadowRoot.getElementById("saveButton")
+
+        saveButton.addEventListener("click", (ev) => this.saveAnnotations()) 
         imageContainer.addEventListener("mousedown", (ev) => this.switchOperation(ev)) 
         imageContainer.addEventListener("mouseup", () => this.endDrawing())
         drawTool.addEventListener("change", () => this.toggleDrawingMode())
@@ -268,14 +270,12 @@ class BoxyAnnotator extends HTMLElement {
             "target": target,
             "creator": "bry-dun"
         }
-
-        console.log("Annotation Generated")
-        console.log(anno)
+        return anno
      }
 
      async processAnnotationPage(page) {
       if(!page) return
-      const resolvedPage = await fetch(canvas)
+      const resolvedPage = await fetch(page)
         .then(r => {
             if(!r.ok) throw r
             return r.json()
@@ -305,6 +305,8 @@ class BoxyAnnotator extends HTMLElement {
       // Note this will process the id from embedded Canvas objects to pass forward and be resolved.
       const canvasURI = this.processPageTarget(targetCanvas)
       this.loadCanvas(canvasURI)
+
+      // Note this does not load and draw the existing Annotations.  That functionality was not present at the time of componentizing.
 
     }
 
@@ -408,6 +410,27 @@ class BoxyAnnotator extends HTMLElement {
             ctx.drawImage(uploadedImage, 0, 0)
         })
         uploadedImage.setAttribute("src", image)
+    }
+
+    /**
+      * This page renders because of a known AnnotationPage.  Existing Annotations in that AnnotationPage were drawn.
+      * There have been edits to the Annotations and those edits need to be saved.
+      *
+      * TODO
+      * Announce the AnnotationPage with the changes that needs to be updated.
+      * OR
+      * Announce the AnnotationPage after it has been updated with the changes
+    */
+    async saveAnnotations() {
+      // Annotorious has opinions about Annotation body and target values.  
+      // TPEN3 has opinions about Annotation body and target values.  Preference TPEN3 opinions.
+      const allAnnotations = Array.from(this.shadowRoot.querySelectorAll(".drawn-shape")).map(shape => {
+        return this.generateAnnotationFromShape(shape)
+      })
+      console.log("Save these Annotations")
+      console.log(allAnnotations)
+      // collectionInQuery, lineInQuery, annotationPageInQuery to use TPEN to get it out.
+      // TODO what do I do to the AnnotationPage with these new Annotations now?  Just announce them out?
     }
 }
 

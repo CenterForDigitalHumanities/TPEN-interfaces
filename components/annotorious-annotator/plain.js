@@ -375,23 +375,24 @@ class BoxyAnnotator extends HTMLElement {
     async saveAnnotations() {
       // Annotorious has opinions about Annotation body and target values.  
       // TPEN3 has opinions about Annotation body and target values.  Preference TPEN3 opinions.
-      const allAnnotations = this.#annotoriousInstance.getAnnotations()
-      console.log("Save these Annotations")
-      console.log(allAnnotations)
-      allAnnotations.map(annotation => {
+      let allAnnotations = this.#annotoriousInstance.getAnnotations()
+      allAnnotations = allAnnotations.map(annotation => {
         // Careful here.  Consider targets when the Canvas and Image have differing dimensions.
         annotation.body = annotation.body.length ? annotation.body[0] : []
         const tar = annotation.target.source
         const sel = "#"+annotation.target.selector.value.replace("pixel:", "")
         annotation.target = tar + sel
+        annotation.motivation = "transcribing"
         // stop undefined from appearing on previously existing Annotations
         if(!annotation.creator) delete annotation.creator
+        if(!annotation.modified) delete annotation.modified
         // We already track this in __rerum.createdAt
         delete annotation.created
-        // hmm
-        // delete annotation.modified
         return annotation
       })
+      console.log("Save all annotations")
+      console.log(annotations)
+      return annotations
       // collectionInQuery, lineInQuery, annotationPageInQuery to use TPEN to get it out.
       // TODO what do I do to the AnnotationPage with these new Annotations now?  Just announce them out?
     }
