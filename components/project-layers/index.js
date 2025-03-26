@@ -43,8 +43,8 @@ class ProjectLayers extends HTMLElement {
             <div class="container">
                 ${layers.map(layer => `
                     <div class="layer-card">
-                        <p>Layer ID: ${layer["@id"] ?? layer._id}</p>
-                        <p>Pages Count: ${layer.pages.flat().length}</p>
+                        <p>Layer ID: ${layer["@id"] ?? layer.id}</p>
+                        <p>Pages Count: ${(layer.pages ?? layer.items).flat().length}</p>
                     </div>
                 `).join("")}
             </div>
