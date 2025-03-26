@@ -159,7 +159,9 @@ class ProjectLayers extends HTMLElement {
                 this.rearrangePages(layerIndex)
 
                 this.shadowRoot.querySelector(`.layer-card-outer[data-index="${event.target.getAttribute("data-index")}"] .layer-actions .save-pages`)
-                .addEventListener("click", async () => {
+                .addEventListener("click", async (event) => {
+                    const url = event.target.getAttribute("data-layer-id")
+                    const layerId = url.substring(url.lastIndexOf("/") + 1)
                     const pageIds = this.layers[layerIndex].items.map((page) => page["@id"] ?? page.id)
                     await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/layer/${layerId}/pages`, {
                         method: "PUT",
