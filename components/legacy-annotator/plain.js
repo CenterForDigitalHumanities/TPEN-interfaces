@@ -1,11 +1,11 @@
 
 /**
  * A plain TPEN Annotator that can draw Rectangles.
- * This is legacy code that was componentized and brought forward.  It was meant to be a simple annotator.
+ * This is legacy code that was componentized and brought forward.  It was meant to be a simple annotator POC.
  * We are using Annotorious for this now instead.  However, it is likely we will run into a 'parsing interface'
  * for which we will need a completely custom annotator.
  * 
- * It is exposed to the user through /interfaces/annotator/custom.html
+ * It is exposed to the user through /interfaces/annotator/legacy.html
  */
 
 
