@@ -25,19 +25,19 @@ class AnnotoriousAnnotator extends HTMLElement {
     #isErasing = false
     
     static get observedAttributes() {
-        return ["annotationpage"]
+      return ["annotationpage"]
     }
 
     constructor() {
-        super()
-        TPEN.attachAuthentication(this)
-        this.attachShadow({ mode: 'open' })
-        const osdScript = document.createElement("script")
-        osdScript.src = "https://cdn.jsdelivr.net/npm/openseadragon@latest/build/openseadragon/openseadragon.min.js"
-        const annotoriousScript = document.createElement("script")
-        annotoriousScript.src = "https://cdn.jsdelivr.net/npm/@annotorious/openseadragon@latest/dist/annotorious-openseadragon.js"
+      super()
+      TPEN.attachAuthentication(this)
+      this.attachShadow({ mode: 'open' })
+      const osdScript = document.createElement("script")
+      osdScript.src = "https://cdn.jsdelivr.net/npm/openseadragon@latest/build/openseadragon/openseadragon.min.js"
+      const annotoriousScript = document.createElement("script")
+      annotoriousScript.src = "https://cdn.jsdelivr.net/npm/@annotorious/openseadragon@latest/dist/annotorious-openseadragon.js"
 
-        this.shadowRoot.innerHTML = `
+      this.shadowRoot.innerHTML = `
         <style>
           @import url("https://cdn.jsdelivr.net/npm/@annotorious/openseadragon@latest/dist/annotorious-openseadragon.css");
           #annotator-container {
@@ -71,30 +71,30 @@ class AnnotoriousAnnotator extends HTMLElement {
         </div>
 
         `
-        const drawTool = this.shadowRoot.getElementById("drawTool")
-        const eraseTool = this.shadowRoot.getElementById("eraseTool")
-        const seeTool = this.shadowRoot.getElementById("seeTool")
-        const saveButton = this.shadowRoot.getElementById("saveBtn")
-        drawTool.addEventListener("change", (e) => this.toggleDrawingMode(e))
-        eraseTool.addEventListener("change", (e) => this.toggleErasingMode(e))
-        seeTool.addEventListener("change", (e) => this.toggleAnnotationVisibility(e))
-        saveButton.addEventListener("click", (e) => this.saveAnnotations(e))
-        this.shadowRoot.appendChild(osdScript)
-        this.shadowRoot.appendChild(annotoriousScript)
+      const drawTool = this.shadowRoot.getElementById("drawTool")
+      const eraseTool = this.shadowRoot.getElementById("eraseTool")
+      const seeTool = this.shadowRoot.getElementById("seeTool")
+      const saveButton = this.shadowRoot.getElementById("saveBtn")
+      drawTool.addEventListener("change", (e) => this.toggleDrawingMode(e))
+      eraseTool.addEventListener("change", (e) => this.toggleErasingMode(e))
+      seeTool.addEventListener("change", (e) => this.toggleAnnotationVisibility(e))
+      saveButton.addEventListener("click", (e) => this.saveAnnotations(e))
+      this.shadowRoot.appendChild(osdScript)
+      this.shadowRoot.appendChild(annotoriousScript)
     }
 
     async connectedCallback() {
-        if(!this.#userForAnnotorious) {
-          const tpenUserProfile = await User.fromToken(this.userToken).getProfile()
-          // Whatever value is here becomes the value of 'creator' on the Annotations.
-          this.#userForAnnotorious = tpenUserProfile.agent.replace("http://", "https://")
-        }
-        this.#annotationPageURI = TPEN.screen.pageInQuery
-        if(!this.#annotationPageURI) {
-            alert("You must provide a ?pageID=theid in the URL.  The value should be the URI of an existing AnnotationPage.")
-            return
-        }
-        this.setAttribute("annotationpage", this.#annotationPageURI)
+      if(!this.#userForAnnotorious) {
+        const tpenUserProfile = await User.fromToken(this.userToken).getProfile()
+        // Whatever value is here becomes the value of 'creator' on the Annotations.
+        this.#userForAnnotorious = tpenUserProfile.agent.replace("http://", "https://")
+      }
+      this.#annotationPageURI = TPEN.screen.pageInQuery
+      if(!this.#annotationPageURI) {
+          alert("You must provide a ?pageID=theid in the URL.  The value should be the URI of an existing AnnotationPage.")
+          return
+      }
+      this.setAttribute("annotationpage", this.#annotationPageURI)
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
@@ -105,82 +105,82 @@ class AnnotoriousAnnotator extends HTMLElement {
     }
 
     async render(resolvedCanvas) {
-        this.shadowRoot.getElementById('annotator-container').innerHTML = ""
-        const canvasID = resolvedCanvas["@id"] ?? resolvedCanvas.id
-        const fullImage = resolvedCanvas?.items[0]?.items[0]?.body?.id
-        const imageService = resolvedCanvas?.items[0]?.items[0]?.body?.service?.id
-        if(!fullImage) {
-            throw new Error("Cannot Resolve Canvas Image", 
-              {"cause":"The Image is 404 or unresolvable."})
-        }
-        let imageInfo = {
-          type: "image",
-          url: fullImage
-        }
+      this.shadowRoot.getElementById('annotator-container').innerHTML = ""
+      const canvasID = resolvedCanvas["@id"] ?? resolvedCanvas.id
+      const fullImage = resolvedCanvas?.items[0]?.items[0]?.body?.id
+      const imageService = resolvedCanvas?.items[0]?.items[0]?.body?.service?.id
+      if(!fullImage) {
+          throw new Error("Cannot Resolve Canvas Image", 
+            {"cause":"The Image is 404 or unresolvable."})
+      }
+      let imageInfo = {
+        type: "image",
+        url: fullImage
+      }
 
-        // Try to get the info.json.  If we can't, continue with the simple imageInfo obj.
-        if(imageService) {
-            const lastchar = imageService[imageService.length-1]
-            if(lastchar !== "/") imageService += "/"
-            const info = await fetch(imageService+"info.json").then(resp => resp.json()).catch(err => { return false })
-            if(info) imageInfo = info
-        }
-        
-        /**
-         * An instance of OpenSeaDragon with customization options that help our desired
-         * "draw new annotation", "edit existing drawn annotation", "delete drawn annotation" UX.
-         * The interface folder contains an /images/ folder with all the OpenSeaDragon icons.
-         * @see https://openseadragon.github.io/docs/OpenSeadragon.html#.Options for all options and their description.
-        */
-        this.#osd = OpenSeadragon({
-            element: this.shadowRoot.getElementById('annotator-container'),
-            tileSources: imageInfo,
-            prefixUrl: "./images/",
-            gestureSettingsMouse:{
-              clickToZoom: false,
-              dblClickToZoom: true  
-            },
-            gestureSettingsTouch:{
-              clickToZoom: false,
-              dblClickToZoom: true  
-            },
-            gestureSettingsPen:{
-              clickToZoom: false,
-              dblClickToZoom: true  
-            },
-            gestureSettingsUnknown:{
-              clickToZoom: false,
-              dblClickToZoom: true  
-            }
-        })
+      // Try to get the info.json.  If we can't, continue with the simple imageInfo obj.
+      if(imageService) {
+          const lastchar = imageService[imageService.length-1]
+          if(lastchar !== "/") imageService += "/"
+          const info = await fetch(imageService+"info.json").then(resp => resp.json()).catch(err => { return false })
+          if(info) imageInfo = info
+      }
+      
+      /**
+       * An instance of OpenSeaDragon with customization options that help our desired
+       * "draw new annotation", "edit existing drawn annotation", "delete drawn annotation" UX.
+       * The interface folder contains an /images/ folder with all the OpenSeaDragon icons.
+       * @see https://openseadragon.github.io/docs/OpenSeadragon.html#.Options for all options and their description.
+      */
+      this.#osd = OpenSeadragon({
+          element: this.shadowRoot.getElementById('annotator-container'),
+          tileSources: imageInfo,
+          prefixUrl: "./images/",
+          gestureSettingsMouse:{
+            clickToZoom: false,
+            dblClickToZoom: true  
+          },
+          gestureSettingsTouch:{
+            clickToZoom: false,
+            dblClickToZoom: true  
+          },
+          gestureSettingsPen:{
+            clickToZoom: false,
+            dblClickToZoom: true  
+          },
+          gestureSettingsUnknown:{
+            clickToZoom: false,
+            dblClickToZoom: true  
+          }
+      })
 
-        /**
-         * An instance of an OpenSeaDragon Annotorious Annotation with customization options that help our desired
-         * "draw new annotation", "edit existing drawn annotation", "delete drawn annotation" UX.
-         * @see https://annotorious.dev/api-reference/openseadragon-annotator/ for all the available methods of this annotator.
-        */
-        this.#annotoriousInstance = AnnotoriousOSD.createOSDAnnotator(this.#osd, {
-            adapter: AnnotoriousOSD.W3CImageFormat(canvasID),
-            drawingEnabled: false,
-            drawingMode: "drag",
-            // https://annotorious.dev/api-reference/drawing-style/
-            style: {
-             fill: "#ff0000",
-             fillOpacity: 0.25
-            },
-            userSelectAction: "EDIT"
-            // EXAMPLE: Only allow me to edit my own annotations
-            // userSelectAction: (annotation) => {
-            //   const isMe = annotation.target.creator?.id === 'my_id';
-            //   return isMe ? 'EDIT' : 'SELECT';
-            // }
+      /**
+       * An instance of an OpenSeaDragon Annotorious Annotation with customization options that help our desired
+       * "draw new annotation", "edit existing drawn annotation", "delete drawn annotation" UX.
+       * @see https://annotorious.dev/api-reference/openseadragon-annotator/ for all the available methods of this annotator.
+      */
+      this.#annotoriousInstance = AnnotoriousOSD.createOSDAnnotator(this.#osd, {
+          adapter: AnnotoriousOSD.W3CImageFormat(canvasID),
+          drawingEnabled: false,
+          drawingMode: "drag",
+          // https://annotorious.dev/api-reference/drawing-style/
+          style: {
+           fill: "#ff0000",
+           fillOpacity: 0.25
+          },
+          userSelectAction: "EDIT"
+          // EXAMPLE: Only allow me to edit my own annotations
+          // userSelectAction: (annotation) => {
+          //   const isMe = annotation.target.creator?.id === 'my_id';
+          //   return isMe ? 'EDIT' : 'SELECT';
+          // }
 
-        })
-        this.#annotoriousInstance.setUser(this.#userForAnnotorious)
-        // "polygon" is another available option
-        this.#annotoriousInstance.setDrawingTool("rectangle")
-        this.setInitialAnnotations()
-        this.listenTo(this)
+      })
+      this.#annotoriousInstance.setUser(this.#userForAnnotorious)
+      // "polygon" is another available option
+      this.#annotoriousInstance.setDrawingTool("rectangle")
+      this.setInitialAnnotations()
+      this.listenTo(this)
     }
 
     /**
