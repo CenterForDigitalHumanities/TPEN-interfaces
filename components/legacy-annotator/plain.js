@@ -13,7 +13,7 @@ import { eventDispatcher } from '../../api/events.js'
 import TPEN from '../../api/TPEN.js'
 import User from '../../api/User.js'
 
-class BoxyAnnotator extends HTMLElement {
+class LegacyAnnotator extends HTMLElement {
     #isDrawing = false
     #currentRectangle
     #startX
@@ -421,4 +421,4 @@ class BoxyAnnotator extends HTMLElement {
     }
 }
 
-customElements.define('tpen-boxy-annotator', BoxyAnnotator)
+customElements.define('tpen-legacy-annotator', LegacyAnnotator)
