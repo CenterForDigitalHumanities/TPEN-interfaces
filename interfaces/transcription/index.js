@@ -1,30 +1,30 @@
 export default class TranscriptionInterface extends HTMLElement {
-    constructor() {
-        super()
-        this.attachShadow({ mode: "open" })
-        this.state = {
-            isSplitscreenActive: false,
-        }
+  constructor() {
+    super()
+    this.attachShadow({ mode: "open" })
+    this.state = {
+      isSplitscreenActive: false,
     }
+  }
 
-    connectedCallback() {
-        this.render()
-        this.addEventListeners()
-    }
+  connectedCallback() {
+    this.render()
+    this.addEventListeners()
+  }
 
-    addEventListeners() {
-        // Listen for any splitscreen-toggle events from children
-        this.shadowRoot.addEventListener("splitscreen-toggle", () => this.toggleSplitscreen())
-    }
+  addEventListeners() {
+    // Listen for any splitscreen-toggle events from children
+    this.shadowRoot.addEventListener("splitscreen-toggle", () => this.toggleSplitscreen())
+  }
 
-    toggleSplitscreen() {
-        this.state.isSplitscreenActive = !this.state.isSplitscreenActive
-        this.render()
-    }
+  toggleSplitscreen() {
+    this.state.isSplitscreenActive = !this.state.isSplitscreenActive
+    this.render()
+  }
 
-    render() {
-        if (this.state.isSplitscreenActive) {
-            this.shadowRoot.innerHTML = `
+  render() {
+    if (this.state.isSplitscreenActive) {
+      this.shadowRoot.innerHTML = `
           <style>
             .split-screen-right {
               height: 100%;
@@ -53,7 +53,7 @@ export default class TranscriptionInterface extends HTMLElement {
               padding: 10px;
             }
           </style>
-          <tpen-project-navigation></tpen-project-navigation>
+          <tpen-project-header></tpen-project-header>
           <tpen-split-screen>
             <div slot="left">
               <section class="transcription-section">
@@ -81,37 +81,37 @@ export default class TranscriptionInterface extends HTMLElement {
           </tpen-split-screen>
         `
 
-            // Add event listener to update right pane content based on the select value
-            const splitSelect = this.shadowRoot.querySelector(".split-option")
-            if (splitSelect) {
-                splitSelect.addEventListener("change", (e) => {
-                    const selectedOption = e.target.value
-                    const contentDivs = this.shadowRoot.querySelectorAll(".content-display > div")
-                    contentDivs.forEach((div) => {
-                        div.style.display = (div.getAttribute("data-option") === selectedOption) ? "block" : "none"
-                    })
-                })
-            }
+      // Add event listener to update right pane content based on the select value
+      const splitSelect = this.shadowRoot.querySelector(".split-option")
+      if (splitSelect) {
+        splitSelect.addEventListener("change", (e) => {
+          const selectedOption = e.target.value
+          const contentDivs = this.shadowRoot.querySelectorAll(".content-display > div")
+          contentDivs.forEach((div) => {
+            div.style.display = (div.getAttribute("data-option") === selectedOption) ? "block" : "none"
+          })
+        })
+      }
 
-            // Add event listener to the close button in the right pane header
-            const closeButton = this.shadowRoot.querySelector('.close-splitscreen-button')
-            if (closeButton) {
-                closeButton.addEventListener("click", () => {
-                    // Dispatch the same event to toggle off the splitscreen mode
-                    this.toggleSplitscreen()
-                })
-            }
-        } else {
-            // Render the interface without splitscreen (full width transcription interface)
-            this.shadowRoot.innerHTML = `
-          <tpen-project-navigation></tpen-project-navigation>
+      // Add event listener to the close button in the right pane header
+      const closeButton = this.shadowRoot.querySelector('.close-splitscreen-button')
+      if (closeButton) {
+        closeButton.addEventListener("click", () => {
+          // Dispatch the same event to toggle off the splitscreen mode
+          this.toggleSplitscreen()
+        })
+      }
+    } else {
+      // Render the interface without splitscreen (full width transcription interface)
+      this.shadowRoot.innerHTML = `
+          <tpen-project-header></tpen-project-header>
           <section class="transcription-section">
             <tpen-transcription-block></tpen-transcription-block>
             <tpen-workspace-tools></tpen-workspace-tools>
           </section>
         `
-        }
     }
+  }
 }
 
 customElements.define("tpen-transcription-interface", TranscriptionInterface)
