@@ -3,7 +3,7 @@ export default class TranscriptionInterface extends HTMLElement {
         super()
         this.attachShadow({ mode: "open" })
         this.state = {
-            isSplitscreenActive: true,
+            isSplitscreenActive: false,
         }
     }
 
