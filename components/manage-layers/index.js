@@ -2,6 +2,7 @@ import TPEN from "../../api/TPEN.js"
 
 class ProjectLayers extends HTMLElement {
     canvases = []
+    layers = []
     constructor() {
         super()
         this.attachShadow({ mode: "open" })
@@ -116,14 +117,14 @@ class ProjectLayers extends HTMLElement {
             ${layers
                 .map(
                     (layer, layerIndex) => `
-                    <div class="layer-card-outer" data-index="${layerIndex}">
+                    <div class="layer-card-outer" data-index="${layerIndex}" style="cursor:default;}">
                         <p><strong>Layer ID:</strong> ${layer["@id"] ?? layer.id}</p>
                         ${layer.label ? `<p><strong>Label:</strong> ${layer.label.none}</p>` : ``}
                         <div class="layer-pages">
                         ${(layer.pages ?? layer.items)
                             .map(
-                                (page) =>
-                                    `<p class="layer-page">${page["@id"] ?? page.id ?? page.map((page) => page["@id"] ?? page.id ).join(`</p><p class='layer-page' data-index="${layerIndex}">`)}</p>`
+                                (page, pageIndex) =>
+                                    `<p class="layer-page" data-index="${pageIndex}">${page["@id"] ?? page.id ?? page.map((page) => page["@id"] ?? page.id )}</p>`
                                 )
                             .join("")}
                         </div>
@@ -138,7 +139,7 @@ class ProjectLayers extends HTMLElement {
                 .join("")}     
             </div>
         `
-        
+        this.layers = TPEN.activeProject.layers
         this.shadowRoot.querySelectorAll(".manage-pages").forEach((button) => {
             button.addEventListener("click", async (event) => {
                 this.shadowRoot.querySelector(`.layer-card-outer[data-index="${event.target.getAttribute("data-index")}"] .layer-pages`).classList.add("layer-container")
@@ -147,27 +148,39 @@ class ProjectLayers extends HTMLElement {
                     el.classList.add("layer-card")
                     el.setAttribute("draggable", "true")}
                 )
+                const saveButton = document.createElement("button")
+                saveButton.setAttribute("class", "layer-btn save-pages")
+                saveButton.setAttribute("data-index", event.target.getAttribute("data-index"))
+                saveButton.setAttribute("data-layer-id", event.target.getAttribute("data-layer-id"))
+                saveButton.innerText = "Save"
+                this.shadowRoot.querySelector(`.layer-card-outer[data-index="${event.target.getAttribute("data-index")}"] .layer-actions`).insertBefore(saveButton, this.shadowRoot.querySelector(`.layer-card-outer[data-index="${event.target.getAttribute("data-index")}"] .layer-actions`).firstChild)
+                this.shadowRoot.querySelector(`.layer-card-outer[data-index="${event.target.getAttribute("data-index")}"] .layer-actions`).removeChild(this.shadowRoot.querySelector(`.layer-card-outer[data-index="${event.target.getAttribute("data-index")}"] .manage-pages`))
                 const layerIndex = event.target.getAttribute("data-index")
                 this.rearrangePages(layerIndex)
-                const layerId = event.target.getAttribute("data-layer-id")
-                const layer = TPEN.activeProject.layers[layerIndex]
-                // await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/layer/${layerId}`, {
-                //     method: "PUT",
-                //     headers: {
-                //         "Content-Type": "application/json",
-                //         Authorization: `Bearer ${TPEN.getAuthorization()}`,
-                //     },
-                //     body: JSON.stringify(layer),
-                // })
-                // .then(response => {
-                //     const toast = new CustomEvent('tpen-toast', {
-                //     detail: {
-                //         message: (response.ok) ? 'Successfully updated layer' : 'Error updating layer',
-                //         status: (response.ok) ? 200 : 500
-                //         }
-                //     })
-                //     return TPEN.eventDispatcher.dispatchEvent(toast)
-                // })
+
+                this.shadowRoot.querySelector(`.layer-card-outer[data-index="${event.target.getAttribute("data-index")}"] .layer-actions .save-pages`)
+                .addEventListener("click", async () => {
+                    const pageIds = this.layers[layerIndex].items.map((page) => page["@id"] ?? page.id)
+                    await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/layer/${layerId}`, {
+                        method: "PUT",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${TPEN.getAuthorization()}`,
+                        },
+                        body: JSON.stringify({
+                            pages: pageIds
+                        }),
+                    })
+                    .then(response => {
+                        const toast = new CustomEvent('tpen-toast', {
+                        detail: {
+                            message: (response.ok) ? 'Successfully updated layer' : 'Error updating layer',
+                            status: (response.ok) ? 200 : 500
+                            }
+                        })
+                        return TPEN.eventDispatcher.dispatchEvent(toast)
+                    })
+                })
             })
         })
 
@@ -233,11 +246,12 @@ class ProjectLayers extends HTMLElement {
 
     rearrangePages(layerIndex) {
         const cards = this.shadowRoot.querySelectorAll(".layer-card")
+        let layer = this.layers[layerIndex]
 
         cards.forEach((card) => {
             card.addEventListener("dragstart", (event) => {
                 event.dataTransfer.setData("text/plain", card.dataset.index)
-                card.style.opacity = "0.5"
+                card.style.border = "none"
             })
 
             card.addEventListener("dragend", () => {
@@ -246,28 +260,26 @@ class ProjectLayers extends HTMLElement {
 
             card.addEventListener("dragover", (event) => {
                 event.preventDefault()
-                card.style.border = "2px dashed #007bff"
             })
 
             card.addEventListener("dragleave", () => {
-                card.style.border = "none"
             })
 
             card.addEventListener("drop", (event) => {
                 event.preventDefault()
                 const draggedIndex = event.dataTransfer.getData("text/plain")
                 const targetIndex = card.dataset.index
-                const layer = TPEN.activeProject.layers[layerIndex]
 
-                console.log(draggedIndex, targetIndex)
-
-                // if (draggedIndex !== targetIndex) {
-                //     const draggedPage = layer.items[draggedIndex]
-                //     layer.items.splice(draggedIndex, 1)
-                //     layer.items.splice(targetIndex, 0, draggedPage)
-                //     this.render()
-                // }
-
+                if (draggedIndex !== targetIndex) {
+                    const draggedPage = layer.items[draggedIndex]
+                    const targetPage = layer.items[targetIndex]
+                    layer.items[draggedIndex] = targetPage
+                    layer.items[targetIndex] = draggedPage
+                    let temp = this.shadowRoot.querySelectorAll(".layer-card")[targetIndex].textContent
+                    this.shadowRoot.querySelectorAll(".layer-card")[targetIndex].textContent = this.shadowRoot.querySelectorAll(".layer-card")[draggedIndex].textContent
+                    this.shadowRoot.querySelectorAll(".layer-card")[draggedIndex].textContent = temp
+                    this.layers[layerIndex] = layer
+                }
                 card.style.border = "none"
             })
         })
