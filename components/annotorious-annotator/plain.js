@@ -33,7 +33,7 @@ class AnnotoriousAnnotator extends HTMLElement {
         TPEN.attachAuthentication(this)
         this.attachShadow({ mode: 'open' })
         const osdScript = document.createElement("script")
-        osdScript.src = "https://cdn.jsdelivr.net/npm/openseadragon@5.0/build/openseadragon/openseadragon.min.js"
+        osdScript.src = "https://cdn.jsdelivr.net/npm/openseadragon@latest/build/openseadragon/openseadragon.min.js"
         const annotoriousScript = document.createElement("script")
         annotoriousScript.src = "https://cdn.jsdelivr.net/npm/@annotorious/openseadragon@latest/dist/annotorious-openseadragon.js"
 
@@ -90,7 +90,7 @@ class AnnotoriousAnnotator extends HTMLElement {
           this.#userForAnnotorious = tpenUserProfile.agent.replace("http://", "https://")
         }
         this.#annotationPageURI = TPEN.screen.pageInQuery
-        if (!this.#annotationPageURI) {
+        if(!this.#annotationPageURI) {
             alert("You must provide a ?pageID=theid in the URL.  The value should be the URI of an existing AnnotationPage.")
             return
         }
@@ -99,7 +99,7 @@ class AnnotoriousAnnotator extends HTMLElement {
 
     attributeChangedCallback(name, oldValue, newValue) {
       if(newValue === oldValue || !newValue) return
-      if (name === 'annotationpage') {
+      if(name === 'annotationpage') {
           this.processAnnotationPage(newValue)
       }
     }
@@ -109,7 +109,7 @@ class AnnotoriousAnnotator extends HTMLElement {
         const canvasID = resolvedCanvas["@id"] ?? resolvedCanvas.id
         const fullImage = resolvedCanvas?.items[0]?.items[0]?.body?.id
         const imageService = resolvedCanvas?.items[0]?.items[0]?.body?.service?.id
-        if(!fullImage){
+        if(!fullImage) {
             throw new Error("Cannot Resolve Canvas Image", 
               {"cause":"The Image is 404 or unresolvable."})
         }
@@ -119,7 +119,7 @@ class AnnotoriousAnnotator extends HTMLElement {
         }
 
         // Try to get the info.json.  If we can't, continue with the simple imageInfo obj.
-        if(imageService){
+        if(imageService) {
             const lastchar = imageService[imageService.length-1]
             if(lastchar !== "/") imageService += "/"
             const info = await fetch(imageService+"info.json").then(resp => resp.json()).catch(err => { return false })
@@ -242,7 +242,7 @@ class AnnotoriousAnnotator extends HTMLElement {
             throw e
         })
       const context = this.#resolvedAnnotationPage["@context"]
-      if(!(context.includes("iiif.io/api/presentation/3/context.json") || context.includes("w3.org/ns/anno.jsonld"))){
+      if(!(context.includes("iiif.io/api/presentation/3/context.json") || context.includes("w3.org/ns/anno.jsonld"))) {
         console.warn("The AnnotationPage object did not have the IIIF Presentation API 3 context and may not be parseable.")
       }
       const id = this.#resolvedAnnotationPage["@id"] ?? this.#resolvedAnnotationPage.id
@@ -251,7 +251,7 @@ class AnnotoriousAnnotator extends HTMLElement {
             {"cause":"The AnnotationPage is 404 or unresolvable."})
       }
       const type = this.#resolvedAnnotationPage["@type"] ?? this.#resolvedAnnotationPage.type
-      if(type !== "AnnotationPage"){
+      if(type !== "AnnotationPage") {
           throw new Error(`Provided URI did not resolve an 'AnnotationPage'.  It resolved a '${type}'`,
             {"cause":"URI must point to an AnnotationPage."})
       }
@@ -282,7 +282,7 @@ class AnnotoriousAnnotator extends HTMLElement {
             throw e
         })
       const context = resolvedCanvas["@context"]
-      if(!context.includes("iiif.io/api/presentation/3/context.json")){
+      if(!context.includes("iiif.io/api/presentation/3/context.json")) {
         console.warn("The Canvas object did not have the IIIF Presentation API 3 context and may not be parseable.")
       }
       const id = resolvedCanvas["@id"] ?? resolvedCanvas.id
@@ -291,7 +291,7 @@ class AnnotoriousAnnotator extends HTMLElement {
             {"cause":"The Canvas is 404 or unresolvable."})
       }
       const type = resolvedCanvas["@type"] ?? resolvedCanvas.type
-      if(type !== "Canvas"){
+      if(type !== "Canvas") {
           throw new Error(`Provided URI did not resolve a 'Canvas'.  It resolved a '${type}'`, 
             {"cause":"URI must point to a Canvas."})
       }
@@ -367,7 +367,7 @@ class AnnotoriousAnnotator extends HTMLElement {
     */ 
     processPageTarget(pageTarget) {
       let canvasURI
-      if(Array.isArray(pageTarget)){
+      if(Array.isArray(pageTarget)) {
         throw new Error(`The AnnotationPage object has multiple targets.  We cannot process this yet, and nothing will load.`,
           {"cause":"AnnotationPage.target is an Array."})
       }
@@ -375,7 +375,7 @@ class AnnotoriousAnnotator extends HTMLElement {
         try{
           JSON.parse(JSON.stringify(target))
         }
-        catch(err){
+        catch(err) {
           throw new Error(`The AnnotationPage target is not processable.`, 
             {"cause":"AnnotationPage.target is not JSON."})
         }
@@ -387,7 +387,7 @@ class AnnotoriousAnnotator extends HTMLElement {
         // For now we don't trust the embedded Canvas and are going to take the id forward to resolve.
         canvasURI = tcid
       }
-      else if (typeof pageTarget === "string") {
+      else if(typeof pageTarget === "string") {
         // Just use it then
         canvasURI = pageTarget
       }
@@ -397,7 +397,7 @@ class AnnotoriousAnnotator extends HTMLElement {
         uricheck = new URL(canvasURI)
       } 
       catch (_) {}
-      if(!(uricheck?.protocol === "http:" || uricheck?.protocol === "https:")){
+      if(!(uricheck?.protocol === "http:" || uricheck?.protocol === "https:")) {
         throw new Error(`AnnotationPage.target string is not a URI`, 
           {"cause":"AnnotationPage.target string must be a URI."})
       }
@@ -414,7 +414,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       else { this.stopErasing() }
     }
 
-    toggleAnnotationVisibility (e) {
+    toggleAnnotationVisibility(e) {
       if(e.target.checked) this.showAnnotations()
       else { this.hideAnnotations() }
     }
