@@ -9,7 +9,7 @@
  * and thanks the Annotorious development team for this open source software.
  * @see https://annotorious.dev/
  * Annotorious licensing information can be found at https://github.com/annotorious/annotorious
- */
+*/
 
 import TPEN from '../../api/TPEN.js'
 import User from '../../api/User.js'
@@ -215,7 +215,7 @@ class AnnotoriousAnnotator extends HTMLElement {
 
       /**
         * Fired after a new annotation is created and available as a shape in the DOM.
-        */
+      */
       annotator.on('createAnnotation', function(annotation) {
         // console.log('Annotation Created:', annotation)
         _this.#annotoriousInstance.cancelSelected(annotation)  
@@ -448,7 +448,7 @@ class AnnotoriousAnnotator extends HTMLElement {
     /**
      * Activate Annotorious annotation drawing mode.
      * This makes it so the user cannot zoom and pan.
-     */ 
+    */ 
     startDrawing() {
       this.stopErasing()
       this.#isDrawing = true
@@ -464,7 +464,7 @@ class AnnotoriousAnnotator extends HTMLElement {
     /**
      * Deactivate Annotorious annotation drawing mode.
      * This makes it so that the user can zoom and pan.
-     */ 
+    */ 
     stopDrawing() {
       this.#isDrawing = false
       this.#annotoriousInstance.setDrawingEnabled(false)
@@ -478,7 +478,7 @@ class AnnotoriousAnnotator extends HTMLElement {
     /**
      * Activate Annotorious annotation erasing mode.
      * Clicking on an existing annotation will prompt the user about deleting the annotation.
-     */ 
+    */ 
     startErasing() {
       this.stopDrawing()
       this.#isErasing = true
@@ -493,7 +493,7 @@ class AnnotoriousAnnotator extends HTMLElement {
     /**
      * Deactivate Annotorious annotation erasing mode.
      * This allows user to zoom and pan, and select annotations to edit.
-     */ 
+    */ 
     stopErasing() {
       this.#isErasing = false
       const toast = {
