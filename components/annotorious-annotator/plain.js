@@ -11,20 +11,21 @@
  * Annotorious licensing information can be found at https://github.com/annotorious/annotorious
  */
 
-import { eventDispatcher } from '../../api/events.js'
 import TPEN from '../../api/TPEN.js'
 import User from '../../api/User.js'
 
-class BoxyAnnotator extends HTMLElement {
+class AnnotoriousAnnotator extends HTMLElement {
     #osd
     #annotoriousInstance
     #userForAnnotorious
     #annotationPageURI
     #resolvedAnnotationPage
+    #modifiedAnnotationPage
     #isDrawing = false
     #isErasing = false
+    
     static get observedAttributes() {
-        return ["canvas", "image", "annotationpage"]
+        return ["annotationpage"]
     }
 
     constructor() {
@@ -52,19 +53,19 @@ class BoxyAnnotator extends HTMLElement {
         <div>
             <div id="tools-container">
               <p> You can zoom and pan when you are not drawing.</p>
-              <label for="drawTool">Check To Draw:
+              <label for="drawTool">Draw Mode
                <input  type="checkbox" id="drawTool">
               </label>
               <br>
-              <label> Check to Erase:
+              <label> Erase Mode
                <input type="checkbox" id="eraseTool"> 
               </label>
               <br>
-              <label> Check to See Annotations:
+              <label> Annotation Visibility
                <input type="checkbox" id="seeTool" checked> 
               </label>
               <br>
-              <input id="saveBtn" type="button" value="Save"/>
+              <input id="saveBtn" type="button" value="Save Annotations"/>
             </div>
             <div id="annotator-container"></div>
         </div>
@@ -88,15 +89,16 @@ class BoxyAnnotator extends HTMLElement {
           // Whatever value is here becomes the value of 'creator' on the Annotations.
           this.#userForAnnotorious = tpenUserProfile.agent.replace("http://", "https://")
         }
-        this.#annotationPageURI = this.getAnnotationPageFromURL()
+        this.#annotationPageURI = TPEN.screen.pageInQuery
+        if (!this.#annotationPageURI) {
+            alert("You must provide a ?pageID=theid in the URL.  The value should be the URI of an existing AnnotationPage.")
+            return
+        }
         this.setAttribute("annotationpage", this.#annotationPageURI)
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
-      if(newValue === oldValue) return
-      if (name === 'canvas') {
-          this.processCanvas(newValue)
-      }
+      if(newValue === oldValue || !newValue) return
       if (name === 'annotationpage') {
           this.processAnnotationPage(newValue)
       }
@@ -108,20 +110,20 @@ class BoxyAnnotator extends HTMLElement {
         const fullImage = resolvedCanvas?.items[0]?.items[0]?.body?.id
         const imageService = resolvedCanvas?.items[0]?.items[0]?.body?.service?.id
         if(!fullImage){
-            err = new Error("Cannot Resolve Canvas or Image", {"cause":"The Image is 404 or unresolvable."})
-            throw err
+            throw new Error("Cannot Resolve Canvas Image", 
+              {"cause":"The Image is 404 or unresolvable."})
         }
-        this.setAttribute("image", fullImage)
         let imageInfo = {
           type: "image",
           url: fullImage
         }
 
-        // Try to get the info.json
+        // Try to get the info.json.  If we can't, continue with the simple imageInfo obj.
         if(imageService){
             const lastchar = imageService[imageService.length-1]
             if(lastchar !== "/") imageService += "/"
-            imageInfo = await fetch(imageService+"info.json").then(resp => resp.json()).catch(err => { return false })
+            const info = await fetch(imageService+"info.json").then(resp => resp.json()).catch(err => { return false })
+            if(info) imageInfo = info
         }
         
         /**
@@ -182,7 +184,7 @@ class BoxyAnnotator extends HTMLElement {
     }
 
     /**
-      * Listeners on all available Annotorious instance events.  See inline comments for details.
+      * Listeners on all available Annotorious events involving the annotations.  See inline comments for details.
       * Here we can catch events, then do TPEN things with the Annotations from those events.
       * Lifecycle Events API is available at https://annotorious.dev/api-reference/events/
       *
@@ -190,15 +192,15 @@ class BoxyAnnotator extends HTMLElement {
     */ 
     listenTo(_this) {
       const annotator = _this.#annotoriousInstance
+      
       // A click event on a drawn Annotation.  The annotation data is known and available as a parameter.
       annotator.on('clickAnnotation', (annotation, originalEvent) => {
-        // console.log('Annotation clicked: ' + annotation.id)
         if(!annotation) return
         // A click on a drawn Annotation in erase mode means erase the Annotation.
         // FIXME if the user holds the mouse down there is some goofy UX.
         if(_this.#isErasing) {
           setTimeout(()=>{
-            // Timeout required in order to let the click-and-focus native functionality to complete.
+            // Timeout required in order to allow the click-and-focus native functionality to complete.
             // Also stops the goofy UX for naturally slow clickers.
             let c = confirm("Are you sure you want to remove this?")
             if(c) {
@@ -211,53 +213,12 @@ class BoxyAnnotator extends HTMLElement {
         }
       })
 
-      // A mouseenter event on a drawn Annotation.  The annotation data is known and available as a parameter.
-      annotator.on('mouseEnterAnnotation', (annotation, originalEvent) => {
-        // console.log('Mouse entered: ' + annotation.id)
-      })
-
-      annotator.on('mouseLeaveAnnotation', (annotation, originalEvent) => {
-        // console.log('Mouse left: ' + annotation.id)
-      })
-
-      /**
-        * Fired when the set of selected annotation changes. For future compatibility, the argument is an array. 
-        * However, only single annotation will be returned currently.
-        * When the user de-selects an annotation, the event will be fired with an empty array.
-      */
-      annotator.on('selectionChanged', (annotations, originalEvent) => {
-        // console.log('Selected annotations', annotations)
-      })
-
-      /**
-        * Fired when the set of annotations visible in the current viewport changes.
-        * This event is only available on the OpenSeadragonAnnotator and will respond to zooming and panning 
-        * of the OpenSeadragon image.
-      */
-      annotator.on('viewportIntersect', (annotations, originalEvent) => {
-        // console.log('Annotations in viewport', annotations)
-      })
-
-      
       /**
         * Fired after a new annotation is created and available as a shape in the DOM.
         */
       annotator.on('createAnnotation', function(annotation) {
-        console.log('Annotation Created:', annotation)
+        // console.log('Annotation Created:', annotation)
         _this.#annotoriousInstance.cancelSelected(annotation)  
-      })
-
-      /**
-       * Fired when an existing annotation is modified. Provides both the updated annotation and the previous state
-       * of the annotation.
-      */
-      annotator.on('updateAnnotation', (annotation, previous) => {
-        // console.log('Annotation before update: ' + previous)
-        // console.log('Annotation after update: ' + annotation)
-      })
-
-      annotator.on('deleteAnnotation', (annotation) => {
-        // console.log('Annotation Deleted:', annotation)
       })
 
     }
@@ -272,7 +233,6 @@ class BoxyAnnotator extends HTMLElement {
     */
     async processAnnotationPage(page) {
       if(!page) return
-      let err
       this.#resolvedAnnotationPage = await fetch(page)
         .then(r => {
             if(!r.ok) throw r
@@ -287,18 +247,18 @@ class BoxyAnnotator extends HTMLElement {
       }
       const id = this.#resolvedAnnotationPage["@id"] ?? this.#resolvedAnnotationPage.id
       if(!id) {
-          err = new Error("Cannot Resolve AnnotationPage", {"cause":"The AnnotationPage is 404 or unresolvable."})
-          throw err
+          throw new Error("Cannot Resolve AnnotationPage",
+            {"cause":"The AnnotationPage is 404 or unresolvable."})
       }
       const type = this.#resolvedAnnotationPage["@type"] ?? this.#resolvedAnnotationPage.type
       if(type !== "AnnotationPage"){
-          err = new Error(`Provided URI did not resolve an 'AnnotationPage'.  It resolved a '${type}'`, {"cause":"URI must point to an AnnotationPage."})
-          throw err
+          throw new Error(`Provided URI did not resolve an 'AnnotationPage'.  It resolved a '${type}'`,
+            {"cause":"URI must point to an AnnotationPage."})
       }
       const targetCanvas = this.#resolvedAnnotationPage.target
       if(!targetCanvas) {
-        err = new Error(`The AnnotationPage object did not have a target Canvas.  There is no image to load.`, {"cause":"AnnotationPage.target must have a value."})
-        throw err
+        throw new Error(`The AnnotationPage object did not have a target Canvas.  There is no image to load.`,
+          {"cause":"AnnotationPage.target must have a value."})
       }
       // Note this will process the id from embedded Canvas objects to pass forward and be resolved.
       const canvasURI = this.processPageTarget(targetCanvas)
@@ -311,7 +271,6 @@ class BoxyAnnotator extends HTMLElement {
      * @param uri A String Canvas URI
     */
     async processCanvas(uri) {
-      let err
       const canvas = uri
       if(!canvas) return
       const resolvedCanvas = await fetch(canvas)
@@ -328,13 +287,13 @@ class BoxyAnnotator extends HTMLElement {
       }
       const id = resolvedCanvas["@id"] ?? resolvedCanvas.id
       if(!id) {
-          err = new Error("Cannot Resolve Canvas or Image", {"cause":"The Canvas is 404 or unresolvable."})
-          throw err
+          throw new Error("Cannot Resolve Canvas or Image",
+            {"cause":"The Canvas is 404 or unresolvable."})
       }
       const type = resolvedCanvas["@type"] ?? resolvedCanvas.type
       if(type !== "Canvas"){
-          err = new Error(`Provided URI did not resolve a 'Canvas'.  It resolved a '${type}'`, {"cause":"URI must point to a Canvas."})
-          throw err
+          throw new Error(`Provided URI did not resolve a 'Canvas'.  It resolved a '${type}'`, 
+            {"cause":"URI must point to a Canvas."})
       }
       this.render(resolvedCanvas)
     }
@@ -365,20 +324,17 @@ class BoxyAnnotator extends HTMLElement {
 
     /**
       * This page renders because of a known AnnotationPage.  Existing Annotations in that AnnotationPage were drawn.
-      * There have been edits to the Annotations and those edits need to be saved.
-      *
-      * TODO
-      * Announce the AnnotationPage with the changes that needs to be updated.
-      * OR
-      * Announce the AnnotationPage after it has been updated with the changes
+      * There have been edits to the page items and those edits need to be saved.
+      * Announce the AnnotationPage with the changes that needs to be updated for processing upstream.
+      * 
+      * Note that Annotorious has opinions about Annotation body and target values.  So does TPEN3.
+      * TPEN3 opinions are preferenced.
     */
-    async saveAnnotations() {
-      // Annotorious has opinions about Annotation body and target values.  
-      // TPEN3 has opinions about Annotation body and target values.  Preference TPEN3 opinions.
+    saveAnnotations() {
       let allAnnotations = this.#annotoriousInstance.getAnnotations()
       allAnnotations = allAnnotations.map(annotation => {
         // Careful here.  Consider targets when the Canvas and Image have differing dimensions.
-        annotation.body = annotation.body.length ? annotation.body[0] : []
+        annotation.body = annotation.body.length ? annotation.body[0] : {}
         const tar = annotation.target.source
         const sel = "#"+annotation.target.selector.value.replace("pixel:", "")
         annotation.target = tar + sel
@@ -390,11 +346,16 @@ class BoxyAnnotator extends HTMLElement {
         delete annotation.created
         return annotation
       })
-      console.log("Save all annotations")
-      console.log(annotations)
-      return annotations
-      // collectionInQuery, lineInQuery, annotationPageInQuery to use TPEN to get it out.
-      // TODO what do I do to the AnnotationPage with these new Annotations now?  Just announce them out?
+      const toast = {
+        message: "Annotations saved!",
+        status: "info"
+      }
+      TPEN.eventDispatcher.dispatch("tpen-toast", toast)
+      let page = JSON.parse(JSON.stringify(this.#resolvedAnnotationPage))
+      page.items = allAnnotations
+      this.#modifiedAnnotationPage = page
+      TPEN.eventDispatcher.dispatch("tpen-page-committed", page)
+      return allAnnotations
     }
 
     /**
@@ -406,23 +367,22 @@ class BoxyAnnotator extends HTMLElement {
     */ 
     processPageTarget(pageTarget) {
       let canvasURI
-      let err
       if(Array.isArray(pageTarget)){
-        err = new Error(`The AnnotationPage object has multiple targets.  We cannot process this yet, and nothing will load.`, {"cause":"AnnotationPage.target is an Array."})
-        throw err
+        throw new Error(`The AnnotationPage object has multiple targets.  We cannot process this yet, and nothing will load.`,
+          {"cause":"AnnotationPage.target is an Array."})
       }
       else if(typeof pageTarget === "object") {
         try{
           JSON.parse(JSON.stringify(target))
         }
         catch(err){
-          err = new Error(`The AnnotationPage target is not processable.`, {"cause":"AnnotationPage.target is not JSON."})
-          throw err
+          throw new Error(`The AnnotationPage target is not processable.`, 
+            {"cause":"AnnotationPage.target is not JSON."})
         }
         const tcid = pageTarget["@id"] ?? pageTarget.id
         if(!tcid) {
-          err = new Error(`The target of the AnnotationPage does not contain an id.  This Canvas cannot be loaded, and so there is no image to load.`, {"cause":"AnnotationPage.target must be a Canvas and must have an id."})
-          throw err
+          throw new Error(`The target of the AnnotationPage does not contain an id.  This Canvas cannot be loaded, and so there is no image to load.`,
+            {"cause":"AnnotationPage.target must be a Canvas and must have an id."})
         }
         // For now we don't trust the embedded Canvas and are going to take the id forward to resolve.
         canvasURI = tcid
@@ -438,20 +398,10 @@ class BoxyAnnotator extends HTMLElement {
       } 
       catch (_) {}
       if(!(uricheck?.protocol === "http:" || uricheck?.protocol === "https:")){
-        err = new Error(`AnnotationPage.target string is not a URI`, {"cause":"AnnotationPage.target string must be a URI."})
-        throw err
+        throw new Error(`AnnotationPage.target string is not a URI`, 
+          {"cause":"AnnotationPage.target string must be a URI."})
       }
       return canvasURI
-    }
-
-    getAnnotationPageFromURL() {
-        const urlParams = new URLSearchParams(window.location.search)
-        const page = urlParams.get("page")
-        if (!page) {
-            alert("You must provide a ?page= in the URL.  The value should be the URI of an existing AnnotationPage.")
-            return
-        }
-        return page
     }
 
     toggleDrawingMode(e) {
@@ -475,6 +425,11 @@ class BoxyAnnotator extends HTMLElement {
     */
     showAnnotations() {
       this.#annotoriousInstance.setVisible(true)
+      const toast = {
+        message: "Annotations are visible",
+        status: "info"
+      }
+      TPEN.eventDispatcher.dispatch("tpen-toast", toast)
     }
 
     /**
@@ -483,30 +438,70 @@ class BoxyAnnotator extends HTMLElement {
     */
     hideAnnotations() {
       this.#annotoriousInstance.setVisible(false)
+      const toast = {
+        message: "Annotations are hidden",
+        status: "info"
+      }
+      TPEN.eventDispatcher.dispatch("tpen-toast", toast)
     }
 
+    /**
+     * Activate Annotorious annotation drawing mode.
+     * This makes it so the user cannot zoom and pan.
+     */ 
     startDrawing() {
       this.stopErasing()
       this.#isDrawing = true
       this.shadowRoot.getElementById("eraseTool").checked = false
       this.#annotoriousInstance.setDrawingEnabled(true)
+      const toast = {
+        message: "You started drawing",
+        status: "info"
+      }
+      TPEN.eventDispatcher.dispatch("tpen-toast", toast)
     }
 
+    /**
+     * Deactivate Annotorious annotation drawing mode.
+     * This makes it so that the user can zoom and pan.
+     */ 
     stopDrawing() {
       this.#isDrawing = false
       this.#annotoriousInstance.setDrawingEnabled(false)
+      const toast = {
+        message: "You stopped drawing",
+        status: "info"
+      }
+      TPEN.eventDispatcher.dispatch("tpen-toast", toast)
     }
 
+    /**
+     * Activate Annotorious annotation erasing mode.
+     * Clicking on an existing annotation will prompt the user about deleting the annotation.
+     */ 
     startErasing() {
       this.stopDrawing()
       this.#isErasing = true
       this.shadowRoot.getElementById("drawTool").checked = false
+      const toast = {
+        message: "You started erasing",
+        status: "info"
+      }
+      TPEN.eventDispatcher.dispatch("tpen-toast", toast)
     }
 
+    /**
+     * Deactivate Annotorious annotation erasing mode.
+     * This allows user to zoom and pan, and select annotations to edit.
+     */ 
     stopErasing() {
       this.#isErasing = false
+      const toast = {
+        message: "You stopped erasing",
+        status: "info"
+      }
+      TPEN.eventDispatcher.dispatch("tpen-toast", toast)
     }
-
 }
 
-customElements.define('tpen-boxy-annotator', BoxyAnnotator)
+customElements.define('tpen-plain-annotator', AnnotoriousAnnotator)

@@ -25,6 +25,7 @@ class Tpen {
     screen = {
         projectInQuery: new URLSearchParams(window.location.search).get('projectID'),
         collectionInQuery: new URLSearchParams(window.location.search).get('collectionID'),
+        pageInQuery: new URLSearchParams(window.location.search).get('pageID'),
         lineInQuery: new URLSearchParams(window.location.search).get('lineID'),
         userInQuery: new URLSearchParams(window.location.search).get('userID'),
         action: { label: "Action", link: "#" },
