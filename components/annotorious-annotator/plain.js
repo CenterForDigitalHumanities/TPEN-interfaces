@@ -206,10 +206,13 @@ class AnnotoriousAnnotator extends HTMLElement {
     listenTo(_this) {
       const annotator = _this.#annotoriousInstance
       
-      // A click event on a drawn Annotation.  The annotation data is known and available as a parameter.
+      /**
+        * Fired after A click event on a drawn Annotation.  The annotation data is known and available as a parameter.
+        * A click on a drawn Annotation in erase mode means erase the Annotation.
+        * 
+      */
       annotator.on('clickAnnotation', (annotation, originalEvent) => {
         if(!annotation) return
-        // A click on a drawn Annotation in erase mode means erase the Annotation.
         // FIXME if the user holds the mouse down there is some goofy UX.
         if(_this.#isErasing) {
           setTimeout(()=>{
