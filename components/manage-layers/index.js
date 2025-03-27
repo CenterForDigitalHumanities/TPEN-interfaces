@@ -45,6 +45,12 @@ class ProjectLayers extends HTMLElement {
                     width: 60%;
                     text-align: center;
                 }
+                .label-input {
+                    width: 70%;
+                    padding: 5px;
+                    border: 1px solid #ccc;
+                    border-radius: 4px;
+                }
                 .layer-page {
                     margin: 0 auto;
                     font-size: 14px;
@@ -69,6 +75,12 @@ class ProjectLayers extends HTMLElement {
                     padding: 5px;
                     border: 1px solid #ccc;
                     border-radius: 4px;
+                }
+                .layer-label-div {
+                    justify-content: center;
+                    align-items: center;
+                    gap: 10px;
+                    margin-bottom: 20px;
                 }
                 .layer-btn {
                     margin-top: 10px;
@@ -101,6 +113,14 @@ class ProjectLayers extends HTMLElement {
                 .add-layer:hover {
                     background: #1e7e34;
                 }
+                .edit-pages {
+                    background: #ffc107;
+                    color: white;
+                }
+                .save-label {
+                    background: #007bff;
+                    color: white;
+                }
             </style>
 
             <h1 class="layer-title">Add Layers</h1>
@@ -118,8 +138,10 @@ class ProjectLayers extends HTMLElement {
                 .map(
                     (layer, layerIndex) => `
                     <div class="layer-card-outer" data-index="${layerIndex}" style="cursor:default;}">
-                        <p><strong>Layer ID:</strong> ${layer["@id"] ?? layer.id}</p>
-                        ${layer.label ? `<p><strong>Label:</strong> ${layer.label.none}</p>` : ``}
+                        <p class="layer-id"><strong>Layer ID:</strong> ${layer["@id"] ?? layer.id}</p>
+                        <div class="layer-label-div">
+                            ${layer.label ? `<p class="layer-label"><strong>Label:</strong> ${layer.label.none}</p>` : ``}
+                        </div>
                         <div class="layer-pages">
                         ${(layer.pages ?? layer.items)
                             .map(
@@ -148,6 +170,20 @@ class ProjectLayers extends HTMLElement {
                     el.classList.add("layer-card")
                     el.setAttribute("draggable", "true")}
                 )
+
+                const labelDiv = this.shadowRoot.querySelector(`.layer-card-outer[data-index="${event.target.getAttribute("data-index")}"] .layer-label-div`)
+                labelDiv.setAttribute("style", "display: flex;")
+                labelDiv.setAttribute("data-index", event.target.getAttribute("data-index"))
+                labelDiv.setAttribute("data-layer-id", event.target.getAttribute("data-layer-id"))
+
+                const editButton = document.createElement("button")
+                editButton.setAttribute("class", "layer-btn edit-pages")
+                editButton.setAttribute("style", "margin-top: 0;")
+                editButton.setAttribute("data-index", event.target.getAttribute("data-index"))
+                editButton.setAttribute("data-layer-id", event.target.getAttribute("data-layer-id"))
+                editButton.innerText = "Edit"
+                this.shadowRoot.querySelector(`.layer-card-outer[data-index="${event.target.getAttribute("data-index")}"] .layer-label`).insertAdjacentElement("afterend", editButton)
+
                 const saveButton = document.createElement("button")
                 saveButton.setAttribute("class", "layer-btn save-pages")
                 saveButton.setAttribute("data-index", event.target.getAttribute("data-index"))
@@ -158,6 +194,55 @@ class ProjectLayers extends HTMLElement {
                 const layerIndex = event.target.getAttribute("data-index")
                 this.rearrangePages(layerIndex)
 
+                this.shadowRoot.querySelector(`.layer-card-outer[data-index="${event.target.getAttribute("data-index")}"] .edit-pages`)
+                .addEventListener("click", (event) => {
+                    this.shadowRoot.querySelector(`.layer-card-outer[data-index="${event.target.getAttribute("data-index")}"] .layer-label`).remove()
+                    this.shadowRoot.querySelector(`.layer-card-outer[data-index="${event.target.getAttribute("data-index")}"] .layer-label-div .edit-pages`).remove()
+                    const labelInput = document.createElement("input")
+                    labelInput.setAttribute("type", "text")
+                    labelInput.setAttribute("class", "label-input")
+                    labelInput.setAttribute("value", this.layers[layerIndex].label.none)
+                    labelInput.setAttribute("data-index", event.target.getAttribute("data-index"))
+                    labelInput.setAttribute("data-layer-id", event.target.getAttribute("data-layer-id"))
+                    this.shadowRoot.querySelector(`.layer-card-outer[data-index="${event.target.getAttribute("data-index")}"] .layer-label-div`).insertAdjacentElement("afterbegin", labelInput)
+
+                    const saveButton = document.createElement("button")
+                    saveButton.setAttribute("class", "layer-btn save-label")
+                    saveButton.setAttribute("style", "margin-top: 0;")
+                    saveButton.setAttribute("data-index", event.target.getAttribute("data-index"))
+                    saveButton.setAttribute("data-layer-id", event.target.getAttribute("data-layer-id"))
+                    saveButton.innerText = "Save"
+                    this.shadowRoot.querySelector(`.layer-card-outer[data-index="${event.target.getAttribute("data-index")}"] .layer-label-div .label-input`).insertAdjacentElement("afterend", saveButton)
+
+                    this.shadowRoot.querySelector(`.layer-card-outer[data-index="${event.target.getAttribute("data-index")}"] .save-label`)
+                    .addEventListener("click", async (event) => {
+                        const url = event.target.getAttribute("data-layer-id")
+                        const layerId = url.substring(url.lastIndexOf("/") + 1)
+                        const label = this.shadowRoot.querySelector(`.layer-card-outer[data-index="${event.target.getAttribute("data-index")}"] .label-input`).value
+                        await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/layer/${layerId}`, {
+                            method: "PUT",
+                            headers: {
+                                "Content-Type": "application/json",
+                                Authorization: `Bearer ${TPEN.getAuthorization()}`,
+                            },
+                            body: JSON.stringify({
+                                label: {
+                                    none: [label]
+                                }
+                            })
+                        })
+                        .then(response => {
+                            const toast = new CustomEvent('tpen-toast', {
+                            detail: {
+                                message: (response.ok) ? 'Successfully updated layer label' : 'Error updating layer label',
+                                status: (response.ok) ? 200 : 500
+                                }
+                            })
+                            return TPEN.eventDispatcher.dispatchEvent(toast)
+                        })
+                    })
+                })
+                    
                 this.shadowRoot.querySelector(`.layer-card-outer[data-index="${event.target.getAttribute("data-index")}"] .layer-actions .save-pages`)
                 .addEventListener("click", async (event) => {
                     const url = event.target.getAttribute("data-layer-id")
