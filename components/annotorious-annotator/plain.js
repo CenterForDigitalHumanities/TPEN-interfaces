@@ -360,30 +360,27 @@ class AnnotoriousAnnotator extends HTMLElement {
       * 
       * Note that Annotorious has opinions about Annotation body and target values.  So does TPEN3.
       * TPEN3 opinions are preferenced.
+      *
+      * FIXME Annotorious disregards the Canvas width and height when making #xywh FragmentSelectors.
+      * Instead, tt uses the Image width and height to determine the values of the #xywh selectors.
+      *
+      * DEMO
+      * Note the only difference in the Canvases are the recorded width and height for the Canvas.
+      *
+      * Normal behavior use ?pageID=https://tpen-project-examples.habesoftware.app/transcription-project/page-1.json
+      * Draw some Annotations and save them to see the fragment selector values generated for the Annotations.
+      *
+      * Wonky Behavior use ?pageID=https://store.rerum.io/v1/id/67e55afd4850bf3e0edee32f
+      * Draw some Annotations and save them to see the fragment selector values generated for the Annotations.
+      * The Annotations will have the same target selectors even though this Canvas is half the size of the other.
+      * This is because it used the Image Dimensions to determine the selectors as opposed to the Canvas Dimensions.
+      *
+      * Note that the target values for those AnnotationPages are the Canvases, where you will find the width and height.
     */
     saveAnnotations() {
       let allAnnotations = this.#annotoriousInstance.getAnnotations()
       allAnnotations = allAnnotations.map(annotation => {
         annotation.body = annotation.body.length ? annotation.body[0] : {}
-
-        /**
-         * FIXME Annotorious disregards the Canvas width and height when making #xywh FragmentSelectors.
-         * Instead, tt uses the Image width and height to determine the values of the #xywh selectors.
-         *
-         * DEMO
-         * Note the only difference in the Canvases are the recorded width and height for the Canvas.
-         *
-         * Normal behavior use ?pageID=https://tpen-project-examples.habesoftware.app/transcription-project/page-1.json
-         * Draw some Annotations and save them to see the fragment selector values generated for the Annotations.
-         *
-         * Wonky Behavior use ?pageID=https://store.rerum.io/v1/id/67e55afd4850bf3e0edee32f
-         * Draw some Annotations and save them to see the fragment selector values generated for the Annotations.
-         * The Annotations will have the same target selectors even though this Canvas is half the size of the other.
-         * This is because it used the Image Dimensions to determine the selectors as opposed to the Canvas Dimensions.
-         *
-         * Note that the target values for those AnnotationPages are the Canvases, where you will find the width and height.
-        */
-
         const tar = annotation.target.source
         const sel = "#"+annotation.target.selector.value.replace("pixel:", "")
         annotation.target = tar + sel
