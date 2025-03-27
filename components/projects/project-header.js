@@ -94,8 +94,7 @@ export default class ProjectHeader extends HTMLElement {
         .line-indicator {
           border: 1px dashed;
         }
-        .line-indicator,
-        select {
+        .line-indicator {
           padding: 5px;
           border-radius: 5px;
         }
@@ -135,9 +134,8 @@ export default class ProjectHeader extends HTMLElement {
             </select>
           </div>
         </section>
-        <select>
-          <option value="">Layer 1 label</option>
-        </select>
+        <tpen-layer-selector></tpen-layer-selector>
+   
         <div class="line-indicator">Line indicator</div>
         <div class="control-buttons">
           <div class="nav-icon">
