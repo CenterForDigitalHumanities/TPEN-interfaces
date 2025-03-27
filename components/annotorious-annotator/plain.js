@@ -241,6 +241,7 @@ class AnnotoriousAnnotator extends HTMLElement {
      * In order to show an Image the AnnotationPage must target a Canvas that has an Image annotated onto it.
      * Process the target, which can be a value of various types.
      * Pass along the string Canvas URI that relates to or is the direct value of the target.
+     *
      * FIXME
      * Give users a path when AnnotationPage URIs do not resolve or resolve to something unexpected.
      *
