@@ -20,7 +20,6 @@ export default class LayerSelector extends HTMLElement {
         }
         // Listen for project loaded events to update layers.
         eventDispatcher.on("tpen-project-loaded", (ev) => {
-            
             if (ev.detail && ev.detail.layers) {
                 this.layers = ev.detail.layers
                 if (this.layers.length <= 1) {
@@ -33,33 +32,52 @@ export default class LayerSelector extends HTMLElement {
         this.render()
     }
 
+    getLabel(data) {
+        if (typeof data.label === "string") {
+            return data.label
+        }
+
+        if (typeof data.label === "object") {
+            return Object.entries(data.label)
+                .map(([lang, values]) => `${lang != "none" ? lang + ":" : ""} ${values.join(", ")}`)
+                .join(" | ")
+        }
+
+        return "Unknown Label"
+    }
+
     render() {
-        console.log(TPEN.activeProject)
         // Only render the selector if we have more than one layer.
         if (!this.layers || this.layers.length <= 1) {
             return
         }
 
         const optionsHtml = this.layers
-            .map((layer) => `<option value="${layer.URI ?? layer["@id"]}">${layer.label ?? layer["@id"]}</option>`)
+            .map((layer) => {
+                const label = this.getLabel(layer)
+                return `<option value="${layer.URI}">${label}</option>`
+            })
             .join("")
 
         this.shadowRoot.innerHTML = `
       <style>
         :host {
           display: block;
-          /* Enable container queries */
           container-type: inline-size;
         }
         select {
           font-size: clamp(0.8rem, 1vw, 1rem);
-          padding: 05px;
+          padding: 5px;
           border: 1px dashed var(--border-color, #ccc);
           border-radius: 5px;
           background: var(--select-bg, #fff);
           outline:none;
+          /* Allow text to wrap */
+          white-space: normal;
+          word-wrap: break-word;
+          max-width:100px;
         }
-        /* Adjust styling for small containers */
+
         @container (max-width: 300px) {
           select {
             font-size: 0.8rem;
@@ -76,7 +94,7 @@ export default class LayerSelector extends HTMLElement {
             const selectedURI = e.target.value
             const selectedLayer = this.layers.find((layer) => layer.URI === selectedURI)
             if (selectedLayer) {
-                // Update the active layer and dispatch the change event.
+                // Update TPEN.activeLayer and dispatch the change event.
                 TPEN.activeLayer = selectedLayer
                 eventDispatcher.dispatchEvent(new CustomEvent("tpen-active-layer", {
                     detail: selectedLayer,
