@@ -21,6 +21,8 @@ class AnnotoriousAnnotator extends HTMLElement {
     #annotationPageURI
     #resolvedAnnotationPage
     #modifiedAnnotationPage
+    #imageDims
+    #canvasDims
     #isDrawing = false
     #isErasing = false
     
@@ -109,10 +111,21 @@ class AnnotoriousAnnotator extends HTMLElement {
       const canvasID = resolvedCanvas["@id"] ?? resolvedCanvas.id
       const fullImage = resolvedCanvas?.items[0]?.items[0]?.body?.id
       const imageService = resolvedCanvas?.items[0]?.items[0]?.body?.service?.id
+      
       if(!fullImage) {
           throw new Error("Cannot Resolve Canvas Image", 
             {"cause":"The Image is 404 or unresolvable."})
       }
+
+      this.#imageDims = [
+        resolvedCanvas?.items[0]?.items[0]?.body?.width,
+        resolvedCanvas?.items[0]?.items[0]?.body?.height
+      ]
+      this.#canvasDims = [
+        resolvedCanvas?.width,
+        resolvedCanvas?.height
+      ]
+
       let imageInfo = {
         type: "image",
         url: fullImage
@@ -125,7 +138,7 @@ class AnnotoriousAnnotator extends HTMLElement {
           const info = await fetch(imageService+"info.json").then(resp => resp.json()).catch(err => { return false })
           if(info) imageInfo = info
       }
-      
+
       /**
        * An instance of OpenSeaDragon with customization options that help our desired
        * "draw new annotation", "edit existing drawn annotation", "delete drawn annotation" UX.
@@ -301,6 +314,9 @@ class AnnotoriousAnnotator extends HTMLElement {
     /**
      * Format and pass along the Annotations from the provided AnnotationPage.
      * Annotorious will render them on screen and introduce them to the UX flow.
+     *
+     * FIXME Annotorious does not draw Annotations correctly when the canvas and image dimensions are different.
+     * It appears to always uses Image Dimensions and ignored Canvas Dimensions.  
     */
     setInitialAnnotations() {
       if(!this.#resolvedAnnotationPage) return
@@ -335,6 +351,13 @@ class AnnotoriousAnnotator extends HTMLElement {
       allAnnotations = allAnnotations.map(annotation => {
         // Careful here.  Consider targets when the Canvas and Image have differing dimensions.
         annotation.body = annotation.body.length ? annotation.body[0] : {}
+
+        /**
+         * TODO
+         * What should we do if the image dimensions and the canvas dimensions are different?
+         * You know this.#imageDims and this.#canvasDims here.  [width, height] for both.
+        */
+
         const tar = annotation.target.source
         const sel = "#"+annotation.target.selector.value.replace("pixel:", "")
         annotation.target = tar + sel
@@ -355,6 +378,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       page.items = allAnnotations
       this.#modifiedAnnotationPage = page
       TPEN.eventDispatcher.dispatch("tpen-page-committed", page)
+      console.log(allAnnotations)
       return allAnnotations
     }
 
@@ -372,6 +396,7 @@ class AnnotoriousAnnotator extends HTMLElement {
           {"cause":"AnnotationPage.target is an Array."})
       }
       else if(typeof pageTarget === "object") {
+        // An embedded object, a referenced object, or a {source:"", selector:{}} object
         try{
           JSON.parse(JSON.stringify(target))
         }
@@ -379,10 +404,10 @@ class AnnotoriousAnnotator extends HTMLElement {
           throw new Error(`The AnnotationPage target is not processable.`, 
             {"cause":"AnnotationPage.target is not JSON."})
         }
-        const tcid = pageTarget["@id"] ?? pageTarget.id
+        const tcid = pageTarget["@id"] ?? pageTarget.id ?? pageTarget.source
         if(!tcid) {
-          throw new Error(`The target of the AnnotationPage does not contain an id.  This Canvas cannot be loaded, and so there is no image to load.`,
-            {"cause":"AnnotationPage.target must be a Canvas and must have an id."})
+          throw new Error(`The target of the AnnotationPage does not contain an id.  There is no image to load.`,
+            {"cause":"AnnotationPage.target must be a Canvas."})
         }
         // For now we don't trust the embedded Canvas and are going to take the id forward to resolve.
         canvasURI = tcid
