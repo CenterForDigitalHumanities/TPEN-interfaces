@@ -125,7 +125,6 @@ class AnnotoriousAnnotator extends HTMLElement {
         resolvedCanvas?.width,
         resolvedCanvas?.height
       ]
-
       let imageInfo = {
         type: "image",
         url: fullImage
@@ -207,7 +206,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       const annotator = _this.#annotoriousInstance
       
       /**
-        * Fired after A click event on a drawn Annotation.  The annotation data is known and available as a parameter.
+        * Fired after a click event on a drawn Annotation.  The annotation data is known and available as a parameter.
         * A click on a drawn Annotation in erase mode means erase the Annotation.
         * 
       */
