@@ -284,7 +284,7 @@ class AnnotoriousAnnotator extends HTMLElement {
      * Fetch a Canvas URI and check that it is a Canvas object.  Pass it forward to render the Image into the interface.
      *
      * FIXME
-     * Give users a path when AnnotationPage URIs do not resolve or resolve to something unexpected.
+     * Give users a path when Canvas URIs do not resolve or resolve to something unexpected.
      *
      * @param uri A String Canvas URI
     */
