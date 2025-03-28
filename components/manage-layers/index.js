@@ -269,30 +269,30 @@ class ProjectLayers extends HTMLElement {
         //     })
         // })
 
-        // this.shadowRoot.querySelectorAll(".delete-layer").forEach((button) => {
-        //     button.addEventListener("click", async (event) => {
-        //         const layerIndex = event.target.getAttribute("data-index")
-        //         TPEN.activeProject.layers.splice(layerIndex, 1)
-        //         const url = event.target.getAttribute("data-layer-id")
-        //         const layerId = url.substring(url.lastIndexOf("/") + 1)
-        //         await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/layer/${layerId}`, {
-        //             method: "DELETE",
-        //             headers: {
-        //                 "Content-Type": "application/json",
-        //                 Authorization: `Bearer ${TPEN.getAuthorization()}`,
-        //             },
-        //         })
-        //         .then(response => {
-        //             const toast = new CustomEvent('tpen-toast', {
-        //             detail: {
-        //                 message: (response.ok) ? 'Successfully deleted layer' : 'Error deleting layer',
-        //                 status: (response.ok) ? 200 : 500
-        //                 }
-        //             })
-        //             return TPEN.eventDispatcher.dispatchEvent(toast)
-        //         })
-        //     })
-        // })
+        this.shadowRoot.querySelectorAll(".delete-layer").forEach((button) => {
+            button.addEventListener("click", async (event) => {
+                const layerIndex = event.target.getAttribute("data-index")
+                TPEN.activeProject.layers.splice(layerIndex, 1)
+                const url = event.target.getAttribute("data-layer-id")
+                const layerId = url.substring(url.lastIndexOf("/") + 1)
+                await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/layer/${layerId}`, {
+                    method: "DELETE",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${TPEN.getAuthorization()}`,
+                    },
+                })
+                .then(response => {
+                    const toast = new CustomEvent('tpen-toast', {
+                    detail: {
+                        message: (response.ok) ? 'Successfully deleted layer' : 'Error deleting layer',
+                        status: (response.ok) ? 200 : 500
+                        }
+                    })
+                    return TPEN.eventDispatcher.dispatchEvent(toast)
+                })
+            })
+        })
 
         this.shadowRoot.querySelector(".add-layer").addEventListener("click", async() => {
             const layers = TPEN.activeProject.layers
