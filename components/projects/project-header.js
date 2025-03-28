@@ -25,27 +25,6 @@ export default class ProjectHeader extends HTMLElement {
         })
     }
 
-    attributeChangedCallback(name, oldValue, newValue) {
-        if (oldValue !== newValue) {
-            switch (name) {
-                case "tpen-project":
-                    this.handleProjectChange(newValue)
-                    break
-                case "tpen-user-id":
-                    this.handleUserChange(newValue)
-                    break
-            }
-        }
-    }
-
-    handleProjectChange(projectId) {
-        console.log(`Project changed to: ${projectId}`)
-    }
-
-    handleUserChange(userId) {
-        console.log(`User changed to: ${userId}`)
-        console.log(TPEN.currentUser)
-    }
 
     async connectedCallback() {
         TPEN.attachAuthentication(this)
