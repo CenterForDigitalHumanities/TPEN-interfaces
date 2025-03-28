@@ -420,7 +420,7 @@ class AnnotoriousAnnotator extends HTMLElement {
         throw new Error(`The AnnotationPage object has multiple targets.  We cannot process this yet, and nothing will load.`,
           {"cause":"AnnotationPage.target is an Array."})
       }
-      else if(typeof pageTarget === "object") {
+      if(typeof pageTarget === "object") {
         // An embedded object, a referenced object, or a {source:"", selector:{}} object
         try{
           JSON.parse(JSON.stringify(target))
