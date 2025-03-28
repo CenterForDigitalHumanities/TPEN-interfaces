@@ -5,6 +5,7 @@ import "../../components/project-metadata/index.js"
 import "../../components/projects/project-list-view.js"
 import "../../components/project-permissions/index.js"
 import "../../components/project-export/index.js"
+import "../../components/project-layers/index.js"
 
 TPEN.eventDispatcher.on('tpen-project-loaded', () => render())
 const container = document.body
@@ -17,6 +18,10 @@ document.getElementById('manage-collaboration-btn').addEventListener('click', ()
 
 document.getElementById("update-metadata-btn").addEventListener('click', () => {  
     window.location.href = `/components/update-metadata/index.html?projectID=${TPEN.screen.projectInQuery}`
+})
+
+document.getElementById('manage-layers-btn').addEventListener('click', () => {
+    window.location.href = `/components/manage-layers/index.html?projectID=${TPEN.screen.projectInQuery}`
 })
 
 document.getElementById('export-project-btn').addEventListener('click', async () => {
