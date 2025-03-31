@@ -27,8 +27,19 @@ export default class TranscriptionInterface extends HTMLElement {
     if (this.state.isSplitscreenActive) {
       this.shadowRoot.innerHTML = `
         <style>
-          .split-screen-right {
-            height: 100%;
+          .container {
+            display: flex;
+            height: 90vh;
+            overflow: hidden;
+          }
+          .transcription-section {
+            flex: 1;
+            overflow: auto;
+          }
+          .placeholder {
+            width: 40%;
+            border-left: 1px solid #ccc;
+            padding: 10px;
             display: flex;
             flex-direction: column;
           }
@@ -37,71 +48,46 @@ export default class TranscriptionInterface extends HTMLElement {
             justify-content: flex-end;
             padding: 5px;
           }
-          .close-splitscreen-button {
+          .close-button {
             background: none;
             border: none;
             font-size: 20px;
             cursor: pointer;
           }
-          .split-option {
-            margin: 10px;
-            padding: 5px;
-          }
-          .content-display {
+          .tools {
             flex: 1;
             overflow: auto;
-            border: 1px solid #ccc;
-            padding: 10px;
+            border-top: 1px solid #ccc;
+            margin-top: 10px;
+            padding-top: 10px;
+          }
+          .tools p {
+            margin: 5px 0;
+            font-size: 0.9rem;
           }
         </style>
         <tpen-project-navigation></tpen-project-navigation>
-        <tpen-split-screen>
-          <div slot="left">
-            <section class="transcription-section">
-              <tpen-transcription-block></tpen-transcription-block>
-              <tpen-workspace-tools></tpen-workspace-tools>
-            </section>
-          </div>
-          <div slot="right">
-            <div class="split-screen-right">
-              <div class="header">
-                <button class="close-splitscreen-button">×</button>
-              </div>
-              <select class="split-option">
-                <option value="progress">Transcription Progress</option>
-                <option value="dictionary">Greek Dictionary</option>
-                <option value="nextpage">Next Page Preview</option>
-              </select>
-              <div class="content-display">
-                <div data-option="progress">Transcription Progress Preview Will be Rendered Here</div>
-                <div data-option="dictionary" style="display: none;">Greek Dictionary Will be Rendered Here</div>
-                <div data-option="nextpage" style="display: none;">Next Page Preview Will be Rendered Here</div>
-              </div>
+        <div class="container">
+          <section class="transcription-section">
+            <tpen-transcription-block></tpen-transcription-block>
+            <tpen-workspace-tools></tpen-workspace-tools>
+          </section>
+          <div class="placeholder">
+            <div class="header">
+              <button class="close-button">×</button>
+            </div>
+            <div class="tools">
+              <p>Transcription Progress</p>
+              <p>Greek Dictionary</p>
+              <p>Next Page Preview</p>
             </div>
           </div>
-        </tpen-split-screen>
+        </div>
       `
-
-      // Update the right pane's content based on the selected option.
-      const splitSelect = this.shadowRoot.querySelector(".split-option")
-      if (splitSelect) {
-        splitSelect.addEventListener("change", (e) => {
-          const selectedOption = e.target.value
-          const contentDivs = this.shadowRoot.querySelectorAll(".content-display > div")
-          contentDivs.forEach((div) => {
-            div.style.display = (div.getAttribute("data-option") === selectedOption) ? "block" : "none"
-          })
-        })
-      }
-
-      // Close button toggles splitscreen mode and dispatches a toggle event.
-      const closeButton = this.shadowRoot.querySelector(".close-splitscreen-button")
+      // Add event listener for the close button to toggle splitscreen off.
+      const closeButton = this.shadowRoot.querySelector(".close-button")
       if (closeButton) {
         closeButton.addEventListener("click", () => {
-          this.dispatchEvent(new CustomEvent("tpen-splitscreen-toggle", {
-            bubbles: true,
-            composed: true,
-          }))
           this.toggleSplitscreen()
         })
       }
