@@ -161,10 +161,9 @@ class ProjectLayers extends HTMLElement {
         `
         this.shadowRoot.querySelectorAll(".delete-layer").forEach((button) => {
             button.addEventListener("click", (event) => {
-                const layerIndex = event.target.getAttribute("data-index")
-                TPEN.activeProject.layers.splice(layerIndex, 1)
                 const url = event.target.getAttribute("data-layer-id")
                 const layerId = url.substring(url.lastIndexOf("/") + 1)
+
                 fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/layer/${layerId}`, {
                     method: "DELETE",
                     headers: {
@@ -174,27 +173,28 @@ class ProjectLayers extends HTMLElement {
                 })
                 .then(response => {
                     return TPEN.eventDispatcher.dispatch("tpen-toast", 
-                    { 
-                        message: response.ok ? 'Successfully deleted layer' : 'Error deleting layer', 
-                        status: response.ok ? 204 : 500 
-                    })
+                    response.ok ? 
+                        { status: 204, message: 'Successfully Deleted Layer' } : 
+                        { status: 500, message: 'Error Deleting Layer' }
+                    )
                 })
             })
         })
 
-        this.shadowRoot.querySelector(".add-layer").addEventListener("click", async() => {
-            const layers = TPEN.activeProject.layers
+        this.shadowRoot.querySelector(".add-layer").addEventListener("click", () => {
             const canvases = []
             layers.map(layer => (layer.pages ?? layer.items).map(page => {
                 if (!canvases.includes(page.canvas) && page.canvas) {
                     canvases.push(page.canvas)
                 }
             }))
+
             let layerLabel = this.shadowRoot.getElementById("layerLabel").value
             if (layerLabel === "") {
                 layerLabel = null
             }
-            await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/layer`, {
+
+            fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/layer`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -207,12 +207,11 @@ class ProjectLayers extends HTMLElement {
             })
             .then(response => {
                 return TPEN.eventDispatcher.dispatch("tpen-toast", 
-                { 
-                    message: response.ok ? 'Successfully added layer' : 'Error adding layer', 
-                    status: response.ok ? 200 : 500 
-                })
+                response.ok ? 
+                    { status: 201, message: 'Successfully Added Layer' } : 
+                    { status: 500, message: 'Error Adding Layer' }
+                )
             })
-            this.render()
         })
     }
 }
