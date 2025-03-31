@@ -148,7 +148,7 @@ class ProjectLayers extends HTMLElement {
                                 )
                             .join("")}
                         </div>
-                        ${(String(layer.id) ?? String(layer["@id"])).includes("https://devstore.rerum.io/v1/id/") ?
+                        ${(String(layer.id) ?? String(layer["@id"])).includes("store.rerum.io") ?
                         `<div class="layer-actions">
                             <button class="layer-btn manage-pages" data-index="${layerIndex}" data-layer-id="${layer["@id"] ?? layer.id}">Manage Pages</button>
                             <button class="layer-btn delete-layer" data-index="${layerIndex}" data-layer-id="${layer["@id"] ?? layer.id}">Delete Layer</button>
