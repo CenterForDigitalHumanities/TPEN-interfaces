@@ -148,7 +148,7 @@ class ProjectLayers extends HTMLElement {
                                 )
                             .join("")}
                         </div>
-                        ${(String(layer.id) ?? String(layer["@id"])).includes("https") ?
+                        ${(String(layer.id) ?? String(layer["@id"])).includes("https://devstore.rerum.io/v1/id/") ?
                         `<div class="layer-actions">
                             <button class="layer-btn manage-pages" data-index="${layerIndex}" data-layer-id="${layer["@id"] ?? layer.id}">Manage Pages</button>
                             <button class="layer-btn delete-layer" data-index="${layerIndex}" data-layer-id="${layer["@id"] ?? layer.id}">Delete Layer</button>
@@ -168,14 +168,14 @@ class ProjectLayers extends HTMLElement {
                     method: "DELETE",
                     headers: {
                         "Content-Type": "application/json",
-                        Authorization: `Bearer ${TPEN.getAuthorization()}`,
-                    },
+                        Authorization: `Bearer ${TPEN.getAuthorization()}`
+                    }
                 })
                 .then(response => {
                     return TPEN.eventDispatcher.dispatch("tpen-toast", 
                     response.ok ? 
-                        { status: 204, message: 'Successfully Deleted Layer' } : 
-                        { status: 500, message: 'Error Deleting Layer' }
+                        { status: "info", message: 'Successfully Deleted Layer' } : 
+                        { status: "error", message: 'Error Deleting Layer' }
                     )
                 })
             })
@@ -183,7 +183,7 @@ class ProjectLayers extends HTMLElement {
 
         this.shadowRoot.querySelector(".add-layer").addEventListener("click", () => {
             const canvases = []
-            layers.map(layer => (layer.pages ?? layer.items).map(page => {
+            layers.map(layer => (layer.pages).map(page => {
                 if (!canvases.includes(page.canvas) && page.canvas) {
                     canvases.push(page.canvas)
                 }
@@ -198,18 +198,18 @@ class ProjectLayers extends HTMLElement {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: `Bearer ${TPEN.getAuthorization()}`,
+                    Authorization: `Bearer ${TPEN.getAuthorization()}`
                 },
                 body: JSON.stringify({
                     label: layerLabel,
                     canvases
-                }), 
+                })
             })
             .then(response => {
                 return TPEN.eventDispatcher.dispatch("tpen-toast", 
                 response.ok ? 
-                    { status: 201, message: 'Successfully Added Layer' } : 
-                    { status: 500, message: 'Error Adding Layer' }
+                    { status: "info", message: 'Successfully Added Layer' } : 
+                    { status: "error", message: 'Error Adding Layer' }
                 )
             })
         })
