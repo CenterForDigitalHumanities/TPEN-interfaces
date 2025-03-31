@@ -1,8 +1,6 @@
 import TPEN from "../../api/TPEN.js"
 
 class ProjectLayers extends HTMLElement {
-    canvases = []
-    layers = []
     constructor() {
         super()
         this.attachShadow({ mode: "open" })
@@ -161,15 +159,13 @@ class ProjectLayers extends HTMLElement {
                 .join("")}     
             </div>
         `
-        this.layers = TPEN.activeProject.layers
-
         this.shadowRoot.querySelectorAll(".delete-layer").forEach((button) => {
-            button.addEventListener("click", async (event) => {
+            button.addEventListener("click", (event) => {
                 const layerIndex = event.target.getAttribute("data-index")
                 TPEN.activeProject.layers.splice(layerIndex, 1)
                 const url = event.target.getAttribute("data-layer-id")
                 const layerId = url.substring(url.lastIndexOf("/") + 1)
-                await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/layer/${layerId}`, {
+                fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/layer/${layerId}`, {
                     method: "DELETE",
                     headers: {
                         "Content-Type": "application/json",
@@ -177,16 +173,21 @@ class ProjectLayers extends HTMLElement {
                     },
                 })
                 .then(response => {
-                    return TPEN.eventDispatcher.dispatch("tpen-toast", { message: response.ok ? 'Successfully deleted layer' : 'Error deleting layer', status: response.ok ? 200 : 500 })
+                    return TPEN.eventDispatcher.dispatch("tpen-toast", 
+                    { 
+                        message: response.ok ? 'Successfully deleted layer' : 'Error deleting layer', 
+                        status: response.ok ? 204 : 500 
+                    })
                 })
             })
         })
 
         this.shadowRoot.querySelector(".add-layer").addEventListener("click", async() => {
             const layers = TPEN.activeProject.layers
+            const canvases = []
             layers.map(layer => (layer.pages ?? layer.items).map(page => {
-                if (!this.canvases.includes(page.canvas) && page.canvas) {
-                    this.canvases.push(page.canvas)
+                if (!canvases.includes(page.canvas) && page.canvas) {
+                    canvases.push(page.canvas)
                 }
             }))
             let layerLabel = this.shadowRoot.getElementById("layerLabel").value
@@ -201,17 +202,15 @@ class ProjectLayers extends HTMLElement {
                 },
                 body: JSON.stringify({
                     label: layerLabel,
-                    canvases : this.canvases
+                    canvases
                 }), 
             })
             .then(response => {
-                const toast = new CustomEvent('tpen-toast', {
-                detail: {
-                    message: (response.ok) ? 'Successfully added layer' : 'Error adding layer',
-                    status: (response.ok) ? 200 : 500
-                    }
+                return TPEN.eventDispatcher.dispatch("tpen-toast", 
+                { 
+                    message: response.ok ? 'Successfully added layer' : 'Error adding layer', 
+                    status: response.ok ? 200 : 500 
                 })
-                return TPEN.eventDispatcher.dispatchEvent(toast)
             })
             this.render()
         })
