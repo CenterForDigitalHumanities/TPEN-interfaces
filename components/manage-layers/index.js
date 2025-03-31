@@ -162,112 +162,6 @@ class ProjectLayers extends HTMLElement {
             </div>
         `
         this.layers = TPEN.activeProject.layers
-        // this.shadowRoot.querySelectorAll(".manage-pages").forEach((button) => {
-        //     button.addEventListener("click", async (event) => {
-        //         this.shadowRoot.querySelector(`.layer-card-outer[data-index="${event.target.getAttribute("data-index")}"] .layer-pages`).classList.add("layer-container")
-        //         this.shadowRoot.querySelectorAll(`.layer-card-outer[data-index="${event.target.getAttribute("data-index")}"] .layer-page`)
-        //         .forEach(el => { 
-        //             el.classList.add("layer-card")
-        //             el.setAttribute("draggable", "true")}
-        //         )
-
-        //         const labelDiv = this.shadowRoot.querySelector(`.layer-card-outer[data-index="${event.target.getAttribute("data-index")}"] .layer-label-div`)
-        //         labelDiv.setAttribute("style", "display: flex;")
-        //         labelDiv.setAttribute("data-index", event.target.getAttribute("data-index"))
-        //         labelDiv.setAttribute("data-layer-id", event.target.getAttribute("data-layer-id"))
-
-        //         const editButton = document.createElement("button")
-        //         editButton.setAttribute("class", "layer-btn edit-pages")
-        //         editButton.setAttribute("style", "margin-top: 0;")
-        //         editButton.setAttribute("data-index", event.target.getAttribute("data-index"))
-        //         editButton.setAttribute("data-layer-id", event.target.getAttribute("data-layer-id"))
-        //         editButton.innerText = "Edit"
-        //         this.shadowRoot.querySelector(`.layer-card-outer[data-index="${event.target.getAttribute("data-index")}"] .layer-label`).insertAdjacentElement("afterend", editButton)
-
-        //         const saveButton = document.createElement("button")
-        //         saveButton.setAttribute("class", "layer-btn save-pages")
-        //         saveButton.setAttribute("data-index", event.target.getAttribute("data-index"))
-        //         saveButton.setAttribute("data-layer-id", event.target.getAttribute("data-layer-id"))
-        //         saveButton.innerText = "Save"
-        //         this.shadowRoot.querySelector(`.layer-card-outer[data-index="${event.target.getAttribute("data-index")}"] .layer-actions`).insertBefore(saveButton, this.shadowRoot.querySelector(`.layer-card-outer[data-index="${event.target.getAttribute("data-index")}"] .layer-actions`).firstChild)
-        //         this.shadowRoot.querySelector(`.layer-card-outer[data-index="${event.target.getAttribute("data-index")}"] .layer-actions`).removeChild(this.shadowRoot.querySelector(`.layer-card-outer[data-index="${event.target.getAttribute("data-index")}"] .manage-pages`))
-        //         const layerIndex = event.target.getAttribute("data-index")
-        //         this.rearrangePages(layerIndex)
-
-        //         this.shadowRoot.querySelector(`.layer-card-outer[data-index="${event.target.getAttribute("data-index")}"] .edit-pages`)
-        //         .addEventListener("click", (event) => {
-        //             this.shadowRoot.querySelector(`.layer-card-outer[data-index="${event.target.getAttribute("data-index")}"] .layer-label`).remove()
-        //             this.shadowRoot.querySelector(`.layer-card-outer[data-index="${event.target.getAttribute("data-index")}"] .layer-label-div .edit-pages`).remove()
-        //             const labelInput = document.createElement("input")
-        //             labelInput.setAttribute("type", "text")
-        //             labelInput.setAttribute("class", "label-input")
-        //             labelInput.setAttribute("value", this.layers[layerIndex].label.none)
-        //             labelInput.setAttribute("data-index", event.target.getAttribute("data-index"))
-        //             labelInput.setAttribute("data-layer-id", event.target.getAttribute("data-layer-id"))
-        //             this.shadowRoot.querySelector(`.layer-card-outer[data-index="${event.target.getAttribute("data-index")}"] .layer-label-div`).insertAdjacentElement("afterbegin", labelInput)
-
-        //             const saveButton = document.createElement("button")
-        //             saveButton.setAttribute("class", "layer-btn save-label")
-        //             saveButton.setAttribute("style", "margin-top: 0;")
-        //             saveButton.setAttribute("data-index", event.target.getAttribute("data-index"))
-        //             saveButton.setAttribute("data-layer-id", event.target.getAttribute("data-layer-id"))
-        //             saveButton.innerText = "Save"
-        //             this.shadowRoot.querySelector(`.layer-card-outer[data-index="${event.target.getAttribute("data-index")}"] .layer-label-div .label-input`).insertAdjacentElement("afterend", saveButton)
-
-        //             this.shadowRoot.querySelector(`.layer-card-outer[data-index="${event.target.getAttribute("data-index")}"] .save-label`)
-        //             .addEventListener("click", async (event) => {
-        //                 const url = event.target.getAttribute("data-layer-id")
-        //                 const layerId = url.substring(url.lastIndexOf("/") + 1)
-        //                 const label = this.shadowRoot.querySelector(`.layer-card-outer[data-index="${event.target.getAttribute("data-index")}"] .label-input`).value
-        //                 await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/layer/${layerId}`, {
-        //                     method: "PUT",
-        //                     headers: {
-        //                         "Content-Type": "application/json",
-        //                         Authorization: `Bearer ${TPEN.getAuthorization()}`,
-        //                     },
-        //                     body: JSON.stringify({
-        //                         label
-        //                     })
-        //                 })
-        //                 .then(response => {
-        //                     const toast = new CustomEvent('tpen-toast', {
-        //                     detail: {
-        //                         message: (response.ok) ? 'Successfully updated layer label' : 'Error updating layer label',
-        //                         status: (response.ok) ? 200 : 500
-        //                         }
-        //                     })
-        //                     return TPEN.eventDispatcher.dispatchEvent(toast)
-        //                 })
-        //             })
-        //         })
-                    
-        //         this.shadowRoot.querySelector(`.layer-card-outer[data-index="${event.target.getAttribute("data-index")}"] .layer-actions .save-pages`)
-        //         .addEventListener("click", async (event) => {
-        //             const url = event.target.getAttribute("data-layer-id")
-        //             const layerId = url.substring(url.lastIndexOf("/") + 1)
-        //             const pageIds = this.layers[layerIndex].items.map((page) => page["@id"] ?? page.id)
-        //             await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/layer/${layerId}/pages`, {
-        //                 method: "PUT",
-        //                 headers: {
-        //                     "Content-Type": "application/json",
-        //                     Authorization: `Bearer ${TPEN.getAuthorization()}`,
-        //                 },
-        //                 body: JSON.stringify({
-        //                     pages: pageIds
-        //                 }),
-        //             })
-        //             .then(response => {
-        //                 const toast = new CustomEvent('tpen-toast', {
-        //                 detail: {
-        //                     message: (response.ok) ? 'Successfully updated layer' : 'Error updating layer',
-        //                     status: (response.ok) ? 200 : 500
-        //                     }
-        //                 })
-        //                 return TPEN.eventDispatcher.dispatchEvent(toast)
-        //             })
-        //         })
-        //     })
-        // })
 
         this.shadowRoot.querySelectorAll(".delete-layer").forEach((button) => {
             button.addEventListener("click", async (event) => {
@@ -283,13 +177,7 @@ class ProjectLayers extends HTMLElement {
                     },
                 })
                 .then(response => {
-                    const toast = new CustomEvent('tpen-toast', {
-                    detail: {
-                        message: (response.ok) ? 'Successfully deleted layer' : 'Error deleting layer',
-                        status: (response.ok) ? 200 : 500
-                        }
-                    })
-                    return TPEN.eventDispatcher.dispatchEvent(toast)
+                    return TPEN.eventDispatcher.dispatch("tpen-toast", { message: response.ok ? 'Successfully deleted layer' : 'Error deleting layer', status: response.ok ? 200 : 500 })
                 })
             })
         })
@@ -328,47 +216,6 @@ class ProjectLayers extends HTMLElement {
             this.render()
         })
     }
-
-    // rearrangePages(layerIndex) {
-    //     const cards = this.shadowRoot.querySelectorAll(".layer-card")
-    //     let layer = this.layers[layerIndex]
-
-    //     cards.forEach((card) => {
-    //         card.addEventListener("dragstart", (event) => {
-    //             event.dataTransfer.setData("text/plain", card.dataset.index)
-    //             card.style.border = "none"
-    //         })
-
-    //         card.addEventListener("dragend", () => {
-    //             cards.forEach((card) => card.style.opacity = "1")
-    //         })
-
-    //         card.addEventListener("dragover", (event) => {
-    //             event.preventDefault()
-    //         })
-
-    //         card.addEventListener("dragleave", () => {
-    //         })
-
-    //         card.addEventListener("drop", (event) => {
-    //             event.preventDefault()
-    //             const draggedIndex = event.dataTransfer.getData("text/plain")
-    //             const targetIndex = card.dataset.index
-
-    //             if (draggedIndex !== targetIndex) {
-    //                 const draggedPage = layer.items[draggedIndex]
-    //                 const targetPage = layer.items[targetIndex]
-    //                 layer.items[draggedIndex] = targetPage
-    //                 layer.items[targetIndex] = draggedPage
-    //                 let temp = this.shadowRoot.querySelectorAll(".layer-card")[targetIndex].textContent
-    //                 this.shadowRoot.querySelectorAll(".layer-card")[targetIndex].textContent = this.shadowRoot.querySelectorAll(".layer-card")[draggedIndex].textContent
-    //                 this.shadowRoot.querySelectorAll(".layer-card")[draggedIndex].textContent = temp
-    //                 this.layers[layerIndex] = layer
-    //             }
-    //             card.style.border = "none"
-    //         })
-    //     })
-    // }
 }
 
 customElements.define("tpen-manage-layers", ProjectLayers)
