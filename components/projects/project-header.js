@@ -135,7 +135,6 @@ export default class ProjectHeader extends HTMLElement {
           </div>
         </section>
         <tpen-layer-selector></tpen-layer-selector>
-   
         <div class="line-indicator">Line indicator</div>
         <div class="control-buttons">
           <div class="nav-icon">
