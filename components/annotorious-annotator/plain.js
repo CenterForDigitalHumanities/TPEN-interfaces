@@ -349,8 +349,6 @@ class AnnotoriousAnnotator extends HTMLElement {
           converted_xywh[1] = parseInt((this.#imageDims[1] / this.#canvasDims[1]) * parseInt(orig_xywh[1]))
           converted_xywh[2] = parseInt((this.#imageDims[0] / this.#canvasDims[0]) * parseInt(orig_xywh[2]))
           converted_xywh[3] = parseInt((this.#imageDims[1] / this.#canvasDims[1]) * parseInt(orig_xywh[3]))
-
-          // FIXME this results in a slight visual overlap of lines even though it should not.
           sel = "#xywh=" + converted_xywh.join(",")
           annotation.target = tar + sel
         }
