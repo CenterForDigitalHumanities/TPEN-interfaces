@@ -320,24 +320,59 @@ class AnnotoriousAnnotator extends HTMLElement {
     }
 
     /**
+      * Adjust Annotation selectors as needed for communication between Annotorious and TPEN3.
+      * Annotorious naturally builds selector values relative to image dimensions.
+      * TPEN3 wants them relative to Canvas dimensions.
+      * When recieving Annotations to render convert the selectors so they are relative to the image and draw correctly.
+      * When saving Annotations convert the selectors so they are relative to the canvas and save correctly.
+    */
+    convertSelectors(annotations, bool=false) {
+      let orig_xywh, converted_xywh = []
+      let tar, sel = ""
+      return annotations.map(annotation => {
+        if(bool) {
+          /**
+           * You are converting for Annotorious.  Selectors need to be changed to be relative to the Image dimensions.
+           * This is so that they render correctly.  TPEN3 selectors are relative to the Canvas dimensions.
+          */
+          tar = annotation.target.split("#xywh=")[0]
+          orig_xywh = annotation.target.split("#xywh=")[1].split(",")
+          converted_xywh[0] = parseInt((this.#imageDims[0] / this.#canvasDims[0]) * parseInt(orig_xywh[0]))
+          converted_xywh[1] = parseInt((this.#imageDims[1] / this.#canvasDims[1]) * parseInt(orig_xywh[1]))
+          converted_xywh[2] = parseInt((this.#imageDims[0] / this.#canvasDims[0]) * parseInt(orig_xywh[2]))
+          converted_xywh[3] = parseInt((this.#imageDims[1] / this.#canvasDims[1]) * parseInt(orig_xywh[3]))
+
+          // FIXME this results in a slight visual overlap of lines even though it should not.
+          sel = "#xywh=" + converted_xywh.join(",")
+          annotation.target = tar + sel
+        }
+        else{
+          /**
+           * You are converting for TPEN3.  Selectors need to be changed to be relative to the Canvas dimensions.
+           * This is so that they save correctly.  Annotorious selectors are relative to the Image dimensions.
+          */
+          tar = annotation.target.source
+          orig_xywh = annotation.target.selector.value.replace("xywh=pixel:", "").split(",")
+          converted_xywh[0] = parseInt((this.#canvasDims[0] / this.#imageDims[0]) * parseInt(orig_xywh[0]))
+          converted_xywh[1] = parseInt((this.#canvasDims[1] / this.#imageDims[1]) * parseInt(orig_xywh[1]))
+          converted_xywh[2] = parseInt((this.#canvasDims[0] / this.#imageDims[0]) * parseInt(orig_xywh[2]))
+          converted_xywh[3] = parseInt((this.#canvasDims[1] / this.#imageDims[1]) * parseInt(orig_xywh[3]))
+          sel = "xywh=" + converted_xywh.join(",")
+          annotation.target.selector.value = sel
+        }
+        return annotation
+      })
+    }
+
+    /**
      * Format and pass along the Annotations from the provided AnnotationPage.
      * Annotorious will render them on screen and introduce them to the UX flow.
-     *
-     * FIXME Annotorious does not draw Annotations correctly when the canvas and image dimensions are different.
-     *
-     * DEMO for FIXME
-     * Note that the Canvas in the "wonky" data is exactly half the size of the Canvas in the "normal" data.
-     * Note that the width and the height of the Canvas were used to determine the fragment selector #xywh values in another platform.
-     *
-     * Normal behavior use ?pageID=https://tpen-project-examples.habesoftware.app/transcription-project/page-1.json
-     * Wonky Behavior use ?pageID=https://store.rerum.io/v1/id/67e55afd4850bf3e0edee32f
-     *
-     * Note that the target values for those AnnotationPages are the Canvases, where you will find the width and height.
-     * 
     */
     setInitialAnnotations() {
       if(!this.#resolvedAnnotationPage) return
       let allAnnotations = JSON.parse(JSON.stringify(this.#resolvedAnnotationPage.items))
+      // Convert the Annotation selectors so that they are relative to the Image dimensions
+      allAnnotations = this.convertSelectors(allAnnotations, true)
       allAnnotations.map(annotation => {
         annotation.body = [annotation.body]
         const tarsel = annotation.target.split("#")
@@ -359,28 +394,11 @@ class AnnotoriousAnnotator extends HTMLElement {
       * This page renders because of a known AnnotationPage.  Existing Annotations in that AnnotationPage were drawn.
       * There have been edits to the page items and those edits need to be saved.
       * Announce the AnnotationPage with the changes that needs to be updated for processing upstream.
-      * 
-      * Note that Annotorious has opinions about Annotation body and target values.  So does TPEN3.
-      * TPEN3 opinions are preferenced.
-      *
-      * FIXME Annotorious disregards the Canvas width and height when making #xywh FragmentSelectors.
-      * Instead, tt uses the Image width and height to determine the values of the #xywh selectors.
-      *
-      * DEMO
-      * Note the only difference in the Canvases are the recorded width and height for the Canvas.
-      *
-      * Normal behavior use ?pageID=https://tpen-project-examples.habesoftware.app/transcription-project/page-1.json
-      * Draw some Annotations and save them to see the fragment selector values generated for the Annotations.
-      *
-      * Wonky Behavior use ?pageID=https://store.rerum.io/v1/id/67e55afd4850bf3e0edee32f
-      * Draw some Annotations and save them to see the fragment selector values generated for the Annotations.
-      * The Annotations will have the same target selectors even though this Canvas is half the size of the other.
-      * This is because it used the Image Dimensions to determine the selectors as opposed to the Canvas Dimensions.
-      *
-      * Note that the target values for those AnnotationPages are the Canvases, where you will find the width and height.
     */
     saveAnnotations() {
       let allAnnotations = this.#annotoriousInstance.getAnnotations()
+      // Convert the Annotation selectors so that they are relative to the Canvas dimensions
+      allAnnotations = this.convertSelectors(allAnnotations, false)
       allAnnotations = allAnnotations.map(annotation => {
         annotation.body = annotation.body.length ? annotation.body[0] : {}
         const tar = annotation.target.source
