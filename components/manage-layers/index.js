@@ -1,4 +1,5 @@
 import TPEN from "../../api/TPEN.js"
+import "../../components/manage-pages/index.js"
 
 class ProjectLayers extends HTMLElement {
     constructor() {
@@ -125,7 +126,7 @@ class ProjectLayers extends HTMLElement {
             <div class="layer-div">
                 <div>
                     <label for="layerLabel">Label:</label>
-                    <input type="text" id="layerLabel" placeholder="Layer Label">
+                    <input type="text" class="layer-input" id="layerLabel" placeholder="Layer Label">
                 </div>
                 <button class="layer-btn add-layer">Add Layer</button>
             </div>
@@ -150,7 +151,7 @@ class ProjectLayers extends HTMLElement {
                         </div>
                         ${(String(layer.id) ?? String(layer["@id"])).includes("store.rerum.io") ?
                         `<div class="layer-actions">
-                            <button class="layer-btn manage-pages" data-index="${layerIndex}" data-layer-id="${layer["@id"] ?? layer.id}">Manage Pages</button>
+                            <tpen-manage-pages data-index="${layerIndex}" data-layer-id="${layer["@id"] ?? layer.id}"></tpen-manage-pages>
                             <button class="layer-btn delete-layer" data-index="${layerIndex}" data-layer-id="${layer["@id"] ?? layer.id}">Delete Layer</button>
                         </div>`
                         : ``}
