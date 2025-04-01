@@ -325,15 +325,23 @@ class AnnotoriousAnnotator extends HTMLElement {
       * TPEN3 wants them relative to Canvas dimensions.
       * When recieving Annotations to render convert the selectors so they are relative to the image and draw correctly.
       * When saving Annotations convert the selectors so they are relative to the canvas and save correctly.
+      *
+      * @param annotations - An Array of Annotations whose selectors need converted
+      * @param bool - A switch for forwards or backwards conversion
+      *
+      * @return the Array of Annotations with their selectors converted
     */
     convertSelectors(annotations, bool=false) {
+      if(!annotations || annotations.length === 0) return
       let orig_xywh, converted_xywh = []
       let tar, sel = ""
       return annotations.map(annotation => {
+        if(!annotation.target) return
         if(bool) {
           /**
            * You are converting for Annotorious.  Selectors need to be changed to be relative to the Image dimensions.
            * This is so that they render correctly.  TPEN3 selectors are relative to the Canvas dimensions.
+           * The target is in simplified TPEN3 format. uri#xywh=
           */
           tar = annotation.target.split("#xywh=")[0]
           orig_xywh = annotation.target.split("#xywh=")[1].split(",")
@@ -350,6 +358,7 @@ class AnnotoriousAnnotator extends HTMLElement {
           /**
            * You are converting for TPEN3.  Selectors need to be changed to be relative to the Canvas dimensions.
            * This is so that they save correctly.  Annotorious selectors are relative to the Image dimensions.
+           * The target is in expanded Annotatorious format. {source:"uri", selector:{value:"xywh="}}
           */
           tar = annotation.target.source
           orig_xywh = annotation.target.selector.value.replace("xywh=pixel:", "").split(",")
