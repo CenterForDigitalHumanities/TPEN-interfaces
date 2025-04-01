@@ -356,7 +356,7 @@ class AnnotoriousAnnotator extends HTMLElement {
           /**
            * You are converting for TPEN3.  Selectors need to be changed to be relative to the Canvas dimensions.
            * This is so that they save correctly.  Annotorious selectors are relative to the Image dimensions.
-           * The target is in expanded Annotatorious format. {source:"uri", selector:{value:"xywh="}}
+           * The target is in expanded Annotorious format. {source:"uri", selector:{value:"xywh="}}
           */
           tar = annotation.target.source
           orig_xywh = annotation.target.selector.value.replace("xywh=pixel:", "").split(",")
