@@ -332,11 +332,12 @@ class AnnotoriousAnnotator extends HTMLElement {
       * @return the Array of Annotations with their selectors converted
     */
     convertSelectors(annotations, bool=false) {
-      if(!annotations || annotations.length === 0) return
+      if(this.#imageDims[0] === this.#canvasDims[0] && this.#imageDims[1] === this.#canvasDims[1]) return annotations
+      if(!annotations || annotations.length === 0) return annotations
       let orig_xywh, converted_xywh = []
       let tar, sel = ""
       return annotations.map(annotation => {
-        if(!annotation.target) return
+        if(!annotation.target) return annotation
         if(bool) {
           /**
            * You are converting for Annotorious.  Selectors need to be changed to be relative to the Image dimensions.
@@ -358,7 +359,6 @@ class AnnotoriousAnnotator extends HTMLElement {
            * This is so that they save correctly.  Annotorious selectors are relative to the Image dimensions.
            * The target is in expanded Annotorious format. {source:"uri", selector:{value:"xywh="}}
           */
-          tar = annotation.target.source
           orig_xywh = annotation.target.selector.value.replace("xywh=pixel:", "").split(",")
           converted_xywh[0] = parseInt((this.#canvasDims[0] / this.#imageDims[0]) * parseInt(orig_xywh[0]))
           converted_xywh[1] = parseInt((this.#canvasDims[1] / this.#imageDims[1]) * parseInt(orig_xywh[1]))
