@@ -120,6 +120,23 @@ class ProjectLayers extends HTMLElement {
                     background: #007bff;
                     color: white;
                 }
+                .page-id {
+                    margin: 0 auto;
+                }
+                .layer-card-flex {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 10px;
+                }
+                .delete-page {
+                    margin-top: 0;
+                    background: #dc3545;
+                    color: white;
+                }
+                .layer-actions-margin {
+                    margin-top: 20px;
+                }
             </style>
 
             <h1 class="layer-title">Add Layers</h1>
@@ -145,7 +162,11 @@ class ProjectLayers extends HTMLElement {
                         ${layer.pages
                             .map(
                                 (page, pageIndex) =>
-                                    `<p class="layer-page" data-index="${pageIndex}">${page["@id"] ?? page.id ?? page.map((page) => page["@id"] ?? page.id )}</p>`
+                                `
+                                <div class="layer-page" data-index="${pageIndex}">
+                                    <p class="page-id" data-index="${pageIndex}">${page["@id"] ?? page.id ?? page.map((page) => page["@id"] ?? page.id )}</p>
+                                </div>
+                                `
                                 )
                             .join("")}
                         </div>

@@ -90,12 +90,27 @@ class ManagePages extends HTMLElement {
                 const layer_id = layerId.substring(layerId.lastIndexOf("/") + 1)
                 const layerCardOuter = mainParent.shadowRoot.querySelector(`.layer-card-outer[data-index="${layerIndex}"]`)
 
+                const layerActions = layerCardOuter.querySelector(".layer-actions")
+                layerActions.classList.add("layer-actions-margin")
+
                 layerCardOuter.querySelector(".layer-pages").classList.add("layer-container")
                 layerCardOuter.querySelectorAll(".layer-page")
                 .forEach(el => { 
-                    el.classList.add("layer-card")
-                    el.setAttribute("draggable", "true")}
-                )
+                    el.classList.add("layer-card", "layer-card-flex")
+                    el.setAttribute("draggable", "true")
+
+                    const deleteButton = document.createElement("button")
+                    deleteButton.className = "layer-btn delete-page"
+                    deleteButton.dataset.index = layerIndex
+                    deleteButton.dataset.layerId = layerId
+                    deleteButton.innerText = "Delete"
+                    el.insertBefore(deleteButton, el.lastChild).insertAdjacentElement("afterend", deleteButton)
+
+                    deleteButton.addEventListener("click", () => {
+                        layerCardOuter.querySelector(".layer-pages").removeChild(el)
+                        layers[layerIndex].pages.splice(el.dataset.index, 1)
+                    })
+                })
 
                 const labelDiv = layerCardOuter.querySelector(".layer-label-div")
                 labelDiv.style.display = "flex"
@@ -112,9 +127,9 @@ class ManagePages extends HTMLElement {
                 saveButton.className = "layer-btn save-pages"
                 saveButton.dataset.index = layerIndex
                 saveButton.dataset.layerId = layerId
-                saveButton.innerText = "Save"
-                layerCardOuter.querySelector(".layer-actions").insertBefore(saveButton, layerCardOuter.querySelector(".layer-actions").firstChild)
-                layerCardOuter.querySelector(".layer-actions").removeChild(layerCardOuter.querySelector("tpen-manage-pages"))
+                saveButton.innerText = "Save Pages"
+                layerActions.insertBefore(saveButton, layerActions.firstChild)
+                layerActions.removeChild(layerCardOuter.querySelector("tpen-manage-pages"))
                 this.rearrangePages(layerIndex, layerCardOuter)
 
                 editButton.addEventListener("click", () => {
@@ -134,7 +149,7 @@ class ManagePages extends HTMLElement {
                     saveLabelButton.style.marginTop = "0"
                     saveLabelButton.dataset.index = layerIndex
                     saveLabelButton.dataset.layerId = layerId
-                    saveLabelButton.innerText = "Save"
+                    saveLabelButton.innerText = "Save Label"
                     labelInput.insertAdjacentElement("afterend", saveLabelButton)
 
                     saveLabelButton.addEventListener("click", () => {
@@ -215,9 +230,9 @@ class ManagePages extends HTMLElement {
                     const targetPage = layer.pages[targetIndex]
                     layer.pages[draggedIndex] = targetPage
                     layer.pages[targetIndex] = draggedPage
-                    let temp = cards[targetIndex].textContent
-                    cards[targetIndex].textContent = cards[draggedIndex].textContent
-                    cards[draggedIndex].textContent = temp
+                    let temp = cards[targetIndex].querySelector(".page-id").textContent
+                    cards[targetIndex].querySelector(".page-id").textContent = cards[draggedIndex].querySelector(".page-id").textContent
+                    cards[draggedIndex].querySelector(".page-id").textContent = temp
                     layers[layerIndex] = layer
                 }
                 card.style.border = "none"
