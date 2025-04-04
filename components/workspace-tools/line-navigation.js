@@ -1,33 +1,33 @@
-import { eventDispatcher } from "../../api/events.js"
+import TPEN from "../../api/TPEN.js"
 
 export default class LineNavigation extends HTMLElement {
-  constructor() {
-    super()
-    this.attachShadow({ mode: "open" })
-  }
-
-  connectedCallback() {
-    this.render()
-    this.addListeners()
-  }
-
-  addListeners() {
-    const prevButton = this.shadowRoot.querySelector(".prev-button")
-    const nextButton = this.shadowRoot.querySelector(".next-button")
-    if (prevButton) {
-      prevButton.addEventListener("click", () => {
-        eventDispatcher.dispatch("tpen-line-previous")
-      })
+    constructor() {
+        super()
+        this.attachShadow({ mode: "open" })
     }
-    if (nextButton) {
-      nextButton.addEventListener("click", () => {
-        eventDispatcher.dispatch("tpen-line-next")
-      })
-    }
-  }
 
-  render() {
-    this.shadowRoot.innerHTML = `
+    connectedCallback() {
+        this.render()
+        this.setupListeners()
+    }
+
+    setupListeners() {
+        const prevButton = this.shadowRoot.querySelector(".prev-button")
+        const nextButton = this.shadowRoot.querySelector(".next-button")
+        if (prevButton) {
+            prevButton.addEventListener("click", () => {
+                TPEN.eventDispatcher.dispatch("tpen-line-previous")
+            })
+        }
+        if (nextButton) {
+            nextButton.addEventListener("click", () => {
+                TPEN.eventDispatcher.dispatch("tpen-line-next")
+            })
+        }
+    }
+
+    render() {
+        this.shadowRoot.innerHTML = `
       <style>
         .line-navigation {
           display: flex
@@ -54,7 +54,7 @@ export default class LineNavigation extends HTMLElement {
         <button class="next-button">Next Line</button>
       </div>
     `
-  }
+    }
 }
 
 customElements.define("tpen-line-navigation", LineNavigation)

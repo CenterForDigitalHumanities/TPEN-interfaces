@@ -1,5 +1,4 @@
 import TPEN from "../../api/TPEN.js"
-import { eventDispatcher } from "../../api/events.js"
 
 export default class WorkspaceContainer extends HTMLElement {
   constructor() {
@@ -13,20 +12,20 @@ export default class WorkspaceContainer extends HTMLElement {
   }
 
   setupListeners() {
-    // Listen for the active line event via eventDispatcher
-    eventDispatcher.on("tpen-active-line", () => {
+    // Listen for the active line event via TPEN.eventDispatcher
+    TPEN.eventDispatcher.on("tpen-active-line", () => {
       this.updateSubcomponents()
     })
 
     // Listen for a reset event to reset workspace
-    eventDispatcher.on("tpen-reset-workspace", () => {
+    TPEN.eventDispatcher.on("tpen-reset-workspace", () => {
       this.resetWorkspace()
     })
 
     // Global keydown listener for ESC key that dispatches a reset event
     window.addEventListener("keydown", (e) => {
       if (e.key === "Escape") {
-        eventDispatcher.dispatch("tpen-reset-workspace")
+        TPEN.eventDispatcher.dispatch("tpen-reset-workspace")
       }
     })
   }

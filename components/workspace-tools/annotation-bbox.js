@@ -1,37 +1,34 @@
 import TPEN from "../../api/TPEN.js"
-import { eventDispatcher } from "../../api/events.js"
-
 export default class AnnotationBbox extends HTMLElement {
   constructor() {
     super()
     this.attachShadow({ mode: "open" })
-    this.activeLine = null
+    this.line = null
     this.suppressed = false
   }
 
   connectedCallback() {
-    eventDispatcher.on("tpen-active-line", (e) => {
-      this.activeLine = TPEN.activeLine
+    TPEN.eventDispatcher.on("tpen-active-line", (e) => {
+      this.line = TPEN.activeLine
       this.render()
     })
-    eventDispatcher.on("tpen-hide-annotation-bbox", () => {
+    TPEN.eventDispatcher.on("tpen-hide-annotation-bbox", () => {
       this.suppressed = true
       this.render()
     })
-    eventDispatcher.on("tpen-show-annotation-bbox", () => {
+    TPEN.eventDispatcher.on("tpen-show-annotation-bbox", () => {
       this.suppressed = false
       this.render()
     })
-    this.render()
   }
 
   render() {
-    if (this.suppressed || !this.activeLine) {
+    if (this.suppressed || !this.line) {
       this.shadowRoot.innerHTML = ""
       return
     }
     // Assume activeLine has a bbox property: { x, y, width, height } in percentages
-    const { bbox } = this.activeLine
+    const { bbox } = this.line
     const margin = 2
     const left = bbox.x - margin
     const top = bbox.y - margin
