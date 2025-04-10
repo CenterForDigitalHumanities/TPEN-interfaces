@@ -99,10 +99,13 @@ class TpenFeedback extends HTMLElement {
     })
   }
 
+  /**
+   * Actually create a GitHub Issue containing the feedback using TPEN Services.
+  */
   async submitFeedback(data, type) {
     const endpoint = type === "feedback" 
-      ? `${TPEN.servicesURL}/submit/feedback`
-      : `${TPEN.servicesURL}/submit/bug`
+      ? `${TPEN.servicesURL}/beta/feedback`
+      : `${TPEN.servicesURL}/beta/bug`
 
     const response = await fetch(endpoint, {
       method: "POST",
