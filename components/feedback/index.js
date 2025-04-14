@@ -107,6 +107,14 @@ class TpenFeedback extends HTMLElement {
       ? `${TPEN.servicesURL}/beta/feedback`
       : `${TPEN.servicesURL}/beta/bug`
 
+    if (type === "bug") {
+      data.bugDescription = data.description
+      delete data.description
+    }
+    if (type === "feedback") {
+      data.feedback = data.description
+      delete data.description
+    }
     const response = await fetch(endpoint, {
       method: "POST",
       headers: {
