@@ -167,14 +167,13 @@ class UserProfile extends HTMLElement {
                     <span class="user-email-text" id="emailText">loading...</span>
                     <input type="email" class="user-email-input" name="email" id="emailInput" style="display: none;" required />
                 </p>
+                <p class="user-public-profile"><em class="user-em">Public Profile:</em><pre class="user-pre" id="profile">loading...</pre></p>
+                ${showMetadata ? `<p class="user-metadata"><em class="user-em">Metadata:</em><pre class="user-pre" id="metadata">loading...</pre></p>` : ''}
                 <div class="btn-container">
                     <button class="default-btn" id="editBtn">Update Profile</button>
                     <button class="default-btn" id="saveBtn" style="display: none;">Save</button>
                     <button class="default-btn" id="cancelBtn" style="display: none;">Cancel</button>
                 </div>
-    
-                <p class="user-public-profile"><em class="user-em">Public Profile:</em><pre class="user-pre" id="profile">loading...</pre></p>
-                ${showMetadata ? `<p class="user-metadata"><em class="user-em">Metadata:</em><pre class="user-pre" id="metadata">loading...</pre></p>` : ''}
             </div>
         `
     
