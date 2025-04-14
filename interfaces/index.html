@@ -10,75 +10,29 @@
     <script type="module" src="../components/projects/index.js"></script>
     <script type="module" src="../components/projects/project-list-view.js"></script>
     <script type="module" src="../components/user-profile/index.js"></script>
+    <script type="module" src="../components/gui/site/index.js"></script>
+    <script type="module" src="../components/gui/card/Card.js"></script>
 
-    <style>
-        .container {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 10px;
-            padding: 20px;
-            margin: 25px auto;
-            width: 90%;
-        }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .card-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 10px;
-        }
-
-        .card {
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            padding: 10px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            max-height: 400px;
-            overflow-y: scroll;
-        }
-
-        /* Custom scrollbar */
-        .card::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .card::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 10px;
-        }
-
-        .card::-webkit-scrollbar-thumb {
-            background: #888;
-            border-radius: 10px;
-        }
-
-        .card::-webkit-scrollbar-thumb:hover {
-            background: #555;
-        }
-
-        .longer-card {
-            min-width: 500px;
-        }
-    </style>
 </head>
 
 <body>
-    <div class="container">
-        <div class="header">
-            <div class="logo">TPEN Logo</div>
-            <tpen-user-profile></tpen-user-profile>
+    <tpen-page>
+        <tpen-user-profile></tpen-user-profile>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); grid-gap: .5em;">
+            <tpen-card>
+                <h2 slot="header">My Projects</h2>
+                <tpen-projects-view slot="body" class="card"></tpen-projects-view>
+            </tpen-card>
+            <tpen-card>
+                <h2 slot="header">My Actions</h2>
+                <tpen-new-action slot="body" class="card"></tpen-new-action>
+            </tpen-card>
+            <tpen-card>
+                <h2 slot="header">Continue Working</h2>
+                <tpen-continue-working slot="body" class="card longer-card"></tpen-continue-working>
+            </tpen-card>
         </div>
-        <div class="card-container">
-            <tpen-projects-view class="card"></tpen-projects-view>
-            <tpen-new-action class="card"></tpen-new-action>
-            <tpen-continue-working class="card longer-card"></tpen-continue-working>
-        </div>
-    </div>
+    </tpen-page>
 </body>
 
 </html>
