@@ -205,7 +205,7 @@ class UserProfile extends HTMLElement {
         })
     
         saveBtn.addEventListener('click', async () => {
-            const newName = encodeURI(nameInput.value.trim())
+            const newName = nameInput.value.trim()
     
             if (!/^[a-zA-Z0-9\s._'-@#]+$/.test(newName)) {
                 return TPEN.eventDispatcher.dispatchEvent(
