@@ -84,14 +84,14 @@ class TpenFeedback extends HTMLElement {
       try {
         const feedbackType = this.shadowRoot.getElementById("feedback-type").value
         await this.submitFeedback(feedbackData, feedbackType)
-        TPEN.eventDispatcher.dispatch("toast", {
+        TPEN.eventDispatcher.dispatch("tpen-toast", {
           message: "Feedback submitted successfully!",
           type: "success"
         })
         this.shadowRoot.getElementById("feedback-description").value = ""
       } catch (error) {
         console.error("Error submitting feedback:", error)
-        TPEN.eventDispatcher.dispatch("toast", {
+        TPEN.eventDispatcher.dispatch("tpen-toast", {
           message: "Failed to submit feedback. Please try again.",
           type: "error"
         })
