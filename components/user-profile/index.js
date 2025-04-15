@@ -223,7 +223,7 @@ class UserProfile extends HTMLElement {
                 )
             }
 
-            const response = await fetch(`${TPEN.servicesURL}/my/profile/${this.user._id}/update`, {
+            const response = await fetch(`${TPEN.servicesURL}/my/profile`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
