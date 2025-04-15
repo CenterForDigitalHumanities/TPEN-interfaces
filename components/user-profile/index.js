@@ -68,6 +68,7 @@ class UserProfile extends HTMLElement {
                     background-color: #ffffff;
                     color: #2c2c2c;
                     line-height: 1.6;
+                    width: 30%;
                 }
 
                 .user-name, .user-email, .user-public-profile, .user-metadata {
