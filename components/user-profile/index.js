@@ -208,6 +208,14 @@ class UserProfile extends HTMLElement {
         saveBtn.addEventListener('click', async () => {
             const newName = nameInput.value.trim()
     
+            if (!/^[a-zA-Z\s]+$/.test(newName)) {
+                return TPEN.eventDispatcher.dispatchEvent(
+                    new CustomEvent('tpen-toast', {
+                      detail: { message: 'Please enter a valid name', status: "error" }
+                    })
+                )
+            }
+
             if (!newName) {
                 return TPEN.eventDispatcher.dispatchEvent(
                     new CustomEvent('tpen-toast', {
