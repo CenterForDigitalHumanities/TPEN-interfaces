@@ -166,7 +166,6 @@ class UserProfile extends HTMLElement {
                 </p>
                 <p class="user-email"><em class="user-em">Email:</em> 
                     <span class="user-email-text" id="emailText">loading...</span>
-                    <input type="email" class="user-email-input" name="email" id="emailInput" style="display: none;" required />
                 </p>
                 <p class="user-public-profile"><em class="user-em">Public Profile:</em><pre class="user-pre" id="profile">loading...</pre></p>
                 ${showMetadata ? `<p class="user-metadata"><em class="user-em">Metadata:</em><pre class="user-pre" id="metadata">loading...</pre></p>` : ''}
@@ -181,7 +180,6 @@ class UserProfile extends HTMLElement {
         const nameText = this.shadowRoot.querySelector('#nameText')
         const emailText = this.shadowRoot.querySelector('#emailText')
         const nameInput = this.shadowRoot.querySelector('#nameInput')
-        const emailInput = this.shadowRoot.querySelector('#emailInput')
         const editBtn = this.shadowRoot.querySelector('#editBtn')
         const saveBtn = this.shadowRoot.querySelector('#saveBtn')
         const cancelBtn = this.shadowRoot.querySelector('#cancelBtn')
@@ -189,12 +187,9 @@ class UserProfile extends HTMLElement {
     
         editBtn.addEventListener('click', () => {
             nameInput.value = nameText.textContent
-            emailInput.value = emailText.textContent
-    
             nameText.style.display = 'none'
             emailText.style.display = 'none'
             nameInput.style.display = 'inline-block'
-            emailInput.style.display = 'inline-block'
             divBtn.style.justifyContent = 'flex-end'
             editBtn.style.display = 'none'
             saveBtn.style.display = 'inline-block'
@@ -203,7 +198,6 @@ class UserProfile extends HTMLElement {
     
         cancelBtn.addEventListener('click', () => {
             nameInput.style.display = 'none'
-            emailInput.style.display = 'none'
             nameText.style.display = 'inline'
             emailText.style.display = 'inline'
             editBtn.style.display = 'inline-block'
@@ -213,12 +207,11 @@ class UserProfile extends HTMLElement {
     
         saveBtn.addEventListener('click', async () => {
             const newName = nameInput.value.trim()
-            const newEmail = emailInput.value.trim()
     
-            if (!newName || !newEmail) {
+            if (!newName) {
                 return TPEN.eventDispatcher.dispatchEvent(
                     new CustomEvent('tpen-toast', {
-                      detail: { message: 'Please enter a valid name and email', status: "error" }
+                      detail: { message: 'Please enter a valid name', status: "error" }
                     })
                 )
             }
@@ -229,7 +222,7 @@ class UserProfile extends HTMLElement {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${TPEN.getAuthorization()}`
                 },
-                body: JSON.stringify({ name: newName, email: newEmail })
+                body: JSON.stringify({ displayName: newName })
             })
 
             if (!response.ok) {
@@ -242,9 +235,7 @@ class UserProfile extends HTMLElement {
             }
     
             nameText.textContent = newName
-            emailText.textContent = newEmail
             nameInput.style.display = 'none'
-            emailInput.style.display = 'none'
             nameText.style.display = 'inline'
             emailText.style.display = 'inline'
             editBtn.style.display = 'inline-block'
