@@ -188,7 +188,6 @@ class UserProfile extends HTMLElement {
         editBtn.addEventListener('click', () => {
             nameInput.value = nameText.textContent
             nameText.style.display = 'none'
-            emailText.style.display = 'none'
             nameInput.style.display = 'inline-block'
             divBtn.style.justifyContent = 'flex-end'
             editBtn.style.display = 'none'
