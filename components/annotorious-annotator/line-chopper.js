@@ -244,23 +244,25 @@ class AnnotoriousAnnotator extends HTMLElement {
       annotator.on('clickAnnotation', (annotation, originalEvent) => {
         if(!annotation) return
         if(_this.#isErasing) return
-
+        this.lineChange(annotation, originalEvent)
       })
 
       /**
        * Intiate line chopper UX for 'column'
       */
-      anno.on('mouseEnterAnnotation', (annotation) => {
+      anno.on('mouseEnterAnnotation', (annotation, originalEvent) => {
         console.log('Mouse entered: ' + annotation.id)
         #isChopping = annotation.id
+        this.applyRuler(annotation, originalEvent)
       })
 
       /**
        * Quit line chopper UX for 'column'
       */
-      anno.on('mouseLeaveAnnotation', (annotation) => {
+      anno.on('mouseLeaveAnnotation', (annotation, originalEvent) => {
         console.log('Mouse left: ' + annotation.id)
-        #isChopping = false
+        this.#isChopping = false
+        this. removeRuler(annotation, originalEvent)
       })
 
     }
@@ -604,221 +606,128 @@ class AnnotoriousAnnotator extends HTMLElement {
       }
       TPEN.eventDispatcher.dispatch("tpen-toast", toast)
     }
+
+    /**
+     * Adds a line by splitting the current line where it was clicked.
+     *
+     * @param e clicked line element
+     * @see organizePage(e)
+     */
+    splitLine(line, event) {
+      if(!this.#isDrawing) return
+      let originalLineHeight = line.style.height
+      document.querySelectorAll(".parsing").forEach(e => e.classList.setAttribute("newline", "false"))
+      line.after(newLine)
+      progress.innerText ="Line Added"
+    }
+
+    /**
+     * Change the ruler UI color, images have all kinds of colors to contrast against.
+     */
+    rulerColor(color) {
+      if (color === "custom") {
+          color = $("#customRuler").val();
+          if (validTextColor(color)) {
+
+          } else {
+              color = "red";
+          }
+      }
+      ruler1.style.color = color
+      ruler1.style.background = color
+      sampleRuler.style.color = color
+      sampleRuler.style.background = color
+    }
+
+    /**
+     * Mouseover / mousemove needs to do the ruler UI
+     */
+    applyRuler(line, deleteOnly) {
+      let hottip = "Add a Line" || "Merge Line" || "Delete Line"
+      imageTip.innerText = hottip
+      switch(hottip){
+        case "Add a Line":
+          line.style.cursor = "crosshair"
+          ruler1.classList.remove("is-hidden")
+        break
+        case "Merge a Line":
+          if (line.getAttribute("lineleft") == line.nextElementSibling.attr("lineleft")) {
+              line.nextElementSibling.classList.add("deletable")
+          }
+          line.classList.add("deletable")
+          if (document.querySelectorAll(".deletable").length > 1) {
+              document.querySelectorAll(".deletable").forEach(e => e.classList.add("mergeable"))
+          } 
+          else {
+              // This is a delete maybe?
+          }
+          line.style.cursor = "cell" //all the lines should get this cursor when merging
+        break
+        case "Delete a Line":
+          if (line.getAttribute("lineleft") !== line.nextElementSibling.getAttribute("lineleft")) {
+              line.classList.add('deletable')
+              //only let the deleted line get this cursor when deleting
+              line.style.cursor = "pointer"
+          } 
+          else {
+              //other lines get the "can't do it" cursor
+              line.style.cursor = "not-allowed"
+          }
+          break
+      }
+
+      line.addEventListener('mousemove', function (e) {
+          let imgTopOffset = $("#imgTop").offset().left //helps because we can center the interface with this and it will still work.
+          let myLeft = line.position().left + imgTopOffset
+          let myWidth = line.width()
+          imageTip.classList.remove("is-hidden").style({
+              left: e.pageX,
+              top: e.pageY + 20
+          })
+          ruler1.style({
+              left: myLeft,
+              top: e.pageY,
+              height: '1px',
+              width: myWidth
+          })
+      })
+    }
+
+    /*
+     * Hides ruler within parsing tool. Called on mouseleave .parsing.
+     */
+    removeRuler(line) {
+      if(!#isDrawing) {
+        document.querySelectorAll(".deletable").forEach(e => {
+          e.classList.remove("deleteable")
+          e.classList.remove("mergeable")
+        })
+      }
+      imageTip.classList.add("is-hidden")
+      ruler1.classList.add("is-hidden")
+    }
+
+    /**
+     * Triggered when a user alters a line to either create a new one or destroy one with the mouseclick
+     */
+    lineChange(e, event, deleteOnly) {
+      parsingCover.classList.remove("is-hidden")
+      if (#isDrawing) {
+          splitLine(e, event)
+      } 
+      else {
+          //merge the line you clicked with the line below.  Delete the line below and grow this line by that lines height.
+          removeLine(e, false, deleteOnly)
+      }
+    }
+
+    /**
+     * Removes clicked line, merges if possible with the following line.
+     * TODO
+     */
+    removeLine(e, columnDelete, deleteOnly) {
+
+    }
 }
 
 customElements.define('tpen-line-chopper-annotator', AnnotoriousAnnotator)
-
-/**
- * Adds a line by splitting the current line where it was clicked.
- *
- * @param e clicked line element
- * @see organizePage(e)
- */
-function splitLine(e, event) {
-    //e is the line that was clicked in
-    //This is where the click happened relative to img top.  In other words, where the click happened among the lines.
-    var originalLineHeight = $(e).height(); //-1 take one px off for the border
-    $(".parsing").attr("newline", "false");
-    var originalLineTop = $(e).offset().top - $("#imgTop").offset().top; // +1 Move down one px for the border.
-    var clickInLines = event.pageY - $("#imgTop").offset().top;
-    var lineOffset = $(e).offset().top - $("#imgTop").offset().top;
-    var oldLineHeight = (clickInLines - lineOffset) / $("#imgTop").height() * 100;
-    var newLineHeight = (originalLineHeight - (clickInLines - originalLineTop)) / $("#imgTop").height() * 100;
-    var newLineTop = (clickInLines / $("#imgTop").height()) * 100;
-    var newLine = $(e).clone(true);
-    var originalLine = $(e).clone(true);
-    $(e).css({
-        "height": oldLineHeight + "%"
-    }).attr({
-        "newline": true,
-        "lineheight": oldLineHeight
-    });
-    $(newLine).css({
-        "height": newLineHeight + "%",
-        "top": newLineTop + "%"
-    }).attr({
-        "newline": true,
-        "linetop": newLineTop,
-        "lineheight": newLineHeight
-    });
-    $(e).after(newLine);
-    var currentLine = $(".transcriptlet[lineserverid='" + $(e).attr('lineserverid') + "']");
-    if (currentLine.length === 0) {
-        //There may be no transcriptlets yet.  if the user cleared their lines and started from scratch, .transcriptlet won't be here until there is a drawLinesDesignateColumns();
-        //This is a little sketchy, we should optimize things so there isn't confusion here.
-        currentLine = originalLine; //We have to pass the .parsing line in this case, which is the orignal $(e), that way all the values are correct.
-    }
-    currentLine.attr("lineheight", oldLineHeight);
-    var newNum = -1;
-    $.each($(".parsing"), function () {
-        newNum++;
-        $(this).attr("lineid", newNum);
-    });
-    saveNewLine(currentLine, newLine);
-    $("#progress").html("Line Added").fadeIn(1000).delay(3000).fadeOut(1000);
-}
-
-/**
- * Removes clicked line, merges if possible with the following line.
- * updateLine(e,additionalParameters) handles the original, resized line.
- *
- * @param e clicked line element from lineChange(e) via saveNewLine(e)
- * @see lineChange(e)
- * @see saveNewLine(e)
- */
-function removeLine(e, columnDelete, deleteOnly) {
-    $("#imageTip").hide();
-    var removedLine = $(e);
-    if (columnDelete) {
-        var lineID = "";
-        removedLine.remove();
-        return false;
-    } else {
-        if ($(e).attr("lineleft") == $(e).next(".parsing").attr("lineleft")) { //merge
-            if (!deleteOnly) { //if user clicked to remove a line, then do not allow merging.  Only delete the last line.
-                removedLine = $(e).next();
-                var removedLineHeight = removedLine.height();
-                var currentLineHeight = $(e).height();
-                var newLineHeight = removedLineHeight + currentLineHeight;
-                var convertedNewLineHeight = newLineHeight / $("#imgTop").height() * 100;
-                var transcriptletToUpdate = $(".transcriptlet[lineserverid='" + $(e).attr('lineserverid') + "']");
-                $(e).css({
-                    "height": convertedNewLineHeight + "%",
-                    "top": $(e).css("top")
-                }).addClass("newDiv").attr({
-                    "lineheight": convertedNewLineHeight
-                });
-                transcriptletToUpdate.attr("lineheight", convertedNewLineHeight); //Need to put this on the transcriptlet so updateLine() passes the correct value.
-            } else { //User is trying to delete a line that is not the last line, do nothing
-                //removedLine = $(e);
-                //tpen.screen.isDestroyingLine = true;
-                $("#parsingCover").hide();
-                return false;
-            }
-        } else { //user is deleting a line, could be merge or delete mode
-            if (deleteOnly) { //this would mean it is delete happening in delete mode, so allow it.
-
-            } else { //this would mean it is a delete happening in merge mode.
-                alert("To delete a line, deactivate 'Merge Lines' and activate 'Delete Last Line'.");
-                $("#parsingCover").hide();
-                return false;
-            }
-        }
-        var params = new Array({name: "remove", value: removedLine.attr("lineserverid")});
-
-        if (deleteOnly) { //if we are in delete mode deleting a line
-            if ($(e).hasClass("deletable")) {
-                var cfrm = confirm("Removing this line will remove any data contained as well.\n\nContinue?");
-                if (!cfrm) {
-                    $("#parsingCover").hide();
-                    return false;
-                }
-                removeTranscriptlet(removedLine.attr("lineserverid"), $(e).attr("lineserverid"), true, "cover");
-                removedLine.remove();
-                return params;
-            } else {
-                $("#parsingCover").hide();
-                return false;
-            }
-        } else { //we are in merge mode merging a line, move forward with this functionality.
-            removeTranscriptlet(removedLine.attr("lineserverid"), $(e).attr("lineserverid"), true, "cover");
-            removedLine.remove();
-            //$("#parsingCover").hide();
-            return params;
-        }
-
-    }
-}
-
-//Change the ruler color.
-function rulerColor(color) {
-  if (color === "custom") {
-      color = $("#customRuler").val();
-      if (validTextColor(color)) {
-
-      } else {
-          color = "red";
-      }
-  }
-  ruler1.style.color = color
-  ruler1.style.background = color
-  sampleRuler.style.color = color
-  sampleRuler.style.background = color
-}
-
-//Turn the ruler on
-function applyRuler(line, deleteOnly) {
-  let hottip = "Add a Line" || "Merge Line" || "Delete Line"
-  imageTip.innerText = hottip
-  switch(hottip){
-    case "Add a Line":
-      line.style.cursor = "crosshair"
-      ruler1.classList.remove("is-hidden")
-    break
-    case "Merge a Line":
-      if (line.getAttribute("lineleft") == line.nextElementSibling.attr("lineleft")) {
-          line.nextElementSibling.classList.add("deletable")
-      }
-      line.classList.add("deletable")
-      if (document.querySelectorAll(".deletable").length > 1) {
-          document.querySelectorAll(".deletable").forEach(e => e.classList.add("mergeable"))
-      } 
-      else {
-          // This is a delete maybe?
-      }
-      line.style.cursor = "cell" //all the lines should get this cursor when merging
-    break
-    case "Delete a Line":
-      if (line.getAttribute("lineleft") !== line.nextElementSibling.getAttribute("lineleft")) {
-          line.classList.add('deletable')
-          //only let the deleted line get this cursor when deleting
-          line.style.cursor = "pointer"
-      } 
-      else {
-          //other lines get the "can't do it" cursor
-          line.style.cursor = "not-allowed"
-      }
-      break
-  }
-
-  line.addEventListener('mousemove', function (e) {
-      let imgTopOffset = $("#imgTop").offset().left //helps because we can center the interface with this and it will still work.
-      let myLeft = line.position().left + imgTopOffset
-      let myWidth = line.width()
-      imageTip.classList.remove("is-hidden").style({
-          left: e.pageX,
-          top: e.pageY + 20
-      })
-      ruler1.style({
-          left: myLeft,
-          top: e.pageY,
-          height: '1px',
-          width: myWidth
-      })
-  })
-}
-/*
- * Hides ruler within parsing tool. Called on mouseleave .parsing.
- */
-function removeRuler(line) {
-  if(!#isDrawing) {
-    document.querySelectorAll(".deletable").forEach(e => {
-      e.classList.remove("deleteable")
-      e.classList.remove("mergeable")
-    })
-  }
-  imageTip.classList.add("is-hidden")
-  ruler1.classList.add("is-hidden")
-}
-
-//Triggered when a user alters a line to either create a new one or destroy one.
-function lineChange(e, event, deleteOnly) {
-    parsingCover.classList.remove("is-hidden")
-    if (#isDrawing) {
-        splitLine(e, event)
-    } 
-    else {
-        //merge the line you clicked with the line below.  Delete the line below and grow this line by that lines height.
-        removeLine(e, false, deleteOnly)
-    }
-}
