@@ -7,8 +7,7 @@
     <title>Projects Interface</title>
     <script type="module" src="../components/new-action.js"></script>
     <script type="module" src="../components/continue-working/index.js"></script>
-    <script type="module" src="../components/projects/index.js"></script>
-    <script type="module" src="../components/projects/project-list-view.js"></script>
+    <script type="module" src="../components/projects/list-navigation.js"></script>
     <script type="module" src="../components/user-profile/index.js"></script>
     <script type="module" src="../components/gui/site/index.js"></script>
     <script type="module" src="../components/gui/card/Card.js"></script>
@@ -21,7 +20,7 @@
         <div style="display: grid; grid-template-columns: repeat(3, 1fr); grid-gap: .5em;">
             <tpen-card>
                 <h2 slot="header">My Projects</h2>
-                <tpen-projects-view slot="body" class="card"></tpen-projects-view>
+                <tpen-projects-list-navigation slot="body" class="card"></tpen-projects-list-navigation>
             </tpen-card>
             <tpen-card>
                 <h2 slot="header">My Actions</h2>
