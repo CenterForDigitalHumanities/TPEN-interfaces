@@ -57,7 +57,11 @@ class AnnotoriousAnnotator extends HTMLElement {
             <div id="tools-container">
               <p> You can zoom and pan when you are not drawing.</p>
               <label for="drawTool">Draw Mode
-               <input  type="checkbox" id="drawTool">
+               <input type="checkbox" id="drawTool">
+              </label>
+              <br>
+              <label for="chopTool">Chop Mode
+               <input type="checkbox" id="chopTool">
               </label>
               <br>
               <label> Erase Mode
@@ -75,10 +79,12 @@ class AnnotoriousAnnotator extends HTMLElement {
 
         `
       const drawTool = this.shadowRoot.getElementById("drawTool")
+      const chopTool = this.shadowRoot.getElementById("chopTool")
       const eraseTool = this.shadowRoot.getElementById("eraseTool")
       const seeTool = this.shadowRoot.getElementById("seeTool")
       const saveButton = this.shadowRoot.getElementById("saveBtn")
       drawTool.addEventListener("change", (e) => this.toggleDrawingMode(e))
+      chopTool.addEventListener("change", (e) => this.toggleChoppingMode(e))
       eraseTool.addEventListener("change", (e) => this.toggleErasingMode(e))
       seeTool.addEventListener("change", (e) => this.toggleAnnotationVisibility(e))
       saveButton.addEventListener("click", (e) => this.saveAnnotations(e))
@@ -250,16 +256,16 @@ class AnnotoriousAnnotator extends HTMLElement {
       /**
        * Intiate line chopper UX for 'column'
       */
-      anno.on('mouseEnterAnnotation', (annotation, originalEvent) => {
+      annotator.on('mouseEnterAnnotation', (annotation, originalEvent) => {
         console.log('Mouse entered: ' + annotation.id)
-        #isChopping = annotation.id
+        this.#isChopping = annotation.id
         this.applyRuler(annotation, originalEvent)
       })
 
       /**
        * Quit line chopper UX for 'column'
       */
-      anno.on('mouseLeaveAnnotation', (annotation, originalEvent) => {
+      annotator.on('mouseLeaveAnnotation', (annotation, originalEvent) => {
         console.log('Mouse left: ' + annotation.id)
         this.#isChopping = false
         this. removeRuler(annotation, originalEvent)
@@ -513,6 +519,11 @@ class AnnotoriousAnnotator extends HTMLElement {
       else { this.stopDrawing() }
     }
 
+    toggleChoppingMode(e) {
+      if(e.target.checked) this.startChopping()
+      else { this.stopChopping() }
+    }
+
     toggleErasingMode(e) {
       if(e.target.checked) this.startErasing()
       else { this.stopErasing() }
@@ -555,8 +566,10 @@ class AnnotoriousAnnotator extends HTMLElement {
     */ 
     startDrawing() {
       this.stopErasing()
+      this.stopChopping()
       this.#isDrawing = true
       this.shadowRoot.getElementById("eraseTool").checked = false
+      this.shadowRoot.getElementById("chopTool").checked = false
       this.#annotoriousInstance.setDrawingEnabled(true)
       const toast = {
         message: "You started drawing",
@@ -580,13 +593,44 @@ class AnnotoriousAnnotator extends HTMLElement {
     }
 
     /**
+     * Activate Annotorious annotation chopping mode.
+     * Clicking on an existing annotation will prompt the user about deleting the annotation.
+    */ 
+    startChopping() {
+      this.stopDrawing()
+      this.stopErasing()
+      this.shadowRoot.getElementById("eraseTool").checked = false
+      this.shadowRoot.getElementById("drawTool").checked = false
+      const toast = {
+        message: "You started chopping",
+        status: "info"
+      }
+      TPEN.eventDispatcher.dispatch("tpen-toast", toast)
+    }
+
+    /**
+     * Activate Annotorious annotation chopping mode.
+     * Clicking on an existing annotation will prompt the user about deleting the annotation.
+    */ 
+    stopChopping() {
+      this.#isChopping = false
+      const toast = {
+        message: "You started chopping",
+        status: "info"
+      }
+      TPEN.eventDispatcher.dispatch("tpen-toast", toast)
+    }
+
+    /**
      * Activate Annotorious annotation erasing mode.
      * Clicking on an existing annotation will prompt the user about deleting the annotation.
     */ 
     startErasing() {
       this.stopDrawing()
+      this.stopChopping()
       this.#isErasing = true
       this.shadowRoot.getElementById("drawTool").checked = false
+      this.shadowRoot.getElementById("chopTool").checked = false
       const toast = {
         message: "You started erasing",
         status: "info"
@@ -618,7 +662,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       let originalLineHeight = line.style.height
       document.querySelectorAll(".parsing").forEach(e => e.classList.setAttribute("newline", "false"))
       line.after(newLine)
-      progress.innerText ="Line Added"
+      progress.innerText = "Line Added"
     }
 
     /**
@@ -697,7 +741,7 @@ class AnnotoriousAnnotator extends HTMLElement {
      * Hides ruler within parsing tool. Called on mouseleave .parsing.
      */
     removeRuler(line) {
-      if(!#isDrawing) {
+      if(!this.#isDrawing) {
         document.querySelectorAll(".deletable").forEach(e => {
           e.classList.remove("deleteable")
           e.classList.remove("mergeable")
@@ -712,7 +756,7 @@ class AnnotoriousAnnotator extends HTMLElement {
      */
     lineChange(e, event, deleteOnly) {
       parsingCover.classList.remove("is-hidden")
-      if (#isDrawing) {
+      if (this.#isDrawing) {
           splitLine(e, event)
       } 
       else {
