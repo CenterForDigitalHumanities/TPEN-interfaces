@@ -26,6 +26,7 @@ class AnnotoriousAnnotator extends HTMLElement {
     #isDrawing = false
     #isChopping = false
     #isErasing = false
+    #chopType = ""
     
     static get observedAttributes() {
       return ["annotationpage"]
@@ -52,6 +53,9 @@ class AnnotoriousAnnotator extends HTMLElement {
             top: 4em;
             z-index: 10;
           }
+          input[type="button"].selected {
+            background-color: green;
+          }
         </style>
         <div>
             <div id="tools-container">
@@ -64,6 +68,11 @@ class AnnotoriousAnnotator extends HTMLElement {
                <input type="checkbox" id="chopTool">
               </label>
               <br>
+              <div class="chopOptions">
+                <input type="button" class="toggleChopType" id="addLinesBtn" value="Add Lines" />
+                <input type="button" class="toggleChopType" id="mergeLinesBtn" value="Merge Lines" />
+                <input type="button" class="toggleChopType" id="deleteLastLineBtn" value="Delete (Last) Line"/>
+              </div>
               <label> Erase Mode
                <input type="checkbox" id="eraseTool"> 
               </label>
@@ -83,6 +92,12 @@ class AnnotoriousAnnotator extends HTMLElement {
       const eraseTool = this.shadowRoot.getElementById("eraseTool")
       const seeTool = this.shadowRoot.getElementById("seeTool")
       const saveButton = this.shadowRoot.getElementById("saveBtn")
+      const addLinesBtn = this.shadowRoot.getElementById("addLinesBtn")
+      const mergeLinesBtn = this.shadowRoot.getElementById("mergeLinesBtn")
+      const deleteLinesBtn = this.shadowRoot.getElementById("deleteLastLineBtn")
+      addLinesBtn.addEventListener("click", (e) => this.toggleAddLines(e))
+      mergeLinesBtn.addEventListener("click", (e) => this.toggleMergeLines(e))
+      deleteLinesBtn.addEventListener("click", (e) => this.toggleDeleteLines(e))
       drawTool.addEventListener("change", (e) => this.toggleDrawingMode(e))
       chopTool.addEventListener("change", (e) => this.toggleChoppingMode(e))
       eraseTool.addEventListener("change", (e) => this.toggleErasingMode(e))
@@ -514,6 +529,39 @@ class AnnotoriousAnnotator extends HTMLElement {
       return canvasURI
     }
 
+    toggleAddLines(e){
+      if(e.target.classList.contains("selected")) {
+        e.target.classList.remove("selected")
+        this.#chopType = ""
+      }
+      else {
+        e.target.classList.add("selected")
+        this.#chopType = "Add Lines"
+      }
+    }
+
+    toggleMergeLines(e){
+      if(e.target.classList.contains("selected")) {
+        e.target.classList.remove("selected")
+        this.#chopType = ""
+      }
+      else {
+        e.target.classList.add("selected")
+        this.#chopType = "Merge Lines"
+      }
+    }
+
+    toggleDeleteLines(e){
+      if(e.target.classList.contains("selected")) {
+        e.target.classList.remove("selected")
+        this.#chopType = ""
+      }
+      else {
+        e.target.classList.add("selected")
+        this.#chopType = "Delete Lines"
+      }
+    }
+
     toggleDrawingMode(e) {
       if(e.target.checked) this.startDrawing()
       else { this.stopDrawing() }
@@ -601,6 +649,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       this.stopErasing()
       this.shadowRoot.getElementById("eraseTool").checked = false
       this.shadowRoot.getElementById("drawTool").checked = false
+      this.shadowRoot.querySelectorAll(".toggleChopType").forEach(el => {el.removeAttribute("selected")})
       const toast = {
         message: "You started chopping",
         status: "info"
@@ -614,6 +663,7 @@ class AnnotoriousAnnotator extends HTMLElement {
     */ 
     stopChopping() {
       this.#isChopping = false
+      this.#chopType = ""
       const toast = {
         message: "You started chopping",
         status: "info"
