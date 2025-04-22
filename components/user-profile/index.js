@@ -235,10 +235,9 @@ class UserProfile extends HTMLElement {
                 )
             }
             else {
-                TPEN.eventDispatcher.dispatch('tpen-toast', {
-                    message: "Profile updated!",
-                    status: "info"
-                })
+                TPEN.eventDispatcher.dispatch('tpen-toast', 
+                    { message: "Profile updated!", status: "info" }
+                )
             }
     
             nameText.textContent = newName
