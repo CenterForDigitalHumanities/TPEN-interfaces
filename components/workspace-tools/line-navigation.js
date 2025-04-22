@@ -1,9 +1,8 @@
 import TPEN from "../../api/TPEN.js"
-import { eventDispatcher } from "../../api/events.js"
 
 export default class LineNavButton extends HTMLElement {
   // The direction should be provided as an attribute: "prev" or "next"
-  direction = this.getAttribute("direction") || "next"
+  direction = this.getAttribute("direction") ?? "next"
   buttonText = ""
 
   constructor() {
@@ -15,7 +14,7 @@ export default class LineNavButton extends HTMLElement {
     this.render()
     this.setupListeners()
     // Update the button when the active line changes.
-    eventDispatcher.on("tpen-active-line", () => {
+    TPEN.eventDispatcher.on("tpen-active-line", () => {
       this.updateButtonText()
     })
   }
@@ -25,9 +24,9 @@ export default class LineNavButton extends HTMLElement {
     if (btn) {
       btn.addEventListener("click", () => {
         if (this.direction === "prev") {
-          eventDispatcher.dispatch("tpen-line-previous")
+          TPEN.eventDispatcher.dispatch("tpen-line-previous")
         } else {
-          eventDispatcher.dispatch("tpen-line-next")
+          TPEN.eventDispatcher.dispatch("tpen-line-next")
         }
       })
     }
