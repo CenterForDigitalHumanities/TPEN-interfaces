@@ -111,6 +111,8 @@ class TpenHeader extends HTMLElement {
                     box-shadow: rgba(0, 0, 0, .5) 0 0 .25em;
                     position: relative;
                     bottom: -.25em;
+                    opacity: 1;
+                    visibility: visible;
                     aspect-ratio: 1 / 1;
                     max-width: 15vw;
                     outline: var(--primary-light) 1px solid;
@@ -120,6 +122,11 @@ class TpenHeader extends HTMLElement {
                 .action-button:focus, .action-button:hover {
                     outline: var(--primary-color) 1px solid;
                     outline-offset: -1.5px;
+                }
+                .hidden {
+                    visibility: hidden;
+                    opacity: 0;
+                    pointer-events: none;
                 }
                 button:hover {
                     background-color: var(--primary-light);
@@ -164,29 +171,42 @@ class TpenHeader extends HTMLElement {
                         <div class="back"></div>
                     </div>
                 </h1>
-                <h1 class="banner">${this.getAttribute('title') ?? ""}</h1>
+                <h1 class="banner ${this.getAttribute('title') ? "" : "hidden"}">${this.getAttribute('title') ?? ""}</h1>
                 <tpen-action-link data-description="Whatever the TPEN.actionLink is will be a button-looking link here.">
-                    <button type="button" class="action-button">Action</button>
+                    <button type="button" class="action-button hidden">Action</button>
                 </tpen-action-link>
                 <nav>
                     <ul>
-                        <li><a href="/home">Home</a></li>
-                        <li><a href="#">About</a></li>
-                        <li><a href="https://three.t-pen.org/logout?returnTo=${location}">Logout</a></li>
+                        <li><a href="/index">Home</a></li>
+                        <li><a href="/about">About</a></li>
+                        <li class="logout-btn"><a href="#">Logout</a></li>
                     </ul>
                 </nav>
             </header>
         `;
     }
     connectedCallback() {
-        TPEN.eventDispatcher.on('tpen-gui-action', ev => {
+        TPEN.eventDispatcher.on('tpen-gui-title', ev => {
+            if(!ev.detail) {
+                title.classList.add('hidden')
+                return
+            }
+            const title = this.shadowRoot.querySelector('.banner')
+            title.classList.remove('hidden')
+            title.textContent = ev.detail
+        })
+        TPEN.eventDispatcher.on('tpen-gui-action-link', ev => {
             const btn = this.shadowRoot.querySelector('.action-button')
+            btn.classList.remove('hidden')
             btn.textContent = ev.detail.label
             btn.addEventListener('click', ev.detail.callback)
         })
-        TPEN.eventDispatcher.on('tpen-gui-title', ev => {
-            this.shadowRoot.querySelector('.banner').textContent = ev.detail
+        TPEN.eventDispatcher.on('tpen-gui-action-link-remove', ev => {
+            const btn = this.shadowRoot.querySelector('.action-button')
+            btn.classList.add('hidden')
+            btn.removeEventListener('click', ev.detail.callback)
         })
+        this.shadowRoot.querySelector('.logout-btn').addEventListener('click', ()=>TPEN.logout())
     }
 }
 

@@ -10,3 +10,5 @@ collections:
     output: true
     directory: classes
 theme: jekyll-theme-modernist
+
+permalink: pretty

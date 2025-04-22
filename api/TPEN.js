@@ -128,7 +128,6 @@ class Tpen {
     }
 
     logout(redirect = origin + location.pathname) {
-        this.currentUser = null
         localStorage.clear()
         location.href = `https://three.t-pen.org/logout?returnTo=${encodeURIComponent(redirect)}`
         return
