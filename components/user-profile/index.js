@@ -208,18 +208,14 @@ class UserProfile extends HTMLElement {
             const newName = nameInput.value.trim()
     
             if (!/^[a-zA-Z0-9\s._'-@#]+$/.test(newName)) {
-                return TPEN.eventDispatcher.dispatchEvent(
-                    new CustomEvent('tpen-toast', {
-                      detail: { message: 'Please enter a valid name', status: "error" }
-                    })
+                return TPEN.eventDispatcher.dispatch('tpen-toast', 
+                    { message: 'Please enter a valid name', status: "error" }
                 )
             }
 
             if (!newName) {
-                return TPEN.eventDispatcher.dispatchEvent(
-                    new CustomEvent('tpen-toast', {
-                      detail: { message: 'Please enter a valid name', status: "error" }
-                    })
+                return TPEN.eventDispatcher.dispatch('tpen-toast',
+                    { message: 'Please enter a valid name', status: "error" }
                 )
             }
 
@@ -234,11 +230,15 @@ class UserProfile extends HTMLElement {
 
             if (!response.ok) {
                 const errorData = await response.json()
-                return TPEN.eventDispatcher.dispatchEvent(
-                    new CustomEvent('tpen-toast', {
-                      detail: { message: errorData.message, status: "error" }
-                    })
+                return TPEN.eventDispatcher.dispatch('tpen-toast', 
+                  { message: errorData.message, status: "error" }
                 )
+            }
+            else {
+                TPEN.eventDispatcher.dispatch('tpen-toast', {
+                    message: "Profile updated!",
+                    status: "info"
+                })
             }
     
             nameText.textContent = newName
