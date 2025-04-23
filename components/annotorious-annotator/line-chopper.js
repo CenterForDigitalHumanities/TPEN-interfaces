@@ -27,6 +27,7 @@ class AnnotoriousAnnotator extends HTMLElement {
     #isChopping = false
     #isErasing = false
     #chopType = ""
+    #annoToChop = null
     
     static get observedAttributes() {
       return ["annotationpage"]
@@ -280,8 +281,8 @@ class AnnotoriousAnnotator extends HTMLElement {
       /**
         * Fired after a click event on a drawn Annotation.  This should chop the existing 'column' resulting in a new 'line'.
         * If this.#isErasing they want to delete the Annotation (line or column?)
-        * If this.#isDrawing they want to edit the annotation
-        * if this.#isChopping they want to add, merge, or remove lines
+        * If this.#isDrawing they want to resize the annotation
+        * if this.#isChopping they want to add, merge, or remove lines (annotations)
       */
       annotator.on('clickAnnotation', (originalAnnotation, originalEvent) => {
         if(!originalAnnotation) return
@@ -297,7 +298,6 @@ class AnnotoriousAnnotator extends HTMLElement {
         }
         if(_this.#isChopping) {
           // Initiate chopper UX on clicked Annotation
-          if (!_this.#annoToChop) _this.#annoToChop = originalAnnotation
           // Figure out the element to do UI to
           // Parent element <g>
           // .a9s-annotation.selected
@@ -308,25 +308,16 @@ class AnnotoriousAnnotator extends HTMLElement {
         
       })
 
-      /**
-       * Intiate line chopper UX for 'column'
-      */
-      annotator.on('mouseEnterAnnotation', (annotation) => {
-        console.log('Mouse entered: ' + annotation.id)
-        const selected = annotator.getSelected()
-        if(this.#isChopping && annotation.id === selected?.id) {
+      annotator.on('selectionChanged', (annotations) => {
+        console.log('Selected annotations', annotations);
+        if(!_this.#isChopping) return
+        if(annotations && annotations.length){
+          this.#annoToChop = annotations[0]
           this.applyRuler()  
         }
-        
-      })
-
-      /**
-       * Quit line chopper UX for 'column'
-      */
-      annotator.on('mouseLeaveAnnotation', (annotation) => {
-        console.log('Mouse left: ' + annotation.id)
-        if(this.#isChopping) {
-          this.removeRuler()  
+        else{
+          this.#annoToChop = null
+          this.removeRuler()
         }
       })
 
@@ -575,19 +566,24 @@ class AnnotoriousAnnotator extends HTMLElement {
 
     toggleAddLines(e) {
       if(!this.#isChopping) return
+      const ruler = this.shadowRoot.getElementById("ruler")
       if(e.target.classList.contains("selected")) {
         e.target.classList.remove("selected")
         this.#chopType = ""
+        ruler.style.display = "none"
       }
       else {
         this.shadowRoot.querySelectorAll(".toggleChopType").forEach(el => {el.classList.remove("selected")})
         e.target.classList.add("selected")
         this.#chopType = "Add Lines"
+        ruler.style.display = "block"
       }
     }
 
     toggleMergeLines(e) {
       if(!this.#isChopping) return
+      const ruler = this.shadowRoot.getElementById("ruler")
+      ruler.style.display = "none"
       if(e.target.classList.contains("selected")) {
         e.target.classList.remove("selected")
         this.#chopType = ""
@@ -601,6 +597,8 @@ class AnnotoriousAnnotator extends HTMLElement {
 
     toggleDeleteLines(e){
       if(!this.#isChopping) return
+      const ruler = this.shadowRoot.getElementById("ruler")
+      ruler.style.display = "none"
       if(e.target.classList.contains("selected")) {
         e.target.classList.remove("selected")
         this.#chopType = ""
@@ -701,6 +699,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       this.shadowRoot.getElementById("eraseTool").checked = false
       this.shadowRoot.getElementById("drawTool").checked = false
       this.shadowRoot.querySelectorAll(".toggleChopType").forEach(el => {el.classList.remove("selected")})
+      this.#chopType = ""
       const toast = {
         message: "You started chopping",
         status: "info"
@@ -789,51 +788,15 @@ class AnnotoriousAnnotator extends HTMLElement {
      * Mouseover / mousemove needs to do the ruler UI
      */
     applyRuler() {
+      const elem = this.#annotoriousInstance.viewer.element.querySelector(".a9s-annotation.selected")
       const ruler = this.shadowRoot.getElementById("ruler")
-      switch(this.#chopType){
-        case "Add Lines":
-          line.style.cursor = "crosshair"
-          ruler.classList.remove("is-hidden")
-        break
-        case "Merge Lines":
-          if (line.getAttribute("lineleft") == line.nextElementSibling.attr("lineleft")) {
-              line.nextElementSibling.classList.add("deletable")
-          }
-          line.classList.add("deletable")
-          if (document.querySelectorAll(".deletable").length > 1) {
-              document.querySelectorAll(".deletable").forEach(e => e.classList.add("mergeable"))
-          } 
-          else {
-              // This is a delete maybe?
-          }
-          line.style.cursor = "cell" //all the lines should get this cursor when merging
-        break
-        case "Delete Lines":
-          if (line.getAttribute("lineleft") !== line.nextElementSibling.getAttribute("lineleft")) {
-              line.classList.add('deletable')
-              //only let the deleted line get this cursor when deleting
-              line.style.cursor = "pointer"
-          } 
-          else {
-              //other lines get the "can't do it" cursor
-              line.style.cursor = "not-allowed"
-          }
-          break
-        default:
-          // eek
-          break
-      }
 
-      line.addEventListener('mousemove', function (e) {
-          let imgTopOffset = $("#imgTop").offset().left //helps because we can center the interface with this and it will still work.
-          let myLeft = line.position().left + imgTopOffset
-          let myWidth = line.width()
-          ruler.style({
-              left: myLeft,
-              top: e.pageY,
-              height: '1px',
-              width: myWidth
-          })
+      elem.addEventListener('mousemove', function (e) {
+        const rect = elem.getBoundingClientRect()
+        ruler.style.left = rect.x+"px"
+        ruler.style.top = e.pageY+"px"
+        ruler.style.height = '1px'
+        ruler.style.width = rect.width+"px"
       })
     }
 
@@ -842,34 +805,40 @@ class AnnotoriousAnnotator extends HTMLElement {
      */
     removeRuler() {
       const ruler = this.shadowRoot.getElementById("ruler")
-      if(!this.#isDrawing) {
-        document.querySelectorAll(".deletable").forEach(e => {
-          e.classList.remove("deleteable")
-          e.classList.remove("mergeable")
-        })
-      }
+      // if(!this.#isDrawing) {
+      //   document.querySelectorAll(".deletable").forEach(e => {
+      //     e.classList.remove("deleteable")
+      //     e.classList.remove("mergeable")
+      //   })
+      // }
       ruler.classList.add("is-hidden")
     }
 
     /**
      * Triggered when a user alters a line to either create a new one or destroy one with the mouseclick
      */
-    lineChange(e, event, deleteOnly) {
-      parsingCover.classList.remove("is-hidden")
-      if (this.#isDrawing) {
-          splitLine(e, event)
-      } 
-      else {
-          //merge the line you clicked with the line below.  Delete the line below and grow this line by that lines height.
-          removeLine(e, false, deleteOnly)
+    lineChange(annotation, event, elem) {
+      if(!this.#isChopping) return
+      //parsingCover.classList.remove("is-hidden")
+
+      if (this.#chopType === "Add Lines") {
+        console.log("Add a line by doing splitLine() and UI-ing Annotorious")
+        // return this.splitLine(e, event)
+      }
+      if(this.#chopType === "Merge Lines"){
+        console.log("Add a line by doing mergeLines() and UI-ing Annotatorious")
+        // return this.mergeLines(e, event)
+      }
+      if(this.#chopType === "Delete Lines"){
+        console.log("Remove a line by doing removeLine() and UI-ing Annotatorious")
+        // return this.removeLine(e, event)
       }
     }
 
     /**
-     * Removes clicked line, merges if possible with the following line.
-     * TODO
+     * Only works on last line, otherwise it is a merge instead.
      */
-    removeLine(e, columnDelete, deleteOnly) {
+    removeLine(e, event) {
 
     }
 }
