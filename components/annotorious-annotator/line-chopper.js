@@ -56,6 +56,23 @@ class AnnotoriousAnnotator extends HTMLElement {
           input[type="button"].selected {
             background-color: green;
           }
+          #ruler {
+            display: none;
+            background: black;
+            position: absolute;
+            z-index: 6; 
+            pointer-events: none;
+          }
+          #sampleRuler {
+            display: none;
+            overflow: hidden;
+            position:relative;
+            background:black;
+            width:80%;
+            margin:0 auto;
+            height:2px;
+            top:-10px;
+          }
         </style>
         <div>
             <div id="tools-container">
@@ -84,6 +101,8 @@ class AnnotoriousAnnotator extends HTMLElement {
               <input id="saveBtn" type="button" value="Save Annotations"/>
             </div>
             <div id="annotator-container"></div>
+            <div id="ruler"></div>
+            <span id="sampleRuler"></span>
         </div>
 
         `
@@ -260,30 +279,55 @@ class AnnotoriousAnnotator extends HTMLElement {
 
       /**
         * Fired after a click event on a drawn Annotation.  This should chop the existing 'column' resulting in a new 'line'.
-        * 
+        * If this.#isErasing they want to delete the Annotation (line or column?)
+        * If this.#isDrawing they want to edit the annotation
+        * if this.#isChopping they want to add, merge, or remove lines
       */
-      annotator.on('clickAnnotation', (annotation, originalEvent) => {
-        if(!annotation) return
-        if(_this.#isErasing) return
-        this.lineChange(annotation, originalEvent)
+      annotator.on('clickAnnotation', (originalAnnotation, originalEvent) => {
+        if(!originalAnnotation) return
+        if(_this.#isErasing) {
+          let ev = new CustomEvent("wantsToEraseAnnotation", {
+            detail: {
+              originalAnnotation,
+              originalEvent
+            }
+          })
+          annotator.dispatchEvent(ev)
+          return
+        }
+        if(_this.#isChopping) {
+          // Initiate chopper UX on clicked Annotation
+          if (!_this.#annoToChop) _this.#annoToChop = originalAnnotation
+          // Figure out the element to do UI to
+          // Parent element <g>
+          // .a9s-annotation.selected
+          const annoElem = annotator.viewer.element.querySelector(".a9s-annotation.selected")
+          // annotator.viewer.innerTracker and outerTracker for the mouse?
+          return _this.lineChange(originalAnnotation, originalEvent, annoElem)
+        }
+        
       })
 
       /**
        * Intiate line chopper UX for 'column'
       */
-      annotator.on('mouseEnterAnnotation', (annotation, originalEvent) => {
+      annotator.on('mouseEnterAnnotation', (annotation) => {
         console.log('Mouse entered: ' + annotation.id)
-        this.#isChopping = annotation.id
-        this.applyRuler(annotation, originalEvent)
+        const selected = annotator.getSelected()
+        if(this.#isChopping && annotation.id === selected?.id) {
+          this.applyRuler()  
+        }
+        
       })
 
       /**
        * Quit line chopper UX for 'column'
       */
-      annotator.on('mouseLeaveAnnotation', (annotation, originalEvent) => {
+      annotator.on('mouseLeaveAnnotation', (annotation) => {
         console.log('Mouse left: ' + annotation.id)
-        this.#isChopping = false
-        this. removeRuler(annotation, originalEvent)
+        if(this.#isChopping) {
+          this.removeRuler()  
+        }
       })
 
     }
@@ -529,34 +573,40 @@ class AnnotoriousAnnotator extends HTMLElement {
       return canvasURI
     }
 
-    toggleAddLines(e){
+    toggleAddLines(e) {
+      if(!this.#isChopping) return
       if(e.target.classList.contains("selected")) {
         e.target.classList.remove("selected")
         this.#chopType = ""
       }
       else {
+        this.shadowRoot.querySelectorAll(".toggleChopType").forEach(el => {el.classList.remove("selected")})
         e.target.classList.add("selected")
         this.#chopType = "Add Lines"
       }
     }
 
-    toggleMergeLines(e){
+    toggleMergeLines(e) {
+      if(!this.#isChopping) return
       if(e.target.classList.contains("selected")) {
         e.target.classList.remove("selected")
         this.#chopType = ""
       }
       else {
+        this.shadowRoot.querySelectorAll(".toggleChopType").forEach(el => {el.classList.remove("selected")})
         e.target.classList.add("selected")
         this.#chopType = "Merge Lines"
       }
     }
 
     toggleDeleteLines(e){
+      if(!this.#isChopping) return
       if(e.target.classList.contains("selected")) {
         e.target.classList.remove("selected")
         this.#chopType = ""
       }
       else {
+        this.shadowRoot.querySelectorAll(".toggleChopType").forEach(el => {el.classList.remove("selected")})
         e.target.classList.add("selected")
         this.#chopType = "Delete Lines"
       }
@@ -647,9 +697,10 @@ class AnnotoriousAnnotator extends HTMLElement {
     startChopping() {
       this.stopDrawing()
       this.stopErasing()
+      this.#isChopping = true
       this.shadowRoot.getElementById("eraseTool").checked = false
       this.shadowRoot.getElementById("drawTool").checked = false
-      this.shadowRoot.querySelectorAll(".toggleChopType").forEach(el => {el.removeAttribute("selected")})
+      this.shadowRoot.querySelectorAll(".toggleChopType").forEach(el => {el.classList.remove("selected")})
       const toast = {
         message: "You started chopping",
         status: "info"
@@ -719,6 +770,7 @@ class AnnotoriousAnnotator extends HTMLElement {
      * Change the ruler UI color, images have all kinds of colors to contrast against.
      */
     rulerColor(color) {
+      const ruler = this.shadowRoot.getElementById("ruler")
       if (color === "custom") {
           color = $("#customRuler").val();
           if (validTextColor(color)) {
@@ -727,8 +779,8 @@ class AnnotoriousAnnotator extends HTMLElement {
               color = "red";
           }
       }
-      ruler1.style.color = color
-      ruler1.style.background = color
+      ruler.style.color = color
+      ruler.style.background = color
       sampleRuler.style.color = color
       sampleRuler.style.background = color
     }
@@ -736,15 +788,14 @@ class AnnotoriousAnnotator extends HTMLElement {
     /**
      * Mouseover / mousemove needs to do the ruler UI
      */
-    applyRuler(line, deleteOnly) {
-      let hottip = "Add a Line" || "Merge Line" || "Delete Line"
-      imageTip.innerText = hottip
-      switch(hottip){
-        case "Add a Line":
+    applyRuler() {
+      const ruler = this.shadowRoot.getElementById("ruler")
+      switch(this.#chopType){
+        case "Add Lines":
           line.style.cursor = "crosshair"
-          ruler1.classList.remove("is-hidden")
+          ruler.classList.remove("is-hidden")
         break
-        case "Merge a Line":
+        case "Merge Lines":
           if (line.getAttribute("lineleft") == line.nextElementSibling.attr("lineleft")) {
               line.nextElementSibling.classList.add("deletable")
           }
@@ -757,7 +808,7 @@ class AnnotoriousAnnotator extends HTMLElement {
           }
           line.style.cursor = "cell" //all the lines should get this cursor when merging
         break
-        case "Delete a Line":
+        case "Delete Lines":
           if (line.getAttribute("lineleft") !== line.nextElementSibling.getAttribute("lineleft")) {
               line.classList.add('deletable')
               //only let the deleted line get this cursor when deleting
@@ -768,17 +819,16 @@ class AnnotoriousAnnotator extends HTMLElement {
               line.style.cursor = "not-allowed"
           }
           break
+        default:
+          // eek
+          break
       }
 
       line.addEventListener('mousemove', function (e) {
           let imgTopOffset = $("#imgTop").offset().left //helps because we can center the interface with this and it will still work.
           let myLeft = line.position().left + imgTopOffset
           let myWidth = line.width()
-          imageTip.classList.remove("is-hidden").style({
-              left: e.pageX,
-              top: e.pageY + 20
-          })
-          ruler1.style({
+          ruler.style({
               left: myLeft,
               top: e.pageY,
               height: '1px',
@@ -790,15 +840,15 @@ class AnnotoriousAnnotator extends HTMLElement {
     /*
      * Hides ruler within parsing tool. Called on mouseleave .parsing.
      */
-    removeRuler(line) {
+    removeRuler() {
+      const ruler = this.shadowRoot.getElementById("ruler")
       if(!this.#isDrawing) {
         document.querySelectorAll(".deletable").forEach(e => {
           e.classList.remove("deleteable")
           e.classList.remove("mergeable")
         })
       }
-      imageTip.classList.add("is-hidden")
-      ruler1.classList.add("is-hidden")
+      ruler.classList.add("is-hidden")
     }
 
     /**
