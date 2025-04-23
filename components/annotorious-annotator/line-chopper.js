@@ -296,16 +296,7 @@ class AnnotoriousAnnotator extends HTMLElement {
           annotator.dispatchEvent(ev)
           return
         }
-        if(_this.#isChopping) {
-          // Initiate chopper UX on clicked Annotation
-          // Figure out the element to do UI to
-          // Parent element <g>
-          // .a9s-annotation.selected
-          const annoElem = annotator.viewer.element.querySelector(".a9s-annotation.selected")
-          // annotator.viewer.innerTracker and outerTracker for the mouse?
-          return _this.lineChange(originalAnnotation, originalEvent, annoElem)
-        }
-        
+        if(_this.#isChopping) _this.#annoToChop = originalAnnotation
       })
 
       annotator.on('selectionChanged', (annotations) => {
@@ -695,6 +686,9 @@ class AnnotoriousAnnotator extends HTMLElement {
     startChopping() {
       this.stopDrawing()
       this.stopErasing()
+      // Oh come on.  SELECT even though it selects the Annotation does not select it in the UI, so there is no elem :(
+      // SELECT would be better than EDIT here b/c click to chop and click-and-hold-to-drag are shared.
+      // this.#annotoriousInstance.setUserSelectAction("SELECT")
       this.#isChopping = true
       this.shadowRoot.getElementById("eraseTool").checked = false
       this.shadowRoot.getElementById("drawTool").checked = false
@@ -790,6 +784,7 @@ class AnnotoriousAnnotator extends HTMLElement {
     applyRuler() {
       const elem = this.#annotoriousInstance.viewer.element.querySelector(".a9s-annotation.selected")
       const ruler = this.shadowRoot.getElementById("ruler")
+      const _this = this
 
       elem.addEventListener('mousemove', function (e) {
         const rect = elem.getBoundingClientRect()
@@ -797,6 +792,10 @@ class AnnotoriousAnnotator extends HTMLElement {
         ruler.style.top = e.pageY+"px"
         ruler.style.height = '1px'
         ruler.style.width = rect.width+"px"
+      })
+
+      elem.addEventListener('click', function (e) {
+        _this.lineChange(_this.#annoToChop, e)
       })
     }
 
@@ -817,10 +816,10 @@ class AnnotoriousAnnotator extends HTMLElement {
     /**
      * Triggered when a user alters a line to either create a new one or destroy one with the mouseclick
      */
-    lineChange(annotation, event, elem) {
+    lineChange(annotation, event) {
       if(!this.#isChopping) return
       //parsingCover.classList.remove("is-hidden")
-
+      const elem = this.#annotoriousInstance.viewer.element.querySelector(".a9s-annotation.selected")
       if (this.#chopType === "Add Lines") {
         console.log("Add a line by doing splitLine() and UI-ing Annotorious")
         // return this.splitLine(e, event)
@@ -833,6 +832,10 @@ class AnnotoriousAnnotator extends HTMLElement {
         console.log("Remove a line by doing removeLine() and UI-ing Annotatorious")
         // return this.removeLine(e, event)
       }
+      console.log("Annotation to chop")
+      console.log(annotation)
+      console.log("Drawn Annotation to UI and generate new Annotation set from.")
+      console.log(elem)
     }
 
     /**
