@@ -251,8 +251,15 @@ class AnnotoriousAnnotator extends HTMLElement {
         * Fired after a new annotation is created and available as a shape in the DOM.
       */
       annotator.on('createAnnotation', function(annotation) {
-        // console.log('Annotation Created:', annotation)
-        _this.#annotoriousInstance.cancelSelected(annotation)  
+        console.log('Annotation Created:', annotation)
+        // _this.#annotoriousInstance.cancelSelected(annotation)
+        // A bit tricky if we want to leave the created Annotation selected as part of the UX...
+        _this.applyRuler(annotation)
+      })
+
+      annotator.on('updateAnnotation', function(annotation) {
+        console.log('Annotation Updated:', annotation)
+        // _this.#annotoriousInstance.cancelSelected(annotation)  
       })
 
       /**
@@ -296,15 +303,20 @@ class AnnotoriousAnnotator extends HTMLElement {
           annotator.dispatchEvent(ev)
           return
         }
-        if(_this.#isChopping) _this.#annoToChop = originalAnnotation
+        if(_this.#isChopping) {
+          console.log("clickAnnotation of Annotorious")
+          console.log(originalEvent)
+          _this.#annoToChop = originalAnnotation
+          _this.lineChange(originalEvent)
+          return
+        }
       })
 
       annotator.on('selectionChanged', (annotations) => {
         console.log('Selected annotations', annotations);
         if(!_this.#isChopping) return
         if(annotations && annotations.length){
-          this.#annoToChop = annotations[0]
-          this.applyRuler()  
+          this.applyRuler(annotations[0])  
         }
         else{
           this.#annoToChop = null
@@ -751,12 +763,79 @@ class AnnotoriousAnnotator extends HTMLElement {
      * @param e clicked line element
      * @see organizePage(e)
      */
-    splitLine(line, event) {
-      if(!this.#isDrawing) return
+    splitLine(event) {
+      console.log("SPLIT LINE")
+      if(!this.#isChopping) return
+      if(!this.#annoToChop) return
+      // The only DOM elem available in relation to Annotations is the selected line.
+      // Note that if there is no selected line, there are no DOM elements representing Annotations. 
+      const line = this.#annotoriousInstance.viewer.element.querySelector(".a9s-annotation.selected")
+      if(!line) return
+      console.log("GO!")
       let originalLineHeight = line.style.height
-      document.querySelectorAll(".parsing").forEach(e => e.classList.setAttribute("newline", "false"))
-      line.after(newLine)
-      progress.innerText = "Line Added"
+      let allAnnotations = this.#annotoriousInstance.getAnnotations()
+      const compareId = this.#annoToChop["@id"] ?? this.#annoToChop.id
+      let origIndex = -1
+      let i = 0
+      for(const a of allAnnotations) {
+        const origId = a["@id"] ?? a.id
+        if(origId === compareId) {
+          origIndex = i
+          break
+        }
+        i++
+      }
+
+      // This selected Annotation splits into 2 Annotations.  Need to create the Annotation as data, and update the existing Annotation data.
+      // Once you have the Annotation data correct, splice it in to the current Annotation data.
+      // Redraw Annotations so that the new data is in the Annotaorious UI
+      // Make sure the new Annotation (the one underneath) is selected
+        
+      console.log("click event in selected annotation elem")
+      console.log(event)
+
+      const annoElem = event.target
+      const rect = annoElem.getBoundingClientRect()
+      const annoDims = this.#annoToChop.target.selector.value.replace("xywh=pixel:", "").split(",")
+
+      console.log("Client rect in units")
+      console.log(rect)
+
+      console.log("Drawn Annotation Dimensions in pixels")
+      console.log(annoDims)
+
+      console.log("Canvas Dimensions")
+      console.log(this.#canvasDims)
+      
+      // Drawn Annotation dims represented as units, not pixels
+      const rectY_u = rect.y
+      const rectH_u = rect.height
+
+      // Where the click happened in units relative to the height of the drawn Annotation's height in units
+      const clickY_u = rectH_u - (event.offsetY - rect.y)
+      console.log(`clickY_u: ${clickY_u}`)
+
+      // Drawn Annotation dims represented as pixels, not units
+      const annoY_px = parseFloat(annoDims[1])
+      const annoH_px = parseFloat(annoDims[3])
+
+      // Where the click happened, in pixels
+      const clickY_px = annoH_px * (clickY_u / rectH_u) + annoY_px
+      console.log(clickY_px)
+
+      console.log("original annotation dims adjusted")
+      let adjustedAnnoDims = [...annoDims]
+      const annoH_px_adjusted = annoH_px - (clickY_px - annoY_px)
+      adjustedAnnoDims[3] = annoH_px_adjusted+""
+      console.log(adjustedAnnoDims)
+
+      console.log("new Annotation dims")
+      let newAnnoDims = [...annoDims]
+      const new_annoY_px = clickY_px
+      const new_annoH_px = annoH_px - annoH_px_adjusted
+      newAnnoDims[1] = new_annoY_px+""
+      newAnnoDims[3] = new_annoH_px+""
+      console.log(newAnnoDims)
     }
 
     /**
@@ -781,7 +860,10 @@ class AnnotoriousAnnotator extends HTMLElement {
     /**
      * Mouseover / mousemove needs to do the ruler UI
      */
-    applyRuler() {
+    applyRuler(originalAnnotation) {
+      if(!originalAnnotation) return
+
+      this.#annoToChop = originalAnnotation
       const elem = this.#annotoriousInstance.viewer.element.querySelector(".a9s-annotation.selected")
       const ruler = this.shadowRoot.getElementById("ruler")
       const _this = this
@@ -795,7 +877,8 @@ class AnnotoriousAnnotator extends HTMLElement {
       })
 
       elem.addEventListener('click', function (e) {
-        _this.lineChange(_this.#annoToChop, e)
+        if(!_this.#isChopping) return
+        _this.lineChange(e)
       })
     }
 
@@ -816,13 +899,13 @@ class AnnotoriousAnnotator extends HTMLElement {
     /**
      * Triggered when a user alters a line to either create a new one or destroy one with the mouseclick
      */
-    lineChange(annotation, event) {
+    lineChange(event) {
       if(!this.#isChopping) return
       //parsingCover.classList.remove("is-hidden")
       const elem = this.#annotoriousInstance.viewer.element.querySelector(".a9s-annotation.selected")
       if (this.#chopType === "Add Lines") {
         console.log("Add a line by doing splitLine() and UI-ing Annotorious")
-        // return this.splitLine(e, event)
+        return this.splitLine(event)
       }
       if(this.#chopType === "Merge Lines"){
         console.log("Add a line by doing mergeLines() and UI-ing Annotatorious")
@@ -832,10 +915,10 @@ class AnnotoriousAnnotator extends HTMLElement {
         console.log("Remove a line by doing removeLine() and UI-ing Annotatorious")
         // return this.removeLine(e, event)
       }
-      console.log("Annotation to chop")
-      console.log(annotation)
-      console.log("Drawn Annotation to UI and generate new Annotation set from.")
-      console.log(elem)
+      // console.log("Annotation to chop")
+      // console.log(this.#annoToChop)
+      // console.log("Drawn Annotation to UI and generate new Annotation set from.")
+      // console.log(elem)
     }
 
     /**
