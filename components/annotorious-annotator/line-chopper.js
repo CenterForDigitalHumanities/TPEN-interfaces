@@ -796,6 +796,8 @@ class AnnotoriousAnnotator extends HTMLElement {
 
       const annoElem = event.target
       const rect = annoElem.getBoundingClientRect()
+      // wait a minute.  Is the full unit height of the canvas always 1000 and 'rect' top and height consistently relative to 1000?
+      // this is a theory.  INVESTIGATE as that may give us ways to simplify the mathing.
       const annoDims = this.#annoToChop.target.selector.value.replace("xywh=pixel:", "").split(",")
 
       console.log("Client rect in units")
@@ -804,7 +806,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       console.log("Drawn Annotation Dimensions in pixels")
       console.log(annoDims)
 
-      console.log("Canvas Dimensions")
+      console.log("Canvas Dimensions...maybe as pixels?")
       console.log(this.#canvasDims)
       
       // Drawn Annotation dims represented as units, not pixels
