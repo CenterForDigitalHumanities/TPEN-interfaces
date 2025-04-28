@@ -766,10 +766,13 @@ class AnnotoriousAnnotator extends HTMLElement {
       console.log("SPLIT LINE")
       if(!this.#isChopping) return
       if(!this.#annoToChop) return
-      const line = this.#annotoriousInstance.viewer.element.querySelector(".a9s-annotation.selected")
+      // Would event.target be better?
+      const annoElem = this.#annotoriousInstance.viewer.element.querySelector(".a9s-annotation.selected")
       // Note that if there is no selected line, there are no DOM elements representing Annotations. 
-      if(!line) return
-      let originalLineHeight = line.style.height
+      if(!annoElem) return
+
+      // Know the original Annotation's index in the AnnotationList for splicing
+      // Note the original Annotation JSON is this.#annoToChop
       let allAnnotations = this.#annotoriousInstance.getAnnotations()
       const compareId = this.#annoToChop["@id"] ?? this.#annoToChop.id
       let origIndex = -1
@@ -792,7 +795,6 @@ class AnnotoriousAnnotator extends HTMLElement {
       console.log("click event in selected annotation elem")
       console.log(event)
 
-      const annoElem = event.target
       const rect = annoElem.getBoundingClientRect()
       // wait a minute.  Is the full unit height of the canvas always 1000 and 'rect' top and height consistently relative to 1000?
       // this is a theory.  INVESTIGATE as that may give us ways to simplify the mathing.
@@ -817,7 +819,6 @@ class AnnotoriousAnnotator extends HTMLElement {
 
       // Where the click happened in units relative to the height of the drawn Annotation's height in units
       const clickY_units = rectH_units - (event.offsetY - rect.y)
-      console.log(`clickY_units: ${clickY_units}`)
 
       // Where the click happened, in pixels
       const clickY_pixels = annoH_pixels * (clickY_units / rectH_units) + annoY_pixels
@@ -827,7 +828,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       let adjustedAnnoDims = [...annoDims]
       const annoH_pixels_adjusted = annoH_pixels - (clickY_pixels - annoY_pixels)
       adjustedAnnoDims[3] = annoH_pixels_adjusted+""
-      console.log("new Annotation dims")
+      console.log("adjusted Annotation dims")
       console.log(adjustedAnnoDims)
 
       // Figure the new Annotation's height and y position (in pixels), relative to the original Annotation and the click event.
