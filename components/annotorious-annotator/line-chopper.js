@@ -300,13 +300,6 @@ class AnnotoriousAnnotator extends HTMLElement {
           annotator.dispatchEvent(ev)
           return
         }
-        if(_this.#isChopping) {
-          console.log("clickAnnotation of Annotorious")
-          console.log(originalEvent)
-          _this.#annoToChop = originalAnnotation
-          _this.lineChange(originalEvent)
-          return
-        }
       })
 
       annotator.on('selectionChanged', (annotations) => {
@@ -879,6 +872,7 @@ class AnnotoriousAnnotator extends HTMLElement {
 
       elem.addEventListener('click', function (e) {
         if(!_this.#isChopping) return
+          console.log("APPLY RULER CLICK")
         _this.lineChange(e)
       })
     }
