@@ -800,13 +800,13 @@ class AnnotoriousAnnotator extends HTMLElement {
       // this is a theory.  INVESTIGATE as that may give us ways to simplify the mathing.
       const annoDims = this.#annoToChop.target.selector.value.replace("xywh=pixel:", "").split(",")
 
-      console.log("Client rect in units")
+      console.log("Annotation element client rectangle dimensions in units")
       console.log(rect)
 
-      console.log("Drawn Annotation Dimensions in pixels")
+      console.log("Drawn Annotation dimensions in pixels")
       console.log(annoDims)
 
-      console.log("Canvas Dimensions...maybe as pixels?")
+      console.log("Canvas dimensions in pixels")
       console.log(this.#canvasDims)
       
       // Drawn Annotation dims represented as units, not pixels
@@ -818,10 +818,10 @@ class AnnotoriousAnnotator extends HTMLElement {
       const annoH_pixels = parseFloat(annoDims[3])
 
       // Where the click happened in units relative to the height of the drawn Annotation's height in units
-      const clickY_units = rectH_units - (event.offsetY - rect.y)
+      const clickY_units = annoH_units - (event.offsetY - annoY_units)
 
       // Where the click happened, in pixels
-      const clickY_pixels = annoH_pixels * (clickY_units / rectH_units) + annoY_pixels
+      const clickY_pixels = annoH_pixels * (clickY_units / annoH_units) + annoY_pixels
       console.log(clickY_pixels)
 
       // Adjust the original Annotation's height (in pixels) to accomodate the split.  All other dimensions remain the same.
