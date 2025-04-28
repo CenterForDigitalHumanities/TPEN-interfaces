@@ -89,7 +89,6 @@ class AnnotoriousAnnotator extends HTMLElement {
               <div class="chopOptions">
                 <input type="button" class="toggleChopType" id="addLinesBtn" value="Add Lines" />
                 <input type="button" class="toggleChopType" id="mergeLinesBtn" value="Merge Lines" />
-                <input type="button" class="toggleChopType" id="deleteLastLineBtn" value="Delete (Last) Line"/>
               </div>
               <label> Erase Mode
                <input type="checkbox" id="eraseTool"> 
@@ -114,10 +113,8 @@ class AnnotoriousAnnotator extends HTMLElement {
       const saveButton = this.shadowRoot.getElementById("saveBtn")
       const addLinesBtn = this.shadowRoot.getElementById("addLinesBtn")
       const mergeLinesBtn = this.shadowRoot.getElementById("mergeLinesBtn")
-      const deleteLinesBtn = this.shadowRoot.getElementById("deleteLastLineBtn")
       addLinesBtn.addEventListener("click", (e) => this.toggleAddLines(e))
       mergeLinesBtn.addEventListener("click", (e) => this.toggleMergeLines(e))
-      deleteLinesBtn.addEventListener("click", (e) => this.toggleDeleteLines(e))
       drawTool.addEventListener("change", (e) => this.toggleDrawingMode(e))
       chopTool.addEventListener("change", (e) => this.toggleChoppingMode(e))
       eraseTool.addEventListener("change", (e) => this.toggleErasingMode(e))
@@ -598,21 +595,6 @@ class AnnotoriousAnnotator extends HTMLElement {
       }
     }
 
-    toggleDeleteLines(e){
-      if(!this.#isChopping) return
-      const ruler = this.shadowRoot.getElementById("ruler")
-      ruler.style.display = "none"
-      if(e.target.classList.contains("selected")) {
-        e.target.classList.remove("selected")
-        this.#chopType = ""
-      }
-      else {
-        this.shadowRoot.querySelectorAll(".toggleChopType").forEach(el => {el.classList.remove("selected")})
-        e.target.classList.add("selected")
-        this.#chopType = "Delete Lines"
-      }
-    }
-
     toggleDrawingMode(e) {
       if(e.target.checked) this.startDrawing()
       else { this.stopDrawing() }
@@ -766,10 +748,13 @@ class AnnotoriousAnnotator extends HTMLElement {
       console.log("SPLIT LINE")
       if(!this.#isChopping) return
       if(!this.#annoToChop) return
+      let newAnnoObject = JSON.parse(JSON.stringify(this.#annoToChop))
       // Would event.target be better?
       const annoElem = this.#annotoriousInstance.viewer.element.querySelector(".a9s-annotation.selected")
       // Note that if there is no selected line, there are no DOM elements representing Annotations. 
       if(!annoElem) return
+      const rect = annoElem.getBoundingClientRect()
+      const annoDims = this.#annoToChop.target.selector.value.replace("xywh=pixel:", "").split(",")
 
       // Know the original Annotation's index in the AnnotationList for splicing
       // Note the original Annotation JSON is this.#annoToChop
@@ -785,29 +770,6 @@ class AnnotoriousAnnotator extends HTMLElement {
         }
         i++
       }
-
-      // This selected Annotation splits into 2 Annotations.  Need to create the Annotation as data, and update the existing Annotation data.
-      // Once you have the Annotation data correct, splice it in to the current Annotation data.
-      // Order the Annotations in the AnnotationList if chopping, presuming left to right and top to bottom?
-      // Redraw Annotations so that the new data is in the Annotorious UI
-      // Make sure the new Annotation (the one underneath) is selected for continued chopping
-        
-      console.log("click event in selected annotation elem")
-      console.log(event)
-
-      const rect = annoElem.getBoundingClientRect()
-      // wait a minute.  Is the full unit height of the canvas always 1000 and 'rect' top and height consistently relative to 1000?
-      // this is a theory.  INVESTIGATE as that may give us ways to simplify the mathing.
-      const annoDims = this.#annoToChop.target.selector.value.replace("xywh=pixel:", "").split(",")
-
-      console.log("Annotation element client rectangle dimensions in units")
-      console.log(rect)
-
-      console.log("Drawn Annotation dimensions in pixels")
-      console.log(annoDims)
-
-      console.log("Canvas dimensions in pixels")
-      console.log(this.#canvasDims)
       
       // Drawn Annotation dims represented as units, not pixels
       const annoY_units = rect.y
@@ -833,7 +795,7 @@ class AnnotoriousAnnotator extends HTMLElement {
 
       // Figure the new Annotation's height and y position (in pixels), relative to the original Annotation and the click event.
       let newAnnoDims = [...annoDims]
-      const new_annoY_pixels = clickY_pixels
+      const new_annoY_pixels = annoY_pixels + annoH_pixels_adjusted
       const new_annoH_pixels = annoH_pixels - annoH_pixels_adjusted
       newAnnoDims[1] = new_annoY_pixels+""
       newAnnoDims[3] = new_annoH_pixels+""
@@ -841,11 +803,40 @@ class AnnotoriousAnnotator extends HTMLElement {
       console.log("new Annotation dims")
       console.log(newAnnoDims)
 
-      // TODO splice new Annotation data into original Annotation list
+      // Replace original Annotation dimensions
+      this.#annoToChop.target.selector.value = `xywh=pixel:${adjustedAnnoDims.join()}`
+      allAnnotations.splice(origIndex, 1, this.#annoToChop)
 
-      // TODO clear and redraw Annotations in the Annotorious UI
+      // Splice new Annotation data into original Annotation list
+      newAnnoObject.id = Date.now()+""
+      newAnnoObject.target.selector.value = `xywh=pixel:${newAnnoDims.join()}`
+      newAnnoObject.created = new Date().toJSON()
 
-      // TODO prepare UI for next click in chop mode
+      allAnnotations.splice(origIndex + 1, 0, newAnnoObject)
+
+      console.log("New Annotation Set")
+      console.log(allAnnotations)
+
+      // Mess with annotation colors
+      /*
+      this.#annotoriousInstance.setStyle({
+        fill: '#00ff00',
+        fillOpacity: 0.25,
+        stroke: '#00ff00',
+        strokeOpacity: 1
+      }
+      */
+
+      // Clear and redraw Annotations in the Annotorious UI
+      //this.#annotoriousInstance.clearAnnotations()
+      //this.#annotoriousInstance.setAnnotations(allAnnotations)
+      this.#annotoriousInstance.removeAnnotation(compareId)
+      this.#annotoriousInstance.addAnnotation(allAnnotations[origIndex])
+      this.#annotoriousInstance.addAnnotation(allAnnotations[origIndex + 1])
+
+      // Prepare UI for next click in chop mode by selecting the new Annotations
+      this.#annotoriousInstance.setSelected(newAnnoObject.id)
+      
     }
 
     /**
@@ -921,21 +912,10 @@ class AnnotoriousAnnotator extends HTMLElement {
         console.log("Add a line by doing mergeLines() and UI-ing Annotatorious")
         // return this.mergeLines(e, event)
       }
-      if(this.#chopType === "Delete Lines"){
-        console.log("Remove a line by doing removeLine() and UI-ing Annotatorious")
-        // return this.removeLine(e, event)
-      }
       // console.log("Annotation to chop")
       // console.log(this.#annoToChop)
       // console.log("Drawn Annotation to UI and generate new Annotation set from.")
       // console.log(elem)
-    }
-
-    /**
-     * Only works on last line, otherwise it is a merge instead.
-     */
-    removeLine(e, event) {
-
     }
 }
 
