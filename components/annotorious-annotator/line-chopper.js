@@ -264,8 +264,8 @@ class AnnotoriousAnnotator extends HTMLElement {
         * A click on a drawn Annotation in erase mode means erase the Annotation.
         * 
       */
-      annotator.on('wantsToEraseAnnotation', (annotation, originalEvent) => {
-        if(!annotation) return
+      _this.addEventListener('wantsToEraseAnnotation', (event) => {
+        if(!event.detail.originalAnnotation) return
         // FIXME if the user holds the mouse down there is some goofy UX.
         if(_this.#isErasing) {
           setTimeout(()=>{
@@ -273,7 +273,7 @@ class AnnotoriousAnnotator extends HTMLElement {
             // Also stops the goofy UX for naturally slow clickers.
             let c = confirm("Are you sure you want to remove this?")
             if(c) {
-              _this.#annotoriousInstance.removeAnnotation(annotation)  
+              _this.#annotoriousInstance.removeAnnotation(event.detail.originalAnnotation)  
             }
             else{
               _this.#annotoriousInstance.cancelSelected()
@@ -289,6 +289,7 @@ class AnnotoriousAnnotator extends HTMLElement {
         * if this.#isChopping they want to add, merge, or remove lines (annotations)
       */
       annotator.on('clickAnnotation', (originalAnnotation, originalEvent) => {
+        console.log("Annotorious clickAnnotation")
         if(!originalAnnotation) return
         if(_this.#isErasing) {
           let ev = new CustomEvent("wantsToEraseAnnotation", {
@@ -297,7 +298,7 @@ class AnnotoriousAnnotator extends HTMLElement {
               originalEvent
             }
           })
-          annotator.dispatchEvent(ev)
+          _this.dispatchEvent(ev)
           return
         }
       })
@@ -308,6 +309,11 @@ class AnnotoriousAnnotator extends HTMLElement {
         if(annotations && annotations.length){
           this.applyRuler(annotations[0])  
         }
+        // This is a little race condition-y, but we do want it.
+        // Without it the ruler is left behind when clearing all selections during chop mode.
+        // else{
+        //   this.removeRuler()
+        // }
       })
 
     }
