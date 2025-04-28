@@ -308,10 +308,6 @@ class AnnotoriousAnnotator extends HTMLElement {
         if(annotations && annotations.length){
           this.applyRuler(annotations[0])  
         }
-        else{
-          this.#annoToChop = null
-          this.removeRuler()
-        }
       })
 
     }
@@ -575,8 +571,7 @@ class AnnotoriousAnnotator extends HTMLElement {
 
     toggleMergeLines(e) {
       if(!this.#isChopping) return
-      const ruler = this.shadowRoot.getElementById("ruler")
-      ruler.style.display = "none"
+      this.removeRuler()
       if(e.target.classList.contains("selected")) {
         e.target.classList.remove("selected")
         this.#chopType = ""
@@ -650,7 +645,7 @@ class AnnotoriousAnnotator extends HTMLElement {
         status: "info"
       }
       TPEN.eventDispatcher.dispatch("tpen-toast", toast)
-    }
+    }s
 
     /**
      * Deactivate Annotorious annotation drawing mode.
@@ -695,6 +690,8 @@ class AnnotoriousAnnotator extends HTMLElement {
     stopChopping() {
       this.#isChopping = false
       this.#chopType = ""
+      this.removeRuler()
+      this.shadowRoot.querySelectorAll(".toggleChopType").forEach(el => {el.classList.remove("selected")})
       const toast = {
         message: "You started chopping",
         status: "info"
@@ -821,8 +818,6 @@ class AnnotoriousAnnotator extends HTMLElement {
       */
 
       // Clear and redraw Annotations in the Annotorious UI
-      //this.#annotoriousInstance.clearAnnotations()
-      //this.#annotoriousInstance.setAnnotations(allAnnotations)
       this.#annotoriousInstance.removeAnnotation(compareId)
       this.#annotoriousInstance.addAnnotation(allAnnotations[origIndex])
       this.#annotoriousInstance.addAnnotation(allAnnotations[origIndex + 1])
@@ -873,7 +868,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       elem.addEventListener('click', function (e) {
         if(!_this.#isChopping) return
           console.log("APPLY RULER CLICK")
-        _this.lineChange(e)
+          _this.lineChange(e)
       })
     }
 
@@ -882,13 +877,7 @@ class AnnotoriousAnnotator extends HTMLElement {
      */
     removeRuler() {
       const ruler = this.shadowRoot.getElementById("ruler")
-      // if(!this.#isDrawing) {
-      //   document.querySelectorAll(".deletable").forEach(e => {
-      //     e.classList.remove("deleteable")
-      //     e.classList.remove("mergeable")
-      //   })
-      // }
-      ruler.classList.add("is-hidden")
+      ruler.style.display = "none"
     }
 
     /**
@@ -906,10 +895,6 @@ class AnnotoriousAnnotator extends HTMLElement {
         console.log("Add a line by doing mergeLines() and UI-ing Annotatorious")
         // return this.mergeLines(e, event)
       }
-      // console.log("Annotation to chop")
-      // console.log(this.#annoToChop)
-      // console.log("Drawn Annotation to UI and generate new Annotation set from.")
-      // console.log(elem)
     }
 }
 
