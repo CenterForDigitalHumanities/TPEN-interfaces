@@ -759,19 +759,16 @@ class AnnotoriousAnnotator extends HTMLElement {
 
     /**
      * Adds a line by splitting the current line where it was clicked.
-     *
-     * @param e clicked line element
-     * @see organizePage(e)
+     * The only DOM elem available in relation to Annotations is the selected line.
+     * ^ Is there a way to ask OSD or Annotorious for the Annotation as DOM elements?
      */
     splitLine(event) {
       console.log("SPLIT LINE")
       if(!this.#isChopping) return
       if(!this.#annoToChop) return
-      // The only DOM elem available in relation to Annotations is the selected line.
-      // Note that if there is no selected line, there are no DOM elements representing Annotations. 
       const line = this.#annotoriousInstance.viewer.element.querySelector(".a9s-annotation.selected")
+      // Note that if there is no selected line, there are no DOM elements representing Annotations. 
       if(!line) return
-      console.log("GO!")
       let originalLineHeight = line.style.height
       let allAnnotations = this.#annotoriousInstance.getAnnotations()
       const compareId = this.#annoToChop["@id"] ?? this.#annoToChop.id
@@ -788,8 +785,9 @@ class AnnotoriousAnnotator extends HTMLElement {
 
       // This selected Annotation splits into 2 Annotations.  Need to create the Annotation as data, and update the existing Annotation data.
       // Once you have the Annotation data correct, splice it in to the current Annotation data.
-      // Redraw Annotations so that the new data is in the Annotaorious UI
-      // Make sure the new Annotation (the one underneath) is selected
+      // Order the Annotations in the AnnotationList if chopping, presuming left to right and top to bottom?
+      // Redraw Annotations so that the new data is in the Annotorious UI
+      // Make sure the new Annotation (the one underneath) is selected for continued chopping
         
       console.log("click event in selected annotation elem")
       console.log(event)
@@ -810,34 +808,43 @@ class AnnotoriousAnnotator extends HTMLElement {
       console.log(this.#canvasDims)
       
       // Drawn Annotation dims represented as units, not pixels
-      const rectY_u = rect.y
-      const rectH_u = rect.height
-
-      // Where the click happened in units relative to the height of the drawn Annotation's height in units
-      const clickY_u = rectH_u - (event.offsetY - rect.y)
-      console.log(`clickY_u: ${clickY_u}`)
+      const annoY_units = rect.y
+      const annoH_units = rect.height
 
       // Drawn Annotation dims represented as pixels, not units
-      const annoY_px = parseFloat(annoDims[1])
-      const annoH_px = parseFloat(annoDims[3])
+      const annoY_pixels = parseFloat(annoDims[1])
+      const annoH_pixels = parseFloat(annoDims[3])
+
+      // Where the click happened in units relative to the height of the drawn Annotation's height in units
+      const clickY_units = rectH_units - (event.offsetY - rect.y)
+      console.log(`clickY_units: ${clickY_units}`)
 
       // Where the click happened, in pixels
-      const clickY_px = annoH_px * (clickY_u / rectH_u) + annoY_px
-      console.log(clickY_px)
+      const clickY_pixels = annoH_pixels * (clickY_units / rectH_units) + annoY_pixels
+      console.log(clickY_pixels)
 
-      console.log("original annotation dims adjusted")
+      // Adjust the original Annotation's height (in pixels) to accomodate the split.  All other dimensions remain the same.
       let adjustedAnnoDims = [...annoDims]
-      const annoH_px_adjusted = annoH_px - (clickY_px - annoY_px)
-      adjustedAnnoDims[3] = annoH_px_adjusted+""
+      const annoH_pixels_adjusted = annoH_pixels - (clickY_pixels - annoY_pixels)
+      adjustedAnnoDims[3] = annoH_pixels_adjusted+""
+      console.log("new Annotation dims")
       console.log(adjustedAnnoDims)
 
-      console.log("new Annotation dims")
+      // Figure the new Annotation's height and y position (in pixels), relative to the original Annotation and the click event.
       let newAnnoDims = [...annoDims]
-      const new_annoY_px = clickY_px
-      const new_annoH_px = annoH_px - annoH_px_adjusted
-      newAnnoDims[1] = new_annoY_px+""
-      newAnnoDims[3] = new_annoH_px+""
+      const new_annoY_pixels = clickY_pixels
+      const new_annoH_pixels = annoH_pixels - annoH_pixels_adjusted
+      newAnnoDims[1] = new_annoY_pixels+""
+      newAnnoDims[3] = new_annoH_pixels+""
+
+      console.log("new Annotation dims")
       console.log(newAnnoDims)
+
+      // TODO splice new Annotation data into original Annotation list
+
+      // TODO clear and redraw Annotations in the Annotorious UI
+
+      // TODO prepare UI for next click in chop mode
     }
 
     /**
