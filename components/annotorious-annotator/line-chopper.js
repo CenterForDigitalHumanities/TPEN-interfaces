@@ -265,25 +265,16 @@ class AnnotoriousAnnotator extends HTMLElement {
         * Fired after a new annotation is created and available as a shape in the DOM.
       */
       annotator.on('createAnnotation', function(annotation) {
-        console.log('Annotation Created:', annotation)
-        // _this.#annotoriousInstance.cancelSelected(annotation)
-        // A bit tricky if we want to leave the created Annotation selected as part of the UX...
         _this.applyRuler(annotation)
       })
 
-      annotator.on('updateAnnotation', function(annotation) {
-        console.log('Annotation Updated:', annotation)
-        // _this.#annotoriousInstance.cancelSelected(annotation)  
-      })
-
       /**
-        * Fired after a click event on a drawn Annotation.  The annotation data is known and available as a parameter.
-        * A click on a drawn Annotation in erase mode means erase the Annotation.
-        * 
+        * Fired after a click event on a drawn, unselected Annotation.
+        * Supports Annotation removal.  If the interface is not erasing then nothing special should happen.
       */
-      _this.addEventListener('wantsToEraseAnnotation', (event) => {
-        if(!event.detail.originalAnnotation) return
-        // FIXME if the user holds the mouse down there is some goofy UX.
+      annotator.on('clickAnnotation', (originalAnnotation, originalEvent) => {
+        console.log("Annotorious clickAnnotation")
+        if(!originalAnnotation) return
         if(_this.#isErasing) {
           setTimeout(()=>{
             // Timeout required in order to allow the click-and-focus native functionality to complete.
@@ -300,37 +291,28 @@ class AnnotoriousAnnotator extends HTMLElement {
       })
 
       /**
-        * Fired after a click event on a drawn Annotation.  This should chop the existing 'column' resulting in a new 'line'.
-        * If this.#isErasing they want to delete the Annotation (line or column?)
-        * If this.#isDrawing they want to resize the annotation
-        * if this.#isChopping they want to add, merge, or remove lines (annotations)
+        * Fired after a new set of Annotations is selected by clicking unselected Annotations.
+        * It may be fired in tandem with clickAnnotation.
+        * Supports line editing.  If the interface is not line editing then nothing special should happen.
       */
-      annotator.on('clickAnnotation', (originalAnnotation, originalEvent) => {
-        console.log("Annotorious clickAnnotation")
-        if(!originalAnnotation) return
-        if(_this.#isErasing) {
-          let ev = new CustomEvent("wantsToEraseAnnotation", {
-            detail: {
-              originalAnnotation,
-              originalEvent
-            }
-          })
-          _this.dispatchEvent(ev)
-          return
-        }
-      })
-
       annotator.on('selectionChanged', (annotations) => {
-        console.log('Selected annotations', annotations);
-        if(!_this.#isChopping) return
-        if(annotations && annotations.length){
-          this.applyRuler(annotations[0])  
+        if(_this.#isErasing) {
+          // Take over the cursor behavior seeing the 'move' cursor is confusing
+          if(annotations && annotations.length) {
+            const elem = this.#annotoriousInstance.viewer.element.querySelector(".a9s-annotation.selected")
+            const cursorHandleElem = this.#annotoriousInstance.viewer.element.querySelector(".a9s-shape-handle")
+            elem.style.cursor = "default"
+            cursorHandleElem.style.cursor = "default"
+          }
         }
-        // This is a little race condition-y, but we do want it.
-        // Without it the ruler is left behind when clearing all selections during chop mode.
-        // else{
-        //   this.removeRuler()
-        // }
+        if(_this.#isChopping) {
+          if(annotations && annotations.length) this.applyRuler(annotations[0])  
+          // This is a little race condition-y, but we do want it.
+          // Without it the ruler can be left behind when clearing all selections during line editing.
+          // else {
+          //   this.removeRuler()
+          // }
+        } 
       })
 
     }
@@ -731,6 +713,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       this.#isErasing = true
       this.shadowRoot.getElementById("drawTool").checked = false
       this.shadowRoot.getElementById("chopTool").checked = false
+      this.#annotoriousInstance.cancelSelected()
 
       const toast = {
         message: "You started erasing",
@@ -833,25 +816,6 @@ class AnnotoriousAnnotator extends HTMLElement {
      */
     mergeLines(event) {
 
-    }
-
-    /**
-     * Change the ruler UI color, images have all kinds of colors to contrast against.
-     */
-    rulerColor(color) {
-      const ruler = this.shadowRoot.getElementById("ruler")
-      if (color === "custom") {
-          color = $("#customRuler").val();
-          if (validTextColor(color)) {
-
-          } else {
-              color = "red";
-          }
-      }
-      ruler.style.color = color
-      ruler.style.background = color
-      sampleRuler.style.color = color
-      sampleRuler.style.background = color
     }
 
     /**
