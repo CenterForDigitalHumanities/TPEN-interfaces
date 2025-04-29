@@ -54,6 +54,12 @@ class AnnotoriousAnnotator extends HTMLElement {
             top: 4em;
             z-index: 10;
           }
+          #tools-container label {
+            display: block;
+          }
+          #tools-container i {
+            display: block;
+          }
           input[type="button"].selected {
             background-color: green;
           }
@@ -74,30 +80,41 @@ class AnnotoriousAnnotator extends HTMLElement {
             height:2px;
             top:-10px;
           }
+          .chopOptions {
+            display: none;
+            padding: 5px;
+          }
+          .toggleChopType, #saveBtn {
+            cursor: pointer;
+          }
         </style>
         <div>
             <div id="tools-container">
               <p> You can zoom and pan when you are not drawing.</p>
-              <label for="drawTool">Draw Mode
+              <label for="drawTool">Draw Columns
                <input type="checkbox" id="drawTool">
               </label>
-              <br>
-              <label for="chopTool">Chop Mode
+              <label for="chopTool">Make/Edit Lines
                <input type="checkbox" id="chopTool">
               </label>
-              <br>
               <div class="chopOptions">
+                <i>
+                  * You must select a line.
+                  <br>
+                  * Splitting creates a new line under the selected line.
+                  <br>
+                  * Merging combines the selected line with the line underneath it.
+                </i>
                 <input type="button" class="toggleChopType" id="addLinesBtn" value="Add Lines" />
                 <input type="button" class="toggleChopType" id="mergeLinesBtn" value="Merge Lines" />
+                
               </div>
-              <label> Erase Mode
+              <label> Remove Lines
                <input type="checkbox" id="eraseTool"> 
               </label>
-              <br>
               <label> Annotation Visibility
                <input type="checkbox" id="seeTool" checked> 
               </label>
-              <br>
               <input id="saveBtn" type="button" value="Save Annotations"/>
             </div>
             <div id="annotator-container"></div>
@@ -207,7 +224,7 @@ class AnnotoriousAnnotator extends HTMLElement {
 
       /**
        * An instance of an OpenSeaDragon Annotorious Annotation with customization options that help our desired
-       * "draw new annotation", "edit existing drawn annotation", "delete drawn annotation" UX.
+       * "draw new column", "chop and merge lines", "delete lines" UX.
        * @see https://annotorious.dev/api-reference/openseadragon-annotator/ for all the available methods of this annotator.
       */
       this.#annotoriousInstance = AnnotoriousOSD.createOSDAnnotator(this.#osd, {
@@ -674,12 +691,10 @@ class AnnotoriousAnnotator extends HTMLElement {
     startChopping() {
       this.stopDrawing()
       this.stopErasing()
-      // Oh come on.  SELECT even though it selects the Annotation does not select it in the UI, so there is no elem :(
-      // SELECT would be better than EDIT here b/c click to chop and click-and-hold-to-drag are shared.
-      // this.#annotoriousInstance.setUserSelectAction("SELECT")
       this.#isChopping = true
       this.shadowRoot.getElementById("eraseTool").checked = false
       this.shadowRoot.getElementById("drawTool").checked = false
+      this.shadowRoot.querySelector(".chopOptions").style.display = "block"
       this.shadowRoot.querySelectorAll(".toggleChopType").forEach(el => {el.classList.remove("selected")})
       this.#chopType = ""
       const toast = {
@@ -697,9 +712,10 @@ class AnnotoriousAnnotator extends HTMLElement {
       this.#isChopping = false
       this.#chopType = ""
       this.removeRuler()
+      this.shadowRoot.querySelector(".chopOptions").style.display = "none"
       this.shadowRoot.querySelectorAll(".toggleChopType").forEach(el => {el.classList.remove("selected")})
       const toast = {
-        message: "You started chopping",
+        message: "You stopped chopping",
         status: "info"
       }
       TPEN.eventDispatcher.dispatch("tpen-toast", toast)
@@ -715,6 +731,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       this.#isErasing = true
       this.shadowRoot.getElementById("drawTool").checked = false
       this.shadowRoot.getElementById("chopTool").checked = false
+
       const toast = {
         message: "You started erasing",
         status: "info"
@@ -741,17 +758,14 @@ class AnnotoriousAnnotator extends HTMLElement {
      * ^ Is there a way to ask OSD or Annotorious for the Annotation as DOM elements?
      */
     splitLine(event) {
-      console.log("SPLIT LINE")
       if(!this.#isChopping) return
       if(!this.#annoToChop) return
       let newAnnoObject = JSON.parse(JSON.stringify(this.#annoToChop))
-      // Would event.target be better?
-      const annoElem = this.#annotoriousInstance.viewer.element.querySelector(".a9s-annotation.selected")
+      const annoElem = event.target
       // Note that if there is no selected line, there are no DOM elements representing Annotations. 
       if(!annoElem) return
       const rect = annoElem.getBoundingClientRect()
       const annoDims = this.#annoToChop.target.selector.value.replace("xywh=pixel:", "").split(",")
-
       // Know the original Annotation's index in the AnnotationList for splicing
       // Note the original Annotation JSON is this.#annoToChop
       let allAnnotations = this.#annotoriousInstance.getAnnotations()
@@ -766,54 +780,36 @@ class AnnotoriousAnnotator extends HTMLElement {
         }
         i++
       }
-      
       // Drawn Annotation dims represented as units, not pixels
       const annoY_units = rect.y
       const annoH_units = rect.height
-
       // Drawn Annotation dims represented as pixels, not units
       const annoY_pixels = parseFloat(annoDims[1])
       const annoH_pixels = parseFloat(annoDims[3])
-
       // Where the click happened in units relative to the height of the drawn Annotation's height in units
       const clickY_units = annoH_units - (event.offsetY - annoY_units)
-
       // Where the click happened, in pixels
       const clickY_pixels = annoH_pixels * (clickY_units / annoH_units) + annoY_pixels
-      console.log(clickY_pixels)
-
       // Adjust the original Annotation's height (in pixels) to accomodate the split.  All other dimensions remain the same.
       let adjustedAnnoDims = [...annoDims]
       const annoH_pixels_adjusted = annoH_pixels - (clickY_pixels - annoY_pixels)
       adjustedAnnoDims[3] = annoH_pixels_adjusted+""
-      console.log("adjusted Annotation dims")
-      console.log(adjustedAnnoDims)
-
       // Figure the new Annotation's height and y position (in pixels), relative to the original Annotation and the click event.
       let newAnnoDims = [...annoDims]
       const new_annoY_pixels = annoY_pixels + annoH_pixels_adjusted
       const new_annoH_pixels = annoH_pixels - annoH_pixels_adjusted
       newAnnoDims[1] = new_annoY_pixels+""
       newAnnoDims[3] = new_annoH_pixels+""
-
-      console.log("new Annotation dims")
-      console.log(newAnnoDims)
-
       // Replace original Annotation dimensions
       this.#annoToChop.target.selector.value = `xywh=pixel:${adjustedAnnoDims.join()}`
       allAnnotations.splice(origIndex, 1, this.#annoToChop)
-
       // Splice new Annotation data into original Annotation list
       newAnnoObject.id = Date.now()+""
       newAnnoObject.target.selector.value = `xywh=pixel:${newAnnoDims.join()}`
       newAnnoObject.created = new Date().toJSON()
-
       allAnnotations.splice(origIndex + 1, 0, newAnnoObject)
-
       console.log("New Annotation Set")
       console.log(allAnnotations)
-
-      // Mess with annotation colors
       /*
       this.#annotoriousInstance.setStyle({
         fill: '#00ff00',
@@ -822,15 +818,21 @@ class AnnotoriousAnnotator extends HTMLElement {
         strokeOpacity: 1
       }
       */
-
       // Clear and redraw Annotations in the Annotorious UI
       this.#annotoriousInstance.removeAnnotation(compareId)
       this.#annotoriousInstance.addAnnotation(allAnnotations[origIndex])
       this.#annotoriousInstance.addAnnotation(allAnnotations[origIndex + 1])
-
-      // Prepare UI for next click in chop mode by selecting the new Annotations
+      // Prepare UI for next click in chop mode by selecting the new Annotation
       this.#annotoriousInstance.setSelected(newAnnoObject.id)
-      
+    }
+
+    /**
+     * Reduces two lines to a single line by merging
+     * The only DOM elem available in relation to Annotations is the selected line.
+     * ^ Is there a way to ask OSD or Annotorious for the Annotation as DOM elements?
+     */
+    mergeLines(event) {
+
     }
 
     /**
@@ -860,9 +862,56 @@ class AnnotoriousAnnotator extends HTMLElement {
 
       this.#annoToChop = originalAnnotation
       const elem = this.#annotoriousInstance.viewer.element.querySelector(".a9s-annotation.selected")
+      const cursorHandleElem = this.#annotoriousInstance.viewer.element.querySelector(".a9s-shape-handle")
       const ruler = this.shadowRoot.getElementById("ruler")
       const _this = this
 
+      let mouseStart = 0
+      let mouseFinish = 0
+      
+      // Cursor support for chop options, applies when an Annotation is clicked and selected.
+      if(this.#chopType === "Add Lines") {
+        elem.style.cursor = "crosshair"
+        cursorHandleElem.style.cursor = "crosshair"
+      }
+      if(this.#chopType === "Merge Lines") {
+        elem.style.cursor = "cell"
+        cursorHandleElem.style.cursor = "cell"
+      }
+      if(!this.#isChopping) {
+        elem.style.cursor = "move"
+        cursorHandleElem.style.cursor = "move"
+      }
+
+      // Further cursor support when user changes edit options while an Annotation is selected.
+      elem.addEventListener('mouseenter', function (e) {
+        if(_this.#chopType === "Add Lines") {
+          elem.style.cursor = "crosshair"
+          cursorHandleElem.style.cursor = "crosshair"
+        }
+        if(_this.#chopType === "Merge Lines") {
+          elem.style.cursor = "cell"
+          cursorHandleElem.style.cursor = "cell"
+        }
+        if(!_this.#isChopping) {
+          elem.style.cursor = "move"
+          cursorHandleElem.style.cursor = "move"
+        }
+      })
+
+      // Instead of click use mousedown and mouseup to accomodate moving a column during chop mode
+      elem.addEventListener('mousedown', function (e) {
+        mouseStart = [e.pageX, e.pageY]
+      })
+
+      elem.addEventListener('mouseup', function (e) {
+        mouseFinish = [e.pageX, e.pageY]
+        if(mouseStart[0] !== mouseFinish[0] || mouseStart[1] !== mouseFinish[1]) return
+        if(e.button !== 0) return
+        _this.lineChange(e)
+      })
+
+      // Position the ruler element to be with the cursor
       elem.addEventListener('mousemove', function (e) {
         const rect = elem.getBoundingClientRect()
         ruler.style.left = rect.x+"px"
@@ -871,11 +920,6 @@ class AnnotoriousAnnotator extends HTMLElement {
         ruler.style.width = rect.width+"px"
       })
 
-      elem.addEventListener('click', function (e) {
-        if(!_this.#isChopping) return
-          console.log("APPLY RULER CLICK")
-          _this.lineChange(e)
-      })
     }
 
     /*
@@ -895,11 +939,11 @@ class AnnotoriousAnnotator extends HTMLElement {
       const elem = this.#annotoriousInstance.viewer.element.querySelector(".a9s-annotation.selected")
       if (this.#chopType === "Add Lines") {
         console.log("Add a line by doing splitLine() and UI-ing Annotorious")
-        return this.splitLine(event)
+        this.splitLine(event)
       }
       if(this.#chopType === "Merge Lines"){
         console.log("Add a line by doing mergeLines() and UI-ing Annotatorious")
-        // return this.mergeLines(e, event)
+        this.mergeLines(e, event)
       }
     }
 }
