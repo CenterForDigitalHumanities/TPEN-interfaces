@@ -27,7 +27,6 @@ class AnnotoriousAnnotator extends HTMLElement {
     #isLineEditing = false
     #isErasing = false
     #editType = ""
-    #annoToEditJson = null
     
     static get observedAttributes() {
       return ["annotationpage"]
@@ -265,7 +264,16 @@ class AnnotoriousAnnotator extends HTMLElement {
         * Fired after a new annotation is created and available as a shape in the DOM.
       */
       annotator.on('createAnnotation', function(annotation) {
-        _this.applyCursorBehavior(annotation)
+        console.log("CREATE ANNOTATION")
+        _this.applyCursorBehavior()
+      })
+
+      /**
+        * Fired after a new annotation is resized DOM.
+      */
+      annotator.on('updateAnnotation', function(annotation) {
+        console.log("UPDATE ANNOTATION")
+        _this.applyCursorBehavior()
       })
 
       /**
@@ -296,22 +304,24 @@ class AnnotoriousAnnotator extends HTMLElement {
         * Supports line editing.  If the interface is not line editing then nothing special should happen.
       */
       annotator.on('selectionChanged', (annotations) => {
+        let elem, cursorHandleElem
+        if(annotations && annotations.length) {
+          elem = this.#annotoriousInstance.viewer.element.querySelector(".a9s-annotation.selected")
+          cursorHandleElem = this.#annotoriousInstance.viewer.element.querySelector(".a9s-shape-handle")
+        }
+        else{
+          // This is a little race condition-y.  It removes the ruler during the split line process
+          // Without it the ruler can be left behind when clearing all selections during line editing.
+          // this.removeRuler()
+        }
+        if(!elem) return
         if(_this.#isErasing) {
           // Take over the cursor behavior seeing the 'move' cursor is confusing
-          if(annotations && annotations.length) {
-            const elem = this.#annotoriousInstance.viewer.element.querySelector(".a9s-annotation.selected")
-            const cursorHandleElem = this.#annotoriousInstance.viewer.element.querySelector(".a9s-shape-handle")
-            elem.style.cursor = "default"
-            cursorHandleElem.style.cursor = "default"
-          }
+          elem.style.cursor = "default"
+          cursorHandleElem.style.cursor = "default"
         }
         if(_this.#isLineEditing) {
-          if(annotations && annotations.length) this.applyCursorBehavior(annotations[0])  
-          // This is a little race condition-y, but we do want it.
-          // Without it the ruler can be left behind when clearing all selections during line editing.
-          // else {
-          //   this.removeRuler()
-          // }
+          this.applyCursorBehavior()  
         } 
       })
 
@@ -742,17 +752,21 @@ class AnnotoriousAnnotator extends HTMLElement {
      */
     splitLine(event) {
       if(!this.#isLineEditing) return
-      if(!this.#annoToEditJson) return
-      let newAnnoObject = JSON.parse(JSON.stringify(this.#annoToEditJson))
+      
       const annoElem = event.target
       // Note that if there is no selected line, there are no DOM elements representing Annotations. 
       if(!annoElem) return
+      // Then we really should be able to get the selected annotation JSON from Annotorious
+      let selectedAnnos = this.#annotoriousInstance.getSelected()
+      const annoJsonToEdit = selectedAnnos ? selectedAnnos[0] : null
+      if(!annoJsonToEdit) return
+      let newAnnoObject = JSON.parse(JSON.stringify(annoJsonToEdit))
       const rect = annoElem.getBoundingClientRect()
-      const annoDims = this.#annoToEditJson.target.selector.value.replace("xywh=pixel:", "").split(",")
+      const annoDims = annoJsonToEdit.target.selector.value.replace("xywh=pixel:", "").split(",")
       // Know the original Annotation's index in the AnnotationList for splicing
-      // Note the original Annotation JSON is this.#annoToEditJson
+      // Note the original Annotation JSON is annoJsonToEdit
       let allAnnotations = this.#annotoriousInstance.getAnnotations()
-      const compareId = this.#annoToEditJson["@id"] ?? this.#annoToEditJson.id
+      const compareId = annoJsonToEdit["@id"] ?? annoJsonToEdit.id
       let origIndex = -1
       let i = 0
       for(const a of allAnnotations) {
@@ -784,8 +798,8 @@ class AnnotoriousAnnotator extends HTMLElement {
       newAnnoDims[1] = new_annoY_pixels+""
       newAnnoDims[3] = new_annoH_pixels+""
       // Replace original Annotation dimensions
-      this.#annoToEditJson.target.selector.value = `xywh=pixel:${adjustedAnnoDims.join()}`
-      allAnnotations.splice(origIndex, 1, this.#annoToEditJson)
+      annoJsonToEdit.target.selector.value = `xywh=pixel:${adjustedAnnoDims.join()}`
+      allAnnotations.splice(origIndex, 1, annoJsonToEdit)
       // Splice new Annotation data into original Annotation list
       newAnnoObject.id = Date.now()+""
       newAnnoObject.target.selector.value = `xywh=pixel:${newAnnoDims.join()}`
@@ -822,10 +836,8 @@ class AnnotoriousAnnotator extends HTMLElement {
     /**
      * Mouseover / mousemove needs to do the ruler UI
      */
-    applyCursorBehavior(originalAnnotation) {
-      if(!originalAnnotation) return
+    applyCursorBehavior() {
 
-      this.#annoToEditJson = originalAnnotation
       const elem = this.#annotoriousInstance.viewer.element.querySelector(".a9s-annotation.selected")
       const cursorHandleElem = this.#annotoriousInstance.viewer.element.querySelector(".a9s-shape-handle")
       const ruler = this.shadowRoot.getElementById("ruler")
@@ -905,7 +917,6 @@ class AnnotoriousAnnotator extends HTMLElement {
      */
     lineChange(event) {
       if(!this.#isLineEditing) return
-      const elem = this.#annotoriousInstance.viewer.element.querySelector(".a9s-annotation.selected")
       if (this.#editType === "add") this.splitLine(event)
       if(this.#editType === "merge") this.mergeLines(e, event)
     }
