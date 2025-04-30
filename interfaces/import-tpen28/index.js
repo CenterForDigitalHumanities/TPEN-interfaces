@@ -1,160 +1,154 @@
 import TPEN from "../../api/TPEN.js"
 import Project from "../../api/Project.js"
-
-const container = document.body
-TPEN.attachAuthentication(container)
-
+ 
+TPEN.attachAuthentication(document.body)
 document.getElementById("goForwardBtn").addEventListener("click", goForward)
-document.getElementById("projectSelect").addEventListener("change", () => {
-  document.getElementById("projectData").textContent = ""
-  document.getElementById("projectDetails").style.display = "none"
-})
-
+ 
 async function fetchProjects() {
-  const AUTH_TOKEN = document.cookie
-    .split("; ")
-    .find((row) => row.startsWith("userToken="))
-    ?.split("=")[1]
-
-  const params = new URLSearchParams(window.location.search)
-  const UID = params.get("UID")
-
-  const response = await fetch(
-    `${TPEN.servicesURL}/project/import28/${UID}`,
-    {
-      method: "GET",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${AUTH_TOKEN}`
-      }
-    }
-  )
-
-  const json = await response.json()
-  const message = json.message
-  const data = json.data
-
-  document.getElementById("message").textContent = message
-
-  const select = document.getElementById("projectSelect")
-  for (let key in data) {
-    const option = document.createElement("option")
-    option.value = `${data[key].name}/${data[key].id}`
-    option.text = data[key].name
-    select.appendChild(option)
-  }
-}
-
-async function goForward() {
-  const select = document.getElementById("projectSelect")
-  const selectedValue = select.value
-  const selectedId = selectedValue ? selectedValue.split("/")[2] : null
-
-  const projectDataDiv = document.getElementById("projectData")
-  const projectDetailsDiv = document.getElementById("projectDetails")
-  const messageDiv = document.getElementById("message")
-
-  projectDataDiv.textContent = ""
-  projectDetailsDiv.style.display = "none"
-  messageDiv.textContent = ""
-
-  if (!selectedId) {
-    messageDiv.textContent = "Please select a project first."
-    return
-  }
-
-  const AUTH_TOKEN = document.cookie
-    .split("; ")
-    .find((row) => row.startsWith("userToken="))
-    ?.split("=")[1]
-
-  const url = `https://dev.t-pen.org/TPEN/manifest/${selectedId}`
-
-  const importResponse = await fetch(
-    `${TPEN.servicesURL}/project/import?createFrom=URL`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${AUTH_TOKEN}`
-      },
-      body: JSON.stringify({ url })
-    }
-  )
-
-  const result = await importResponse.json()
-  const projectID = result._id
-
-  const projectResponse = await fetch(
-    `https://dev.t-pen.org/TPEN/getProjectTPENServlet?projectID=${selectedId}`,
-    {
-      method: "GET",
-      credentials: "include"
-    }
-  )
-
-  if (!projectResponse.ok) return
-
-  document.getElementById("goForwardBtn").remove()
-
-  const rawText = await projectResponse.text()
-  const firstLevel = JSON.parse(rawText)
-  const parsedData = {}
-
-  for (const [key, value] of Object.entries(firstLevel)) {
-    try {
-      parsedData[key] = JSON.parse(value)
-    } catch {
-      parsedData[key] = value
-    }
-  }
-
-  projectDataDiv.textContent = JSON.stringify(parsedData.ls_u, null, 2)
-  projectDetailsDiv.style.display = "block"
-
-  const projectCollaborators = parsedData.ls_u.map((user) => ({
-    email: user.Uname
-  }))
-
-  const projectCollaboratorsDiv = document.getElementById("projectCollaborators")
-  projectCollaboratorsDiv.style.display = "flex"
-  projectCollaboratorsDiv.style.justifyContent = "center"
-  projectCollaboratorsDiv.style.alignItems = "center"
-  projectCollaboratorsDiv.style.gap = "50px"
-
-  projectCollaborators.forEach((user) => {
-    const collaboratorP = document.createElement("p")
-    collaboratorP.textContent = user.email
-    const collaboratorButton = document.createElement("button")
-    collaboratorButton.textContent = "Invite"
-
-    collaboratorButton.addEventListener("click", async () => {
-      collaboratorButton.textContent = "Inviting..."
-      collaboratorButton.disabled = true
-
-      const project = new Project(projectID)
-      await project.addMember(user.email)
-
-      collaboratorButton.textContent = "Submit"
-      collaboratorButton.disabled = false
-
-      const successMessage = document.createElement("p")
-      successMessage.textContent = "Invitation sent successfully!"
-      successMessage.classList.add("success-message")
-
-      projectCollaboratorsDiv.appendChild(successMessage)
+    const AUTH_TOKEN = getAuthToken()
+    const UID = new URLSearchParams(window.location.search).get("UID")
+    
+    const response = await fetch(`${TPEN.servicesURL}/project/import28/${UID}`, {
+        method: "GET",
+        credentials: "include",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${AUTH_TOKEN}`
+        }
     })
-
-    projectCollaboratorsDiv.appendChild(collaboratorP)
-    projectCollaboratorsDiv.appendChild(collaboratorButton)
-  })
-
-  const openProjectButton = document.getElementById("openProject")
-  openProjectButton.classList.remove("disable-btn")
-  openProjectButton.addEventListener("click", () => {
-    window.location.href = `/interfaces/manage-project/index.html?projectID=${projectID}`
-  })
+    
+    const { message, data } = await response.json()
+    document.getElementById("message").textContent = message
+    
+    const select = document.getElementById("projectSelect")
+    for (const key in data) {
+        const option = document.createElement("option")
+        option.value = `${data[key].name}/${data[key].id}`
+        option.textContent = data[key].name
+        select.appendChild(option)
+    }
 }
-
+ 
+async function goForward() {
+    const select = document.getElementById("projectSelect")
+    const selectedValue = select.value
+    const selectedId = selectedValue?.split("/")[2]
+    const messageDiv = document.getElementById("message")
+    
+    messageDiv.textContent = ""
+    
+    if (!selectedId) {
+        messageDiv.textContent = "Please select a project first."
+        return
+    }
+    
+    const AUTH_TOKEN = getAuthToken()
+    const url = `https://dev.t-pen.org/TPEN/manifest/${selectedId}`
+    
+    let projectResponse
+    try {
+        projectResponse = await fetch(`https://dev.t-pen.org/TPEN/getProjectTPENServlet?projectID=${selectedId}`, { 
+            method: "GET", 
+            credentials: "include" 
+        })
+    
+        if (!projectResponse.ok) {
+        messageDiv.textContent = "Unable to import Project"
+        return
+        }
+    } catch (error) {
+        console.error("Error during fetch:", error)
+        messageDiv.textContent = "Unable to import Project"
+        return
+    }
+    
+    const importResponse = await fetch(
+        `${TPEN.servicesURL}/project/import?createFrom=URL`,
+        {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${AUTH_TOKEN}`
+        },
+        body: JSON.stringify({ url })
+        }
+    )
+    
+    const result = await importResponse.json()
+    const projectID = result._id
+    
+    messageDiv.textContent = "Project Imported"
+    document.getElementById("projectSelect").disabled = true
+    document.getElementById("goForwardBtn").remove()
+    
+    const rawText = await projectResponse.text()
+    const parsedData = parseProjectResponse(rawText)
+    const collaborators = parsedData.ls_u.map((user) => ({ email: user.Uname }))
+    
+    renderCollaborators(collaborators, projectID)
+    
+    const openBtn = document.getElementById("openProject")
+    openBtn.classList.remove("hidden")
+    openBtn.addEventListener("click", () => {
+        window.location.href = `/interfaces/manage-project/index.html?projectID=${projectID}`
+    })
+}
+ 
+function getAuthToken() {
+    return document.cookie.split(" ").find((row) => row.startsWith("userToken="))?.split("=")[1]
+}
+ 
+function parseProjectResponse(text) {
+    const firstLevel = JSON.parse(text)
+    const parsed = {}
+    for (const [key, value] of Object.entries(firstLevel)) {
+        try {
+        parsed[key] = JSON.parse(value)
+        } catch {
+        parsed[key] = value
+        }
+    }
+    return parsed
+}
+ 
+function renderCollaborators(collaborators, projectID) {
+    const wrapper = document.getElementById("collaboratorList")
+    const section = document.getElementById("projectCollaborators")
+    section.classList.remove("hidden")
+    
+    collaborators.forEach((user) => {
+        const item = document.createElement("div")
+        item.classList.add("collaborator-item")
+    
+        const email = document.createElement("p")
+        email.textContent = user.email
+    
+        const button = document.createElement("button")
+        button.textContent = "Invite"
+        button.className = "btn primary-btn"
+    
+        button.addEventListener("click", async () => {
+        button.textContent = "Inviting..."
+        button.disabled = true
+    
+        const project = new Project(projectID)
+        const response = await project.addMember(user.email)
+    
+        if (response) {
+            button.style.display = "none"
+        }
+    
+        const success = document.createElement("p")
+        success.style.display = "block"
+        success.textContent = "Invitation sent successfully!"
+        success.classList.add("success-message")
+        item.appendChild(success)
+        })
+    
+        item.appendChild(email)
+        item.appendChild(button)
+        wrapper.appendChild(item)
+    })
+}
+ 
 fetchProjects()
