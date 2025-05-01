@@ -41,11 +41,11 @@ async function importProject() {
     }
     
     const AUTH_TOKEN = getAuthToken()
-    const url = `${TPEN.servicesURL}/TPEN/manifest/${selectedId}`
+    const url = `${TPEN.TPEN28URL}/TPEN/manifest/${selectedId}`
     
     let projectResponse
     try {
-        projectResponse = await fetch(`${TPEN.servicesURL}/TPEN/getProjectTPENServlet?projectID=${selectedId}`, { 
+        projectResponse = await fetch(`${TPEN.TPEN28URL}/TPEN/getProjectTPENServlet?projectID=${selectedId}`, { 
             method: "GET", 
             credentials: "include" 
         })
