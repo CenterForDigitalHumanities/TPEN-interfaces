@@ -42,9 +42,9 @@ class NewAction extends HTMLElement {
         })
         this.shadowRoot.getElementById("link-tpen-2.8").addEventListener("click", () => {
             const userToken = localStorage.getItem("userToken")
-            document.cookie = `userToken=${userToken}; path=/; domain=t-pen.org; secure; samesite=strict;`
+            document.cookie = `userToken=${userToken}; path=/; domain=${window.location.origin}; secure; samesite=strict;`
             const redirectUri = encodeURIComponent(`${window.location.origin}/interfaces/import-tpen28/index.html`)
-            window.location.href = `https://dev.t-pen.org/TPEN/login.jsp?redirect_uri=${redirectUri}`
+            window.location.href = `${TPEN.TPEN28URL}/TPEN/login.jsp?redirect_uri=${redirectUri}`
         })
     }
 }
