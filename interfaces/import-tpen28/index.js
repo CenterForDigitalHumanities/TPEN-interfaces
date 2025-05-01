@@ -14,11 +14,7 @@ async function fetchProjects() {
     
     const response = await fetch(`${TPEN.servicesURL}/project/import28/${UID}`, {
         method: "GET",
-        credentials: "include",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${AUTH_TOKEN}`
-        }
+        credentials: "include"
     })
     
     const { message, data } = await response.json()
