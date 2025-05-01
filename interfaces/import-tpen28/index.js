@@ -9,7 +9,6 @@ function getAuthToken() {
 }
 
 async function fetchProjects() {
-    const AUTH_TOKEN = getAuthToken()
     const UID = new URLSearchParams(window.location.search).get("UID")
     
     const response = await fetch(`${TPEN.servicesURL}/project/import28/${UID}`, {
