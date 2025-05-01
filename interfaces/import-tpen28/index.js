@@ -2,8 +2,12 @@ import TPEN from "../../api/TPEN.js"
 import Project from "../../api/Project.js"
  
 TPEN.attachAuthentication(document.body)
-document.getElementById("goForwardBtn").addEventListener("click", goForward)
- 
+document.getElementById("importProjectBtn").addEventListener("click", importProject)
+
+function getAuthToken() {
+    return document.cookie.split(" ").find((row) => row.startsWith("userToken="))?.split("=")[1]
+}
+
 async function fetchProjects() {
     const AUTH_TOKEN = getAuthToken()
     const UID = new URLSearchParams(window.location.search).get("UID")
@@ -29,12 +33,11 @@ async function fetchProjects() {
     }
 }
  
-async function goForward() {
+async function importProject() {
     const select = document.getElementById("projectSelect")
     const selectedValue = select.value
     const selectedId = selectedValue?.split("/")[2]
     const messageDiv = document.getElementById("message")
-    
     messageDiv.textContent = ""
     
     if (!selectedId) {
@@ -53,8 +56,8 @@ async function goForward() {
         })
     
         if (!projectResponse.ok) {
-        messageDiv.textContent = "Unable to import Project"
-        return
+            messageDiv.textContent = "Unable to import Project"
+            return
         }
     } catch (error) {
         console.error("Error during fetch:", error)
@@ -62,24 +65,21 @@ async function goForward() {
         return
     }
     
-    const importResponse = await fetch(
-        `${TPEN.servicesURL}/project/import?createFrom=URL`,
-        {
+    const importResponse = await fetch(`${TPEN.servicesURL}/project/import?createFrom=URL`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${AUTH_TOKEN}`
         },
         body: JSON.stringify({ url })
-        }
-    )
+    })
     
     const result = await importResponse.json()
     const projectID = result._id
     
     messageDiv.textContent = "Project Imported"
     document.getElementById("projectSelect").disabled = true
-    document.getElementById("goForwardBtn").remove()
+    document.getElementById("importProjectBtn").remove()
     
     const rawText = await projectResponse.text()
     const parsedData = parseProjectResponse(rawText)
@@ -94,29 +94,28 @@ async function goForward() {
     })
 }
  
-function getAuthToken() {
-    return document.cookie.split(" ").find((row) => row.startsWith("userToken="))?.split("=")[1]
-}
- 
 function parseProjectResponse(text) {
     const firstLevel = JSON.parse(text)
     const parsed = {}
     for (const [key, value] of Object.entries(firstLevel)) {
         try {
-        parsed[key] = JSON.parse(value)
+            parsed[key] = JSON.parse(value)
         } catch {
-        parsed[key] = value
+            parsed[key] = value
         }
     }
     return parsed
 }
  
-function renderCollaborators(collaborators, projectID) {
+function renderCollaborators(collaborators, leaders, projectID) {
     const wrapper = document.getElementById("collaboratorList")
     const section = document.getElementById("projectCollaborators")
     section.classList.remove("hidden")
-    
-    collaborators.forEach((user) => {
+   
+    const leaderEmails = Object.values(leaders).map((user) => user.email)
+    const collaboratorList = Object.values(collaborators)
+   
+    collaboratorList.forEach((user) => {
         const item = document.createElement("div")
         item.classList.add("collaborator-item")
     
@@ -124,31 +123,30 @@ function renderCollaborators(collaborators, projectID) {
         email.textContent = user.email
     
         const button = document.createElement("button")
-        button.textContent = "Invite"
+        const isLeader = leaderEmails.includes(user.email)
+        const role = isLeader ? "LEADER" : "VIEWER"
+        button.textContent = isLeader ? "Invite as Leader" : "Invite as Viewer"
         button.className = "btn primary-btn"
-    
         button.addEventListener("click", async () => {
-        button.textContent = "Inviting..."
-        button.disabled = true
-    
-        const project = new Project(projectID)
-        const response = await project.addMember(user.email)
-    
-        if (response) {
-            button.style.display = "none"
-        }
-    
-        const success = document.createElement("p")
-        success.style.display = "block"
-        success.textContent = "Invitation sent successfully!"
-        success.classList.add("success-message")
-        item.appendChild(success)
+            button.textContent = "Inviting..."
+            button.disabled = true
+            const project = new Project(projectID)
+            const response = await project.addMember(user.email, [role])
+
+            if (response) {
+                button.style.display = "none"
+            }
+
+            const success = document.createElement("p")
+            success.style.display = "block"
+            success.textContent = "Invitation sent successfully!"
+            success.classList.add("success-message")
+            item.appendChild(success)
         })
-    
         item.appendChild(email)
         item.appendChild(button)
         wrapper.appendChild(item)
     })
-}
+}  
  
 fetchProjects()

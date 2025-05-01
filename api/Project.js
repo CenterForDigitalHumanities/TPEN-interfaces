@@ -82,7 +82,7 @@ export default class Project {
             })
     }
 
-    async addMember(email) {
+    async addMember(email, roles = undefined) {
         try {
             const AUTH_TOKEN = TPEN.getAuthorization() ?? TPEN.login()
             const response = await fetch(`${TPEN.servicesURL}/project/${this._id}/invite-member`, {
@@ -91,7 +91,7 @@ export default class Project {
                     'Content-Type': 'application/json',
                 },
                 method: "POST",
-                body: JSON.stringify({ email }),
+                body: JSON.stringify({ email, roles }),
             })
             if (!response.ok) {
                 const errorData = await response.json()
