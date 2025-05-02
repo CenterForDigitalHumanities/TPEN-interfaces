@@ -71,16 +71,16 @@ async function importProject() {
     
     const result = await importResponse.json()
     const projectID = result._id
-    
-    messageDiv.textContent = "Project Imported"
-    document.getElementById("projectSelect").disabled = true
-    document.getElementById("importProjectBtn").remove()
-    
     const rawText = await projectResponse.text()
     const parsedData = parseProjectResponse(rawText)
     const collaborators = parsedData.ls_u.map((user) => ({ email: user.Uname }))
+    const leader = parsedData.ls_leader.map((user) => ({ email: user.Uname }))
     
-    renderCollaborators(collaborators, projectID)
+    renderCollaborators(collaborators, leader, projectID)
+
+    messageDiv.textContent = "Project Imported"
+    document.getElementById("projectSelect").disabled = true
+    document.getElementById("importProjectBtn").remove()
     
     const openBtn = document.getElementById("openProject")
     openBtn.classList.remove("hidden")
