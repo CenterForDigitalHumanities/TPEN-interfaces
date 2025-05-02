@@ -31,6 +31,7 @@ class NewAction extends HTMLElement {
                 <button id="import-resource">Import a Resource</button>
                 <button id="upgrade">Upgrade from TPEN 2.8</button>
                 <button id="link-tpen-2.8">Link TPEN 2.8 Account</button>
+                <a href="/profile" id="profile-link">Manage Profile</a>
             </div>
         `
 

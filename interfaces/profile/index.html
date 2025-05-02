@@ -1,0 +1,27 @@
+---
+title: Manage Profile
+permalink: /profile
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Profile</title>
+    <script type="module" src="components/user-profile/index.js"></script>
+    <script type="module" src="components/gui/site/index.js"></script>
+    <script type="module" src="components/gui/card/Card.js"></script>
+    <link href="components/gui/site/index.css" rel="stylesheet" type="text/css" />
+    </head>
+<body>
+    <tpen-page>
+            <div style="display: flex; justify-content: center;">
+                <tpen-card>
+                    <h2 slot="header">User Profile</h2>
+                    <tpen-user-profile slot="body" class="card"></tpen-user-profile>
+                </tpen-card>
+            </div>
+    </tpen-page>
+    </body>
+</html>
