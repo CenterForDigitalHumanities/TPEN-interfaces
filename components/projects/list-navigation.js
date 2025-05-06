@@ -9,9 +9,33 @@ export default class ProjectsListNavigation extends HTMLElement {
         const style = document.createElement('style')
         style.textContent = `
             li {
-                margin: 5px 0px;
-                display: flex;
-                gap: 10px;
+            margin: 0px;
+            padding: 5px;
+            display: flex;
+            gap: 10px;
+            background-color: var(--light-gray);
+            transition: background-color 0.2s ease-in-out;
+            }
+            li:nth-child(odd) {
+            background-color: var(--white);
+            }
+            li:hover {
+            background-color: var(--primary-light);
+            }
+            ol {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            }
+            a {
+            text-decoration: none;
+            color: var(--tpen-color-primary);
+            font-weight: 600;
+            display: block;
+            width: 100%;
+            }
+            a:hover {
+            text-decoration: none;
             }
         `
         const projectList = document.createElement('ol')
