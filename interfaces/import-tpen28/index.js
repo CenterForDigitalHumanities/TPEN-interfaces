@@ -107,7 +107,7 @@ async function importProject() {
             status: "error"
         })
     }
-    
+
     const openBtn = document.getElementById("openProject")
     openBtn.classList.remove("hidden")
     openBtn.addEventListener("click", () => {
