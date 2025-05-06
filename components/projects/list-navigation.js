@@ -42,9 +42,26 @@ export default class ProjectsListNavigation extends HTMLElement {
             a:hover {
             text-decoration: none;
             }
+            li.placeholder {
+            background-color: var(--light-gray);
+            color: var(--dark-gray);
+            border-radius: 5px;
+            animation: pulse 1.5s infinite;
+            }
+            @keyframes pulse {
+            0% {
+            background-color: var(--light-gray);
+            }
+            50% {
+            background-color: var(--white);
+            }
+            100% {
+            background-color: var(--light-gray);
+            }
+            }
         `
         const projectList = document.createElement('ol')
-        if(this.classList.contains('unbounded')) {
+        if (this.classList.contains('unbounded')) {
             projectList.classList.add('unbounded')
         }
         projectList.id = 'projectsListView'
