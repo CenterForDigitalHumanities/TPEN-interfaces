@@ -33,7 +33,7 @@ class NewAction extends HTMLElement {
             <a href="/interfaces/project/create" id="create-project">
             <span>📁</span> Create a New Project
             </a>
-            <a href="/interfaces/import-project" id="import-resource">
+            <a href="/interfaces/project/import" id="import-resource">
             <span>📤</span> Import a Resource
             </a>
             <a id="upgrade" href="#">
