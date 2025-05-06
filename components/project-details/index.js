@@ -51,6 +51,18 @@ class ProjectDetails extends HTMLElement {
     connectedCallback() {
         TPEN.attachAuthentication(this)
         TPEN.eventDispatcher.on('tpen-project-loaded', () => this.render())
+        TPEN.eventDispatcher.on('tpen-project-load-failed', (err) => {
+            this.shadowRoot.innerHTML = `
+                <style>${this.style}</style>
+                <h3>Project not found</h3>
+                <p>The project you are looking for does not exist or you do not have access to it.</p>
+            `
+            const toast = {
+                message: `Project failed to load: ${err.message}`,
+                status: "error"
+              }
+            TPEN.eventDispatcher.dispatchEvent('toast',toast)
+        }
     }
 
     async render() {
