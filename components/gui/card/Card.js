@@ -37,6 +37,22 @@ class TPENCard extends HTMLElement {
                 bottom: 0;
                 width: 100%;
             }
+            ::slotted(a) {
+                background-color: var(--primary-color);
+                text-transform: capitalize;
+                outline: var(--primary-light) 1px solid;
+                outline-offset: -3.5px;
+                color: var(--white) !important;
+                border-radius: 5px;
+                text-decoration: none;
+                padding: 0.5em 1em !important;
+                transition: all 0.3s;
+            }
+            ::slotted(a:hover) {
+                background-color: var(--primary-light);
+                outline: var(--primary-color) 1px solid;
+                outline-offset: -1.5px;
+            }
             ::slotted(button) {
                 background-color: var(--primary-color) !important;
                 text-transform: capitalize;

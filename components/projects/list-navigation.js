@@ -26,6 +26,11 @@ export default class ProjectsListNavigation extends HTMLElement {
             list-style: none;
             padding: 0;
             margin: 0;
+            max-height: 20em;
+            overflow-y: auto;
+            }
+            ol.unbounded {
+            max-height: none;
             }
             a {
             text-decoration: none;
@@ -39,6 +44,9 @@ export default class ProjectsListNavigation extends HTMLElement {
             }
         `
         const projectList = document.createElement('ol')
+        if(this.classList.contains('unbounded')) {
+            projectList.classList.add('unbounded')
+        }
         projectList.id = 'projectsListView'
         this.shadowRoot.prepend(style, projectList)
 
