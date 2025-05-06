@@ -101,7 +101,6 @@ async function importProject() {
           message: "Hotkeys added successfully",
           status: "success"
         })
-        return response
       } catch (error) {
         TPEN.eventDispatcher.dispatch("tpen-toast", {
           message: error.toString(),
