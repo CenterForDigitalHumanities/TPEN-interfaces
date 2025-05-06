@@ -48,6 +48,13 @@ export default class ProjectsListNavigation extends HTMLElement {
             projectList.classList.add('unbounded')
         }
         projectList.id = 'projectsListView'
+        const placeholderItem = document.createElement('li')
+        placeholderItem.classList.add('placeholder')
+        placeholderItem.setAttribute('aria-hidden', 'true')
+        placeholderItem.setAttribute('role', 'presentation')
+        placeholderItem.setAttribute('tabindex', '-1')
+        placeholderItem.innerHTML = `<a href="#">Loading...</a>`
+        projectList.append(...Array.from({ length: 5 }, () => placeholderItem.cloneNode(true)))
         this.shadowRoot.prepend(style, projectList)
 
         TPEN.eventDispatcher.on("tpen-authenticated", async (ev) => {
