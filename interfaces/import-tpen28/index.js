@@ -81,6 +81,33 @@ async function importProject() {
     messageDiv.textContent = "Project Imported"
     document.getElementById("projectSelect").disabled = true
     document.getElementById("importProjectBtn").remove()
+
+    const symbols = parsedData.projectButtons.map(button => String.fromCharCode(button.key))
+    try {
+        const response = await fetch(`${TPEN.servicesURL}/project/${projectID}/hotkeys`, {
+          method : "POST",
+          headers: {
+            Authorization: `Bearer ${TPEN.getAuthorization()}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({symbols}),
+        })
+  
+        if (!response.ok) {
+          throw response
+        }
+  
+        TPEN.eventDispatcher.dispatch("tpen-toast", {
+          message: "Hotkeys added successfully",
+          status: "success"
+        })
+        return response
+      } catch (error) {
+        TPEN.eventDispatcher.dispatch("tpen-toast", {
+          message: error.toString(),
+          status: "error"
+        })
+      }
     
     const openBtn = document.getElementById("openProject")
     openBtn.classList.remove("hidden")
