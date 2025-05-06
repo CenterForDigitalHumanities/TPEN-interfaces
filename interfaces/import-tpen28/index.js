@@ -85,28 +85,28 @@ async function importProject() {
     const symbols = parsedData.projectButtons.map(button => String.fromCharCode(button.key))
     try {
         const response = await fetch(`${TPEN.servicesURL}/project/${projectID}/hotkeys`, {
-          method : "POST",
-          headers: {
-            Authorization: `Bearer ${TPEN.getAuthorization()}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({symbols}),
+            method : "POST",
+            headers: {
+                Authorization: `Bearer ${TPEN.getAuthorization()}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({symbols}),
         })
   
         if (!response.ok) {
-          throw response
+            throw response
         }
   
         TPEN.eventDispatcher.dispatch("tpen-toast", {
-          message: "Hotkeys added successfully",
-          status: "success"
+            message: "Hotkeys added successfully",
+            status: "success"
         })
-      } catch (error) {
+    } catch (error) {
         TPEN.eventDispatcher.dispatch("tpen-toast", {
-          message: error.toString(),
-          status: "error"
+            message: "Error adding Hotkeys",
+            status: "error"
         })
-      }
+    }
     
     const openBtn = document.getElementById("openProject")
     openBtn.classList.remove("hidden")
