@@ -66,6 +66,7 @@ class TpenFooter extends HTMLElement {
                 display: flex;
                 align-items: center;
                 justify-content: space-evenly;
+                flex-wrap: wrap;
             }
             .footer-nav ul {
                 list-style: none;

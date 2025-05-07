@@ -18,7 +18,7 @@
  * @version 0.0.1
  */
 import TPEN from './TPEN.js'
-import { eventDispatcher } from './events.js'
+const { eventDispatcher } = TPEN
 import { userMessage } from "../components/iiif-tools/index.js"
 
 export default class Project {

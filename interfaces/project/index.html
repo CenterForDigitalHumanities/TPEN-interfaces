@@ -12,10 +12,18 @@ permalink: /project
     <script type="module" src="/api/TPEN.js"></script>
     <script type="module" src="/components/gui/site/index.js"></script>
     <script type="module" src="/components/project-details/index.js"></script>
+    <script type="module" src="/components/gui/card/Card.js"></script>
+    <link href="/components/gui/site/index.css" rel="stylesheet" type="text/css" />
+    <link href="/components/gui/card/Card.css" rel="stylesheet" type="text/css" />
 </head>
 <body>
     <tpen-page>
-        <tpen-project-detail></tpen-project-detail>
+        <div style="display: flex; justify-content: center;">
+            <tpen-card>
+                <h2 slot="header">Project Details</h2>
+                <tpen-project-details slot="body" class="card"></tpen-project-details>
+            </tpen-card>
+        </div>
     </tpen-page>
     
 </body>
