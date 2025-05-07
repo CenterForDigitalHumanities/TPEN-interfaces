@@ -830,7 +830,83 @@ class AnnotoriousAnnotator extends HTMLElement {
      * TODO
      */
     mergeLines(event) {
-
+      if(!this.#isLineEditing) return
+      let toast
+      const annoElem = event.target
+      // Note that if there is no selected line, there are no DOM elements representing Annotations. 
+      if(!annoElem) return
+      // Then we really should be able to get the selected annotation JSON from Annotorious
+      let selectedAnnos = this.#annotoriousInstance.getSelected()
+      const annoJsonToEdit = selectedAnnos ? selectedAnnos[0] : null
+      if(!annoJsonToEdit) return
+      // Know the original Annotation's index in the AnnotationList for splicing
+      // Note the original Annotation JSON is annoJsonToEdit
+      let allAnnotations = this.#annotoriousInstance.getAnnotations()
+      const compareId = annoJsonToEdit["@id"] ?? annoJsonToEdit.id
+      let origIndex = -1
+      let i = 0
+      for(const a of allAnnotations) {
+        const origId = a["@id"] ?? a.id
+        if(origId === compareId) {
+          origIndex = i
+          break
+        }
+        i++
+      }
+      const annoJsonToMergeIn = allAnnotations[origIndex+1] ?? null
+      // Can't merge with the line underneath it because there is no line underneath it
+      if(!annoJsonToMergeIn) {
+        toast = {
+          message: "No line underneath",
+          status: "error"
+        }
+        TPEN.eventDispatcher.dispatch("tpen-toast", toast)
+        return
+      }
+      const annoDims = annoJsonToEdit.target.selector.value.replace("xywh=pixel:", "").split(",")
+      const mergeIntoAnnoDims = annoJsonToMergeIn.target.selector.value.replace("xywh=pixel:", "").split(",")
+      // Can only merge annotations that share the same x dimension
+      if(annoDims[0] !== mergIntoAnnoDims[0]){
+        toast = {
+          message: "No line underneath",
+          status: "error"
+        }
+        TPEN.eventDispatcher.dispatch("tpen-toast", toast)
+        return
+      }
+      const nextId = annoJsonToMergeIn["@id"] ?? annoJsonToMergeIn.id
+      let newAnnoObject = JSON.parse(JSON.stringify(annoJsonToEdit))
+      const rect = annoElem.getBoundingClientRect()
+      
+      // Make the original absorb the height of the line underneath it.
+      const newAnnoHeight = parseFloat(annoDims[2]) + parseFloat(mergeIntoAnnoDims[3])
+      // If the line underneath it was wider, take on that width
+      const newAnnoWidth = parseFloat(annoDims[2]) < parseFloat(mergeIntoAnnoDims[2]) ?mergeIntoAnnoDims[2] : annoDims[2]
+      const newAnnoDims = [annoDims[0], annoDims[1], newAnnoWidth+"", newAnnoHeight+""]
+      
+      // Remove the Annotation underneath the selected Annotation
+      allAnnotations.splice(origIndex+1, 1)
+      this.#annotoriousInstance.removeAnnotation(nextId)
+      // Splice new Annotation data into original Annotation list
+      newAnnoObject.id = Date.now()+""
+      newAnnoObject.target.selector.value = `xywh=pixel:${newAnnoDims.join()}`
+      newAnnoObject.created = new Date().toJSON()
+      allAnnotations.splice(origIndex, 0, newAnnoObject)
+      console.log("New Annotation Set")
+      console.log(allAnnotations)
+      /*
+      this.#annotoriousInstance.setStyle({
+        fill: '#00ff00',
+        fillOpacity: 0.25,
+        stroke: '#00ff00',
+        strokeOpacity: 1
+      }
+      */
+      // Clear and redraw Annotations in the Annotorious UI
+      this.#annotoriousInstance.removeAnnotation(compareId)
+      this.#annotoriousInstance.addAnnotation(allAnnotations[origIndex])
+      // Prepare UI for next click in chop mode by selecting the new Annotation
+      this.#annotoriousInstance.setSelected(newAnnoObject.id)
     }
 
     /**
