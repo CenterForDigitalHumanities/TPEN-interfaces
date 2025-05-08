@@ -1,8 +1,7 @@
 /**
- * A plain Annotorious Annotator that can draw Rectangles.  It is able to draw Polygons, but this ability is not exposed to the user.
- * It assigns all Annotations to the provided AnnotationPage (does not make or track more than one page at a time)
+ * A manual line parser akin to the one available at TPEN 2.8.
  *
- * It is exposed to the user at /interfaces/annotator/index.html and so is our 'default annotator'.
+ * It is exposed to the user at /interfaces/annotator/line-parser.html.
  *
  * The Annotation generation UI is powered by Annotorious.  The TPEN3 team hereby acknowledges
  * and thanks the Annotorious development team for this open source software.
@@ -840,7 +839,7 @@ class AnnotoriousAnnotator extends HTMLElement {
     let allAnnotations = this.#annotoriousInstance.getAnnotations()
 
     /**
-     * The order of these Annotations is not guaranteed which messes up merge line / split line.
+     * The order of these Annotations is not guaranteed which messes up merge line.
      * These Annotations should be ordered by y then x.  Generally, this mocks a columnization order.
      * The reorder is only a helper for the logic here and does not persist or change the order in Annotorious.
      */
