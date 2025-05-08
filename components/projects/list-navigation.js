@@ -27,7 +27,6 @@ export default class ProjectsListNavigation extends HTMLElement {
             padding: 0;
             margin: 0;
             max-height: 20em;
-            overflow-y: auto;
             }
             ol.unbounded {
             max-height: none;

@@ -14,6 +14,8 @@ class TPENCard extends HTMLElement {
                 height          : 100%;
                 min-height      : 10em;
                 position: relative;
+                display: flex;
+                flex-direction: column;
             }
             .card-header, .card-body, .card-footer > * {
                 display: block;
@@ -21,6 +23,8 @@ class TPENCard extends HTMLElement {
             }
             .card-body {
                 margin-bottom: 2em;
+                flex-grow: 1;
+                overflow: auto;
             }
             .card-header {
                 color: var(--accent);
