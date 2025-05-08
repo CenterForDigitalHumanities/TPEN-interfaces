@@ -1,2 +1,0 @@
-# Requires 'Column' Conceptualization
-customElements.define('tpen-column-and-line-annotator', Annotator)
