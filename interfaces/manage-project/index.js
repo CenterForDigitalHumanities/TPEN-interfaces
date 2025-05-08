@@ -6,6 +6,7 @@ import "../../components/projects/project-list-view.js"
 import "../../components/project-permissions/index.js"
 import "../../components/project-export/index.js"
 import "../../components/project-layers/index.js"
+import "../../components/project-tools/index.js"
 
 TPEN.eventDispatcher.on('tpen-project-loaded', () => render())
 const container = document.body
