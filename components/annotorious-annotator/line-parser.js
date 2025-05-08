@@ -13,8 +13,19 @@
 import TPEN from '../../api/TPEN.js'
 import User from '../../api/User.js'
 
-class AnnotoriousAnnotator extends HTMLElement {#
-  osd# annotoriousInstance# userForAnnotorious# annotationPageURI# resolvedAnnotationPage# modifiedAnnotationPage# imageDims# canvasDims# isDrawing = false# isLineEditing = false# isErasing = false# editType = ""
+class AnnotoriousAnnotator extends HTMLElement {
+    #osd
+    #annotoriousInstance
+    #userForAnnotorious
+    #annotationPageURI
+    #resolvedAnnotationPage
+    #modifiedAnnotationPage
+    #imageDims
+    #canvasDims
+    #isDrawing = false
+    #isLineEditing = false
+    #isErasing = false
+    #editType = ""
 
   static get observedAttributes() {
     return ["annotationpage"]
@@ -889,9 +900,10 @@ class AnnotoriousAnnotator extends HTMLElement {#
     newAnnoObject.id = Date.now() + ""
     newAnnoObject.target.selector.value = `xywh=pixel:${newAnnoDims.join()}`
     newAnnoObject.created = new Date().toJSON()
+    allAnnotations.splice(origIndex, 1, newAnnoObject)
     // Clear and redraw Annotations in the Annotorious UI
     this.#annotoriousInstance.removeAnnotation(compareId)
-    this.#annotoriousInstance.addAnnotation(allAnnotations[origIndex])
+    this.#annotoriousInstance.addAnnotation(newAnnoObject)
     // Prepare UI for next click in chop mode by selecting the new Annotation
     this.#annotoriousInstance.setSelected(newAnnoObject.id)
   }
@@ -907,7 +919,7 @@ class AnnotoriousAnnotator extends HTMLElement {#
     const _this = this
     let mouseStart = 0
     let mouseFinish = 0
-    
+
     // Cursor support for editing options, applies when an Annotation is clicked and selected.
     if (this.#isLineEditing) {
       if (this.#editType === "add") {
