@@ -166,12 +166,10 @@ class AnnotoriousAnnotator extends HTMLElement {
       const canvasID = resolvedCanvas["@id"] ?? resolvedCanvas.id
       const fullImage = resolvedCanvas?.items[0]?.items[0]?.body?.id
       const imageService = resolvedCanvas?.items[0]?.items[0]?.body?.service?.id
-      
       if(!fullImage) {
           throw new Error("Cannot Resolve Canvas Image", 
             {"cause":"The Image is 404 or unresolvable."})
       }
-
       this.#imageDims = [
         resolvedCanvas?.items[0]?.items[0]?.body?.width,
         resolvedCanvas?.items[0]?.items[0]?.body?.height
@@ -184,7 +182,6 @@ class AnnotoriousAnnotator extends HTMLElement {
         type: "image",
         url: fullImage
       }
-
       // Try to get the info.json.  If we can't, continue with the simple imageInfo obj.
       if(imageService) {
           const lastchar = imageService[imageService.length-1]
@@ -246,6 +243,15 @@ class AnnotoriousAnnotator extends HTMLElement {
       this.#annotoriousInstance.setUser(this.#userForAnnotorious)
       // "polygon" is another available option
       this.#annotoriousInstance.setDrawingTool("rectangle")
+      // This would change the color of drawn Annotations
+      /*
+      this.#annotoriousInstance.setStyle({
+        fill: '#00ff00',
+        fillOpacity: 0.25,
+        stroke: '#00ff00',
+        strokeOpacity: 1
+      }
+      */
       this.setInitialAnnotations()
       this.listenTo(this)
     }
@@ -264,7 +270,8 @@ class AnnotoriousAnnotator extends HTMLElement {
         * Fired after a new annotation is created and available as a shape in the DOM.
       */
       annotator.on('createAnnotation', function(annotation) {
-        console.log("CREATE ANNOTATION")
+        // console.log("CREATE ANNOTATION")
+        if(_this.#isDrawing) _this.#annotoriousInstance.cancelSelected()
         _this.applyCursorBehavior()
       })
 
@@ -272,7 +279,7 @@ class AnnotoriousAnnotator extends HTMLElement {
         * Fired after a new annotation is resized DOM.
       */
       annotator.on('updateAnnotation', function(annotation) {
-        console.log("UPDATE ANNOTATION")
+        // console.log("UPDATE ANNOTATION")
         _this.applyCursorBehavior()
       })
 
@@ -281,7 +288,7 @@ class AnnotoriousAnnotator extends HTMLElement {
         * Supports Annotation removal.  If the interface is not erasing then nothing special should happen.
       */
       annotator.on('clickAnnotation', (originalAnnotation, originalEvent) => {
-        console.log("Annotorious clickAnnotation")
+        // console.log("Annotorious clickAnnotation")
         if(!originalAnnotation) return
         if(_this.#isErasing) {
           setTimeout(()=>{
@@ -289,7 +296,7 @@ class AnnotoriousAnnotator extends HTMLElement {
             // Also stops the goofy UX for naturally slow clickers.
             let c = confirm("Are you sure you want to remove this?")
             if(c) {
-              _this.#annotoriousInstance.removeAnnotation(event.detail.originalAnnotation)  
+              _this.#annotoriousInstance.removeAnnotation(originalAnnotation)  
             }
             else{
               _this.#annotoriousInstance.cancelSelected()
@@ -316,7 +323,7 @@ class AnnotoriousAnnotator extends HTMLElement {
         }
         if(!elem) return
         if(_this.#isErasing) {
-          // Take over the cursor behavior seeing the 'move' cursor is confusing
+          // Take over the cursor behavior b/c seeing the 'move' cursor is confusing
           elem.style.cursor = "default"
           cursorHandleElem.style.cursor = "default"
         }
@@ -324,6 +331,30 @@ class AnnotoriousAnnotator extends HTMLElement {
           this.applyCursorBehavior()  
         } 
       })
+
+      _this.onkeydown = function(evt) {
+          evt = evt || window.event
+          // Quit actions with escape key
+          if (evt.key === "Escape") {
+            evt.preventDefault()
+            const drawTool = _this.shadowRoot.getElementById("drawTool")
+            if(drawTool.checked) {
+              drawTool.checked = false
+              _this.stopDrawing()
+            }
+            const editTool = _this.shadowRoot.getElementById("editTool")
+            if(editTool.checked) {
+              editTool.checked = false
+              _this.stopLineEditing()
+            }
+            const eraseTool = _this.shadowRoot.getElementById("eraseTool")
+            if(eraseTool.checked) {
+              eraseTool.checked = false
+              _this.stopErasing()
+            }
+            _this.#annotoriousInstance.cancelSelected()
+          }
+      }
 
     }
 
@@ -514,6 +545,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       }
       TPEN.eventDispatcher.dispatch("tpen-toast", toast)
       let page = JSON.parse(JSON.stringify(this.#resolvedAnnotationPage))
+      // Do we want to sort the Annotations in any way?  Annotorious may not have them in any particular order.
       page.items = allAnnotations
       this.#modifiedAnnotationPage = page
       TPEN.eventDispatcher.dispatch("tpen-page-committed", page)
@@ -595,6 +627,7 @@ class AnnotoriousAnnotator extends HTMLElement {
         this.shadowRoot.querySelectorAll(".toggleEditType").forEach(el => {el.classList.remove("selected")})
         e.target.classList.add("selected")
         this.#editType = "merge"
+        this.#annotoriousInstance.cancelSelected()
       }
     }
 
@@ -748,7 +781,6 @@ class AnnotoriousAnnotator extends HTMLElement {
     /**
      * Adds a line by splitting the current line where it was clicked.
      * The only DOM elem available in relation to Annotations is the selected line.
-     * ^ Is there a way to ask OSD or Annotorious for the Annotation as DOM elements?
      */
     splitLine(event) {
       if(!this.#isLineEditing) return
@@ -763,15 +795,13 @@ class AnnotoriousAnnotator extends HTMLElement {
       let newAnnoObject = JSON.parse(JSON.stringify(annoJsonToEdit))
       const rect = annoElem.getBoundingClientRect()
       const annoDims = annoJsonToEdit.target.selector.value.replace("xywh=pixel:", "").split(",")
-      // Know the original Annotation's index in the AnnotationList for splicing
-      // Note the original Annotation JSON is annoJsonToEdit
       let allAnnotations = this.#annotoriousInstance.getAnnotations()
       const compareId = annoJsonToEdit["@id"] ?? annoJsonToEdit.id
       let origIndex = -1
       let i = 0
       for(const a of allAnnotations) {
-        const origId = a["@id"] ?? a.id
-        if(origId === compareId) {
+        const checkId = a["@id"] ?? a.id
+        if(checkId === compareId) {
           origIndex = i
           break
         }
@@ -805,16 +835,6 @@ class AnnotoriousAnnotator extends HTMLElement {
       newAnnoObject.target.selector.value = `xywh=pixel:${newAnnoDims.join()}`
       newAnnoObject.created = new Date().toJSON()
       allAnnotations.splice(origIndex + 1, 0, newAnnoObject)
-      console.log("New Annotation Set")
-      console.log(allAnnotations)
-      /*
-      this.#annotoriousInstance.setStyle({
-        fill: '#00ff00',
-        fillOpacity: 0.25,
-        stroke: '#00ff00',
-        strokeOpacity: 1
-      }
-      */
       // Clear and redraw Annotations in the Annotorious UI
       this.#annotoriousInstance.removeAnnotation(compareId)
       this.#annotoriousInstance.addAnnotation(allAnnotations[origIndex])
@@ -824,10 +844,9 @@ class AnnotoriousAnnotator extends HTMLElement {
     }
 
     /**
-     * Reduces two lines to a single line by merging
-     * The only DOM elem available in relation to Annotations is the selected line.
-     *
-     * TODO
+     * Reduces two lines to a single line by merging.
+     * Lines will only be merged if they share the same x coordinate.
+     * A line is always merged with the line underneath it.  
      */
     mergeLines(event) {
       if(!this.#isLineEditing) return
@@ -839,15 +858,29 @@ class AnnotoriousAnnotator extends HTMLElement {
       let selectedAnnos = this.#annotoriousInstance.getSelected()
       const annoJsonToEdit = selectedAnnos ? selectedAnnos[0] : null
       if(!annoJsonToEdit) return
-      // Know the original Annotation's index in the AnnotationList for splicing
-      // Note the original Annotation JSON is annoJsonToEdit
       let allAnnotations = this.#annotoriousInstance.getAnnotations()
+
+    /**
+     * The order of these Annotations is not guaranteed which messes up merge line / split line.
+     * These Annotations should be ordered by y then x.  Generally, this mocks a columnization order.
+     * The reorder is only a helper for the logic here and does not persist or change the order in Annotorious.
+     */
+      allAnnotations.sort((a, b) => {
+        const a_selector = a.target.selector.value.replace("xywh=pixel:", "").split(",")
+        const b_selector = b.target.selector.value.replace("xywh=pixel:", "").split(",")
+        return parseFloat(a_selector[1]) - parseFloat(b_selector[1])
+      })
+      allAnnotations.sort((a, b) => {
+        const a_selector = a.target.selector.value.replace("xywh=pixel:", "").split(",")
+        const b_selector = b.target.selector.value.replace("xywh=pixel:", "").split(",")
+        return parseFloat(a_selector[0]) - parseFloat(b_selector[0])
+      })
       const compareId = annoJsonToEdit["@id"] ?? annoJsonToEdit.id
       let origIndex = -1
       let i = 0
       for(const a of allAnnotations) {
-        const origId = a["@id"] ?? a.id
-        if(origId === compareId) {
+        const checkId = a["@id"] ?? a.id
+        if(checkId === compareId) {
           origIndex = i
           break
         }
@@ -866,7 +899,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       const annoDims = annoJsonToEdit.target.selector.value.replace("xywh=pixel:", "").split(",")
       const mergeIntoAnnoDims = annoJsonToMergeIn.target.selector.value.replace("xywh=pixel:", "").split(",")
       // Can only merge annotations that share the same x dimension
-      if(annoDims[0] !== mergIntoAnnoDims[0]){
+      if(annoDims[0] !== mergeIntoAnnoDims[0]){
         toast = {
           message: "No line underneath",
           status: "error"
@@ -875,15 +908,12 @@ class AnnotoriousAnnotator extends HTMLElement {
         return
       }
       const nextId = annoJsonToMergeIn["@id"] ?? annoJsonToMergeIn.id
-      let newAnnoObject = JSON.parse(JSON.stringify(annoJsonToEdit))
-      const rect = annoElem.getBoundingClientRect()
-      
+      let newAnnoObject = JSON.parse(JSON.stringify(annoJsonToEdit))      
       // Make the original absorb the height of the line underneath it.
-      const newAnnoHeight = parseFloat(annoDims[2]) + parseFloat(mergeIntoAnnoDims[3])
+      const newAnnoHeight = parseFloat(annoDims[3]) + parseFloat(mergeIntoAnnoDims[3])
       // If the line underneath it was wider, take on that width
-      const newAnnoWidth = parseFloat(annoDims[2]) < parseFloat(mergeIntoAnnoDims[2]) ?mergeIntoAnnoDims[2] : annoDims[2]
+      const newAnnoWidth = parseFloat(annoDims[2]) < parseFloat(mergeIntoAnnoDims[2]) ? mergeIntoAnnoDims[2] : annoDims[2]
       const newAnnoDims = [annoDims[0], annoDims[1], newAnnoWidth+"", newAnnoHeight+""]
-      
       // Remove the Annotation underneath the selected Annotation
       allAnnotations.splice(origIndex+1, 1)
       this.#annotoriousInstance.removeAnnotation(nextId)
@@ -891,17 +921,6 @@ class AnnotoriousAnnotator extends HTMLElement {
       newAnnoObject.id = Date.now()+""
       newAnnoObject.target.selector.value = `xywh=pixel:${newAnnoDims.join()}`
       newAnnoObject.created = new Date().toJSON()
-      allAnnotations.splice(origIndex, 0, newAnnoObject)
-      console.log("New Annotation Set")
-      console.log(allAnnotations)
-      /*
-      this.#annotoriousInstance.setStyle({
-        fill: '#00ff00',
-        fillOpacity: 0.25,
-        stroke: '#00ff00',
-        strokeOpacity: 1
-      }
-      */
       // Clear and redraw Annotations in the Annotorious UI
       this.#annotoriousInstance.removeAnnotation(compareId)
       this.#annotoriousInstance.addAnnotation(allAnnotations[origIndex])
@@ -913,15 +932,13 @@ class AnnotoriousAnnotator extends HTMLElement {
      * Mouseover / mousemove needs to do the ruler UI
      */
     applyCursorBehavior() {
-
       const elem = this.#annotoriousInstance.viewer.element.querySelector(".a9s-annotation.selected")
+      if(!elem) return
       const cursorHandleElem = this.#annotoriousInstance.viewer.element.querySelector(".a9s-shape-handle")
       const ruler = this.shadowRoot.getElementById("ruler")
       const _this = this
-
       let mouseStart = 0
       let mouseFinish = 0
-      
       // Cursor support for editing options, applies when an Annotation is clicked and selected.
       if(this.#isLineEditing) {
         if(this.#editType === "add") {
@@ -994,7 +1011,7 @@ class AnnotoriousAnnotator extends HTMLElement {
     lineChange(event) {
       if(!this.#isLineEditing) return
       if (this.#editType === "add") this.splitLine(event)
-      if(this.#editType === "merge") this.mergeLines(e, event)
+      if(this.#editType === "merge") this.mergeLines(event)
     }
 }
 
