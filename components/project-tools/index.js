@@ -12,9 +12,10 @@ class ProjectTools extends HTMLElement {
     }
 
     render() {
+        const tools = TPEN.activeProject.tools
         this.shadowRoot.innerHTML = `
             <style>
-                .container, .project-tools {
+                .container {
                     display: flex;
                     flex-direction: column;
                     align-items: flex-start;
@@ -25,7 +26,7 @@ class ProjectTools extends HTMLElement {
                     padding: 15px;
                     font-size: 14px;
                 }
-                .tool-card, .project-tool {
+                .tool-card {
                     display: flex;
                     align-items: center;
                     gap: 10px;
@@ -33,7 +34,7 @@ class ProjectTools extends HTMLElement {
                 }
                 .project-tools-title {
                     font-weight: bold;
-                    font-size: 16px;
+                    font-size: 20px;
                     padding: 20px;
                     text-align: center;
                     color: var(--accent);
@@ -61,23 +62,27 @@ class ProjectTools extends HTMLElement {
                     background: #fff;
                     padding: 20px;
                     border-radius: 8px;
-                    max-width: 800px;
-                    width: 100%;
+                    max-width: 500px;
+                    width: 80%;
                     display: flex;
                     flex-direction: column;
+                    align-items: center;
                     gap: 10px;
                     position: relative;
                 }
                 .modal-inputs {
+                    width: 80%;
                     display: flex;
+                    flex-direction: column;
+                    justify-content: center;
                     gap: 10px;
                     align-items: center;
                 }
                 .modal-inputs input {
-                    flex: 1;
                     padding: 6px;
+                    width: 100%;
                 }
-                iframe {
+                #tool-preview {
                     width: 100%;
                     height: 300px;
                     border: 1px solid #ccc;
@@ -89,7 +94,7 @@ class ProjectTools extends HTMLElement {
                     justify-content: flex-end;
                     margin-top: 10px;
                 }
-                button {
+                .tools-btn {
                     padding: 6px 12px;
                     border: none;
                     border-radius: 4px;
@@ -97,19 +102,31 @@ class ProjectTools extends HTMLElement {
                     background: #007bff;
                     color: #fff;
                 }
-                button.secondary {
+                .secondary {
                     background: #6c757d;
                 }
                 .close-btn {
                     position: absolute;
-                    top: 10px;
-                    right: 10px;
-                    background: #dc3545;
+                    top: -12px;
+                    right: -12px;
+                    width: 32px;
+                    height: 32px;
+                    background: #ef4444;
                     color: #fff;
                     border: none;
-                    padding: 10px 15px;
-                    border-radius: 4px;
+                    border-radius: 50%;
                     cursor: pointer;
+                    font-size: 16px;
+                    font-weight: bold;
+                    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    transition: background-color 0.2s ease;
+                }
+
+                .close-btn:hover {
+                    background-color: #dc2626;
                 }
                 #open-modal-btn {
                     margin-left: 20px;
@@ -117,103 +134,120 @@ class ProjectTools extends HTMLElement {
                 }
             </style>
 
-            <div class="project-tools-title">User Tools</div>
             <div class="container">
-                ${[
-                    "Compare Pages",
-                    "Parsing Adjustment",
-                    "Preview Tool",
-                    "History Tool",
-                    "Linebreaking Tool",
-                    "View Full Page",
-                    "XML Tags",
-                    "Special Characters",
-                    "Inspect",
-                    "Page Tools",
-                    "RTL mode"
-                ].map(tool => `
+                ${tools.map(tool => `
                     <div class="tool-card">
-                        <input type="checkbox" name="tools" value="${tool}">
-                        <label>${tool}</label>
+                        <input type="checkbox" name="tools" value="${tool.value}" ${tool.state ? "checked" : ""}>
+                        <label>${tool.name}</label>
                     </div>
                 `).join("")}
             </div>
-            <div class="project-tools-title">Project Tools <button id="open-modal-btn">Add iFrame Tool</button></div>
-            <div class="project-tools">
-                ${[
-                    "Cappelli's Abbreviations",
-                    "Latin Vulgate Search",
-                    "Latin Dictionary",
-                    "Middle English Dictionary",
-                    "French Dictionary",
-                    "Dictionary of Old English"
-                ].map(tool => `
-                    <div class="project-tool">
-                        <input type="checkbox" name="tools" value="${tool}">
-                        <label>${tool}</label>
-                    </div>
-                `).join("")}
-            </div>
-            <div class="project-tools-title"></div>
+            
+            <div class="project-tools-title"><button class="tools-btn" id="open-modal-btn">Add iFrame Tool</button></div>
 
             <div class="modal" id="tool-modal">
                 <div class="modal-content">
-                    <button class="close-btn" id="close-modal-btn">Close</button>
+                    <button class="tools-btn close-btn" id="close-modal-btn">&times;</button>
+                    <div class="project-tools-title">Add iFrame Tool</div>
                     <div class="modal-inputs">
                         <input type="text" id="modal-tool-name" placeholder="Tool Name" />
                         <input type="url" id="modal-tool-url" placeholder="Tool URL" />
                     </div>
                     <div class="modal-buttons">
-                        <button id="test-tool-btn" class="secondary">Test</button>
-                        <button id="add-tool-confirm-btn">Add</button>
+                        <button id="test-tool-btn" class="tools-btn secondary">Test</button>
+                        <button class="tools-btn" id="add-tool-confirm-btn">Add</button>
                     </div>
                     <iframe id="tool-preview" style="display: none;"></iframe>
                 </div>
             </div>
-        `;
+        `
     
-        // Setup listeners AFTER DOM insertion
-        const modal = this.shadowRoot.querySelector("#tool-modal");
-        const manageTools = document.querySelector("#manage-tools-btn");
-        const openModalBtn = this.shadowRoot.querySelector("#open-modal-btn");
-        const closeModalBtn = this.shadowRoot.querySelector("#close-modal-btn");
-        const testBtn = this.shadowRoot.querySelector("#test-tool-btn");
-        const addBtn = this.shadowRoot.querySelector("#add-tool-confirm-btn");
-        const nameInput = this.shadowRoot.querySelector("#modal-tool-name");
-        const urlInput = this.shadowRoot.querySelector("#modal-tool-url");
-        const iframe = this.shadowRoot.querySelector("#tool-preview");
-        const toolsContainer = this.shadowRoot.querySelector("#project-tools");
+        const modal = this.shadowRoot.querySelector("#tool-modal")
+        const manageTools = document.getElementById("manage-tools-btn")
+        const openModalBtn = this.shadowRoot.querySelector("#open-modal-btn")
+        const closeModalBtn = this.shadowRoot.querySelector("#close-modal-btn")
+        const testBtn = this.shadowRoot.querySelector("#test-tool-btn")
+        const addBtn = this.shadowRoot.querySelector("#add-tool-confirm-btn")
+        const nameInput = this.shadowRoot.querySelector("#modal-tool-name")
+        const urlInput = this.shadowRoot.querySelector("#modal-tool-url")
+        const iframe = this.shadowRoot.querySelector("#tool-preview")
     
         openModalBtn.addEventListener("click", () => {
-            modal.style.display = "flex";
-            iframe.style.display = "none";
-            nameInput.value = "";
-            urlInput.value = "";
-        });
+            modal.style.display = "flex"
+            iframe.style.display = "none"
+            nameInput.value = ""
+            urlInput.value = ""
+        })
     
         closeModalBtn.addEventListener("click", () => {
-            modal.style.display = "none";
-        });
+            modal.style.display = "none"
+        })
     
         testBtn.addEventListener("click", () => {
-            const url = urlInput.value.trim();
-            if (url) {
-                iframe.src = url;
-                iframe.style.display = "block";
-            }
-        });
-    
+            const url = urlInput.value.trim()
+
+            if(!url) 
+                return TPEN.eventDispatcher.dispatch("tpen-toast", { status: "error", message: 'Please enter a valid URL' })
+
+            iframe.src = url
+            iframe.style.display = "block"
+        })
+
         addBtn.addEventListener("click", () => {
-            const name = nameInput.value.trim();
-            const url = urlInput.value.trim();
-            if (name && url) {
-                const div = document.createElement("div");
-                div.className = "project-tool";
-                div.innerHTML = `<a href="${url}" target="_blank" class="tool-button" contenteditable="true">${name}</a>`;
-                toolsContainer.appendChild(div);
-                modal.style.display = "none";
-            }
-        });
+            const name = nameInput.value.trim()
+            const url = urlInput.value.trim()
+    
+            if(!name || !url) 
+                return TPEN.eventDispatcher.dispatch("tpen-toast", { status: "error", message: 'Please enter a valid tool name and URL' })
+    
+            const response = fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/tools?action=addtools`, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${TPEN.getAuthorization()}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({name, value, url, state: true}),
+            })
+
+            modal.style.display = "none"
+            iframe.style.display = "none"
+            nameInput.value = ""
+            urlInput.value = ""
+    
+            return TPEN.eventDispatcher.dispatch("tpen-toast", 
+                response.ok ? 
+                    { status: "info", message: 'Successfully Added Tool' } : 
+                    { status: "error", message: 'Error Adding Tool' }
+            )
+        })
+    
+        manageTools.addEventListener("click", async() => {
+            const allInputs = this.shadowRoot.querySelectorAll('input[type="checkbox"][name="tools"]');
+            const selectedTools = Array.from(allInputs).map(input => ({
+                value: input.value,
+                state: input.checked
+            }))
+            console.log(selectedTools)
+            const response = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/tools?action=updatetools`, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${TPEN.getAuthorization()}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({tools : selectedTools}),
+            })
+                
+            modal.style.display = "none"
+            iframe.style.display = "none"
+            nameInput.value = ""
+            urlInput.value = ""
+    
+            return TPEN.eventDispatcher.dispatch("tpen-toast", 
+            response.ok ? 
+                { status: "info", message: 'Successfully Updated Tools' } : 
+                { status: "error", message: 'Error Updating Tools' }
+            )
+        })
     }    
 }
 
