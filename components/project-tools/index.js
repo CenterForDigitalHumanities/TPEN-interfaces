@@ -206,7 +206,13 @@ class ProjectTools extends HTMLElement {
                     Authorization: `Bearer ${TPEN.getAuthorization()}`,
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({name, value, url, state: true}),
+                body: JSON.stringify({ tools : [{
+                        name, 
+                        value: name.toLowerCase().split(" ").join("-"), 
+                        url, 
+                        state: true
+                    }]
+                }),
             })
 
             modal.style.display = "none"
@@ -214,8 +220,11 @@ class ProjectTools extends HTMLElement {
             nameInput.value = ""
             urlInput.value = ""
     
+            if(!response)
+                return
+    
             return TPEN.eventDispatcher.dispatch("tpen-toast", 
-                response.ok ? 
+                response ? 
                     { status: "info", message: 'Successfully Added Tool' } : 
                     { status: "error", message: 'Error Adding Tool' }
             )
@@ -234,7 +243,7 @@ class ProjectTools extends HTMLElement {
                     Authorization: `Bearer ${TPEN.getAuthorization()}`,
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({tools : selectedTools}),
+                body: JSON.stringify({ tools : selectedTools }),
             })
                 
             modal.style.display = "none"
