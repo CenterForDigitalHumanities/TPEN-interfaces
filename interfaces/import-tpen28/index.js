@@ -4,10 +4,6 @@ import Project from "../../api/Project.js"
 TPEN.attachAuthentication(document.body)
 document.getElementById("importProjectBtn").addEventListener("click", importProject)
 
-function getAuthToken() {
-    return document.cookie.split(" ").find((row) => row.startsWith("userToken="))?.split("=")[1]
-}
-
 async function fetchProjects() {
     const UID = new URLSearchParams(window.location.search).get("UID")
     
@@ -39,8 +35,7 @@ async function importProject() {
         messageDiv.textContent = "Please select a project first."
         return
     }
-    
-    const AUTH_TOKEN = getAuthToken()
+
     const url = `${TPEN.TPEN28URL}/TPEN/manifest/${selectedId}`
     
     let projectResponse
@@ -64,7 +59,7 @@ async function importProject() {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${AUTH_TOKEN}`
+            Authorization: `Bearer ${TPEN.getAuthorization()}`
         },
         body: JSON.stringify({ url })
     })
