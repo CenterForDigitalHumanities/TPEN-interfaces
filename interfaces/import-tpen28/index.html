@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title>TPEN28 Project Import</title>
+        <link rel="stylesheet" href="index.css" />
+        <script type="module" src="index.js"></script>
+    </head>
+    <body>
+        <div class="container">
+        <h1 class="header">Select a Project :</h1>
+        <div id="message" class="message">Loading projects...</div>
+    
+        <div class="form-group">
+            <select id="projectSelect" class="dropdown">
+            <option value="">-- Choose a Project --</option>
+            </select>
+            <button id="importProjectBtn" class="btn primary-btn">Import</button>
+        </div>
+    
+        <section id="projectCollaborators" class="collaborators hidden">
+            <h2>Invite the Collaborators :</h2>
+            <div class="collaborator-list" id="collaboratorList"></div>
+        </section>
+    
+        <button id="openProject" class="btn secondary-btn hidden">
+            Open the Project
+        </button>
+        </div>
+    </body>
+</html>
