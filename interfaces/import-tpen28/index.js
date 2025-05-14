@@ -4,10 +4,6 @@ import Project from "../../api/Project.js"
 TPEN.attachAuthentication(document.body)
 document.getElementById("importProjectBtn").addEventListener("click", importProject)
 
-function getAuthToken() {
-    return document.cookie.split(" ").find((row) => row.startsWith("userToken="))?.split("=")[1]
-}
-
 async function fetchProjects() {
     const UID = new URLSearchParams(window.location.search).get("UID")
     
@@ -39,8 +35,7 @@ async function importProject() {
         messageDiv.textContent = "Please select a project first."
         return
     }
-    
-    const AUTH_TOKEN = getAuthToken()
+
     const url = `${TPEN.TPEN28URL}/TPEN/manifest/${selectedId}`
     
     let projectResponse
@@ -64,7 +59,7 @@ async function importProject() {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${AUTH_TOKEN}`
+            Authorization: `Bearer ${TPEN.getAuthorization()}`
         },
         body: JSON.stringify({ url })
     })
@@ -81,7 +76,33 @@ async function importProject() {
     messageDiv.textContent = "Project Imported"
     document.getElementById("projectSelect").disabled = true
     document.getElementById("importProjectBtn").remove()
-    
+
+    const symbols = parsedData.projectButtons.map(button => String.fromCharCode(button.key))
+    try {
+        const response = await fetch(`${TPEN.servicesURL}/project/${projectID}/hotkeys`, {
+            method : "POST",
+            headers: {
+                Authorization: `Bearer ${TPEN.getAuthorization()}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({symbols}),
+        })
+  
+        if (!response.ok) {
+            throw response
+        }
+  
+        TPEN.eventDispatcher.dispatch("tpen-toast", {
+            message: "Hotkeys added successfully",
+            status: "success"
+        })
+    } catch (error) {
+        TPEN.eventDispatcher.dispatch("tpen-toast", {
+            message: "Error adding Hotkeys",
+            status: "error"
+        })
+    }
+
     const openBtn = document.getElementById("openProject")
     openBtn.classList.remove("hidden")
     openBtn.addEventListener("click", () => {
