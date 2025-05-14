@@ -174,10 +174,12 @@ class ProjectTools extends HTMLElement {
 
         function isValidURL(str) {
             try {
-                new URL(str);
-                return true;
+                new URL(str)
+                if(!str.startsWith("http://") && !str.startsWith("https://"))
+                    return false
+                return true
             } catch (_) {
-                return false;
+                return false
             }
         }
 
