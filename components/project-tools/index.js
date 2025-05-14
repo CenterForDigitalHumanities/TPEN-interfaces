@@ -231,7 +231,7 @@ class ProjectTools extends HTMLElement {
             if(checkTools(name, url))
                 return TPEN.eventDispatcher.dispatch("tpen-toast", { status: "error", message: 'This tool already exists' })
     
-            const response = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/addtools`, {
+            const response = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/tools`, {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${TPEN.getAuthorization()}`,
@@ -250,9 +250,6 @@ class ProjectTools extends HTMLElement {
             nameInput.value = ""
             urlInput.value = ""
     
-            if(!response.ok)
-                return
-    
             return TPEN.eventDispatcher.dispatch("tpen-toast", 
                 response.ok ? 
                     { status: "info", message: 'Successfully Added Tool' } : 
@@ -267,7 +264,7 @@ class ProjectTools extends HTMLElement {
                 state: input.checked
             }))
 
-            const response = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/updatetools`, {
+            const response = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/tools`, {
                 method: "PUT",
                 headers: {
                     Authorization: `Bearer ${TPEN.getAuthorization()}`,
