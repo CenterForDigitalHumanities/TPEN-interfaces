@@ -222,12 +222,12 @@ class ProjectTools extends HTMLElement {
                     Authorization: `Bearer ${TPEN.getAuthorization()}`,
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({
+                body: JSON.stringify([{
                         name, 
                         value: name.toLowerCase().split(" ").join("-"), 
                         url: encodeURI(url), 
                         state: true
-                })
+                }])
             })
 
             modal.style.display = "none"
@@ -252,13 +252,13 @@ class ProjectTools extends HTMLElement {
                 state: input.checked
             }))
 
-            const response = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/tools?action=updatetools`, {
+            const response = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/updatetools`, {
                 method: "PUT",
                 headers: {
                     Authorization: `Bearer ${TPEN.getAuthorization()}`,
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ tools : selectedTools })
+                body: JSON.stringify(selectedTools)
             })
                 
             modal.style.display = "none"
