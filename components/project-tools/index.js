@@ -171,6 +171,15 @@ class ProjectTools extends HTMLElement {
         const nameInput = this.shadowRoot.querySelector("#modal-tool-name")
         const urlInput = this.shadowRoot.querySelector("#modal-tool-url")
         const iframe = this.shadowRoot.querySelector("#tool-preview")
+
+        function isValidURL(str) {
+            try {
+                new URL(str);
+                return true;
+            } catch (_) {
+                return false;
+            }
+        }
     
         openModalBtn.addEventListener("click", () => {
             modal.style.display = "flex"
@@ -184,35 +193,41 @@ class ProjectTools extends HTMLElement {
         })
     
         testBtn.addEventListener("click", () => {
+            const name = encodeURIComponent(nameInput.value.trim())
             const url = urlInput.value.trim()
 
             if(!url) 
                 return TPEN.eventDispatcher.dispatch("tpen-toast", { status: "error", message: 'Please enter a valid URL' })
 
-            iframe.src = url
+            if(!isValidURL(url))
+                return TPEN.eventDispatcher.dispatch("tpen-toast", { status: "error", message: 'Please enter a valid URL' })
+
+            iframe.src = encodeURI(url)
             iframe.style.display = "block"
         })
 
-        addBtn.addEventListener("click", () => {
-            const name = nameInput.value.trim()
+        addBtn.addEventListener("click", async() => {
+            const name = encodeURIComponent(nameInput.value.trim())
             const url = urlInput.value.trim()
     
             if(!name || !url) 
                 return TPEN.eventDispatcher.dispatch("tpen-toast", { status: "error", message: 'Please enter a valid tool name and URL' })
+
+            if(!isValidURL(url))
+                return TPEN.eventDispatcher.dispatch("tpen-toast", { status: "error", message: 'Please enter a valid URL' })
     
-            const response = fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/tools?action=addtools`, {
+            const response = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/addtools`, {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${TPEN.getAuthorization()}`,
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ tools : [{
+                body: JSON.stringify({
                         name, 
                         value: name.toLowerCase().split(" ").join("-"), 
-                        url, 
+                        url: encodeURI(url), 
                         state: true
-                    }]
-                }),
+                })
             })
 
             modal.style.display = "none"
@@ -220,11 +235,11 @@ class ProjectTools extends HTMLElement {
             nameInput.value = ""
             urlInput.value = ""
     
-            if(!response)
+            if(!response.ok)
                 return
     
             return TPEN.eventDispatcher.dispatch("tpen-toast", 
-                response ? 
+                response.ok ? 
                     { status: "info", message: 'Successfully Added Tool' } : 
                     { status: "error", message: 'Error Adding Tool' }
             )
@@ -236,14 +251,14 @@ class ProjectTools extends HTMLElement {
                 value: input.value,
                 state: input.checked
             }))
-            console.log(selectedTools)
+
             const response = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/tools?action=updatetools`, {
-                method: "POST",
+                method: "PUT",
                 headers: {
                     Authorization: `Bearer ${TPEN.getAuthorization()}`,
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ tools : selectedTools }),
+                body: JSON.stringify({ tools : selectedTools })
             })
                 
             modal.style.display = "none"
