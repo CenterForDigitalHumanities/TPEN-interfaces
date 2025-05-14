@@ -180,6 +180,15 @@ class ProjectTools extends HTMLElement {
                 return false;
             }
         }
+
+        function checkTools(name, url) {
+            for (let tool of tools) {
+                if (tool.name === name || tool.url === url) {
+                    return true
+                }
+            }
+            return false
+        }
     
         openModalBtn.addEventListener("click", () => {
             modal.style.display = "flex"
@@ -202,6 +211,9 @@ class ProjectTools extends HTMLElement {
             if(!isValidURL(url))
                 return TPEN.eventDispatcher.dispatch("tpen-toast", { status: "error", message: 'Please enter a valid URL' })
 
+            if(checkTools(name, url))
+                return TPEN.eventDispatcher.dispatch("tpen-toast", { status: "error", message: 'This tool already exists' })
+
             iframe.src = encodeURI(url)
             iframe.style.display = "block"
         })
@@ -215,6 +227,9 @@ class ProjectTools extends HTMLElement {
 
             if(!isValidURL(url))
                 return TPEN.eventDispatcher.dispatch("tpen-toast", { status: "error", message: 'Please enter a valid URL' })
+
+            if(checkTools(name, url))
+                return TPEN.eventDispatcher.dispatch("tpen-toast", { status: "error", message: 'This tool already exists' })
     
             const response = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/addtools`, {
                 method: "POST",
