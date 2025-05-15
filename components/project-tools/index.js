@@ -191,6 +191,11 @@ class ProjectTools extends HTMLElement {
             }
             return false
         }
+
+        function checkForCode(str) {
+            const code = /[<>{}()[\];'"`]|script|on\w+=|javascript:/i
+            return code.test(str)
+        }
     
         openModalBtn.addEventListener("click", () => {
             modal.style.display = "flex"
@@ -204,11 +209,14 @@ class ProjectTools extends HTMLElement {
         })
     
         testBtn.addEventListener("click", () => {
-            const name = encodeURIComponent(nameInput.value.trim())
+            const name = nameInput.value.trim()
             const url = urlInput.value.trim()
 
             if(!url) 
                 return TPEN.eventDispatcher.dispatch("tpen-toast", { status: "error", message: 'Please enter a valid URL' })
+
+            if(checkForCode(name))
+                return TPEN.eventDispatcher.dispatch("tpen-toast", { status: "error", message: 'Please enter a valid tool name' })
 
             if(!isValidURL(url))
                 return TPEN.eventDispatcher.dispatch("tpen-toast", { status: "error", message: 'Please enter a valid URL' })
@@ -216,16 +224,19 @@ class ProjectTools extends HTMLElement {
             if(checkTools(name, url))
                 return TPEN.eventDispatcher.dispatch("tpen-toast", { status: "error", message: 'This tool already exists' })
 
-            iframe.src = encodeURI(url)
+            iframe.src = url
             iframe.style.display = "block"
         })
 
         addBtn.addEventListener("click", async() => {
-            const name = encodeURIComponent(nameInput.value.trim())
+            const name = nameInput.value.trim()
             const url = urlInput.value.trim()
     
             if(!name || !url) 
                 return TPEN.eventDispatcher.dispatch("tpen-toast", { status: "error", message: 'Please enter a valid tool name and URL' })
+
+            if(checkForCode(name))
+                return TPEN.eventDispatcher.dispatch("tpen-toast", { status: "error", message: 'Please enter a valid tool name' })
 
             if(!isValidURL(url))
                 return TPEN.eventDispatcher.dispatch("tpen-toast", { status: "error", message: 'Please enter a valid URL' })
@@ -242,7 +253,7 @@ class ProjectTools extends HTMLElement {
                 body: JSON.stringify([{
                         name, 
                         value: name.toLowerCase().split(" ").join("-"), 
-                        url: encodeURI(url), 
+                        url: url, 
                         state: true
                 }])
             })
