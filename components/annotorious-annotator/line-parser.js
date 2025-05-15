@@ -531,12 +531,56 @@ class AnnotoriousAnnotator extends HTMLElement {
     }
     TPEN.eventDispatcher.dispatch("tpen-toast", toast)
     let page = JSON.parse(JSON.stringify(this.#resolvedAnnotationPage))
+    const pageID = page["@id"] ?? page.id
     // Do we want to sort the Annotations in any way?  Annotorious may not have them in any particular order.
-    page.items = allAnnotations
+    console.log(allAnnotations)
+
+    // Since lines need to be saved or updated we process them one by one
+    let allCalls = []
+    for(const anno of allAnnotations) {
+      const lineID = anno["@id"] ?? anno.id
+      let call = lineID.includes(TPEN.RERUMURL) ? 
+        fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/page/${pageID.split("/").pop()}/line/${lineID.split("/").pop()}`, {
+          method: "PUT",
+          headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${TPEN.getAuthorization()}`,
+          },
+          body: JSON.stringify(anno)
+        })
+        :
+        fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/page/${pageID.split("/").pop()}/line`, {
+          method: "POST",
+          headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${TPEN.getAuthorization()}`,
+          },
+          body: JSON.stringify(anno)
+        })
+      allCalls.push(call)
+    }
+    const goodData = Promise.all(allCalls)
+      .then(responses => {
+        return Promise.all(responses.map(response => {
+          if(response.ok) return resp.json()
+          // The page cannot contain this anno because of the error, so log the error and skip it.
+          const err = {
+            "status" : response.status,
+            "message": response.statusText
+          }
+          console.log("Could not process annotation")
+          console.error(response)
+        }))
+      })
+      .then(data => data)
+      .catch(error => {
+        throw error
+      })
+
+    page.items = goodData
     this.#modifiedAnnotationPage = page
     TPEN.eventDispatcher.dispatch("tpen-page-committed", page)
-    console.log(allAnnotations)
-    return allAnnotations
+    return goodData
   }
 
   /**
