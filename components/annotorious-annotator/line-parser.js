@@ -164,8 +164,8 @@ class AnnotoriousAnnotator extends HTMLElement {
     eraseTool.addEventListener("change", (e) => this.toggleErasingMode(e))
     seeTool.addEventListener("change", (e) => this.toggleAnnotationVisibility(e))
     saveButton.addEventListener("click", (e) => {
-      // Timeout required in order to allow the focus native functionality to complete for $isDirty.
       this.#annotoriousInstance.cancelSelected()
+      // Timeout required in order to allow the unfocus native functionality to complete for $isDirty.
       setTimeout(() => {this.saveAnnotations()}, 500)
     })
     this.shadowRoot.appendChild(osdScript)
@@ -388,6 +388,7 @@ class AnnotoriousAnnotator extends HTMLElement {
 
     /**
      * Fired after a new annotation is created and available as a shape in the DOM.
+     * Make it $isDirty so that it knows to save.
      */
     annotator.on('createAnnotation', function(annotation) {
       // console.log("CREATE ANNOTATION")
@@ -399,9 +400,11 @@ class AnnotoriousAnnotator extends HTMLElement {
 
     /**
      * Fired after a new annotation is resized or moved in DOM, and focus is removed.
+     * Make it $isDirty so it knows to update.
+     * Note this does not fire on a programmatic annotoriousInstance.updateAnnotation() call.
      */
     annotator.on('updateAnnotation', function(annotation) {
-      //  console.log("UPDATE ANNOTATION")
+      // console.log("UPDATE ANNOTATION")
       annotation.$isDirty = true
       _this.#annotoriousInstance.updateAnnotation(annotation)
       _this.applyCursorBehavior()
@@ -575,7 +578,6 @@ class AnnotoriousAnnotator extends HTMLElement {
    * Announce the AnnotationPage with the changes that needs to be updated for processing upstream.
    */
   async saveAnnotations() {
-    console.log(this.#annotoriousInstance.getAnnotations())
     let allAnnotations = this.#annotoriousInstance.getAnnotations().filter(a => a.$isDirty)
     // Convert the Annotation selectors so that they are relative to the Canvas dimensions
     allAnnotations = this.convertSelectors(allAnnotations, false)
