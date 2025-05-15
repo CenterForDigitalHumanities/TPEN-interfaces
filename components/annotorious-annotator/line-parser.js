@@ -163,7 +163,11 @@ class AnnotoriousAnnotator extends HTMLElement {
     editTool.addEventListener("change", (e) => this.toggleEditingMode(e))
     eraseTool.addEventListener("change", (e) => this.toggleErasingMode(e))
     seeTool.addEventListener("change", (e) => this.toggleAnnotationVisibility(e))
-    saveButton.addEventListener("click", (e) => this.saveAnnotations(e))
+    saveButton.addEventListener("click", (e) => {
+      // Timeout required in order to allow the focus native functionality to complete for $isDirty.
+      this.#annotoriousInstance.cancelSelected()
+      setTimeout(() => {this.saveAnnotations()}, 500)
+    })
     this.shadowRoot.appendChild(osdScript)
     this.shadowRoot.appendChild(annotoriousScript)
     // Process the page to get the data required for the component UI
@@ -392,10 +396,12 @@ class AnnotoriousAnnotator extends HTMLElement {
     })
 
     /**
-     * Fired after a new annotation is resized DOM.
+     * Fired after a new annotation is resized or moved in DOM, and focus is removed.
      */
     annotator.on('updateAnnotation', function(annotation) {
-      // console.log("UPDATE ANNOTATION")
+      console.log("UPDATE ANNOTATION")
+      annotation.$isDirty = true
+      _this.#annotoriousInstance.updateAnnotation(annotation)
       _this.applyCursorBehavior()
     })
 
@@ -555,6 +561,7 @@ class AnnotoriousAnnotator extends HTMLElement {
         }
       }
       annotation.target = target
+      annotation.$isDirty = false
       return annotation
     })
     this.#annotoriousInstance.setAnnotations(allAnnotations, false)
@@ -566,7 +573,8 @@ class AnnotoriousAnnotator extends HTMLElement {
    * Announce the AnnotationPage with the changes that needs to be updated for processing upstream.
    */
   async saveAnnotations() {
-    let allAnnotations = this.#annotoriousInstance.getAnnotations()
+    console.log(this.#annotoriousInstance.getAnnotations())
+    let allAnnotations = this.#annotoriousInstance.getAnnotations().filter(a => a.$isDirty)
     // Convert the Annotation selectors so that they are relative to the Canvas dimensions
     allAnnotations = this.convertSelectors(allAnnotations, false)
     allAnnotations = allAnnotations.map(annotation => {
