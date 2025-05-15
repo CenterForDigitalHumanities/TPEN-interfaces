@@ -49,7 +49,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       this.#userForAnnotorious = tpenUserProfile.agent.replace("http://", "https://")
     }
     // Must know the Project
-    TPEN.eventDispatcher.on('tpen-project-loaded', () => this.init())
+    TPEN.eventDispatcher.on('tpen-project-loaded', () => this.render())
     TPEN.eventDispatcher.on('tpen-project-load-failed', (err) => {
       this.shadowRoot.innerHTML = `
           <style>${this.style}</style>
@@ -61,7 +61,7 @@ class AnnotoriousAnnotator extends HTMLElement {
   }
 
   // Initialize HTML after loading in a TPEN3 Project
-  init() {
+  render() {
     this.#annotationPageURI = TPEN.screen.pageInQuery
     if (!this.#annotationPageURI) {
       alert("You must provide a ?pageID=theid in the URL.  The value should be the ID of an existing TPEN3 Page.")
@@ -238,6 +238,7 @@ class AnnotoriousAnnotator extends HTMLElement {
     }
     // Note this will process the id from embedded Canvas objects to pass forward and be resolved.
     const canvasURI = this.processPageTarget(targetCanvas)
+    // Process the Canvas to get the data for the component UI.
     this.processCanvas(canvasURI)
   }
 
@@ -278,11 +279,17 @@ class AnnotoriousAnnotator extends HTMLElement {
     if (type !== "Canvas") {
       throw new Error(`Provided URI did not resolve a 'Canvas'.  It resolved a '${type}'`, { "cause": "URI must point to a Canvas." })
     }
-    this.render(resolvedCanvas)
+    // Use the Annotations and Image on the Canvas for inititalizing the Annotorious portion of the component.
+    this.loadAnnotorious(resolvedCanvas)
   }
-
-  // Next stage of UI that requires Project, Page, Canvas, and Image data.
-  async render(resolvedCanvas) {
+ 
+  /**
+   * The Project, User, Page, and Canvas data has been processed.
+   * The UI is ready to try to load Annotorious and Annotorious listeners.
+   *
+   * @param resolveCanvas - Canvas JSON which includes the Image and any existing Annotations for Annotorious.
+  */
+  async loadAnnotorious(resolvedCanvas) {
     this.shadowRoot.getElementById('annotator-container').innerHTML = ""
     const canvasID = resolvedCanvas["@id"] ?? resolvedCanvas.id
     const fullImage = resolvedCanvas?.items[0]?.items[0]?.body?.id
