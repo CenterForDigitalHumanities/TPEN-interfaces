@@ -183,6 +183,7 @@ class AnnotoriousAnnotator extends HTMLElement {
    */
   async processPage(pageID) {
     if (!pageID) return
+    // We want to use this URL instead of the RERUM URL to help with temp pages vs incorrect ids
     this.#resolvedAnnotationPage = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/page/${pageID.split("/").pop()}`, {
       method: "GET",
       headers: {
@@ -192,6 +193,7 @@ class AnnotoriousAnnotator extends HTMLElement {
     })
     .then(r => {
       if (!r.ok) throw r
+        // resolve all the referenced Annotations in items:[]?
       return r.json()
     })
     .catch(e => {
@@ -203,6 +205,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       `
       throw e
     })
+    
     const context = this.#resolvedAnnotationPage["@context"]
     if (!(context.includes("iiif.io/api/presentation/3/context.json") || context.includes("w3.org/ns/anno.jsonld"))) {
       console.warn("The AnnotationPage object did not have the IIIF Presentation API 3 context and may not be parseable.")
@@ -218,6 +221,16 @@ class AnnotoriousAnnotator extends HTMLElement {
     const targetCanvas = this.#resolvedAnnotationPage.target
     if (!targetCanvas) {
       throw new Error(`The AnnotationPage object did not have a target Canvas.  There is no image to load.`, { "cause": "AnnotationPage.target must have a value." })
+    }
+    // Resolve any referenced items
+    if(this.#resolvedAnnotationPage?.items && this.#resolvedAnnotationPage.items.length) {
+      let i = 0
+      for await (const anno_ref of this.#resolvedAnnotationPage.items) {
+        if(anno_ref.hasOwnProperty("body")) continue
+        const anno_res = await fetch(anno_ref.id).then(res => res.json()).catch(err => { throw err })
+        this.#resolvedAnnotationPage.items[i] = anno_res
+        i++
+      }
     }
     // Note this will process the id from embedded Canvas objects to pass forward and be resolved.
     const canvasURI = this.processPageTarget(targetCanvas)
@@ -524,7 +537,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       if(!annotation?.body) annotation.body = []
       if(!Array.isArray(annotation.body)) {
         if(typeof annotation.body === "object") {
-          if(Object.keys(b).length > 0) annotation.body = [annotation.body]
+          if(Object.keys(annotation.body).length > 0) annotation.body = [annotation.body]
           else { annotation.body = [] }
         }
         else{
@@ -578,20 +591,14 @@ class AnnotoriousAnnotator extends HTMLElement {
     let allCalls = []
     for(const anno of allAnnotations) {
       const lineID = anno["@id"] ?? anno.id
+      let fetchURL = `${TPEN.servicesURL}/project/${TPEN.activeProject._id}/page/${pageID.split("/").pop()}/line/`
+      // Can do the following to make it invalid for services, as a test.
       //delete anno.body
       //delete anno.target
-      let call = lineID.includes(TPEN.RERUMURL) ? 
-        fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/page/${pageID.split("/").pop()}/line/${lineID.split("/").pop()}`, {
-          method: "PUT",
-          headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${TPEN.getAuthorization()}`,
-          },
-          body: JSON.stringify(anno)
-        })
-        :
-        fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/page/${pageID.split("/").pop()}/line`, {
-          method: "POST",
+      const method = lineID.includes(TPEN.RERUMURL) ? "PUT" : "POST"
+      if(method === "PUT") fetchURL += lineID.split("/").pop()
+      let call = fetch(fetchURL, {
+          method,
           headers: {
               "Content-Type": "application/json",
               "Authorization": `Bearer ${TPEN.getAuthorization()}`,
@@ -625,6 +632,7 @@ class AnnotoriousAnnotator extends HTMLElement {
     page.items = goodData
     this.#modifiedAnnotationPage = page
     TPEN.eventDispatcher.dispatch("tpen-page-committed", page)
+    // Note that the pageID has changed now, so we need to update the one we are using in the URL.
     return page
   }
 
