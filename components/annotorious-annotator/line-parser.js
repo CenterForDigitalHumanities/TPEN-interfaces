@@ -519,8 +519,19 @@ class AnnotoriousAnnotator extends HTMLElement {
     let allAnnotations = JSON.parse(JSON.stringify(this.#resolvedAnnotationPage.items))
     // Convert the Annotation selectors so that they are relative to the Image dimensions
     allAnnotations = this.convertSelectors(allAnnotations, true)
+    // Convert the Annotations from the Page to be formatted for Annotorious
     allAnnotations.map(annotation => {
-      annotation.body = [annotation.body]
+      if(!annotation?.body) annotation.body = []
+      if(!Array.isArray(annotation.body)) {
+        if(typeof annotation.body === "object") {
+          if(Object.keys(b).length > 0) annotation.body = [annotation.body]
+          else { annotation.body = [] }
+        }
+        else{
+          // This is a malformed Annotation body!  What to do...
+          annotation.body = []
+        }
+      }
       const tarsel = annotation.target.split("#")
       const target = {
         source: tarsel[0],
@@ -541,7 +552,7 @@ class AnnotoriousAnnotator extends HTMLElement {
    * There have been edits to the page items and those edits need to be saved.
    * Announce the AnnotationPage with the changes that needs to be updated for processing upstream.
    */
-  saveAnnotations() {
+  async saveAnnotations() {
     let allAnnotations = this.#annotoriousInstance.getAnnotations()
     // Convert the Annotation selectors so that they are relative to the Canvas dimensions
     allAnnotations = this.convertSelectors(allAnnotations, false)
@@ -558,11 +569,6 @@ class AnnotoriousAnnotator extends HTMLElement {
       delete annotation.created
       return annotation
     })
-    const toast = {
-      message: "Annotations saved!",
-      status: "info"
-    }
-    TPEN.eventDispatcher.dispatch("tpen-toast", toast)
     let page = JSON.parse(JSON.stringify(this.#resolvedAnnotationPage))
     const pageID = page["@id"] ?? page.id
     // Do we want to sort the Annotations in any way?  Annotorious may not have them in any particular order.
@@ -572,8 +578,8 @@ class AnnotoriousAnnotator extends HTMLElement {
     let allCalls = []
     for(const anno of allAnnotations) {
       const lineID = anno["@id"] ?? anno.id
-      delete anno.body
-      delete anno.target
+      //delete anno.body
+      //delete anno.target
       let call = lineID.includes(TPEN.RERUMURL) ? 
         fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/page/${pageID.split("/").pop()}/line/${lineID.split("/").pop()}`, {
           method: "PUT",
@@ -594,10 +600,10 @@ class AnnotoriousAnnotator extends HTMLElement {
         })
       allCalls.push(call)
     }
-    const goodData = Promise.all(allCalls)
+    const goodData = await Promise.all(allCalls)
       .then(responses => {
         return Promise.all(responses.map(response => {
-          if(response.ok) return resp.json()
+          if(response.ok) return response.json()
           // The page cannot contain this anno because of the error, so log the error and skip it.
           const err = {
             "status" : response.status,
@@ -609,13 +615,17 @@ class AnnotoriousAnnotator extends HTMLElement {
       })
       .then(data => data)
       .catch(error => {
+        TPEN.eventDispatcher.dispatch("tpen-toast", {
+          message: "Error saving annotations",
+          status: "error"
+        })
         throw error
       })
 
     page.items = goodData
     this.#modifiedAnnotationPage = page
     TPEN.eventDispatcher.dispatch("tpen-page-committed", page)
-    return goodData
+    return page
   }
 
   /**
