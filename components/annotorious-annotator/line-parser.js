@@ -392,6 +392,8 @@ class AnnotoriousAnnotator extends HTMLElement {
     annotator.on('createAnnotation', function(annotation) {
       // console.log("CREATE ANNOTATION")
       if (_this.#isDrawing) _this.#annotoriousInstance.cancelSelected()
+      annotation.$isDirty = true
+      _this.#annotoriousInstance.updateAnnotation(annotation)
       _this.applyCursorBehavior()
     })
 
@@ -399,7 +401,7 @@ class AnnotoriousAnnotator extends HTMLElement {
      * Fired after a new annotation is resized or moved in DOM, and focus is removed.
      */
     annotator.on('updateAnnotation', function(annotation) {
-      console.log("UPDATE ANNOTATION")
+      //  console.log("UPDATE ANNOTATION")
       annotation.$isDirty = true
       _this.#annotoriousInstance.updateAnnotation(annotation)
       _this.applyCursorBehavior()
