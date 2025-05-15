@@ -26,14 +26,47 @@ class AnnotoriousAnnotator extends HTMLElement {
     #isErasing = false
     #editType = ""
 
-  static get observedAttributes() {
-    return ["annotationpage"]
-  }
-
   constructor() {
     super()
     TPEN.attachAuthentication(this)
     this.attachShadow({ mode: 'open' })
+  }
+
+  // Custom component setup
+  async connectedCallback() {
+    // Must know the User
+    if (!this.#userForAnnotorious) {
+      const tpenUserProfile = await User.fromToken(this.userToken).getProfile()
+      if(!tpenUserProfile?.agent) {
+        this.shadowRoot.innerHTML = `
+            <style>${this.style}</style>
+            <h3>User Error</h3>
+            <p>The user agent could not be detected or does not have access to this page.</p>
+        `
+        return
+      }
+      // Whatever value is here becomes the value of 'creator' on the Annotations.
+      this.#userForAnnotorious = tpenUserProfile.agent.replace("http://", "https://")
+    }
+    // Must know the Project
+    TPEN.eventDispatcher.on('tpen-project-loaded', () => this.init())
+    TPEN.eventDispatcher.on('tpen-project-load-failed', (err) => {
+      this.shadowRoot.innerHTML = `
+          <style>${this.style}</style>
+          <h3>Project Error</h3>
+          <p>The project you are looking for does not exist or you do not have access to it.</p>
+          <p> ${err.detail.status}: ${err.detail.statusText} </p>
+      `
+    })
+  }
+
+  // Initialize HTML after loading in a TPEN3 Project
+  init() {
+    this.#annotationPageURI = TPEN.screen.pageInQuery
+    if (!this.#annotationPageURI) {
+      alert("You must provide a ?pageID=theid in the URL.  The value should be the ID of an existing TPEN3 Page.")
+      return
+    }
     const osdScript = document.createElement("script")
     osdScript.src = "https://cdn.jsdelivr.net/npm/openseadragon@latest/build/openseadragon/openseadragon.min.js"
     const annotoriousScript = document.createElement("script")
@@ -133,29 +166,105 @@ class AnnotoriousAnnotator extends HTMLElement {
     saveButton.addEventListener("click", (e) => this.saveAnnotations(e))
     this.shadowRoot.appendChild(osdScript)
     this.shadowRoot.appendChild(annotoriousScript)
+    // Process the page to get the data required for the component UI
+    this.processPage(this.#annotationPageURI)
   }
 
-  async connectedCallback() {
-    if (!this.#userForAnnotorious) {
-      const tpenUserProfile = await User.fromToken(this.userToken).getProfile()
-      // Whatever value is here becomes the value of 'creator' on the Annotations.
-      this.#userForAnnotorious = tpenUserProfile.agent.replace("http://", "https://")
+  /**
+   * Resolve and process/validate a TPEN3 Page ID.
+   * In order to show an Image the AnnotationPage must target a Canvas that has an Image annotated onto it.
+   * Process the target, which can be a value of various types.
+   * Pass along the string Canvas URI that relates to or is the direct value of the target.
+   *
+   * FIXME
+   * Give users a path when AnnotationPage URIs do not resolve or resolve to something unexpected.
+   *
+   * @param page An AnnotationPage URI.  The AnnotationPage should target a Canvas.
+   */
+  async processPage(pageID) {
+    if (!pageID) return
+    this.#resolvedAnnotationPage = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/page/${pageID.split("/").pop()}`, {
+      method: "GET",
+      headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${TPEN.getAuthorization()}`,
+      }
+    })
+    .then(r => {
+      if (!r.ok) throw r
+      return r.json()
+    })
+    .catch(e => {
+      this.shadowRoot.innerHTML = `
+        <style>${this.style}</style>
+        <h3>Page Error</h3>
+        <p>The Page you are looking for does not exist or you do not have access to it.</p>
+        <p> ${e.status}: ${e.statusText} </p>
+      `
+      throw e
+    })
+    const context = this.#resolvedAnnotationPage["@context"]
+    if (!(context.includes("iiif.io/api/presentation/3/context.json") || context.includes("w3.org/ns/anno.jsonld"))) {
+      console.warn("The AnnotationPage object did not have the IIIF Presentation API 3 context and may not be parseable.")
     }
-    this.#annotationPageURI = TPEN.screen.pageInQuery
-    if (!this.#annotationPageURI) {
-      alert("You must provide a ?pageID=theid in the URL.  The value should be the URI of an existing AnnotationPage.")
-      return
+    const id = this.#resolvedAnnotationPage["@id"] ?? this.#resolvedAnnotationPage.id
+    if (!id) {
+      throw new Error("Cannot Resolve AnnotationPage", { "cause": "The AnnotationPage is 404 or unresolvable." })
     }
-    this.setAttribute("annotationpage", this.#annotationPageURI)
+    const type = this.#resolvedAnnotationPage["@type"] ?? this.#resolvedAnnotationPage.type
+    if (type !== "AnnotationPage") {
+      throw new Error(`Provided URI did not resolve an 'AnnotationPage'.  It resolved a '${type}'`, { "cause": "URI must point to an AnnotationPage." })
+    }
+    const targetCanvas = this.#resolvedAnnotationPage.target
+    if (!targetCanvas) {
+      throw new Error(`The AnnotationPage object did not have a target Canvas.  There is no image to load.`, { "cause": "AnnotationPage.target must have a value." })
+    }
+    // Note this will process the id from embedded Canvas objects to pass forward and be resolved.
+    const canvasURI = this.processPageTarget(targetCanvas)
+    this.processCanvas(canvasURI)
   }
 
-  attributeChangedCallback(name, oldValue, newValue) {
-    if (newValue === oldValue || !newValue) return
-    if (name === 'annotationpage') {
-      this.processAnnotationPage(newValue)
+  /**
+   * Fetch a Canvas URI and check that it is a Canvas object.  Pass it forward to render the Image into the interface.
+   *
+   * FIXME
+   * Give users a path when Canvas URIs do not resolve or resolve to something unexpected.
+   *
+   * @param uri A String Canvas URI
+   */
+  async processCanvas(uri) {
+    const canvas = uri
+    if (!canvas) return
+    const resolvedCanvas = await fetch(canvas)
+      .then(r => {
+        if (!r.ok) throw r
+        return r.json()
+      })
+      .catch(e => {
+        this.shadowRoot.innerHTML = `
+          <style>${this.style}</style>
+          <h3>Canvas Error</h3>
+          <p>The Canvas within this Page could not be loaded.</p>
+          <p> ${e.status}: ${e.statusText} </p>
+        `
+        throw e
+      })
+    const context = resolvedCanvas["@context"]
+    if (!context.includes("iiif.io/api/presentation/3/context.json")) {
+      console.warn("The Canvas object did not have the IIIF Presentation API 3 context and may not be parseable.")
     }
+    const id = resolvedCanvas["@id"] ?? resolvedCanvas.id
+    if (!id) {
+      throw new Error("Cannot Resolve Canvas or Image", { "cause": "The Canvas is 404 or unresolvable." })
+    }
+    const type = resolvedCanvas["@type"] ?? resolvedCanvas.type
+    if (type !== "Canvas") {
+      throw new Error(`Provided URI did not resolve a 'Canvas'.  It resolved a '${type}'`, { "cause": "URI must point to a Canvas." })
+    }
+    this.render(resolvedCanvas)
   }
 
+  // Next stage of UI that requires Project, Page, Canvas, and Image data.
   async render(resolvedCanvas) {
     this.shadowRoot.getElementById('annotator-container').innerHTML = ""
     const canvasID = resolvedCanvas["@id"] ?? resolvedCanvas.id
@@ -351,82 +460,6 @@ class AnnotoriousAnnotator extends HTMLElement {
   }
 
   /**
-   * Resolve and process/validate an AnnotationPage URI.
-   * In order to show an Image the AnnotationPage must target a Canvas that has an Image annotated onto it.
-   * Process the target, which can be a value of various types.
-   * Pass along the string Canvas URI that relates to or is the direct value of the target.
-   *
-   * FIXME
-   * Give users a path when AnnotationPage URIs do not resolve or resolve to something unexpected.
-   *
-   * @param page An AnnotationPage URI.  The AnnotationPage should target a Canvas.
-   */
-  async processAnnotationPage(page) {
-    if (!page) return
-    this.#resolvedAnnotationPage = await fetch(page)
-      .then(r => {
-        if (!r.ok) throw r
-        return r.json()
-      })
-      .catch(e => {
-        throw e
-      })
-    const context = this.#resolvedAnnotationPage["@context"]
-    if (!(context.includes("iiif.io/api/presentation/3/context.json") || context.includes("w3.org/ns/anno.jsonld"))) {
-      console.warn("The AnnotationPage object did not have the IIIF Presentation API 3 context and may not be parseable.")
-    }
-    const id = this.#resolvedAnnotationPage["@id"] ?? this.#resolvedAnnotationPage.id
-    if (!id) {
-      throw new Error("Cannot Resolve AnnotationPage", { "cause": "The AnnotationPage is 404 or unresolvable." })
-    }
-    const type = this.#resolvedAnnotationPage["@type"] ?? this.#resolvedAnnotationPage.type
-    if (type !== "AnnotationPage") {
-      throw new Error(`Provided URI did not resolve an 'AnnotationPage'.  It resolved a '${type}'`, { "cause": "URI must point to an AnnotationPage." })
-    }
-    const targetCanvas = this.#resolvedAnnotationPage.target
-    if (!targetCanvas) {
-      throw new Error(`The AnnotationPage object did not have a target Canvas.  There is no image to load.`, { "cause": "AnnotationPage.target must have a value." })
-    }
-    // Note this will process the id from embedded Canvas objects to pass forward and be resolved.
-    const canvasURI = this.processPageTarget(targetCanvas)
-    this.processCanvas(canvasURI)
-  }
-
-  /**
-   * Fetch a Canvas URI and check that it is a Canvas object.  Pass it forward to render the Image into the interface.
-   *
-   * FIXME
-   * Give users a path when Canvas URIs do not resolve or resolve to something unexpected.
-   *
-   * @param uri A String Canvas URI
-   */
-  async processCanvas(uri) {
-    const canvas = uri
-    if (!canvas) return
-    const resolvedCanvas = await fetch(canvas)
-      .then(r => {
-        if (!r.ok) throw r
-        return r.json()
-      })
-      .catch(e => {
-        throw e
-      })
-    const context = resolvedCanvas["@context"]
-    if (!context.includes("iiif.io/api/presentation/3/context.json")) {
-      console.warn("The Canvas object did not have the IIIF Presentation API 3 context and may not be parseable.")
-    }
-    const id = resolvedCanvas["@id"] ?? resolvedCanvas.id
-    if (!id) {
-      throw new Error("Cannot Resolve Canvas or Image", { "cause": "The Canvas is 404 or unresolvable." })
-    }
-    const type = resolvedCanvas["@type"] ?? resolvedCanvas.type
-    if (type !== "Canvas") {
-      throw new Error(`Provided URI did not resolve a 'Canvas'.  It resolved a '${type}'`, { "cause": "URI must point to a Canvas." })
-    }
-    this.render(resolvedCanvas)
-  }
-
-  /**
    * Adjust Annotation selectors as needed for communication between Annotorious and TPEN3.
    * Annotorious naturally builds selector values relative to image dimensions.
    * TPEN3 wants them relative to Canvas dimensions.
@@ -539,6 +572,8 @@ class AnnotoriousAnnotator extends HTMLElement {
     let allCalls = []
     for(const anno of allAnnotations) {
       const lineID = anno["@id"] ?? anno.id
+      delete anno.body
+      delete anno.target
       let call = lineID.includes(TPEN.RERUMURL) ? 
         fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/page/${pageID.split("/").pop()}/line/${lineID.split("/").pop()}`, {
           method: "PUT",
