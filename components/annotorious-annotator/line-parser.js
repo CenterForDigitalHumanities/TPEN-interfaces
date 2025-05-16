@@ -11,6 +11,8 @@
 
 import TPEN from '../../api/TPEN.js'
 import User from '../../api/User.js'
+import { decodeUserToken } from '../iiif-tools/index.js'
+
 
 class AnnotoriousAnnotator extends HTMLElement {
     #osd
@@ -26,14 +28,47 @@ class AnnotoriousAnnotator extends HTMLElement {
     #isErasing = false
     #editType = ""
 
-  static get observedAttributes() {
-    return ["annotationpage"]
-  }
-
   constructor() {
     super()
     TPEN.attachAuthentication(this)
     this.attachShadow({ mode: 'open' })
+  }
+
+  // Custom component setup
+  async connectedCallback() {
+    // Must know the User
+    if (!this.#userForAnnotorious) {
+      const agent = decodeUserToken(this.userToken)['http://store.rerum.io/agent']
+      if(!agent) {
+        this.shadowRoot.innerHTML = `
+            <style>${this.style}</style>
+            <h3>User Error</h3>
+            <p>The user agent could not be detected or does not have access to this page.</p>
+        `
+        return
+      }
+      // Whatever value is here becomes the value of 'creator' on the Annotations.
+      this.#userForAnnotorious = agent
+    }
+    // Must know the Project
+    TPEN.eventDispatcher.on('tpen-project-loaded', (ev) => this.render())
+    TPEN.eventDispatcher.on('tpen-project-load-failed', (err) => {
+      this.shadowRoot.innerHTML = `
+          <style>${this.style}</style>
+          <h3>Project Error</h3>
+          <p>The project you are looking for does not exist or you do not have access to it.</p>
+          <p> ${err.detail.status}: ${err.detail.statusText} </p>
+      `
+    })
+  }
+
+  // Initialize HTML after loading in a TPEN3 Project
+  render() {
+    this.#annotationPageURI = TPEN.screen.pageInQuery
+    if (!this.#annotationPageURI) {
+      alert("You must provide a ?pageID=theid in the URL.  The value should be the ID of an existing TPEN3 Page.")
+      return
+    }
     const osdScript = document.createElement("script")
     osdScript.src = "https://cdn.jsdelivr.net/npm/openseadragon@latest/build/openseadragon/openseadragon.min.js"
     const annotoriousScript = document.createElement("script")
@@ -84,6 +119,10 @@ class AnnotoriousAnnotator extends HTMLElement {
         .toggleEditType, #saveBtn {
           cursor: pointer;
         }
+        #saveBtn[disabled] {
+          background-color: gray;
+          color: white;
+        }
       </style>
       <div>
         <div id="tools-container">
@@ -130,33 +169,133 @@ class AnnotoriousAnnotator extends HTMLElement {
     editTool.addEventListener("change", (e) => this.toggleEditingMode(e))
     eraseTool.addEventListener("change", (e) => this.toggleErasingMode(e))
     seeTool.addEventListener("change", (e) => this.toggleAnnotationVisibility(e))
-    saveButton.addEventListener("click", (e) => this.saveAnnotations(e))
+    saveButton.addEventListener("click", (e) => {
+      this.#annotoriousInstance.cancelSelected()
+      // Timeout required in order to allow the unfocus native functionality to complete for $isDirty.
+      setTimeout(() => {this.saveAnnotations()}, 500)
+    })
     this.shadowRoot.appendChild(osdScript)
     this.shadowRoot.appendChild(annotoriousScript)
+    // Process the page to get the data required for the component UI
+    this.processPage(this.#annotationPageURI)
   }
 
-  async connectedCallback() {
-    if (!this.#userForAnnotorious) {
-      const tpenUserProfile = await User.fromToken(this.userToken).getProfile()
-      // Whatever value is here becomes the value of 'creator' on the Annotations.
-      this.#userForAnnotorious = tpenUserProfile.agent.replace("http://", "https://")
+  /**
+   * Resolve and process/validate a TPEN3 Page ID.
+   * In order to show an Image the AnnotationPage must target a Canvas that has an Image annotated onto it.
+   * Process the target, which can be a value of various types.
+   * Pass along the string Canvas URI that relates to or is the direct value of the target.
+   *
+   * FIXME
+   * Give users a path when AnnotationPage URIs do not resolve or resolve to something unexpected.
+   *
+   * @param page An AnnotationPage URI.  The AnnotationPage should target a Canvas.
+   */
+  async processPage(pageID) {
+    if (!pageID) return
+    // We want to use this URL instead of the RERUM URL to help with temp pages vs incorrect ids
+    this.#resolvedAnnotationPage = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/page/${pageID.split("/").pop()}`, {
+      method: "GET",
+      headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${TPEN.getAuthorization()}`,
+      }
+    })
+    .then(r => {
+      if (!r.ok) throw r
+        // resolve all the referenced Annotations in items:[]?
+      return r.json()
+    })
+    .catch(e => {
+      this.shadowRoot.innerHTML = `
+        <style>${this.style}</style>
+        <h3>Page Error</h3>
+        <p>The Page you are looking for does not exist or you do not have access to it.</p>
+        <p> ${e.status}: ${e.statusText} </p>
+      `
+      throw e
+    })
+    this.#resolvedAnnotationPage.$isDirty = false
+    const context = this.#resolvedAnnotationPage["@context"]
+    if (!(context.includes("iiif.io/api/presentation/3/context.json") || context.includes("w3.org/ns/anno.jsonld"))) {
+      console.warn("The AnnotationPage object did not have the IIIF Presentation API 3 context and may not be parseable.")
     }
-    this.#annotationPageURI = TPEN.screen.pageInQuery
-    if (!this.#annotationPageURI) {
-      alert("You must provide a ?pageID=theid in the URL.  The value should be the URI of an existing AnnotationPage.")
-      return
+    const id = this.#resolvedAnnotationPage["@id"] ?? this.#resolvedAnnotationPage.id
+    if (!id) {
+      throw new Error("Cannot Resolve AnnotationPage", { "cause": "The AnnotationPage is 404 or unresolvable." })
     }
-    this.setAttribute("annotationpage", this.#annotationPageURI)
+    const type = this.#resolvedAnnotationPage["@type"] ?? this.#resolvedAnnotationPage.type
+    if (type !== "AnnotationPage") {
+      throw new Error(`Provided URI did not resolve an 'AnnotationPage'.  It resolved a '${type}'`, { "cause": "URI must point to an AnnotationPage." })
+    }
+    const targetCanvas = this.#resolvedAnnotationPage.target
+    if (!targetCanvas) {
+      throw new Error(`The AnnotationPage object did not have a target Canvas.  There is no image to load.`, { "cause": "AnnotationPage.target must have a value." })
+    }
+    // Resolve any referenced items
+    if(this.#resolvedAnnotationPage?.items && this.#resolvedAnnotationPage.items.length) {
+      let i = -1
+      for await (const anno_ref of this.#resolvedAnnotationPage.items) {
+        i++
+        if(anno_ref.hasOwnProperty("body")) continue
+        const anno_res = await fetch(anno_ref.id).then(res => res.json()).catch(err => { throw err })
+        this.#resolvedAnnotationPage.items[i] = anno_res
+      }
+    }
+    // Note this will process the id from embedded Canvas objects to pass forward and be resolved.
+    const canvasURI = this.processPageTarget(targetCanvas)
+    // Process the Canvas to get the data for the component UI.
+    this.processCanvas(canvasURI)
   }
 
-  attributeChangedCallback(name, oldValue, newValue) {
-    if (newValue === oldValue || !newValue) return
-    if (name === 'annotationpage') {
-      this.processAnnotationPage(newValue)
+  /**
+   * Fetch a Canvas URI and check that it is a Canvas object.  Pass it forward to render the Image into the interface.
+   *
+   * FIXME
+   * Give users a path when Canvas URIs do not resolve or resolve to something unexpected.
+   *
+   * @param uri A String Canvas URI
+   */
+  async processCanvas(uri) {
+    const canvas = uri
+    if (!canvas) return
+    const resolvedCanvas = await fetch(canvas)
+      .then(r => {
+        if (!r.ok) throw r
+        return r.json()
+      })
+      .catch(e => {
+        this.shadowRoot.innerHTML = `
+          <style>${this.style}</style>
+          <h3>Canvas Error</h3>
+          <p>The Canvas within this Page could not be loaded.</p>
+          <p> ${e.status}: ${e.statusText} </p>
+        `
+        throw e
+      })
+    const context = resolvedCanvas["@context"]
+    if (!context.includes("iiif.io/api/presentation/3/context.json")) {
+      console.warn("The Canvas object did not have the IIIF Presentation API 3 context and may not be parseable.")
     }
+    const id = resolvedCanvas["@id"] ?? resolvedCanvas.id
+    if (!id) {
+      throw new Error("Cannot Resolve Canvas or Image", { "cause": "The Canvas is 404 or unresolvable." })
+    }
+    const type = resolvedCanvas["@type"] ?? resolvedCanvas.type
+    if (type !== "Canvas") {
+      throw new Error(`Provided URI did not resolve a 'Canvas'.  It resolved a '${type}'`, { "cause": "URI must point to a Canvas." })
+    }
+    // Use the Annotations and Image on the Canvas for inititalizing the Annotorious portion of the component.
+    this.loadAnnotorious(resolvedCanvas)
   }
-
-  async render(resolvedCanvas) {
+ 
+  /**
+   * The Project, User, Page, and Canvas data has been processed.
+   * The UI is ready to try to load Annotorious and Annotorious listeners.
+   *
+   * @param resolveCanvas - Canvas JSON which includes the Image and any existing Annotations for Annotorious.
+  */
+  async loadAnnotorious(resolvedCanvas) {
     this.shadowRoot.getElementById('annotator-container').innerHTML = ""
     const canvasID = resolvedCanvas["@id"] ?? resolvedCanvas.id
     const fullImage = resolvedCanvas?.items[0]?.items[0]?.body?.id
@@ -262,18 +401,25 @@ class AnnotoriousAnnotator extends HTMLElement {
 
     /**
      * Fired after a new annotation is created and available as a shape in the DOM.
+     * Make the page $isDirty so that it knows to save.
      */
     annotator.on('createAnnotation', function(annotation) {
       // console.log("CREATE ANNOTATION")
       if (_this.#isDrawing) _this.#annotoriousInstance.cancelSelected()
+      _this.#annotoriousInstance.updateAnnotation(annotation)
+      _this.#resolvedAnnotationPage.$isDirty = true
       _this.applyCursorBehavior()
     })
 
     /**
-     * Fired after a new annotation is resized DOM.
+     * Fired after an annotation is resized or moved in the DOM, and focus is removed.
+     * Make the page $isDirty so it knows to update.
+     * Note this does not fire on a programmatic annotoriousInstance.updateAnnotation() call.
      */
     annotator.on('updateAnnotation', function(annotation) {
       // console.log("UPDATE ANNOTATION")
+      _this.#annotoriousInstance.updateAnnotation(annotation)
+      _this.#resolvedAnnotationPage.$isDirty = true
       _this.applyCursorBehavior()
     })
 
@@ -291,6 +437,7 @@ class AnnotoriousAnnotator extends HTMLElement {
           let c = confirm("Are you sure you want to remove this?")
           if (c) {
             _this.#annotoriousInstance.removeAnnotation(originalAnnotation)
+            _this.#resolvedAnnotationPage.$isDirty = true
           } else {
             _this.#annotoriousInstance.cancelSelected()
           }
@@ -351,79 +498,40 @@ class AnnotoriousAnnotator extends HTMLElement {
   }
 
   /**
-   * Resolve and process/validate an AnnotationPage URI.
-   * In order to show an Image the AnnotationPage must target a Canvas that has an Image annotated onto it.
-   * Process the target, which can be a value of various types.
-   * Pass along the string Canvas URI that relates to or is the direct value of the target.
-   *
-   * FIXME
-   * Give users a path when AnnotationPage URIs do not resolve or resolve to something unexpected.
-   *
-   * @param page An AnnotationPage URI.  The AnnotationPage should target a Canvas.
+   * Format and pass along the Annotations from the provided AnnotationPage.
+   * Annotorious will render them on screen and introduce them to the UX flow.
    */
-  async processAnnotationPage(page) {
-    if (!page) return
-    this.#resolvedAnnotationPage = await fetch(page)
-      .then(r => {
-        if (!r.ok) throw r
-        return r.json()
-      })
-      .catch(e => {
-        throw e
-      })
-    const context = this.#resolvedAnnotationPage["@context"]
-    if (!(context.includes("iiif.io/api/presentation/3/context.json") || context.includes("w3.org/ns/anno.jsonld"))) {
-      console.warn("The AnnotationPage object did not have the IIIF Presentation API 3 context and may not be parseable.")
-    }
-    const id = this.#resolvedAnnotationPage["@id"] ?? this.#resolvedAnnotationPage.id
-    if (!id) {
-      throw new Error("Cannot Resolve AnnotationPage", { "cause": "The AnnotationPage is 404 or unresolvable." })
-    }
-    const type = this.#resolvedAnnotationPage["@type"] ?? this.#resolvedAnnotationPage.type
-    if (type !== "AnnotationPage") {
-      throw new Error(`Provided URI did not resolve an 'AnnotationPage'.  It resolved a '${type}'`, { "cause": "URI must point to an AnnotationPage." })
-    }
-    const targetCanvas = this.#resolvedAnnotationPage.target
-    if (!targetCanvas) {
-      throw new Error(`The AnnotationPage object did not have a target Canvas.  There is no image to load.`, { "cause": "AnnotationPage.target must have a value." })
-    }
-    // Note this will process the id from embedded Canvas objects to pass forward and be resolved.
-    const canvasURI = this.processPageTarget(targetCanvas)
-    this.processCanvas(canvasURI)
-  }
-
-  /**
-   * Fetch a Canvas URI and check that it is a Canvas object.  Pass it forward to render the Image into the interface.
-   *
-   * FIXME
-   * Give users a path when Canvas URIs do not resolve or resolve to something unexpected.
-   *
-   * @param uri A String Canvas URI
-   */
-  async processCanvas(uri) {
-    const canvas = uri
-    if (!canvas) return
-    const resolvedCanvas = await fetch(canvas)
-      .then(r => {
-        if (!r.ok) throw r
-        return r.json()
-      })
-      .catch(e => {
-        throw e
-      })
-    const context = resolvedCanvas["@context"]
-    if (!context.includes("iiif.io/api/presentation/3/context.json")) {
-      console.warn("The Canvas object did not have the IIIF Presentation API 3 context and may not be parseable.")
-    }
-    const id = resolvedCanvas["@id"] ?? resolvedCanvas.id
-    if (!id) {
-      throw new Error("Cannot Resolve Canvas or Image", { "cause": "The Canvas is 404 or unresolvable." })
-    }
-    const type = resolvedCanvas["@type"] ?? resolvedCanvas.type
-    if (type !== "Canvas") {
-      throw new Error(`Provided URI did not resolve a 'Canvas'.  It resolved a '${type}'`, { "cause": "URI must point to a Canvas." })
-    }
-    this.render(resolvedCanvas)
+  setInitialAnnotations() {
+    if (!this.#resolvedAnnotationPage) return
+    let allAnnotations = JSON.parse(JSON.stringify(this.#resolvedAnnotationPage.items))
+    // Convert the Annotation selectors so that they are relative to the Image dimensions
+    allAnnotations = this.convertSelectors(allAnnotations, true)
+    // Convert the Annotations from the Page to be formatted for Annotorious
+    allAnnotations.map(annotation => {
+      if(!annotation?.body) annotation.body = []
+      if(!Array.isArray(annotation.body)) {
+        if(typeof annotation.body === "object") {
+          annotation.body = (Object.keys(annotation.body).length > 0) ? [annotation.body] : [] 
+        }
+        else{
+          // This is a malformed Annotation body!  What to do...
+          annotation.body = []
+        }
+      }
+      // FIXME because TPEN3 may also make some more kinds of target selectors.
+      const tarsel = annotation.target.split("#")
+      const target = {
+        source: tarsel[0],
+        selector: {
+          conformsTo: "http://www.w3.org/TR/media-frags/",
+          type: "FragmentSelector",
+          value: tarsel[1]
+        }
+      }
+      annotation.target = target
+      return annotation
+    })
+    this.#annotoriousInstance.setAnnotations(allAnnotations, false)
   }
 
   /**
@@ -478,37 +586,21 @@ class AnnotoriousAnnotator extends HTMLElement {
   }
 
   /**
-   * Format and pass along the Annotations from the provided AnnotationPage.
-   * Annotorious will render them on screen and introduce them to the UX flow.
-   */
-  setInitialAnnotations() {
-    if (!this.#resolvedAnnotationPage) return
-    let allAnnotations = JSON.parse(JSON.stringify(this.#resolvedAnnotationPage.items))
-    // Convert the Annotation selectors so that they are relative to the Image dimensions
-    allAnnotations = this.convertSelectors(allAnnotations, true)
-    allAnnotations.map(annotation => {
-      annotation.body = [annotation.body]
-      const tarsel = annotation.target.split("#")
-      const target = {
-        source: tarsel[0],
-        selector: {
-          conformsTo: "http://www.w3.org/TR/media-frags/",
-          type: "FragmentSelector",
-          value: tarsel[1]
-        }
-      }
-      annotation.target = target
-      return annotation
-    })
-    this.#annotoriousInstance.setAnnotations(allAnnotations, false)
-  }
-
-  /**
    * This page renders because of a known AnnotationPage.  Existing Annotations in that AnnotationPage were drawn.
    * There have been edits to the page items and those edits need to be saved.
    * Announce the AnnotationPage with the changes that needs to be updated for processing upstream.
    */
-  saveAnnotations() {
+  async saveAnnotations() {
+    if (!this.#resolvedAnnotationPage.$isDirty){
+      TPEN.eventDispatcher.dispatch("tpen-toast", {
+        message: "No changes to save",
+        status: "info"
+      })
+      return
+    }
+    const saveButton = this.shadowRoot.getElementById("saveBtn")
+    saveButton.setAttribute("disabled", "true")
+    saveButton.value = "saving.  please wait..."
     let allAnnotations = this.#annotoriousInstance.getAnnotations()
     // Convert the Annotation selectors so that they are relative to the Canvas dimensions
     allAnnotations = this.convertSelectors(allAnnotations, false)
@@ -520,23 +612,40 @@ class AnnotoriousAnnotator extends HTMLElement {
       annotation.motivation = "transcribing"
       // stop undefined from appearing on previously existing Annotations
       if (!annotation.creator) delete annotation.creator
-      if (!annotation.modified) delete annotation.modified
-      // We already track this in __rerum.createdAt
+      delete annotation.modified
       delete annotation.created
       return annotation
     })
-    const toast = {
-      message: "Annotations saved!",
-      status: "info"
-    }
-    TPEN.eventDispatcher.dispatch("tpen-toast", toast)
     let page = JSON.parse(JSON.stringify(this.#resolvedAnnotationPage))
-    // Do we want to sort the Annotations in any way?  Annotorious may not have them in any particular order.
     page.items = allAnnotations
+    // TODO order the Annotations before saving/updating
+    const pageID = page["@id"] ?? page.id
+    const mod = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/page/${pageID.split("/").pop()}`, {
+      method: "PUT",
+      headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${TPEN.getAuthorization()}`,
+      },
+      body: JSON.stringify({ "items": page.items })
+    })
+    .then(res => res.json())
+    .catch(err => { 
+      saveButton.value = "ERROR"
+      throw err 
+    })
+    page.items = page.items.map(i => ({
+      ...i,
+      ...(mod.items?.find(a => a.target === i.target) ?? {})
+    }))
     this.#modifiedAnnotationPage = page
-    TPEN.eventDispatcher.dispatch("tpen-page-committed", page)
-    console.log(allAnnotations)
-    return allAnnotations
+    TPEN.eventDispatcher.dispatch("tpen-page-committed", this.#modifiedAnnotationPage)
+    TPEN.eventDispatcher.dispatch("tpen-toast", {
+      message: "Annotations Saved",
+      status: "success"
+    })
+    saveButton.removeAttribute("disabled")
+    saveButton.value = "Save Annotations"
+    return this.#modifiedAnnotationPage
   }
 
   /**
@@ -671,7 +780,6 @@ class AnnotoriousAnnotator extends HTMLElement {
     }
     TPEN.eventDispatcher.dispatch("tpen-toast", toast)
   }
-  s
 
   /**
    * Deactivate Annotorious annotation drawing mode.
@@ -759,6 +867,8 @@ class AnnotoriousAnnotator extends HTMLElement {
   /**
    * Adds a line by splitting the current line where it was clicked.
    * The only DOM elem available in relation to Annotations is the selected line.
+   *
+   * FIXME preserve the line text
    */
   splitLine(event) {
     if (!this.#isLineEditing) return
@@ -819,12 +929,15 @@ class AnnotoriousAnnotator extends HTMLElement {
     this.#annotoriousInstance.addAnnotation(allAnnotations[origIndex + 1])
     // Prepare UI for next click in chop mode by selecting the new Annotation
     this.#annotoriousInstance.setSelected(newAnnoObject.id)
+    this.#resolvedAnnotationPage.$isDirty = true
   }
 
   /**
    * Reduces two lines to a single line by merging.
    * Lines will only be merged if they share the same x coordinate.
-   * A line is always merged with the line underneath it.  
+   * A line is always merged with the line underneath it.
+   *
+   * FIXME preserve the line text
    */
   mergeLines(event) {
     if (!this.#isLineEditing) return
@@ -905,6 +1018,7 @@ class AnnotoriousAnnotator extends HTMLElement {
     this.#annotoriousInstance.addAnnotation(newAnnoObject)
     // Prepare UI for next click in chop mode by selecting the new Annotation
     this.#annotoriousInstance.setSelected(newAnnoObject.id)
+    this.#resolvedAnnotationPage.$isDirty = true
   }
 
   /**

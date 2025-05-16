@@ -36,6 +36,7 @@ class Tpen {
         this.tinyThingsURL = tinyThingsURL
         this.servicesURL = "https://dev.api.t-pen.org"
         this.TPEN28URL = "https://dev.t-pen.org"
+        this.RERUMURL = "https://devstore.rerum.io/v1"
         this.currentUser
         this.activeProject
 
