@@ -608,7 +608,8 @@ class AnnotoriousAnnotator extends HTMLElement {
 
     // Since lines need to be saved or updated we process them one by one
     let allCalls = []
-    for(const anno of allAnnotations) {
+    let goodData = []
+    for (const anno of allAnnotations) {
       const lineID = anno["@id"] ?? anno.id
       let fetchURL = `${TPEN.servicesURL}/project/${TPEN.activeProject._id}/page/${pageID.split("/").pop()}/line/`
       // Can do the following to make it invalid for services, as a test.
@@ -616,7 +617,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       //delete anno.target
       const method = lineID.includes(TPEN.RERUMURL) ? "PUT" : "POST"
       if(method === "PUT") fetchURL += lineID.split("/").pop()
-      let call = fetch(fetchURL, {
+      let line = await fetch(fetchURL, {
           method,
           headers: {
               "Content-Type": "application/json",
@@ -624,26 +625,45 @@ class AnnotoriousAnnotator extends HTMLElement {
           },
           body: JSON.stringify(anno)
         })
-      allCalls.push(call)
+      goodData.push(line)
+      //allCalls.push(call)
     }
-    const goodData = await Promise.all(allCalls)
-      .then(responses => {
-        return Promise.all(responses.map(response => {
-          if(response.ok) return response.json()
-          // The page cannot contain this anno because of the error, so log the error and skip it.
-          console.log("Could not process annotation")
-          console.error(response)
-        }))
-      })
-      .then(data => data)
-      .catch(error => {
-        TPEN.eventDispatcher.dispatch("tpen-toast", {
-          message: "Error saving annotations",
-          status: "error"
-        })
-        throw error
-      })
+    
+    // for await (const c of allCalls) {
+    //   goodData.push(await c.then(response => {
+    //     if(response.ok) return response.json()
+    //       // The page cannot contain this anno because of the error, so log the error and skip it.
+    //       console.log("Could not process annotation")
+    //       console.error(response)
+    //     })
+    //     .catch(error => {
+    //       TPEN.eventDispatcher.dispatch("tpen-toast", {
+    //         message: "Error saving annotations",
+    //         status: "error"
+    //       })
+    //       throw error
+    //     })
+    //   )
+    // }
 
+    // const goodData = await Promise.all(allCalls)
+    //   .then(responses => {
+    //     return Promise.all(responses.map(response => {
+    //       if(response.ok) return response.json()
+    //       // The page cannot contain this anno because of the error, so log the error and skip it.
+    //       console.log("Could not process annotation")
+    //       console.error(response)
+    //     }))
+    //   })
+    //   .then(data => data)
+    //   .catch(error => {
+    //     TPEN.eventDispatcher.dispatch("tpen-toast", {
+    //       message: "Error saving annotations",
+    //       status: "error"
+    //     })
+    //     throw error
+    //   })
+    console.log(goodData)
     page.items = goodData
     this.#modifiedAnnotationPage = page
     TPEN.eventDispatcher.dispatch("tpen-page-committed", page)
