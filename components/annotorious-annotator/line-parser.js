@@ -509,8 +509,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       if(!annotation?.body) annotation.body = []
       if(!Array.isArray(annotation.body)) {
         if(typeof annotation.body === "object") {
-          if(Object.keys(annotation.body).length > 0) annotation.body = [annotation.body]
-          else { annotation.body = [] }
+          annotation.body = (Object.keys(annotation.body).length > 0) ? [annotation.body] : [] 
         }
         else{
           // This is a malformed Annotation body!  What to do...
