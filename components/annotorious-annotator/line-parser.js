@@ -712,6 +712,8 @@ class AnnotoriousAnnotator extends HTMLElement {
     if (e.target.classList.contains("selected")) {
       e.target.classList.remove("selected")
       this.#editType = ""
+      const elem = this.#annotoriousInstance.viewer.element.querySelector(".a9s-annotation.selected")
+      if(elem) elem.style.cursor = "move"
     } else {
       this.shadowRoot.querySelectorAll(".toggleEditType").forEach(el => { el.classList.remove("selected") })
       e.target.classList.add("selected")
@@ -1044,9 +1046,13 @@ class AnnotoriousAnnotator extends HTMLElement {
         cursorHandleElem.style.cursor = "crosshair"
         ruler.style.display = "block"
       }
-      if (this.#editType === "merge") {
+      else if (this.#editType === "merge") {
         elem.style.cursor = "cell"
         cursorHandleElem.style.cursor = "cell"
+      }
+      else{
+        elem.style.cursor = "move"
+        cursorHandleElem.style.cursor = "move"
       }
     } else {
       elem.style.cursor = "move"
@@ -1060,9 +1066,13 @@ class AnnotoriousAnnotator extends HTMLElement {
           elem.style.cursor = "crosshair"
           cursorHandleElem.style.cursor = "crosshair"
         }
-        if (_this.#editType === "merge") {
+        else if (_this.#editType === "merge") {
           elem.style.cursor = "cell"
           cursorHandleElem.style.cursor = "cell"
+        }
+        else{
+          elem.style.cursor = "move"
+          cursorHandleElem.style.cursor = "move"
         }
       } else {
         elem.style.cursor = "move"
