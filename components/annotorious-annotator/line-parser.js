@@ -617,6 +617,7 @@ class AnnotoriousAnnotator extends HTMLElement {
     TPEN.eventDispatcher.dispatch("tpen-page-committed", this.#modifiedAnnotationPage)
     console.log(this.#modifiedAnnotationPage)
     return this.#modifiedAnnotationPage
+    
     /*
     const pageID = page["@id"] ?? page.id
     // Do we want to sort the Annotations in any way?  Annotorious may not have them in any particular order.
