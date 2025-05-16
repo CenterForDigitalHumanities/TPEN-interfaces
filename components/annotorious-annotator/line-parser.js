@@ -11,6 +11,8 @@
 
 import TPEN from '../../api/TPEN.js'
 import User from '../../api/User.js'
+import { decodeUserToken } from '../iiif-tools/index.js'
+
 
 class AnnotoriousAnnotator extends HTMLElement {
     #osd
@@ -36,8 +38,8 @@ class AnnotoriousAnnotator extends HTMLElement {
   async connectedCallback() {
     // Must know the User
     if (!this.#userForAnnotorious) {
-      const tpenUserProfile = await User.fromToken(this.userToken).getProfile()
-      if(!tpenUserProfile?.agent) {
+      const agent = decodeUserToken(this.userToken)['http://store.rerum.io/agent']
+      if(!agent) {
         this.shadowRoot.innerHTML = `
             <style>${this.style}</style>
             <h3>User Error</h3>
@@ -46,7 +48,7 @@ class AnnotoriousAnnotator extends HTMLElement {
         return
       }
       // Whatever value is here becomes the value of 'creator' on the Annotations.
-      this.#userForAnnotorious = tpenUserProfile.agent.replace("http://", "https://")
+      this.#userForAnnotorious = agent
     }
     // Must know the Project
     TPEN.eventDispatcher.on('tpen-project-loaded', (ev) => this.render())
@@ -516,6 +518,7 @@ class AnnotoriousAnnotator extends HTMLElement {
           annotation.body = []
         }
       }
+      // FIXME because TPEN3 may also make some more kinds of target selectors.
       const tarsel = annotation.target.split("#")
       const target = {
         source: tarsel[0],
@@ -630,11 +633,10 @@ class AnnotoriousAnnotator extends HTMLElement {
       saveButton.value = "ERROR"
       throw err 
     })
-    page.items = page.items.map( orig => { 
-      const match = mod.items.find( (modded) => orig.target === modded.target )
-      if(match) orig.id = match.id
-      return orig
-    })
+    page.items = page.items.map(i => ({
+      ...i,
+      ...(mod.items?.find(a => a.target === i.target) ?? {})
+    }))
     this.#modifiedAnnotationPage = page
     TPEN.eventDispatcher.dispatch("tpen-page-committed", this.#modifiedAnnotationPage)
     TPEN.eventDispatcher.dispatch("tpen-toast", {
