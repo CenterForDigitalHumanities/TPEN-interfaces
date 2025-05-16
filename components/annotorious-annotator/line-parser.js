@@ -878,6 +878,7 @@ class AnnotoriousAnnotator extends HTMLElement {
     let selectedAnnos = this.#annotoriousInstance.getSelected()
     const annoJsonToEdit = selectedAnnos ? selectedAnnos[0] : null
     if (!annoJsonToEdit) return
+    let newAnnoObject = JSON.parse(JSON.stringify(annoJsonToEdit))
     const rect = annoElem.getBoundingClientRect()
     const annoDims = annoJsonToEdit.target.selector.value.replace("xywh=pixel:", "").split(",")
     let allAnnotations = this.#annotoriousInstance.getAnnotations()
