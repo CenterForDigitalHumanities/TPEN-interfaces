@@ -716,8 +716,6 @@ class AnnotoriousAnnotator extends HTMLElement {
       this.shadowRoot.querySelectorAll(".toggleEditType").forEach(el => { el.classList.remove("selected") })
       e.target.classList.add("selected")
       this.#editType = "merge"
-      // Don't HAVE to cancel, but it helps control the cursor.
-      this.#annotoriousInstance.cancelSelected()
     }
   }
 
