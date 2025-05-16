@@ -630,41 +630,8 @@ class AnnotoriousAnnotator extends HTMLElement {
       goodData.push(line)
       //allCalls.push(call)
     }
-    
-    // for await (const c of allCalls) {
-    //   goodData.push(await c.then(response => {
-    //     if(response.ok) return response.json()
-    //       // The page cannot contain this anno because of the error, so log the error and skip it.
-    //       console.log("Could not process annotation")
-    //       console.error(response)
-    //     })
-    //     .catch(error => {
-    //       TPEN.eventDispatcher.dispatch("tpen-toast", {
-    //         message: "Error saving annotations",
-    //         status: "error"
-    //       })
-    //       throw error
-    //     })
-    //   )
-    // }
 
-    // const goodData = await Promise.all(allCalls)
-    //   .then(responses => {
-    //     return Promise.all(responses.map(response => {
-    //       if(response.ok) return response.json()
-    //       // The page cannot contain this anno because of the error, so log the error and skip it.
-    //       console.log("Could not process annotation")
-    //       console.error(response)
-    //     }))
-    //   })
-    //   .then(data => data)
-    //   .catch(error => {
-    //     TPEN.eventDispatcher.dispatch("tpen-toast", {
-    //       message: "Error saving annotations",
-    //       status: "error"
-    //     })
-    //     throw error
-    //   })
+    // Need a "can I give all these lines to a page" version.  Services will do the line by line work.  Interface just commits the page.
     console.log(goodData)
     page.items = goodData
     this.#modifiedAnnotationPage = page
