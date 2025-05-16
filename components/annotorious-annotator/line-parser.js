@@ -601,11 +601,26 @@ class AnnotoriousAnnotator extends HTMLElement {
       delete annotation.created
       return annotation
     })
+    console.log(allAnnotations)
     let page = JSON.parse(JSON.stringify(this.#resolvedAnnotationPage))
+    page.items = allAnnotations
+    this.#modifiedAnnotationPage = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/page/${pageID.split("/").pop()}`, {
+      "PUT",
+      headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${TPEN.getAuthorization()}`,
+      },
+      body: JSON.stringify(page)
+    })
+    .then(res => res.json())
+    .catch(err => { throw err })
+    TPEN.eventDispatcher.dispatch("tpen-page-committed", this.#modifiedAnnotationPage)
+    console.log(this.#modifiedAnnotationPage)
+    return this.#modifiedAnnotationPage
+    /*
     const pageID = page["@id"] ?? page.id
     // Do we want to sort the Annotations in any way?  Annotorious may not have them in any particular order.
     console.log(allAnnotations)
-
     // Since lines need to be saved or updated we process them one by one
     let allCalls = []
     let goodData = []
@@ -631,13 +646,13 @@ class AnnotoriousAnnotator extends HTMLElement {
       //allCalls.push(call)
     }
 
-    // Need a "can I give all these lines to a page" version.  Services will do the line by line work.  Interface just commits the page.
     console.log(goodData)
     page.items = goodData
     this.#modifiedAnnotationPage = page
     TPEN.eventDispatcher.dispatch("tpen-page-committed", page)
     // Note that the pageID has changed now, so we need to update the one we are using in the URL.
     return page
+    * /
   }
 
   /**
