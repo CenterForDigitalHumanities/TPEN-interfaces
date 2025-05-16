@@ -491,6 +491,44 @@ class AnnotoriousAnnotator extends HTMLElement {
   }
 
   /**
+   * Format and pass along the Annotations from the provided AnnotationPage.
+   * Annotorious will render them on screen and introduce them to the UX flow.
+   */
+  setInitialAnnotations() {
+    if (!this.#resolvedAnnotationPage) return
+    let allAnnotations = JSON.parse(JSON.stringify(this.#resolvedAnnotationPage.items))
+    // Convert the Annotation selectors so that they are relative to the Image dimensions
+    allAnnotations = this.convertSelectors(allAnnotations, true)
+    // Convert the Annotations from the Page to be formatted for Annotorious
+    allAnnotations.map(annotation => {
+      if(!annotation?.body) annotation.body = []
+      if(!Array.isArray(annotation.body)) {
+        if(typeof annotation.body === "object") {
+          if(Object.keys(annotation.body).length > 0) annotation.body = [annotation.body]
+          else { annotation.body = [] }
+        }
+        else{
+          // This is a malformed Annotation body!  What to do...
+          annotation.body = []
+        }
+      }
+      const tarsel = annotation.target.split("#")
+      const target = {
+        source: tarsel[0],
+        selector: {
+          conformsTo: "http://www.w3.org/TR/media-frags/",
+          type: "FragmentSelector",
+          value: tarsel[1]
+        }
+      }
+      annotation.target = target
+      annotation.$isDirty = false
+      return annotation
+    })
+    this.#annotoriousInstance.setAnnotations(allAnnotations, false)
+  }
+
+  /**
    * Adjust Annotation selectors as needed for communication between Annotorious and TPEN3.
    * Annotorious naturally builds selector values relative to image dimensions.
    * TPEN3 wants them relative to Canvas dimensions.
@@ -539,44 +577,6 @@ class AnnotoriousAnnotator extends HTMLElement {
       }
       return annotation
     })
-  }
-
-  /**
-   * Format and pass along the Annotations from the provided AnnotationPage.
-   * Annotorious will render them on screen and introduce them to the UX flow.
-   */
-  setInitialAnnotations() {
-    if (!this.#resolvedAnnotationPage) return
-    let allAnnotations = JSON.parse(JSON.stringify(this.#resolvedAnnotationPage.items))
-    // Convert the Annotation selectors so that they are relative to the Image dimensions
-    allAnnotations = this.convertSelectors(allAnnotations, true)
-    // Convert the Annotations from the Page to be formatted for Annotorious
-    allAnnotations.map(annotation => {
-      if(!annotation?.body) annotation.body = []
-      if(!Array.isArray(annotation.body)) {
-        if(typeof annotation.body === "object") {
-          if(Object.keys(annotation.body).length > 0) annotation.body = [annotation.body]
-          else { annotation.body = [] }
-        }
-        else{
-          // This is a malformed Annotation body!  What to do...
-          annotation.body = []
-        }
-      }
-      const tarsel = annotation.target.split("#")
-      const target = {
-        source: tarsel[0],
-        selector: {
-          conformsTo: "http://www.w3.org/TR/media-frags/",
-          type: "FragmentSelector",
-          value: tarsel[1]
-        }
-      }
-      annotation.target = target
-      annotation.$isDirty = false
-      return annotation
-    })
-    this.#annotoriousInstance.setAnnotations(allAnnotations, false)
   }
 
   /**
@@ -631,10 +631,6 @@ class AnnotoriousAnnotator extends HTMLElement {
         return Promise.all(responses.map(response => {
           if(response.ok) return response.json()
           // The page cannot contain this anno because of the error, so log the error and skip it.
-          const err = {
-            "status" : response.status,
-            "message": response.statusText
-          }
           console.log("Could not process annotation")
           console.error(response)
         }))
