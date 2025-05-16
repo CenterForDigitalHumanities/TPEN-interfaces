@@ -451,7 +451,27 @@ class AnnotoriousAnnotator extends HTMLElement {
      * Supports line editing.  If the interface is not line editing then nothing special should happen.
      */
     annotator.on('selectionChanged', (annotations) => {
-      this.applyCursorBehavior()
+      let elem, cursorHandleElem
+      if (annotations && annotations.length) {
+        elem = this.#annotoriousInstance.viewer.element.querySelector(".a9s-annotation.selected")
+        cursorHandleElem = this.#annotoriousInstance.viewer.element.querySelector(".a9s-shape-handle")
+      } else {
+        // This is a little race condition-y.  It removes the ruler during the split line process
+        // Without it the ruler can be left behind when clearing all selections during line editing.
+        // this.removeRuler()
+      }
+      if (!elem) {
+        this.removeRuler()
+        return
+      }
+      if (_this.#isErasing) {
+        // Take over the cursor behavior b/c seeing the 'move' cursor is confusing
+        elem.style.cursor = "default"
+        cursorHandleElem.style.cursor = "default"
+      }
+      if (_this.#isLineEditing) {
+        this.applyCursorBehavior()
+      }
     })
 
     _this.onkeydown = function(evt) {
@@ -682,7 +702,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       this.shadowRoot.querySelectorAll(".toggleEditType").forEach(el => { el.classList.remove("selected") })
       e.target.classList.add("selected")
       this.#editType = "add"
-      ruler.style.display = "block"
+      if(this.#annotoriousInstance.getSelected().length) ruler.style.display = "block"
     }
   }
 
@@ -1009,12 +1029,9 @@ class AnnotoriousAnnotator extends HTMLElement {
    */
   applyCursorBehavior() {
     const elem = this.#annotoriousInstance.viewer.element.querySelector(".a9s-annotation.selected")
-    if (!elem) {
-      this.removeRuler()
-      return
-    }
-    const ruler = this.shadowRoot.getElementById("ruler")
+    if (!elem) return
     const cursorHandleElem = this.#annotoriousInstance.viewer.element.querySelector(".a9s-shape-handle")
+    const ruler = this.shadowRoot.getElementById("ruler")
     const _this = this
     let mouseStart = 0
     let mouseFinish = 0
@@ -1024,17 +1041,13 @@ class AnnotoriousAnnotator extends HTMLElement {
       if (this.#editType === "add") {
         elem.style.cursor = "crosshair"
         cursorHandleElem.style.cursor = "crosshair"
+        ruler.style.display = "block"
       }
       if (this.#editType === "merge") {
         elem.style.cursor = "cell"
         cursorHandleElem.style.cursor = "cell"
       }
-    } 
-    else if (this.#isErasing){
-      elem.style.cursor = "default"
-      cursorHandleElem.style.cursor = "default"
-    }
-    else {
+    } else {
       elem.style.cursor = "move"
       cursorHandleElem.style.cursor = "move"
     }
