@@ -625,6 +625,8 @@ class AnnotoriousAnnotator extends HTMLElement {
           },
           body: JSON.stringify(anno)
         })
+        .then(res => res.json())
+        .catch(err => { throw err })
       goodData.push(line)
       //allCalls.push(call)
     }
