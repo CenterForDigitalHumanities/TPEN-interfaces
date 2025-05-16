@@ -49,7 +49,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       this.#userForAnnotorious = tpenUserProfile.agent.replace("http://", "https://")
     }
     // Must know the Project
-    TPEN.eventDispatcher.on('tpen-project-loaded', () => this.render())
+    TPEN.eventDispatcher.on('tpen-project-loaded', (ev) => this.render())
     TPEN.eventDispatcher.on('tpen-project-load-failed', (err) => {
       this.shadowRoot.innerHTML = `
           <style>${this.style}</style>
@@ -116,6 +116,10 @@ class AnnotoriousAnnotator extends HTMLElement {
         }
         .toggleEditType, #saveBtn {
           cursor: pointer;
+        }
+        #saveBtn[disabled] {
+          background-color: gray;
+          color: white;
         }
       </style>
       <div>
@@ -209,7 +213,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       `
       throw e
     })
-    
+    this.#resolvedAnnotationPage.$isDirty = false
     const context = this.#resolvedAnnotationPage["@context"]
     if (!(context.includes("iiif.io/api/presentation/3/context.json") || context.includes("w3.org/ns/anno.jsonld"))) {
       console.warn("The AnnotationPage object did not have the IIIF Presentation API 3 context and may not be parseable.")
@@ -228,12 +232,12 @@ class AnnotoriousAnnotator extends HTMLElement {
     }
     // Resolve any referenced items
     if(this.#resolvedAnnotationPage?.items && this.#resolvedAnnotationPage.items.length) {
-      let i = 0
+      let i = -1
       for await (const anno_ref of this.#resolvedAnnotationPage.items) {
+        i++
         if(anno_ref.hasOwnProperty("body")) continue
         const anno_res = await fetch(anno_ref.id).then(res => res.json()).catch(err => { throw err })
         this.#resolvedAnnotationPage.items[i] = anno_res
-        i++
       }
     }
     // Note this will process the id from embedded Canvas objects to pass forward and be resolved.
@@ -395,25 +399,25 @@ class AnnotoriousAnnotator extends HTMLElement {
 
     /**
      * Fired after a new annotation is created and available as a shape in the DOM.
-     * Make it $isDirty so that it knows to save.
+     * Make the page $isDirty so that it knows to save.
      */
     annotator.on('createAnnotation', function(annotation) {
       // console.log("CREATE ANNOTATION")
       if (_this.#isDrawing) _this.#annotoriousInstance.cancelSelected()
-      annotation.$isDirty = true
       _this.#annotoriousInstance.updateAnnotation(annotation)
+      _this.#resolvedAnnotationPage.$isDirty = true
       _this.applyCursorBehavior()
     })
 
     /**
-     * Fired after a new annotation is resized or moved in DOM, and focus is removed.
-     * Make it $isDirty so it knows to update.
+     * Fired after an annotation is resized or moved in the DOM, and focus is removed.
+     * Make the page $isDirty so it knows to update.
      * Note this does not fire on a programmatic annotoriousInstance.updateAnnotation() call.
      */
     annotator.on('updateAnnotation', function(annotation) {
       // console.log("UPDATE ANNOTATION")
-      annotation.$isDirty = true
       _this.#annotoriousInstance.updateAnnotation(annotation)
+      _this.#resolvedAnnotationPage.$isDirty = true
       _this.applyCursorBehavior()
     })
 
@@ -431,6 +435,7 @@ class AnnotoriousAnnotator extends HTMLElement {
           let c = confirm("Are you sure you want to remove this?")
           if (c) {
             _this.#annotoriousInstance.removeAnnotation(originalAnnotation)
+            _this.#resolvedAnnotationPage.$isDirty = true
           } else {
             _this.#annotoriousInstance.cancelSelected()
           }
@@ -522,7 +527,6 @@ class AnnotoriousAnnotator extends HTMLElement {
         }
       }
       annotation.target = target
-      annotation.$isDirty = false
       return annotation
     })
     this.#annotoriousInstance.setAnnotations(allAnnotations, false)
@@ -585,7 +589,17 @@ class AnnotoriousAnnotator extends HTMLElement {
    * Announce the AnnotationPage with the changes that needs to be updated for processing upstream.
    */
   async saveAnnotations() {
-    let allAnnotations = this.#annotoriousInstance.getAnnotations().filter(a => a.$isDirty)
+    if (!this.#resolvedAnnotationPage.$isDirty){
+      TPEN.eventDispatcher.dispatch("tpen-toast", {
+        message: "No changes to save",
+        status: "info"
+      })
+      return
+    }
+    const saveButton = this.shadowRoot.getElementById("saveBtn")
+    saveButton.setAttribute("disabled", "true")
+    saveButton.value = "saving.  please wait..."
+    let allAnnotations = this.#annotoriousInstance.getAnnotations()
     // Convert the Annotation selectors so that they are relative to the Canvas dimensions
     allAnnotations = this.convertSelectors(allAnnotations, false)
     allAnnotations = allAnnotations.map(annotation => {
@@ -596,64 +610,41 @@ class AnnotoriousAnnotator extends HTMLElement {
       annotation.motivation = "transcribing"
       // stop undefined from appearing on previously existing Annotations
       if (!annotation.creator) delete annotation.creator
-      if (!annotation.modified) delete annotation.modified
-      // We already track this in __rerum.createdAt
+      delete annotation.modified
       delete annotation.created
       return annotation
     })
-    console.log(allAnnotations)
     let page = JSON.parse(JSON.stringify(this.#resolvedAnnotationPage))
     page.items = allAnnotations
-    this.#modifiedAnnotationPage = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/page/${pageID.split("/").pop()}`, {
-      "PUT",
+    // TODO order the Annotations before saving/updating
+    const pageID = page["@id"] ?? page.id
+    const mod = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/page/${pageID.split("/").pop()}`, {
+      method: "PUT",
       headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${TPEN.getAuthorization()}`,
       },
-      body: JSON.stringify(page)
+      body: JSON.stringify({ "items": page.items })
     })
     .then(res => res.json())
-    .catch(err => { throw err })
-    TPEN.eventDispatcher.dispatch("tpen-page-committed", this.#modifiedAnnotationPage)
-    console.log(this.#modifiedAnnotationPage)
-    return this.#modifiedAnnotationPage
-    
-    /*
-    const pageID = page["@id"] ?? page.id
-    // Do we want to sort the Annotations in any way?  Annotorious may not have them in any particular order.
-    console.log(allAnnotations)
-    // Since lines need to be saved or updated we process them one by one
-    let allCalls = []
-    let goodData = []
-    for (const anno of allAnnotations) {
-      const lineID = anno["@id"] ?? anno.id
-      let fetchURL = `${TPEN.servicesURL}/project/${TPEN.activeProject._id}/page/${pageID.split("/").pop()}/line/`
-      // Can do the following to make it invalid for services, as a test.
-      //delete anno.body
-      //delete anno.target
-      const method = lineID.includes(TPEN.RERUMURL) ? "PUT" : "POST"
-      if(method === "PUT") fetchURL += lineID.split("/").pop()
-      let line = await fetch(fetchURL, {
-          method,
-          headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${TPEN.getAuthorization()}`,
-          },
-          body: JSON.stringify(anno)
-        })
-        .then(res => res.json())
-        .catch(err => { throw err })
-      goodData.push(line)
-      //allCalls.push(call)
-    }
-
-    console.log(goodData)
-    page.items = goodData
+    .catch(err => { 
+      saveButton.value = "ERROR"
+      throw err 
+    })
+    page.items = page.items.map( orig => { 
+      const match = mod.items.find( (modded) => orig.target === modded.target )
+      if(match) orig.id = match.id
+      return orig
+    })
     this.#modifiedAnnotationPage = page
-    TPEN.eventDispatcher.dispatch("tpen-page-committed", page)
-    // Note that the pageID has changed now, so we need to update the one we are using in the URL.
-    return page
-    * /
+    TPEN.eventDispatcher.dispatch("tpen-page-committed", this.#modifiedAnnotationPage)
+    TPEN.eventDispatcher.dispatch("tpen-toast", {
+      message: "Annotations Saved",
+      status: "success"
+    })
+    saveButton.removeAttribute("disabled")
+    saveButton.value = "Save Annotations"
+    return this.#modifiedAnnotationPage
   }
 
   /**
@@ -788,7 +779,6 @@ class AnnotoriousAnnotator extends HTMLElement {
     }
     TPEN.eventDispatcher.dispatch("tpen-toast", toast)
   }
-  s
 
   /**
    * Deactivate Annotorious annotation drawing mode.
@@ -876,6 +866,8 @@ class AnnotoriousAnnotator extends HTMLElement {
   /**
    * Adds a line by splitting the current line where it was clicked.
    * The only DOM elem available in relation to Annotations is the selected line.
+   *
+   * FIXME preserve the line text
    */
   splitLine(event) {
     if (!this.#isLineEditing) return
@@ -887,7 +879,6 @@ class AnnotoriousAnnotator extends HTMLElement {
     let selectedAnnos = this.#annotoriousInstance.getSelected()
     const annoJsonToEdit = selectedAnnos ? selectedAnnos[0] : null
     if (!annoJsonToEdit) return
-    let newAnnoObject = JSON.parse(JSON.stringify(annoJsonToEdit))
     const rect = annoElem.getBoundingClientRect()
     const annoDims = annoJsonToEdit.target.selector.value.replace("xywh=pixel:", "").split(",")
     let allAnnotations = this.#annotoriousInstance.getAnnotations()
@@ -936,12 +927,15 @@ class AnnotoriousAnnotator extends HTMLElement {
     this.#annotoriousInstance.addAnnotation(allAnnotations[origIndex + 1])
     // Prepare UI for next click in chop mode by selecting the new Annotation
     this.#annotoriousInstance.setSelected(newAnnoObject.id)
+    this.#resolvedAnnotationPage.$isDirty = true
   }
 
   /**
    * Reduces two lines to a single line by merging.
    * Lines will only be merged if they share the same x coordinate.
-   * A line is always merged with the line underneath it.  
+   * A line is always merged with the line underneath it.
+   *
+   * FIXME preserve the line text
    */
   mergeLines(event) {
     if (!this.#isLineEditing) return
@@ -1022,6 +1016,7 @@ class AnnotoriousAnnotator extends HTMLElement {
     this.#annotoriousInstance.addAnnotation(newAnnoObject)
     // Prepare UI for next click in chop mode by selecting the new Annotation
     this.#annotoriousInstance.setSelected(newAnnoObject.id)
+    this.#resolvedAnnotationPage.$isDirty = true
   }
 
   /**
