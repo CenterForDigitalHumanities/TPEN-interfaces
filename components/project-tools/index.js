@@ -221,9 +221,6 @@ class ProjectTools extends HTMLElement {
             if(!isValidURL(url))
                 return TPEN.eventDispatcher.dispatch("tpen-toast", { status: "error", message: 'Please enter a valid URL' })
 
-            if(checkTools(name, url))
-                return TPEN.eventDispatcher.dispatch("tpen-toast", { status: "error", message: 'This tool already exists' })
-
             iframe.src = url
             iframe.style.display = "block"
         })
@@ -241,8 +238,13 @@ class ProjectTools extends HTMLElement {
             if(!isValidURL(url))
                 return TPEN.eventDispatcher.dispatch("tpen-toast", { status: "error", message: 'Please enter a valid URL' })
 
-            if(checkTools(name, url))
-                return TPEN.eventDispatcher.dispatch("tpen-toast", { status: "error", message: 'This tool already exists' })
+            if(checkTools(name, url)) {
+                modal.style.display = "none"
+                iframe.style.display = "none"
+                nameInput.value = ""
+                urlInput.value = ""
+                return TPEN.eventDispatcher.dispatch("tpen-toast", { status: "info", message: 'This tool already exists' })
+            }
     
             const response = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/tools`, {
                 method: "POST",
