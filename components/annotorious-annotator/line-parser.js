@@ -1083,8 +1083,8 @@ class AnnotoriousAnnotator extends HTMLElement {
       let mergeInText = annoJsonToMergeIn.body[0]?.value ? " ¶" + annoJsonToMergeIn.body[0]?.value : null
       let lang = origText ? annoJsonToEdit.body[0]?.language : mergeInText ? annoJsonToMergeIn.body[0]?.language : null
       if(!lang) lang = "none"
-      if(!origText) lang = ""
-      if(!mergeInText) lang = ""
+      if(!origText) origText = ""
+      if(!mergeInText) mergeInText = ""
       newAnnoObject.body = [{
           "type": "TextualBody",
           "value": origText + mergeInText,
