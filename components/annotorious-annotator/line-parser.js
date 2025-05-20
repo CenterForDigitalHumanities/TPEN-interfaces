@@ -469,7 +469,7 @@ class AnnotoriousAnnotator extends HTMLElement {
         elem.style.cursor = "default"
         cursorHandleElem.style.cursor = "default"
       }
-      if (_this.#isLineEditing) {
+      if (_this.#isLineEditing && elem) {
         this.applyCursorBehavior()
       }
     })
@@ -697,10 +697,6 @@ class AnnotoriousAnnotator extends HTMLElement {
     allAnnotations = this.cleanAnnotations(allAnnotations)
     // Sort by x,y
     allAnnotations = this.sortAnnotations(allAnnotations)
-    // Format selectors as simple fragment selectors for saving?
-    // allAnnotations = this.simplifyTarget(allAnnotations)
-    // Format body to be an Object instead of an [Object] for saving?
-    // allAnnotations = this.simplifyBody(allAnnotations)
     let page = JSON.parse(JSON.stringify(this.#resolvedAnnotationPage))
     page.items = allAnnotations
     const pageID = page["@id"] ?? page.id
