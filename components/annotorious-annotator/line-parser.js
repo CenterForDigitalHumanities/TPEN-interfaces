@@ -13,20 +13,19 @@ import TPEN from '../../api/TPEN.js'
 import User from '../../api/User.js'
 import { decodeUserToken } from '../iiif-tools/index.js'
 
-
 class AnnotoriousAnnotator extends HTMLElement {
-    #osd
-    #annotoriousInstance
-    #userForAnnotorious
-    #annotationPageURI
-    #resolvedAnnotationPage
-    #modifiedAnnotationPage
-    #imageDims
-    #canvasDims
-    #isDrawing = false
-    #isLineEditing = false
-    #isErasing = false
-    #editType = ""
+  #osd 
+  #annotoriousInstance
+  #userForAnnotorious
+  #annotationPageURI
+  #resolvedAnnotationPage
+  #modifiedAnnotationPage
+  #imageDims
+  #canvasDims
+  #isDrawing = false
+  #isLineEditing = false
+  #isErasing = false
+  #editType = ""
 
   constructor() {
     super()
@@ -39,7 +38,7 @@ class AnnotoriousAnnotator extends HTMLElement {
     // Must know the User
     if (!this.#userForAnnotorious) {
       const agent = decodeUserToken(this.userToken)['http://store.rerum.io/agent']
-      if(!agent) {
+      if (!agent) {
         this.shadowRoot.innerHTML = `
             <style>${this.style}</style>
             <h3>User Error</h3>
@@ -172,7 +171,7 @@ class AnnotoriousAnnotator extends HTMLElement {
     saveButton.addEventListener("click", (e) => {
       this.#annotoriousInstance.cancelSelected()
       // Timeout required in order to allow the unfocus native functionality to complete for $isDirty.
-      setTimeout(() => {this.saveAnnotations()}, 500)
+      setTimeout(() => { this.saveAnnotations() }, 500)
     })
     this.shadowRoot.appendChild(osdScript)
     this.shadowRoot.appendChild(annotoriousScript)
@@ -195,26 +194,26 @@ class AnnotoriousAnnotator extends HTMLElement {
     if (!pageID) return
     // We want to use this URL instead of the RERUM URL to help with temp pages vs incorrect ids
     this.#resolvedAnnotationPage = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/page/${pageID.split("/").pop()}`, {
-      method: "GET",
-      headers: {
+        method: "GET",
+        headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${TPEN.getAuthorization()}`,
-      }
-    })
-    .then(r => {
-      if (!r.ok) throw r
+        }
+      })
+      .then(r => {
+        if (!r.ok) throw r
         // resolve all the referenced Annotations in items:[]?
-      return r.json()
-    })
-    .catch(e => {
-      this.shadowRoot.innerHTML = `
+        return r.json()
+      })
+      .catch(e => {
+        this.shadowRoot.innerHTML = `
         <style>${this.style}</style>
         <h3>Page Error</h3>
         <p>The Page you are looking for does not exist or you do not have access to it.</p>
         <p> ${e.status}: ${e.statusText} </p>
       `
-      throw e
-    })
+        throw e
+      })
     this.#resolvedAnnotationPage.$isDirty = false
     const context = this.#resolvedAnnotationPage["@context"]
     if (!(context.includes("iiif.io/api/presentation/3/context.json") || context.includes("w3.org/ns/anno.jsonld"))) {
@@ -233,11 +232,11 @@ class AnnotoriousAnnotator extends HTMLElement {
       throw new Error(`The AnnotationPage object did not have a target Canvas.  There is no image to load.`, { "cause": "AnnotationPage.target must have a value." })
     }
     // Resolve any referenced items
-    if(this.#resolvedAnnotationPage?.items && this.#resolvedAnnotationPage.items.length) {
+    if (this.#resolvedAnnotationPage?.items && this.#resolvedAnnotationPage.items.length) {
       let i = -1
       for await (const anno_ref of this.#resolvedAnnotationPage.items) {
         i++
-        if(anno_ref.hasOwnProperty("body")) continue
+        if (anno_ref.hasOwnProperty("body")) continue
         const anno_res = await fetch(anno_ref.id).then(res => res.json()).catch(err => { throw err })
         this.#resolvedAnnotationPage.items[i] = anno_res
       }
@@ -288,13 +287,13 @@ class AnnotoriousAnnotator extends HTMLElement {
     // Use the Annotations and Image on the Canvas for inititalizing the Annotorious portion of the component.
     this.loadAnnotorious(resolvedCanvas)
   }
- 
+
   /**
    * The Project, User, Page, and Canvas data has been processed.
    * The UI is ready to try to load Annotorious and Annotorious listeners.
    *
    * @param resolveCanvas - Canvas JSON which includes the Image and any existing Annotations for Annotorious.
-  */
+   */
   async loadAnnotorious(resolvedCanvas) {
     this.shadowRoot.getElementById('annotator-container').innerHTML = ""
     const canvasID = resolvedCanvas["@id"] ?? resolvedCanvas.id
@@ -522,11 +521,11 @@ class AnnotoriousAnnotator extends HTMLElement {
     let orig_xywh, converted_xywh = []
     return annotations.map(annotation => {
       if (!annotation.hasOwnProperty("target") || !annotation.hasOwnProperty("body")) return annotation
-      if(typeof annotation.target === "string") {
+      if (typeof annotation.target === "string") {
         // This is probably a simplified fragment selector like uri#xywh= and Annotorious will not process it.
         const tarsel = annotation.target.split("#")
-        if(tarsel && tarsel.length === 2) {
-          if(!tarsel[1].includes("pixel:")) tarsel[1] = tarsel[1].replace("xywh=", "xywh=pixel:")
+        if (tarsel && tarsel.length === 2) {
+          if (!tarsel[1].includes("pixel:")) tarsel[1] = tarsel[1].replace("xywh=", "xywh=pixel:")
           annotation.target = {
             source: tarsel[0],
             selector: {
@@ -537,11 +536,10 @@ class AnnotoriousAnnotator extends HTMLElement {
           }
         }
       }
-      if(!Array.isArray(annotation.body)) {
-        if(typeof annotation.body === "object") {
-          annotation.body = (Object.keys(annotation.body).length > 0) ? [annotation.body] : [] 
-        }
-        else{
+      if (!Array.isArray(annotation.body)) {
+        if (typeof annotation.body === "object") {
+          annotation.body = (Object.keys(annotation.body).length > 0) ? [annotation.body] : []
+        } else {
           // This is a malformed Annotation body!  What to do...
           annotation.body = []
         }
@@ -608,18 +606,18 @@ class AnnotoriousAnnotator extends HTMLElement {
    * @return the Array of Annotations with their selectors rounded
    */
   roundSelectors(annotations) {
-    if(!annotations) return
+    if (!annotations) return
     return annotations.map(annotation => {
       if (!annotation.target) return annotation
-        let orig_xywh, rounded_xywh = []
-        //The target is in expanded Annotorious format. {source:"uri", selector:{value:"xywh="}}
-        orig_xywh = annotation.target.selector.value.replace("xywh=pixel:", "").split(",")
-        rounded_xywh[0] = Math.round(parseFloat(orig_xywh[0]))
-        rounded_xywh[1] = Math.round(parseFloat(orig_xywh[1]))
-        rounded_xywh[2] = Math.round(parseFloat(orig_xywh[2]))
-        rounded_xywh[3] = Math.round(parseFloat(orig_xywh[3]))
-        const sel = "xywh=pixel:" + rounded_xywh.join(",")
-        annotation.target.selector.value = sel
+      let orig_xywh, rounded_xywh = []
+      //The target is in expanded Annotorious format. {source:"uri", selector:{value:"xywh="}}
+      orig_xywh = annotation.target.selector.value.replace("xywh=pixel:", "").split(",")
+      rounded_xywh[0] = Math.round(parseFloat(orig_xywh[0]))
+      rounded_xywh[1] = Math.round(parseFloat(orig_xywh[1]))
+      rounded_xywh[2] = Math.round(parseFloat(orig_xywh[2]))
+      rounded_xywh[3] = Math.round(parseFloat(orig_xywh[3]))
+      const sel = "xywh=pixel:" + rounded_xywh.join(",")
+      annotation.target.selector.value = sel
       return annotation
     })
   }
@@ -632,7 +630,7 @@ class AnnotoriousAnnotator extends HTMLElement {
    * @return the Array of Annotations with their selectors rounded
    */
   cleanAnnotations(annotations) {
-    if(!annotations) return
+    if (!annotations) return
     return annotations.map(annotation => {
       let body = annotation.body.length ? annotation.body[0] : {}
       // clean out Annotorious
@@ -649,7 +647,7 @@ class AnnotoriousAnnotator extends HTMLElement {
     })
   }
 
-   /**
+  /**
    * The order of these Annotations is not guaranteed.
    * These Annotations should be ordered by x then y.  Generally, this mocks a column design.
    *
@@ -675,7 +673,7 @@ class AnnotoriousAnnotator extends HTMLElement {
    * Announce the AnnotationPage with the changes that needs to be updated for processing upstream.
    */
   async saveAnnotations() {
-    if (!this.#resolvedAnnotationPage.$isDirty){
+    if (!this.#resolvedAnnotationPage.$isDirty) {
       TPEN.eventDispatcher.dispatch("tpen-toast", {
         message: "No changes to save",
         status: "info"
@@ -698,18 +696,18 @@ class AnnotoriousAnnotator extends HTMLElement {
     page.items = allAnnotations
     const pageID = page["@id"] ?? page.id
     const mod = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/page/${pageID.split("/").pop()}`, {
-      method: "PUT",
-      headers: {
+        method: "PUT",
+        headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${TPEN.getAuthorization()}`,
-      },
-      body: JSON.stringify({ "items": page.items })
-    })
-    .then(res => res.json())
-    .catch(err => { 
-      saveButton.value = "ERROR"
-      throw err 
-    })
+        },
+        body: JSON.stringify({ "items": page.items })
+      })
+      .then(res => res.json())
+      .catch(err => {
+        saveButton.value = "ERROR"
+        throw err
+      })
     page.items = page.items.map(i => ({
       ...i,
       ...(mod.items?.find(a => a.target === i.target) ?? {})
@@ -776,7 +774,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       this.shadowRoot.querySelectorAll(".toggleEditType").forEach(el => { el.classList.remove("selected") })
       e.target.classList.add("selected")
       this.#editType = "add"
-      if(this.#annotoriousInstance.getSelected().length) ruler.style.display = "block"
+      if (this.#annotoriousInstance.getSelected().length) ruler.style.display = "block"
     }
   }
 
@@ -787,7 +785,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       e.target.classList.remove("selected")
       this.#editType = ""
       const elem = this.#annotoriousInstance.viewer.element.querySelector(".a9s-annotation.selected")
-      if(elem) elem.style.cursor = "move"
+      if (elem) elem.style.cursor = "move"
     } else {
       this.shadowRoot.querySelectorAll(".toggleEditType").forEach(el => { el.classList.remove("selected") })
       e.target.classList.add("selected")
@@ -946,11 +944,9 @@ class AnnotoriousAnnotator extends HTMLElement {
   /**
    * Adds a line by splitting the current line where it was clicked.
    * The only DOM elem available in relation to Annotations is the selected line.
-   *
    */
   splitLine(event) {
     if (!this.#isLineEditing) return
-
     const annoElem = event.target
     // Note that if there is no selected line, there are no DOM elements representing Annotations. 
     if (!annoElem) return
@@ -1010,7 +1006,6 @@ class AnnotoriousAnnotator extends HTMLElement {
    * Reduces two lines to a single line by merging.
    * Lines will only be merged if they share the same x coordinate.
    * A line is always merged with the line underneath it.
-   *
    */
   mergeLines(event) {
     if (!this.#isLineEditing) return
@@ -1071,19 +1066,19 @@ class AnnotoriousAnnotator extends HTMLElement {
     newAnnoObject.id = Date.now() + ""
     newAnnoObject.target.selector.value = `xywh=pixel:${newAnnoDims.join()}`
     newAnnoObject.created = new Date().toJSON()
-    if(annoJsonToMergeIn.body.length){
+    if (annoJsonToMergeIn.body.length) {
       // This new Annotation should combine any existing text from the Annotations merging together.
       let origText = annoJsonToEdit.body.length ? annoJsonToEdit.body[0]?.value : null
       let mergeInText = annoJsonToMergeIn.body[0]?.value ? " ¶" + annoJsonToMergeIn.body[0]?.value : null
       let lang = origText ? annoJsonToEdit.body[0]?.language : mergeInText ? annoJsonToMergeIn.body[0]?.language : null
-      if(!lang) lang = "none"
-      if(!origText) origText = ""
-      if(!mergeInText) mergeInText = ""
+      if (!lang) lang = "none"
+      if (!origText) origText = ""
+      if (!mergeInText) mergeInText = ""
       newAnnoObject.body = [{
-          "type": "TextualBody",
-          "value": origText + mergeInText,
-          "format": "text/plain",
-          "language": lang
+        "type": "TextualBody",
+        "value": origText + mergeInText,
+        "format": "text/plain",
+        "language": lang
       }]
     }
     allAnnotations.splice(origIndex, 1, newAnnoObject)
@@ -1113,12 +1108,10 @@ class AnnotoriousAnnotator extends HTMLElement {
         elem.style.cursor = "crosshair"
         cursorHandleElem.style.cursor = "crosshair"
         ruler.style.display = "block"
-      }
-      else if (this.#editType === "merge") {
+      } else if (this.#editType === "merge") {
         elem.style.cursor = "cell"
         cursorHandleElem.style.cursor = "cell"
-      }
-      else{
+      } else {
         elem.style.cursor = "move"
         cursorHandleElem.style.cursor = "move"
       }
@@ -1133,12 +1126,10 @@ class AnnotoriousAnnotator extends HTMLElement {
         if (_this.#editType === "add") {
           elem.style.cursor = "crosshair"
           cursorHandleElem.style.cursor = "crosshair"
-        }
-        else if (_this.#editType === "merge") {
+        } else if (_this.#editType === "merge") {
           elem.style.cursor = "cell"
           cursorHandleElem.style.cursor = "cell"
-        }
-        else{
+        } else {
           elem.style.cursor = "move"
           cursorHandleElem.style.cursor = "move"
         }
