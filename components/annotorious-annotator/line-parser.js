@@ -1079,10 +1079,12 @@ class AnnotoriousAnnotator extends HTMLElement {
     newAnnoObject.created = new Date().toJSON()
     if(annoJsonToMergeIn.body.length){
       // This new Annotation should combine any existing text from the Annotations merging together.
-      const origText = annoJsonToEdit.body.length ? annoJsonToEdit.body[0].value : ""
-      let mergeInText = " ¶" + annoJsonToMergeIn.body[0].value
-      let lang = origText ? annoJsonToEdit.body[0].language : mergeInText ? annoJsonToMergeIn.body[0].language : null
+      let origText = annoJsonToEdit.body.length ? annoJsonToEdit.body[0]?.value : null
+      let mergeInText = annoJsonToMergeIn.body[0]?.value ? " ¶" + annoJsonToMergeIn.body[0]?.value : null
+      let lang = origText ? annoJsonToEdit.body[0]?.language : mergeInText ? annoJsonToMergeIn.body[0]?.language : null
       if(!lang) lang = "none"
+      if(!origText) lang = ""
+      if(!mergeInText) lang = ""
       newAnnoObject.body = [{
           "type": "TextualBody",
           "value": origText + mergeInText,
