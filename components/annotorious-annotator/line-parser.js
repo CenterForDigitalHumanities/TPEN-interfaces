@@ -456,11 +456,6 @@ class AnnotoriousAnnotator extends HTMLElement {
         elem = this.#annotoriousInstance.viewer.element.querySelector(".a9s-annotation.selected")
         cursorHandleElem = this.#annotoriousInstance.viewer.element.querySelector(".a9s-shape-handle")
       } else {
-        // This is a little race condition-y.  It removes the ruler during the split line process
-        // Without it the ruler can be left behind when clearing all selections during line editing.
-        // this.removeRuler()
-      }
-      if (!elem) {
         this.removeRuler()
         return
       }
