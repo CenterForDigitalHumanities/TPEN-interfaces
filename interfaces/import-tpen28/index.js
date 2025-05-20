@@ -63,8 +63,76 @@ async function importProject() {
         },
         body: JSON.stringify({ url })
     })
+
+    if (!importResponse.ok) {
+        messageDiv.textContent = "Unable to import Project"
+        return
+    }
     
     const result = await importResponse.json()
+    const allPages = result.layers[0].pages.map((page) => page.target)
+    const allPagesIds = result.layers[0].pages.map((page) =>
+        page.id.replace(/project\/([a-f0-9]+)/, `project/${result._id}`)
+    )
+    let manifestUrl = result.manifest[0]
+    
+    function transformManifestUrl(url) {
+        const parsedUrl = new URL(url)
+        parsedUrl.protocol = "http:"
+        if (parsedUrl.pathname.endsWith("/manifest.json")) {
+            parsedUrl.pathname = parsedUrl.pathname.replace(/\/manifest\.json$/, "")
+        }
+        parsedUrl.search = "?version=3"
+        return parsedUrl.toString()
+    }
+    
+    manifestUrl = transformManifestUrl(manifestUrl)
+    
+    const responseManifest = await fetch(manifestUrl)
+    if (!responseManifest.ok) {
+        throw new Error(`Failed to fetch: ${responseManifest.statusText}`)
+    }
+    
+    const manifestJson = await responseManifest.json()
+    const itemsByPage = {}
+    let index = 0
+    for (const item of manifestJson.items) {
+        const pageId = item.id
+        if (allPages.includes(pageId)) {
+            const annotations =
+                item.annotations?.flatMap(
+                (annotation) =>
+                    annotation.items?.flatMap((innerItems) => ({
+                    body: innerItems.body,
+                    motivation: innerItems.motivation,
+                    target: innerItems.target,
+                    type: innerItems.type,
+                    })) || []
+                ) || []
+            itemsByPage[allPagesIds[index]] = annotations
+        }
+        index++
+    }
+    
+    for (const [endpoint, annotations] of Object.entries(itemsByPage)) {
+        try {
+            const response = await fetch(`${endpoint}/line`, {
+                method: "POST",
+                headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${TPEN.getAuthorization()}`,
+                },
+                body: JSON.stringify(annotations),
+            })
+
+            if (!response.ok) {
+                throw new Error(`Failed to import annotations: ${response.statusText}`)
+            }
+        } catch (error) {
+            console.error("Error importing annotations:", error)
+        }
+    }
+ 
     const projectID = result._id
     const rawText = await projectResponse.text()
     const parsedData = parseProjectResponse(rawText)
