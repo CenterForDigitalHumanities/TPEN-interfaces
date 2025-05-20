@@ -9,7 +9,8 @@ class ProjectDetails extends HTMLElement {
         display: block;
         margin: 0;
         height: 10em;
-        overflow: visible;
+        width: 100%;
+        overflow: hidden;
     }
     h3 {
         color: var(--primary-color);
@@ -26,6 +27,19 @@ class ProjectDetails extends HTMLElement {
     constructor() {
         super()
         this.attachShadow({ mode: 'open' })
+        TPEN.eventDispatcher.on('tpen-project-loaded', this.render.bind(this))
+        TPEN.eventDispatcher.on('tpen-project-load-failed', (err) => {
+            this.shadowRoot.innerHTML = `
+                <style>${this.style}</style>
+                <h3>Project not found</h3>
+                <p>The project you are looking for does not exist or you do not have access to it.</p>
+            `
+            const toast = {
+                message: `Project failed to load: ${err.message}`,
+                status: "error"
+              }
+            TPEN.eventDispatcher.dispatchEvent('toast',toast)
+        })
     }
 
     static get observedAttributes() {
@@ -50,7 +64,6 @@ class ProjectDetails extends HTMLElement {
 
     connectedCallback() {
         TPEN.attachAuthentication(this)
-        TPEN.eventDispatcher.on('tpen-project-loaded', () => this.render())
     }
 
     async render() {
@@ -59,7 +72,7 @@ class ProjectDetails extends HTMLElement {
         const collaboratorCount = Object.keys(project.collaborators).length
 
         TPEN.screen.title = project.label ?? project.title ?? project.name
-        TPEN.eventDispatcher.dispatchEvent(new CustomEvent('tpen-gui-title', { detail: TPEN.screen.title }))
+        TPEN.eventDispatcher.dispatch('tpen-gui-title', TPEN.screen.title)
 
         this.shadowRoot.innerHTML = `
             <style>${this.style}</style>
@@ -69,7 +82,7 @@ class ProjectDetails extends HTMLElement {
             <p>
                 ${collaboratorCount < 3 ? "Collaborators: "+Object.entries(project.collaborators).map(([userID, u]) => u.profile.displayName).join(', ') : `${collaboratorCount} collaborator${collaboratorCount===1? '' : 's'}`}
             </p>
-            <sequence-panel manifest-id="${project.manifest}" preset="responsive"></sequence-panel>
+            <sequence-panel manifest-id="${project.manifest}"></sequence-panel>
         `
     }
 }
