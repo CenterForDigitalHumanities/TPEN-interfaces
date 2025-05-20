@@ -1029,15 +1029,7 @@ class AnnotoriousAnnotator extends HTMLElement {
      * These Annotations should be ordered by x then y.  Generally, this mocks a columnization order.
      * The reorder is only a helper for the logic here and does not persist or change the order in Annotorious.
      */
-    allAnnotations.sort((a, b) => {
-      const a_selector = a.target.selector.value.replace("xywh=pixel:", "").split(",")
-      const b_selector = b.target.selector.value.replace("xywh=pixel:", "").split(",")
-      if (a_selector[0] < b_selector[0]) return -1
-      if (a_selector[0] > b_selector[0]) return 1
-      if (a_selector[1] < b_selector[1]) return -1
-      if (a_selector[1] > b_selector[1]) return 1
-      return 0
-    })
+    allAnnotations = this.sortAnnotations(allAnnotations)
 
     const compareId = annoJsonToEdit["@id"] ?? annoJsonToEdit.id
     const origIndex = allAnnotations.findIndex((a) => {
