@@ -525,12 +525,8 @@ class AnnotoriousAnnotator extends HTMLElement {
       if(typeof annotation.target === "string") {
         // This is probably a simplified fragment selector like uri#xywh= and Annotorious will not process it.
         const tarsel = annotation.target.split("#")
-        let target
-        if(!tarsel || tarsel.length !== 2) {
-          target = annotation.target
-        }
-        else{
-          target = {
+        if(tarsel && tarsel.length === 2) {
+          annotation.target = {
             source: tarsel[0],
             selector: {
               conformsTo: "http://www.w3.org/TR/media-frags/",
@@ -539,7 +535,6 @@ class AnnotoriousAnnotator extends HTMLElement {
             }
           }
         }
-        annotation.target = target
       }
       if(!Array.isArray(annotation.body)) {
         if(typeof annotation.body === "object") {
