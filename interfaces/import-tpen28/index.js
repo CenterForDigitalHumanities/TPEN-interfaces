@@ -171,6 +171,29 @@ async function importProject() {
         })
     }
 
+    const projectTools = parsedData.userTool
+    const toolList = result.tools.map((tool) => tool.value)
+    const selectedTools = toolList.map((tool) => ({
+        value: tool,
+        state: projectTools.includes(tool),
+    }))
+    
+    const responseTools = await fetch(`${TPEN.servicesURL}/project/${projectID}/tools`, {
+        method: "PUT",
+        headers: {
+            Authorization: `Bearer ${TPEN.getAuthorization()}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(selectedTools),
+    })
+    
+    TPEN.eventDispatcher.dispatch(
+        "tpen-toast",
+        responseTools.ok
+        ? { status: "info", message: "Successfully Added Tools" }
+        : { status: "error", message: "Error Adding Tools" }
+    )
+
     const openBtn = document.getElementById("openProject")
     openBtn.classList.remove("hidden")
     openBtn.addEventListener("click", () => {
