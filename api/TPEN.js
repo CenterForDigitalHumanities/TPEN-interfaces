@@ -39,6 +39,7 @@ class Tpen {
         this.servicesURL = "https://dev.api.t-pen.org"
         this.TPEN28URL = "https://dev.t-pen.org"
         this.RERUMURL = "https://devstore.rerum.io/v1"
+        this.BASEURL = "https://app.t-pen.org"
         this.currentUser
         this.activeProject
 

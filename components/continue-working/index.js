@@ -7,17 +7,16 @@ class ContinueWorking extends HTMLElement {
         this.shadowRoot.innerHTML = `
             <style>
                 .tpen-continue-working {
-                    padding: 10px;
                     display: flex;
-                    gap:10px
                 }
                 .section {
                     margin-bottom: 15px;
                     cursor:pointer;
                     transition:all 0.3s linear;
+                    transform:scale(0.9)
                 }
                 .section:hover {
-                    transform:scale(0.9)
+                    transform:scale(1)
                 }
                 .section img {
                     width: 100%;
@@ -34,7 +33,7 @@ class ContinueWorking extends HTMLElement {
         if(TPEN.userMetrics) {
             this.handleProjectsLoaded()
         }
-        TPEN.getUserProjects()
+        TPEN.getUserProjects(TPEN.getAuthorization())
     }
 
     disconnectedCallback() {
@@ -63,16 +62,20 @@ class ContinueWorking extends HTMLElement {
         }
         const recentProjects = deduped
             .map(({ id, label }) => {
-                const project = projects.find(p => p.id === id)
-                return project ? { ...project, label } : null
+                const projectId = id.split(':')[1].split('/')[0]
+                const pageId = id.split('/')[1].split(':')[1]
+                const project = projects.find(p => p._id === projectId)
+                return project ? { project, label, pageId } : null
             })
             .filter(Boolean)
-        container.innerHTML = recentProjects.map(project => `
-            <div class="section" data-id="${project.id}">
-                <h3>${project.title ?? 'Untitled Project'}</h3>
-                <span style="font-size:0.9em;color:#888;">${project.label}</span>
-                <img src="${project.image ?? '../assets/images/manuscript_img.webp'}" alt="${project.title ?? 'Project'}">
-                <p>${project.lastEdited ? `Last edited: ${new Date(project.lastEdited).toLocaleString()}` : ''}</p>
+        container.innerHTML = recentProjects.map(a => `
+            <div class="section" data-id="${a.project.id}">
+                <h3>${a.label}</h3>
+                <span style="font-size:0.9em;color:#888;">${a.project.label}</span>
+                <a href="${TPEN.BASEURL}/transcribe?projectId=${a.project.id}&pageId=${a.pageId}">
+                <img src="../assets/images/manuscript_img.webp" alt="${a.project.label ?? 'Project'}">
+                </a>
+                <p>${a.project._modifiedAt ? `Last edited: ${new Date(a.project._modifiedAt).toLocaleString()}` : ''}</p>
             </div>
         `).join('')
     }
