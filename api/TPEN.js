@@ -19,6 +19,8 @@ class Tpen {
     #activeLine
     #activeProject
     #activeCollection
+    #userMetrics
+    #userProjects
 
     eventDispatcher = eventDispatcher
 
@@ -92,6 +94,14 @@ class Tpen {
         return this.#activeProject
     }
 
+    get userMetrics() {
+        return this.#userMetrics
+    }
+
+    get userProjects() {
+        return this.#userProjects
+    }
+
     set activeProject(project) {
         this.#activeProject = project
     }
@@ -105,10 +115,15 @@ class Tpen {
     }
 
     async getUserProjects(idToken) {
+        let self = this
         const userId = getUserFromToken(idToken)
-        return import('./User.js').then(module => {
+        return import('./User.js').then(async module => {
             const u = new module.default(userId)
-            return u.getProjects()
+            const { projects, metrics } = await u.getProjects()
+            self.#userMetrics = metrics
+            self.#userProjects = projects
+            eventDispatcher.dispatch("tpen-user-projects-loaded")
+            return projects
         })
     }
 
