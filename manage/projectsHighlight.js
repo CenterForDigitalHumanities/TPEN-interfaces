@@ -12,7 +12,9 @@ eventDispatcher.on("tpen-authenticated", loadProjects)
 async function fetchProjects() {
     const token = elem.userToken
     const userObj = User.fromToken(token)
-    return await userObj.getProjects()
+    const { projects, metrics } = await userObj.getProjects()
+    // metrics are available here if you want to use them
+    return projects
 }
 
 function renderProjects(projects) {
