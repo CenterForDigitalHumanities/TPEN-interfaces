@@ -455,7 +455,7 @@ class AnnotoriousAnnotator extends HTMLElement {
         elem = this.#annotoriousInstance.viewer.element.querySelector(".a9s-annotation.selected")
         cursorHandleElem = this.#annotoriousInstance.viewer.element.querySelector(".a9s-shape-handle")
       } else {
-        this.removeRuler()
+        _this.removeRuler()
         return
       }
       if (_this.#isErasing) {
@@ -464,7 +464,7 @@ class AnnotoriousAnnotator extends HTMLElement {
         cursorHandleElem.style.cursor = "default"
       }
       if (_this.#isLineEditing && elem) {
-        this.applyCursorBehavior()
+        _this.applyCursorBehavior()
       }
     })
 
@@ -541,9 +541,10 @@ class AnnotoriousAnnotator extends HTMLElement {
           annotation.body = (Object.keys(annotation.body).length > 0) ? [annotation.body] : []
         } else {
           // This is a malformed Annotation body!  What to do...
-          annotation.body = []
+          annotation.body = [annotation.body]
         }
       }
+      annotation.motivation ??= "transcribing"
       return annotation
     })
   }
@@ -637,10 +638,9 @@ class AnnotoriousAnnotator extends HTMLElement {
       delete body.created
       delete body.creator
       delete body.modified
-      delete body.purpose
+      if(!body?.purpose) delete body.purpose
       annotation.body = Object.keys(body).length > 0 ? [body] : []
-      annotation.motivation = "transcribing"
-      if (!annotation.creator) delete annotation.creator
+      if (!annotation?.creator) delete annotation.creator
       delete annotation.modified
       delete annotation.created
       return annotation
@@ -694,6 +694,8 @@ class AnnotoriousAnnotator extends HTMLElement {
     allAnnotations = this.sortAnnotations(allAnnotations)
     let page = JSON.parse(JSON.stringify(this.#resolvedAnnotationPage))
     page.items = allAnnotations
+    console.log(page)
+    return
     const pageID = page["@id"] ?? page.id
     const mod = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/page/${pageID.split("/").pop()}`, {
         method: "PUT",
