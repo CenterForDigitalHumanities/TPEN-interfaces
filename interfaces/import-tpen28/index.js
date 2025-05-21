@@ -241,6 +241,8 @@ async function openProject() {
     const projectTPEN3Data = await importProject(url)
     const projectID = projectTPEN3Data._id
 
+    message.textContent = "Project importing... Please wait...";
+
     await importAnnotations(projectTPEN3Data)
     await importCollaborators(projectTPEN28Data, projectID)
     await importHotKeys(projectTPEN28Data, projectID)
