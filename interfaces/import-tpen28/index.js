@@ -48,10 +48,10 @@ async function fetchOneTPEN28Project(selectedId) {
     return projectResponse.json()
 }
 
-async function importAnnotations(result) {
-    const allPages = result.layers[0].pages.map((page) => page.target)
-    const allPagesIds = result.layers[0].pages.map((page) =>page.id.replace(/project\/([a-f0-9]+)/, `project/${result._id}`))
-    let manifestUrl = result.manifest[0]
+async function importAnnotations(projectTPEN28Data) {
+    const allPages = projectTPEN28Data.layers[0].pages.map((page) => page.target)
+    const allPagesIds = projectTPEN28Data.layers[0].pages.map((page) =>page.id.replace(/project\/([a-f0-9]+)/, `project/${projectTPEN28Data._id}`))
+    let manifestUrl = projectTPEN28Data.manifest[0]
     
     // We might add the Vault here to get the Manifest version 3
     function transformManifestUrl(url) {
@@ -231,7 +231,7 @@ async function openProject() {
     const projectTPEN3Data = await importProject(url)
     const projectID = projectTPEN3Data._id
 
-    await importAnnotations(result)
+    await importAnnotations(projectTPEN28Data)
     await importCollaborators(projectTPEN28Data, projectID)
     await importHotKeys(projectTPEN28Data, projectID)
     await importTools(projectTPEN28Data, projectTPEN3Data, projectID)
