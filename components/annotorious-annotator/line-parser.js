@@ -694,8 +694,6 @@ class AnnotoriousAnnotator extends HTMLElement {
     allAnnotations = this.sortAnnotations(allAnnotations)
     let page = JSON.parse(JSON.stringify(this.#resolvedAnnotationPage))
     page.items = allAnnotations
-    console.log(page)
-    return
     const pageID = page["@id"] ?? page.id
     const mod = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/page/${pageID.split("/").pop()}`, {
         method: "PUT",
