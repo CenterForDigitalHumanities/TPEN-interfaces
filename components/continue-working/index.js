@@ -68,16 +68,30 @@ class ContinueWorking extends HTMLElement {
                 return project ? { project, label, pageId } : null
             })
             .filter(Boolean)
-        container.innerHTML = recentProjects.map(a => `
+        container.innerHTML = recentProjects.map(a => {
+            let lastEdited = ''
+            if (a.project._modifiedAt) {
+            const modifiedDate = new Date(a.project._modifiedAt)
+            const now = new Date()
+            const diffMs = now - modifiedDate
+            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+            if (diffDays < 7) {
+                lastEdited = `${diffDays === 0 ? 'Today' : `${diffDays} day${diffDays > 1 ? 's' : ''} ago`}`
+            } else {
+                lastEdited = modifiedDate.toLocaleString('en-US', { month: 'short', day: 'numeric' })
+            }
+            }
+            return `
             <div class="section" data-id="${a.project.id}">
                 <h3>${a.label}</h3>
                 <span style="font-size:0.9em;color:#888;">${a.project.label}</span>
                 <a href="${TPEN.BASEURL}/transcribe?projectId=${a.project.id}&pageId=${a.pageId}">
                 <img src="../assets/images/manuscript_img.webp" alt="${a.project.label ?? 'Project'}">
                 </a>
-                <p>${a.project._modifiedAt ? `Last edited: ${new Date(a.project._modifiedAt).toLocaleString()}` : ''}</p>
+                <p>${lastEdited ? `Last edited: ${lastEdited}` : ''}</p>
             </div>
-        `).join('')
+            `
+        }).join('')
     }
 }
 
