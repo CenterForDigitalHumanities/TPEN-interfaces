@@ -30,9 +30,6 @@ async function fetchOneTPEN28Project(selectedId) {
     try {
         projectResponse = await fetch(`${TPEN.TPEN28URL}/TPEN/getProjectTPENServlet?projectID=${selectedId}`, { 
             method: "GET",
-            headers: {
-                "Content-Type": "application/json"
-            },
             credentials: "include" 
         })
     
@@ -45,7 +42,20 @@ async function fetchOneTPEN28Project(selectedId) {
         messageDiv.textContent = "Unable to import Project"
         return
     }
-    return projectResponse.json()
+    return parseProjectResponse(await projectResponse.text())
+}
+
+function parseProjectResponse(text) {
+    const firstLevel = JSON.parse(text)
+    const parsed = {}
+    for (const [key, value] of Object.entries(firstLevel)) {
+        try {
+            parsed[key] = JSON.parse(value)
+        } catch {
+            parsed[key] = value
+        }
+    }
+    return parsed
 }
 
 async function importAnnotations(projectTPEN3Data) {
