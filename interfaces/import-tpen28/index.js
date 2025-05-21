@@ -78,7 +78,7 @@ async function importProject() {
     
     function transformManifestUrl(url) {
         const parsedUrl = new URL(url)
-        parsedUrl.protocol = "http:"
+        parsedUrl.protocol = "https:"
         if (parsedUrl.pathname.endsWith("/manifest.json")) {
             parsedUrl.pathname = parsedUrl.pathname.replace(/\/manifest\.json$/, "")
         }
