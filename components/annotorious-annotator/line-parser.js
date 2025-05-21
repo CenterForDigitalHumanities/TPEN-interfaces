@@ -625,10 +625,12 @@ class AnnotoriousAnnotator extends HTMLElement {
 
   /**
    * Annotorious causes some Annotation data fodder that we need to clean up.
+   * It will add keys and give them the value: undefined.  We want to remove those keys.
+   * Note that it will add those keys to the Annotation object as well as the embedded body object.
    *
    * @param annotations - An Array of Annotations whose selectors may need rounded.
    *
-   * @return the Array of Annotations with their selectors rounded
+   * @return the Array of Annotations without any key: undefined values
    */
   cleanAnnotations(annotations) {
     if (!annotations) return
