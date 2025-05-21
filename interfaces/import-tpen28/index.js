@@ -237,11 +237,11 @@ async function openProject() {
         return
     }
 
+    message.textContent = "Project importing... Please wait..."
+
     const projectTPEN28Data = await fetchOneTPEN28Project(selectedId)
     const projectTPEN3Data = await importProject(url)
     const projectID = projectTPEN3Data._id
-
-    message.textContent = "Project importing... Please wait...";
 
     await importAnnotations(projectTPEN3Data)
     await importCollaborators(projectTPEN28Data, projectID)
