@@ -76,6 +76,7 @@ async function importProject() {
     )
     let manifestUrl = result.manifest[0]
     
+    // We might add the Vault here to get the Manifest version 3
     function transformManifestUrl(url) {
         const parsedUrl = new URL(url)
         parsedUrl.protocol = "https:"
