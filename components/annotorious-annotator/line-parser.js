@@ -13,20 +13,19 @@ import TPEN from '../../api/TPEN.js'
 import User from '../../api/User.js'
 import { decodeUserToken } from '../iiif-tools/index.js'
 
-
 class AnnotoriousAnnotator extends HTMLElement {
-    #osd
-    #annotoriousInstance
-    #userForAnnotorious
-    #annotationPageURI
-    #resolvedAnnotationPage
-    #modifiedAnnotationPage
-    #imageDims
-    #canvasDims
-    #isDrawing = false
-    #isLineEditing = false
-    #isErasing = false
-    #editType = ""
+  #osd 
+  #annotoriousInstance
+  #userForAnnotorious
+  #annotationPageURI
+  #resolvedAnnotationPage
+  #modifiedAnnotationPage
+  #imageDims
+  #canvasDims
+  #isDrawing = false
+  #isLineEditing = false
+  #isErasing = false
+  #editType = ""
 
   constructor() {
     super()
@@ -39,7 +38,7 @@ class AnnotoriousAnnotator extends HTMLElement {
     // Must know the User
     if (!this.#userForAnnotorious) {
       const agent = decodeUserToken(this.userToken)['http://store.rerum.io/agent']
-      if(!agent) {
+      if (!agent) {
         this.shadowRoot.innerHTML = `
             <style>${this.style}</style>
             <h3>User Error</h3>
@@ -172,7 +171,7 @@ class AnnotoriousAnnotator extends HTMLElement {
     saveButton.addEventListener("click", (e) => {
       this.#annotoriousInstance.cancelSelected()
       // Timeout required in order to allow the unfocus native functionality to complete for $isDirty.
-      setTimeout(() => {this.saveAnnotations()}, 500)
+      setTimeout(() => { this.saveAnnotations() }, 500)
     })
     this.shadowRoot.appendChild(osdScript)
     this.shadowRoot.appendChild(annotoriousScript)
@@ -195,26 +194,26 @@ class AnnotoriousAnnotator extends HTMLElement {
     if (!pageID) return
     // We want to use this URL instead of the RERUM URL to help with temp pages vs incorrect ids
     this.#resolvedAnnotationPage = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/page/${pageID.split("/").pop()}`, {
-      method: "GET",
-      headers: {
+        method: "GET",
+        headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${TPEN.getAuthorization()}`,
-      }
-    })
-    .then(r => {
-      if (!r.ok) throw r
+        }
+      })
+      .then(r => {
+        if (!r.ok) throw r
         // resolve all the referenced Annotations in items:[]?
-      return r.json()
-    })
-    .catch(e => {
-      this.shadowRoot.innerHTML = `
+        return r.json()
+      })
+      .catch(e => {
+        this.shadowRoot.innerHTML = `
         <style>${this.style}</style>
         <h3>Page Error</h3>
         <p>The Page you are looking for does not exist or you do not have access to it.</p>
         <p> ${e.status}: ${e.statusText} </p>
       `
-      throw e
-    })
+        throw e
+      })
     this.#resolvedAnnotationPage.$isDirty = false
     const context = this.#resolvedAnnotationPage["@context"]
     if (!(context.includes("iiif.io/api/presentation/3/context.json") || context.includes("w3.org/ns/anno.jsonld"))) {
@@ -233,11 +232,11 @@ class AnnotoriousAnnotator extends HTMLElement {
       throw new Error(`The AnnotationPage object did not have a target Canvas.  There is no image to load.`, { "cause": "AnnotationPage.target must have a value." })
     }
     // Resolve any referenced items
-    if(this.#resolvedAnnotationPage?.items && this.#resolvedAnnotationPage.items.length) {
+    if (this.#resolvedAnnotationPage?.items && this.#resolvedAnnotationPage.items.length) {
       let i = -1
       for await (const anno_ref of this.#resolvedAnnotationPage.items) {
         i++
-        if(anno_ref.hasOwnProperty("body")) continue
+        if (anno_ref.hasOwnProperty("body")) continue
         const anno_res = await fetch(anno_ref.id).then(res => res.json()).catch(err => { throw err })
         this.#resolvedAnnotationPage.items[i] = anno_res
       }
@@ -288,13 +287,13 @@ class AnnotoriousAnnotator extends HTMLElement {
     // Use the Annotations and Image on the Canvas for inititalizing the Annotorious portion of the component.
     this.loadAnnotorious(resolvedCanvas)
   }
- 
+
   /**
    * The Project, User, Page, and Canvas data has been processed.
    * The UI is ready to try to load Annotorious and Annotorious listeners.
    *
    * @param resolveCanvas - Canvas JSON which includes the Image and any existing Annotations for Annotorious.
-  */
+   */
   async loadAnnotorious(resolvedCanvas) {
     this.shadowRoot.getElementById('annotator-container').innerHTML = ""
     const canvasID = resolvedCanvas["@id"] ?? resolvedCanvas.id
@@ -456,12 +455,7 @@ class AnnotoriousAnnotator extends HTMLElement {
         elem = this.#annotoriousInstance.viewer.element.querySelector(".a9s-annotation.selected")
         cursorHandleElem = this.#annotoriousInstance.viewer.element.querySelector(".a9s-shape-handle")
       } else {
-        // This is a little race condition-y.  It removes the ruler during the split line process
-        // Without it the ruler can be left behind when clearing all selections during line editing.
-        // this.removeRuler()
-      }
-      if (!elem) {
-        this.removeRuler()
+        _this.removeRuler()
         return
       }
       if (_this.#isErasing) {
@@ -469,8 +463,8 @@ class AnnotoriousAnnotator extends HTMLElement {
         elem.style.cursor = "default"
         cursorHandleElem.style.cursor = "default"
       }
-      if (_this.#isLineEditing) {
-        this.applyCursorBehavior()
+      if (_this.#isLineEditing && elem) {
+        _this.applyCursorBehavior()
       }
     })
 
@@ -507,34 +501,52 @@ class AnnotoriousAnnotator extends HTMLElement {
   setInitialAnnotations() {
     if (!this.#resolvedAnnotationPage) return
     let allAnnotations = JSON.parse(JSON.stringify(this.#resolvedAnnotationPage.items))
+    // Make sure Annotation targets and bodies are Annotorious friendly.
+    allAnnotations = this.formatAnnotations(allAnnotations)
     // Convert the Annotation selectors so that they are relative to the Image dimensions
     allAnnotations = this.convertSelectors(allAnnotations, true)
-    // Convert the Annotations from the Page to be formatted for Annotorious
-    allAnnotations.map(annotation => {
-      if(!annotation?.body) annotation.body = []
-      if(!Array.isArray(annotation.body)) {
-        if(typeof annotation.body === "object") {
-          annotation.body = (Object.keys(annotation.body).length > 0) ? [annotation.body] : [] 
+    this.#annotoriousInstance.setAnnotations(allAnnotations, false)
+  }
+
+  /**
+   * Format Annotation body and target properties so they are Annotorious friendly.
+   * Otherwise Annotorious will not draw them in the UI.
+   *
+   * @param annotations - An Array of Annotations that may need to be formatted
+   *
+   * @return the Array of Annotations formatted for Annotorious
+   */
+  formatAnnotations(annotations) {
+    if (!annotations || annotations.length === 0) return annotations
+    let orig_xywh, converted_xywh = []
+    return annotations.map(annotation => {
+      if (!annotation.hasOwnProperty("target") || !annotation.hasOwnProperty("body")) return annotation
+      if (typeof annotation.target === "string") {
+        // This is probably a simplified fragment selector like uri#xywh= and Annotorious will not process it.
+        const tarsel = annotation.target.split("#")
+        if (tarsel && tarsel.length === 2) {
+          if (!tarsel[1].includes("pixel:")) tarsel[1] = tarsel[1].replace("xywh=", "xywh=pixel:")
+          annotation.target = {
+            source: tarsel[0],
+            selector: {
+              conformsTo: "http://www.w3.org/TR/media-frags/",
+              type: "FragmentSelector",
+              value: tarsel[1]
+            }
+          }
         }
-        else{
+      }
+      if (!Array.isArray(annotation.body)) {
+        if (typeof annotation.body === "object") {
+          annotation.body = (Object.keys(annotation.body).length > 0) ? [annotation.body] : []
+        } else {
           // This is a malformed Annotation body!  What to do...
-          annotation.body = []
+          annotation.body = [annotation.body]
         }
       }
-      // FIXME because TPEN3 may also make some more kinds of target selectors.
-      const tarsel = annotation.target.split("#")
-      const target = {
-        source: tarsel[0],
-        selector: {
-          conformsTo: "http://www.w3.org/TR/media-frags/",
-          type: "FragmentSelector",
-          value: tarsel[1]
-        }
-      }
-      annotation.target = target
+      annotation.motivation ??= "transcribing"
       return annotation
     })
-    this.#annotoriousInstance.setAnnotations(allAnnotations, false)
   }
 
   /**
@@ -550,41 +562,110 @@ class AnnotoriousAnnotator extends HTMLElement {
    * @return the Array of Annotations with their selectors converted
    */
   convertSelectors(annotations, bool = false) {
+    // Don't need to convert if image and canvas dimensions are the same.
     if (this.#imageDims[0] === this.#canvasDims[0] && this.#imageDims[1] === this.#canvasDims[1]) return annotations
     if (!annotations || annotations.length === 0) return annotations
     let orig_xywh, converted_xywh = []
     let tar, sel = ""
     return annotations.map(annotation => {
       if (!annotation.target) return annotation
+      orig_xywh = annotation.target.selector.value.replace("xywh=pixel:", "").split(",")
       if (bool) {
         /**
          * You are converting for Annotorious.  Selectors need to be changed to be relative to the Image dimensions.
          * This is so that they render correctly.  TPEN3 selectors are relative to the Canvas dimensions.
-         * The target is in simplified TPEN3 format. uri#xywh=
+         * The target is in expanded Annotorious format. {source:"uri", selector:{value:"xywh="}}
          */
-        tar = annotation.target.split("#xywh=")[0]
-        orig_xywh = annotation.target.split("#xywh=")[1].split(",")
-        converted_xywh[0] = parseInt((this.#imageDims[0] / this.#canvasDims[0]) * parseInt(orig_xywh[0]))
-        converted_xywh[1] = parseInt((this.#imageDims[1] / this.#canvasDims[1]) * parseInt(orig_xywh[1]))
-        converted_xywh[2] = parseInt((this.#imageDims[0] / this.#canvasDims[0]) * parseInt(orig_xywh[2]))
-        converted_xywh[3] = parseInt((this.#imageDims[1] / this.#canvasDims[1]) * parseInt(orig_xywh[3]))
-        sel = "#xywh=" + converted_xywh.join(",")
-        annotation.target = tar + sel
+        converted_xywh[0] = parseFloat((this.#imageDims[0] / this.#canvasDims[0]) * parseFloat(orig_xywh[0]))
+        converted_xywh[1] = parseFloat((this.#imageDims[1] / this.#canvasDims[1]) * parseFloat(orig_xywh[1]))
+        converted_xywh[2] = parseFloat((this.#imageDims[0] / this.#canvasDims[0]) * parseFloat(orig_xywh[2]))
+        converted_xywh[3] = parseFloat((this.#imageDims[1] / this.#canvasDims[1]) * parseFloat(orig_xywh[3]))
       } else {
         /**
          * You are converting for TPEN3.  Selectors need to be changed to be relative to the Canvas dimensions.
          * This is so that they save correctly.  Annotorious selectors are relative to the Image dimensions.
          * The target is in expanded Annotorious format. {source:"uri", selector:{value:"xywh="}}
          */
-        orig_xywh = annotation.target.selector.value.replace("xywh=pixel:", "").split(",")
-        converted_xywh[0] = parseInt((this.#canvasDims[0] / this.#imageDims[0]) * parseInt(orig_xywh[0]))
-        converted_xywh[1] = parseInt((this.#canvasDims[1] / this.#imageDims[1]) * parseInt(orig_xywh[1]))
-        converted_xywh[2] = parseInt((this.#canvasDims[0] / this.#imageDims[0]) * parseInt(orig_xywh[2]))
-        converted_xywh[3] = parseInt((this.#canvasDims[1] / this.#imageDims[1]) * parseInt(orig_xywh[3]))
-        sel = "xywh=" + converted_xywh.join(",")
-        annotation.target.selector.value = sel
+        converted_xywh[0] = parseFloat((this.#canvasDims[0] / this.#imageDims[0]) * parseFloat(orig_xywh[0]))
+        converted_xywh[1] = parseFloat((this.#canvasDims[1] / this.#imageDims[1]) * parseFloat(orig_xywh[1]))
+        converted_xywh[2] = parseFloat((this.#canvasDims[0] / this.#imageDims[0]) * parseFloat(orig_xywh[2]))
+        converted_xywh[3] = parseFloat((this.#canvasDims[1] / this.#imageDims[1]) * parseFloat(orig_xywh[3]))
       }
+      sel = "xywh=pixel:" + converted_xywh.join(",")
+      annotation.target.selector.value = sel
       return annotation
+    })
+  }
+
+  /**
+   * Internal conversions may have caused selectors that are non-integer values.
+   * The media frags spec notes that #xywh= values need to be integers.
+   * Convert any floats encountered by rounding to the nearest integer.
+   *
+   * @param annotations - An Array of Annotations whose selectors may need rounded.
+   *
+   * @return the Array of Annotations with their selectors rounded
+   */
+  roundSelectors(annotations) {
+    if (!annotations) return
+    return annotations.map(annotation => {
+      if (!annotation.target) return annotation
+      let orig_xywh, rounded_xywh = []
+      //The target is in expanded Annotorious format. {source:"uri", selector:{value:"xywh="}}
+      orig_xywh = annotation.target.selector.value.replace("xywh=pixel:", "").split(",")
+      rounded_xywh[0] = Math.round(parseFloat(orig_xywh[0]))
+      rounded_xywh[1] = Math.round(parseFloat(orig_xywh[1]))
+      rounded_xywh[2] = Math.round(parseFloat(orig_xywh[2]))
+      rounded_xywh[3] = Math.round(parseFloat(orig_xywh[3]))
+      const sel = "xywh=pixel:" + rounded_xywh.join(",")
+      annotation.target.selector.value = sel
+      return annotation
+    })
+  }
+
+  /**
+   * Annotorious causes some Annotation data fodder that we need to clean up.
+   * It will add keys and give them the value: undefined.  We want to remove those keys.
+   * Note that it will add those keys to the Annotation object as well as the embedded body object.
+   *
+   * @param annotations - An Array of Annotations whose selectors may need rounded.
+   *
+   * @return the Array of Annotations without any key: undefined values
+   */
+  cleanAnnotations(annotations) {
+    if (!annotations) return
+    return annotations.map(annotation => {
+      let body = annotation.body.length ? annotation.body[0] : {}
+      // clean out Annotorious
+      delete body.created
+      delete body.creator
+      delete body.modified
+      if(!body?.purpose) delete body.purpose
+      annotation.body = Object.keys(body).length > 0 ? [body] : []
+      if (!annotation?.creator) delete annotation.creator
+      delete annotation.modified
+      delete annotation.created
+      return annotation
+    })
+  }
+
+  /**
+   * The order of these Annotations is not guaranteed.
+   * These Annotations should be ordered by x then y.  Generally, this mocks a column design.
+   *
+   * @param annotations - An Array of Annotations that needs to be sorted.
+   *
+   * @return the Array of Annotations with their new sorted order
+   */
+  sortAnnotations(annotations) {
+    return annotations.sort((a, b) => {
+      const a_selector = a.target.selector.value.replace("xywh=pixel:", "").split(",")
+      const b_selector = b.target.selector.value.replace("xywh=pixel:", "").split(",")
+      if (parseFloat(a_selector[0]) < parseFloat(b_selector[0])) return -1
+      if (parseFloat(a_selector[0]) > parseFloat(b_selector[0])) return 1
+      if (parseFloat(a_selector[1]) < parseFloat(b_selector[1])) return -1
+      if (parseFloat(a_selector[1]) > parseFloat(b_selector[1])) return 1
+      return 0
     })
   }
 
@@ -594,7 +675,7 @@ class AnnotoriousAnnotator extends HTMLElement {
    * Announce the AnnotationPage with the changes that needs to be updated for processing upstream.
    */
   async saveAnnotations() {
-    if (!this.#resolvedAnnotationPage.$isDirty){
+    if (!this.#resolvedAnnotationPage.$isDirty) {
       TPEN.eventDispatcher.dispatch("tpen-toast", {
         message: "No changes to save",
         status: "info"
@@ -607,35 +688,28 @@ class AnnotoriousAnnotator extends HTMLElement {
     let allAnnotations = this.#annotoriousInstance.getAnnotations()
     // Convert the Annotation selectors so that they are relative to the Canvas dimensions
     allAnnotations = this.convertSelectors(allAnnotations, false)
-    allAnnotations = allAnnotations.map(annotation => {
-      annotation.body = annotation.body.length ? annotation.body[0] : {}
-      const tar = annotation.target.source
-      const sel = "#" + annotation.target.selector.value.replace("pixel:", "")
-      annotation.target = tar + sel
-      annotation.motivation = "transcribing"
-      // stop undefined from appearing on previously existing Annotations
-      if (!annotation.creator) delete annotation.creator
-      delete annotation.modified
-      delete annotation.created
-      return annotation
-    })
+    // Round all selectors to integer values per media-frags spec
+    allAnnotations = this.roundSelectors(allAnnotations)
+    // Remove junk generated by Annotorious that we don't want to save
+    allAnnotations = this.cleanAnnotations(allAnnotations)
+    // Sort by x,y
+    allAnnotations = this.sortAnnotations(allAnnotations)
     let page = JSON.parse(JSON.stringify(this.#resolvedAnnotationPage))
     page.items = allAnnotations
-    // TODO order the Annotations before saving/updating
     const pageID = page["@id"] ?? page.id
     const mod = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/page/${pageID.split("/").pop()}`, {
-      method: "PUT",
-      headers: {
+        method: "PUT",
+        headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${TPEN.getAuthorization()}`,
-      },
-      body: JSON.stringify({ "items": page.items })
-    })
-    .then(res => res.json())
-    .catch(err => { 
-      saveButton.value = "ERROR"
-      throw err 
-    })
+        },
+        body: JSON.stringify({ "items": page.items })
+      })
+      .then(res => res.json())
+      .catch(err => {
+        saveButton.value = "ERROR"
+        throw err
+      })
     page.items = page.items.map(i => ({
       ...i,
       ...(mod.items?.find(a => a.target === i.target) ?? {})
@@ -702,7 +776,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       this.shadowRoot.querySelectorAll(".toggleEditType").forEach(el => { el.classList.remove("selected") })
       e.target.classList.add("selected")
       this.#editType = "add"
-      if(this.#annotoriousInstance.getSelected().length) ruler.style.display = "block"
+      if (this.#annotoriousInstance.getSelected().length) ruler.style.display = "block"
     }
   }
 
@@ -713,7 +787,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       e.target.classList.remove("selected")
       this.#editType = ""
       const elem = this.#annotoriousInstance.viewer.element.querySelector(".a9s-annotation.selected")
-      if(elem) elem.style.cursor = "move"
+      if (elem) elem.style.cursor = "move"
     } else {
       this.shadowRoot.querySelectorAll(".toggleEditType").forEach(el => { el.classList.remove("selected") })
       e.target.classList.add("selected")
@@ -849,7 +923,6 @@ class AnnotoriousAnnotator extends HTMLElement {
     this.shadowRoot.getElementById("drawTool").checked = false
     this.shadowRoot.getElementById("editTool").checked = false
     this.#annotoriousInstance.cancelSelected()
-
     const toast = {
       message: "You started erasing",
       status: "info"
@@ -873,12 +946,9 @@ class AnnotoriousAnnotator extends HTMLElement {
   /**
    * Adds a line by splitting the current line where it was clicked.
    * The only DOM elem available in relation to Annotations is the selected line.
-   *
-   * FIXME preserve the line text
    */
   splitLine(event) {
     if (!this.#isLineEditing) return
-
     const annoElem = event.target
     // Note that if there is no selected line, there are no DOM elements representing Annotations. 
     if (!annoElem) return
@@ -891,16 +961,10 @@ class AnnotoriousAnnotator extends HTMLElement {
     const annoDims = annoJsonToEdit.target.selector.value.replace("xywh=pixel:", "").split(",")
     let allAnnotations = this.#annotoriousInstance.getAnnotations()
     const compareId = annoJsonToEdit["@id"] ?? annoJsonToEdit.id
-    let origIndex = -1
-    let i = 0
-    for (const a of allAnnotations) {
+    const origIndex = allAnnotations.findIndex((a) => {
       const checkId = a["@id"] ?? a.id
-      if (checkId === compareId) {
-        origIndex = i
-        break
-      }
-      i++
-    }
+      return checkId === compareId
+    })
     // Drawn Annotation dims represented as units, not pixels
     const annoY_units = rect.y
     const annoH_units = rect.height
@@ -928,6 +992,8 @@ class AnnotoriousAnnotator extends HTMLElement {
     newAnnoObject.id = Date.now() + ""
     newAnnoObject.target.selector.value = `xywh=pixel:${newAnnoDims.join()}`
     newAnnoObject.created = new Date().toJSON()
+    // This new Annotation should not have text.
+    newAnnoObject.body = []
     allAnnotations.splice(origIndex + 1, 0, newAnnoObject)
     // Clear and redraw Annotations in the Annotorious UI
     this.#annotoriousInstance.removeAnnotation(compareId)
@@ -942,8 +1008,6 @@ class AnnotoriousAnnotator extends HTMLElement {
    * Reduces two lines to a single line by merging.
    * Lines will only be merged if they share the same x coordinate.
    * A line is always merged with the line underneath it.
-   *
-   * FIXME preserve the line text
    */
   mergeLines(event) {
     if (!this.#isLineEditing) return
@@ -959,30 +1023,16 @@ class AnnotoriousAnnotator extends HTMLElement {
 
     /**
      * The order of these Annotations is not guaranteed which messes up merge line.
-     * These Annotations should be ordered by y then x.  Generally, this mocks a columnization order.
+     * These Annotations should be ordered by x then y.  Generally, this mocks a columnization order.
      * The reorder is only a helper for the logic here and does not persist or change the order in Annotorious.
      */
-    allAnnotations.sort((a, b) => {
-      const a_selector = a.target.selector.value.replace("xywh=pixel:", "").split(",")
-      const b_selector = b.target.selector.value.replace("xywh=pixel:", "").split(",")
-      return parseFloat(a_selector[1]) - parseFloat(b_selector[1])
-    })
-    allAnnotations.sort((a, b) => {
-      const a_selector = a.target.selector.value.replace("xywh=pixel:", "").split(",")
-      const b_selector = b.target.selector.value.replace("xywh=pixel:", "").split(",")
-      return parseFloat(a_selector[0]) - parseFloat(b_selector[0])
-    })
+    allAnnotations = this.sortAnnotations(allAnnotations)
+
     const compareId = annoJsonToEdit["@id"] ?? annoJsonToEdit.id
-    let origIndex = -1
-    let i = 0
-    for (const a of allAnnotations) {
+    const origIndex = allAnnotations.findIndex((a) => {
       const checkId = a["@id"] ?? a.id
-      if (checkId === compareId) {
-        origIndex = i
-        break
-      }
-      i++
-    }
+      return checkId === compareId
+    })
     const annoJsonToMergeIn = allAnnotations[origIndex + 1] ?? null
     // Can't merge with the line underneath it because there is no line underneath it
     if (!annoJsonToMergeIn) {
@@ -1018,6 +1068,21 @@ class AnnotoriousAnnotator extends HTMLElement {
     newAnnoObject.id = Date.now() + ""
     newAnnoObject.target.selector.value = `xywh=pixel:${newAnnoDims.join()}`
     newAnnoObject.created = new Date().toJSON()
+    if (annoJsonToMergeIn.body.length) {
+      // This new Annotation should combine any existing text from the Annotations merging together.
+      let origText = annoJsonToEdit.body.length ? annoJsonToEdit.body[0]?.value : null
+      let mergeInText = annoJsonToMergeIn.body[0]?.value ? " ¶" + annoJsonToMergeIn.body[0]?.value : null
+      let lang = origText ? annoJsonToEdit.body[0]?.language : mergeInText ? annoJsonToMergeIn.body[0]?.language : null
+      if (!lang) lang = "none"
+      if (!origText) origText = ""
+      if (!mergeInText) mergeInText = ""
+      newAnnoObject.body = [{
+        "type": "TextualBody",
+        "value": origText + mergeInText,
+        "format": "text/plain",
+        "language": lang
+      }]
+    }
     allAnnotations.splice(origIndex, 1, newAnnoObject)
     // Clear and redraw Annotations in the Annotorious UI
     this.#annotoriousInstance.removeAnnotation(compareId)
@@ -1045,12 +1110,10 @@ class AnnotoriousAnnotator extends HTMLElement {
         elem.style.cursor = "crosshair"
         cursorHandleElem.style.cursor = "crosshair"
         ruler.style.display = "block"
-      }
-      else if (this.#editType === "merge") {
+      } else if (this.#editType === "merge") {
         elem.style.cursor = "cell"
         cursorHandleElem.style.cursor = "cell"
-      }
-      else{
+      } else {
         elem.style.cursor = "move"
         cursorHandleElem.style.cursor = "move"
       }
@@ -1065,12 +1128,10 @@ class AnnotoriousAnnotator extends HTMLElement {
         if (_this.#editType === "add") {
           elem.style.cursor = "crosshair"
           cursorHandleElem.style.cursor = "crosshair"
-        }
-        else if (_this.#editType === "merge") {
+        } else if (_this.#editType === "merge") {
           elem.style.cursor = "cell"
           cursorHandleElem.style.cursor = "cell"
-        }
-        else{
+        } else {
           elem.style.cursor = "move"
           cursorHandleElem.style.cursor = "move"
         }
