@@ -30,9 +30,6 @@ class ContinueWorking extends HTMLElement {
 
     connectedCallback() {
         TPEN.eventDispatcher.on('tpen-user-projects-loaded', this.handleProjectsLoaded)
-        if(TPEN.userMetrics) {
-            this.handleProjectsLoaded()
-        }
         TPEN.getUserProjects(TPEN.getAuthorization())
     }
 
@@ -82,10 +79,10 @@ class ContinueWorking extends HTMLElement {
             }
             }
             return `
-            <div class="section" data-id="${a.project.id}">
+            <div class="section" data-id="${a.project._id}">
                 <h3>${a.label}</h3>
                 <span style="font-size:0.9em;color:#888;">${a.project.label}</span>
-                <a href="${TPEN.BASEURL}/transcribe?projectId=${a.project.id}&pageId=${a.pageId}">
+                <a href="${TPEN.BASEURL}/transcribe?projectId=${a.project._id}&pageId=${a.pageId}">
                 <img src="../assets/images/manuscript_img.webp" alt="${a.project.label ?? 'Project'}">
                 </a>
                 <p>${lastEdited ? `Last edited: ${lastEdited}` : ''}</p>
