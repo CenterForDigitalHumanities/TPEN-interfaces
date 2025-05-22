@@ -38,7 +38,7 @@ class ProjectDetails extends HTMLElement {
                 message: `Project failed to load: ${err.message}`,
                 status: "error"
               }
-            TPEN.eventDispatcher.dispatchEvent('toast',toast)
+            TPEN.eventDispatcher.dispatch('tpen-toast',toast)
         })
     }
 
