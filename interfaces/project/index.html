@@ -5,6 +5,7 @@ permalink: /project
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,17 +15,64 @@ permalink: /project
     <script type="module" src="/components/project-details/index.js"></script>
     <script type="module" src="/components/gui/card/Card.js"></script>
     <link href="/components/gui/site/index.css" rel="stylesheet" type="text/css" />
-    <link href="/components/gui/card/Card.css" rel="stylesheet" type="text/css" />
+    <style>
+        a.button {
+            background-color: var(--primary-color);
+            text-transform: capitalize;
+            outline: var(--primary-light) 1px solid;
+            outline-offset: -3.5px;
+            color: var(--white) !important;
+            border-radius: 5px;
+            text-decoration: none;
+            padding: 0.5em 1em !important;
+            transition: all 0.3s;
+        }
+
+        a.button:hover {
+            background-color: var(--primary-light);
+            outline: var(--primary-color) 1px solid;
+            outline-offset: -1.5px;
+        }
+
+        button {
+            background-color: var(--primary-color) !important;
+            text-transform: capitalize;
+            outline: var(--primary-light) 1px solid;
+            outline-offset: -3.5px;
+            color: var(--white) !important;
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background-color: var(--primary-light) !important;
+            text-transform: capitalize;
+            outline: var(--primary-color) 1px solid;
+            outline-offset: -1.5px;
+        }
+    </style>
 </head>
+
 <body>
-    <tpen-page>
-        <div style="display: flex; justify-content: center;">
-            <tpen-card>
-                <h2 slot="header">Project Details</h2>
-                <tpen-project-details slot="body" class="card"></tpen-project-details>
-            </tpen-card>
-        </div>
+    <tpen-page title="Project Profile" class="grid">
+        <tpen-card>
+            <h2 slot="header">Project Summary</h2>
+            <tpen-project-details slot="body"></tpen-project-details>
+        </tpen-card>
+        <tpen-card>
+            <h2 slot="header">Actions</h2>
+            <div slot="body">
+                <a href="/parsing?projectId=" class="button project-query">Manage Project Preferences</a>
+                </div>
+        </tpen-card>
+        <tpen-card>
+            <h2 slot="header">Project Log</h2>
+            <tpen-project-log slot="body">
+                -- recent activity (contributions, added pages, exports) --
+            </tpen-project-log>
+        </tpen-card>
     </tpen-page>
-    
+
 </body>
+
 </html>
