@@ -96,7 +96,7 @@ export default class ProjectsListNavigation extends HTMLElement {
     get projects() {
         return this.#projects
     }
-    async render() {
+    render() {
         let list = this.shadowRoot.getElementById('projectsListView')
         const userid = this.getAttribute("tpen-user-id")
         if (!this.#projects.length) {
