@@ -1,5 +1,4 @@
 import TPEN from "../../api/TPEN.js"
-
 export default class ProjectsListNavigation extends HTMLElement {
     #projects = []
 
@@ -75,7 +74,8 @@ export default class ProjectsListNavigation extends HTMLElement {
 
         TPEN.eventDispatcher.on("tpen-authenticated", async (ev) => {
             try {
-                this.projects = await TPEN.getUserProjects(ev.detail)
+                this.projects = this.hasAttribute("manager-nav") ? await TPEN.getUserProjectsWithRoles(ev.detail)
+                    : await TPEN.getUserProjects(ev.detail)
             } catch (error) {
                 const toast = new CustomEvent('tpen-toast', {
                     detail: {
@@ -85,7 +85,7 @@ export default class ProjectsListNavigation extends HTMLElement {
                 })
                 TPEN.eventDispatcher.dispatchEvent(toast)
             }
-        })
+        }) 
     }
     async connectedCallback() {
         TPEN.attachAuthentication(this)
@@ -97,17 +97,43 @@ export default class ProjectsListNavigation extends HTMLElement {
     get projects() {
         return this.#projects
     }
-    render() {
+    async render() {
         let list = this.shadowRoot.getElementById('projectsListView')
-        list.innerHTML = (!this.#projects.length) ? `No projects found`
-            : `${this.#projects.reduce((a, project) =>
+        const userid = this.getAttribute("tpen-user-id")
+        if (!this.#projects.length) {
+            list.innerHTML = `No projects found`
+            return
+        }
+        if (!userid) return
+        list.innerHTML = ""
+        if(this.hasAttribute("manager-nav")){
+            for await (const project of this.#projects) {
+                const isManager  = await import('../../api/User.js').then(async module => {
+                    return await new module.default(userid).isOwnerOrLeaderForProject(project._id)
+                })
+                // const manageBtn = isManager ? `<a href="/interfaces/manage-project?projectID=${project._id}" part="project-link">MAN</a>` : ``   
+                const manageLink = isManager ? `/interfaces/manage-project?projectID=${project._id}` 
+                    : `/project/?projectID=${project._id}`
+
+                list.innerHTML += `<li tpen-project-id=${project._id}>
+                    <a href="${manageLink}" part="project-link">
+                        ${project.label ?? project.title}
+                    </a>
+                </li>`
+            }
+        }
+        else {
+            list.innerHTML = `${this.#projects.reduce((a, project) =>
                 a + `<li tpen-project-id=${project._id}>
                         <a href="/project/?projectID=${project._id}" part="project-link">
                             ${project.label ?? project.title}
                         </a>
                     </li>`, ``)
             }`
+        }
     }
 }
+
+
 
 customElements.define('tpen-projects-list-navigation', ProjectsListNavigation)
