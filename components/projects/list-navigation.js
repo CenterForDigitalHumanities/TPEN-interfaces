@@ -100,21 +100,18 @@ export default class ProjectsListNavigation extends HTMLElement {
     render() {
         let list = this.shadowRoot.getElementById('projectsListView')
         const userid = this.getAttribute("tpen-user-id")
-        if (!this.#projects.length) {
-            list.innerHTML = `No projects found`
-            return
-        }
-        list.innerHTML = this.#projects.reduce((a, project) => {
-            const isManager = ["OWNER", "LEADER"].some(role => project?.roles.includes(role))
-            const link = isManager ? `/interfaces/manage-project?projectID=${project._id}` 
-                : `/project/?projectID=${project._id}`
-            
-            return a + `<li tpen-project-id=${project._id}>
-                    <a href="${link}" part="project-link">
-                        ${project.label ?? project.title}
-                    </a>
-                </li>`
-            }, ``)
+        list.innerHTML = (!this.#projects.length) ? `No projects found` :
+            this.#projects.reduce((a, project) => {
+                const isManager = ["OWNER", "LEADER"].some(role => project?.roles.includes(role))
+                const link = isManager ? `/interfaces/manage-project?projectID=${project._id}` 
+                    : `/project/?projectID=${project._id}`
+                
+                return a + `<li tpen-project-id=${project._id}>
+                        <a href="${link}" part="project-link">
+                            ${project.label ?? project.title}
+                        </a>
+                    </li>`
+                }, ``)
     }
 }
 
