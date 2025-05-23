@@ -111,19 +111,18 @@ export default class ProjectsListNavigation extends HTMLElement {
                 const isManager  = await import('../../api/User.js').then(async module => {
                     return await new module.default(userid).isOwnerOrLeaderForProject(project._id)
                 })
-                // const manageBtn = isManager ? `<a href="/interfaces/manage-project?projectID=${project._id}" part="project-link">MAN</a>` : ``   
-                const manageLink = isManager ? `/interfaces/manage-project?projectID=${project._id}` 
-                    : `/project/?projectID=${project._id}`
-
-                list.innerHTML += `<li tpen-project-id=${project._id}>
-                    <a href="${manageLink}" part="project-link">
-                        ${project.label ?? project.title}
-                    </a>
-                </li>`
+                // const manageBtn = isManager ? `<a href="/interfaces/manage-project?projectID=${project._id}" part="project-link">icon</a>` : ``   
+                list.innerHTML += 
+                    `<li tpen-project-id=${project._id}>
+                        <a href="/interfaces/manage-project?projectID=${project._id}" part="project-link">
+                            ${project.label ?? project.title}
+                        </a>
+                    </li>`
             }
         }
         else {
-            list.innerHTML = `${this.#projects.reduce((a, project) =>
+            list.innerHTML = (!this.#projects.length) ? `No projects found`
+            : `${this.#projects.reduce((a, project) =>
                 a + `<li tpen-project-id=${project._id}>
                         <a href="/project/?projectID=${project._id}" part="project-link">
                             ${project.label ?? project.title}
@@ -133,7 +132,5 @@ export default class ProjectsListNavigation extends HTMLElement {
         }
     }
 }
-
-
 
 customElements.define('tpen-projects-list-navigation', ProjectsListNavigation)
