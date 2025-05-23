@@ -84,7 +84,7 @@ export default class ProjectsListNavigation extends HTMLElement {
                 })
                 TPEN.eventDispatcher.dispatchEvent(toast)
             }
-        }) 
+        })
     }
     async connectedCallback() {
         TPEN.attachAuthentication(this)
