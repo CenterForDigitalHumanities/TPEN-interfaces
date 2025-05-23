@@ -39,19 +39,6 @@ export default class User {
     return this
   }
 
-  async isOwnerOrLeaderForProject(id=undefined) {
-    if (!this.#isTheAuthenticatedUser()) return
-    const projectID = id ?? TPEN.activeProject?._id
-    if (!projectID) return false
-    if (!this._id) return false
-    const project = await import('./Project.js').then(async module => {
-        return await new module.default(projectID).fetch()
-    })
-    if (!project) return false
-    const collaborators = project.collaborators
-    return ["OWNER", "LEADER"].some(role => collaborators[this._id]?.roles.includes(role))
-  }
-
   async getProjects() {
     const headers = new Headers({
       Authorization: `Bearer ${TPEN.getAuthorization()}`

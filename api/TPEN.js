@@ -115,26 +115,6 @@ class Tpen {
         this.#activeCollection = collection
     }
 
-    async getUserProjectsWithRoles(idToken) {
-        let self = this
-        const userId = getUserFromToken(idToken)
-        return import('./User.js').then(async module => {
-            const u = new module.default(userId)
-            const { projects, metrics } = await u.getProjects()
-            self.#userMetrics = metrics
-            const i = 0
-            for await (const projectRef of projects) {
-                const project = await import('./Project.js').then(async module => {
-                    return await new module.default(projectRef._id).fetch()
-                })
-                projects[i] = project
-            }
-            self.#userProjects = projects
-            eventDispatcher.dispatch("tpen-user-projects-loaded")
-            return projects
-        })
-    }
-
     async getUserProjects(idToken) {
         let self = this
         const userId = getUserFromToken(idToken)
