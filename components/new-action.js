@@ -66,11 +66,11 @@ class NewAction extends HTMLElement {
         let tokenDomain;
 
         if (TPEN.TPEN28URL.includes("t-pen.org")) {
-            tokenDomain = "t-pen.org";
+            tokenDomain = "t-pen.org"
         }
 
         if (TPEN.TPEN28URL.includes("localhost")) {
-            tokenDomain = "localhost";
+            tokenDomain = "localhost"
         }
         
         document.cookie = `userToken=${userToken}; path=/; domain=${tokenDomain}; secure; samesite=strict;`;    

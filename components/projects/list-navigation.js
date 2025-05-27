@@ -108,7 +108,6 @@ export default class ProjectsListNavigation extends HTMLElement {
     }
     async render() {
         let list = this.shadowRoot.getElementById('projectsListView')
-        const userid = this.getAttribute("tpen-user-id")
         if (!this?.#projects || !this?.#projects.length) {
             list.innerHTML = `No projects found`
             return
@@ -128,7 +127,7 @@ export default class ProjectsListNavigation extends HTMLElement {
             let transcribeLink = isContributor ? `<a title="Resume or Start Transcribing" part="project-opt" href="${transcribeRef}">✎</a>` : ``
             list.innerHTML += `
                 <li tpen-project-id="${project._id}"">
-                    <a title="See Project Details" class="static" href="/project/?projectID=${project._id}" part="project-link">
+                    <a title="See Project Details" class="static" href="/project?projectID=${project._id}" part="project-link">
                         ${project.label ?? project.title}
                     </a>
                     ${transcribeLink}
