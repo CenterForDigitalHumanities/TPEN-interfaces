@@ -89,6 +89,30 @@ export default class WorkspaceTools extends HTMLElement {
             this.hideMagnifier()
           }
         })
+
+        const specialCharBtn = this.shadowRoot.querySelector('.special-char-btn')
+        const charPanel = this.shadowRoot.querySelector('.char-panel')
+
+        specialCharBtn.addEventListener('click', () => {
+          charPanel.style.display = charPanel.style.display === 'none' ? 'flex' : 'none'
+        })
+
+        this.shadowRoot.querySelectorAll('.char-button').forEach(btn => {
+          btn.addEventListener('click', () => {
+          const char = btn.textContent
+          let textAreaContent = document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('tpen-transcription-block').shadowRoot.querySelector('.transcription-input')
+
+          if (textAreaContent && textAreaContent instanceof HTMLInputElement) {
+            const start = textAreaContent.selectionStart
+            const end = textAreaContent.selectionEnd
+            const value = textAreaContent.value
+
+            textAreaContent.value = value.slice(0, start) + char + value.slice(end)
+            textAreaContent.selectionStart = textAreaContent.selectionEnd = start + char.length
+            textAreaContent.focus()
+    }
+          })
+        })
     }
 
     showMagnifier() {
@@ -138,7 +162,6 @@ export default class WorkspaceTools extends HTMLElement {
                 }
 
                 .dropdown-select {
-                    padding: 8px;
                     cursor: pointer;
                 }
 
@@ -176,11 +199,43 @@ export default class WorkspaceTools extends HTMLElement {
                     position: relative;
                     user-select: none;
                 }
+
+                .tools-btn {
+                    border: 1px solid #ccc;
+                    padding: 5px 10px;
+                    border-radius: 20px;
+                    cursor: pointer;
+                }
+
+                .char-panel {
+                    display: none;
+                    flex-wrap: wrap;
+                    gap: 5px;
+                    margin-top: 10px;
+                    background: #f9f9f9;
+                    padding: 10px;
+                    border: 1px solid #ccc;
+                    border-radius: 10px;
+                }
+
+                .char-button {
+                    padding: 5px 10px;
+                    background: #eee;
+                    border: 1px solid #ccc;
+                    border-radius: 5px;
+                    cursor: pointer;
+                    font-size: 16px;
+                    user-select: none;
+                }
+
+                .char-button:hover {
+                    background: #ddd;
+                }
             </style>
             <div class="workspace-tools">
               <div class="top-bar">
                 <div>
-                  <select class="dropdown-select">
+                  <select class="dropdown-select tools-btn">
                     <option value="" selected disabled>Splitscreen Tools</option>
                     <option value="transcription">Transcription Progress</option>
                     <option value="dictionary">Greek Dictionary</option>
@@ -191,11 +246,16 @@ export default class WorkspaceTools extends HTMLElement {
                     <option value="latin-vulgate">Latin Vulgate</option>
                   </select>
                 </div>
-                <div>Page Tools</div>
-                <div>Hotkeys</div>
-                <div class="magnifier-btn" title="Toggle Magnifier" aria-label="Toggle Magnifier">
+                <div class="tools-btn">Page Tools</div>
+                <div class="tools-btn special-char-btn">Special Characters 💻</div>
+                <div class="magnifier-btn tools-btn" title="Toggle Magnifier" aria-label="Toggle Magnifier">
                   Inspect 🔍
                 </div>
+              </div>
+              <div class="char-panel">
+                <div class="char-button">α</div>
+                <div class="char-button">β</div>
+                <div class="char-button">γ</div>
               </div>
               <img 
                 class="canvas-image" 

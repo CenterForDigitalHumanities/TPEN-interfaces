@@ -161,9 +161,7 @@ export default class TranscriptionInterface extends HTMLElement {
           background-color: #f9f9f9;
         }
         .close-button {
-          background: none;
-          border: none;
-          font-size: 20px;
+          font-size: 16px;
           cursor: pointer;
         }
         .tools {
@@ -190,7 +188,7 @@ export default class TranscriptionInterface extends HTMLElement {
         <div class="splitter"></div>
         <div class="right-pane">
           <div class="header">
-            <button class="close-button">×</button>
+            <button class="close-button">Close ×</button>
           </div>
           <div class="tools">
           </div>
