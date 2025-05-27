@@ -20,6 +20,9 @@ class TpenHeader extends HTMLElement {
                     justify-content: space-between;
                     align-items: center;
                 }
+                h1 {
+                    white-space: nowrap;
+                }
                 .cube {
                     transform-style: preserve-3d;
                     animation: spin linear reverse;
@@ -141,6 +144,10 @@ class TpenHeader extends HTMLElement {
                     margin: -.125em;
                     position: relative;
                     bottom: .25em;
+                    font-size: clamp(1rem, 5vw, 2rem);
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
                 }
             </style>
             <header>
@@ -194,6 +201,7 @@ class TpenHeader extends HTMLElement {
             const title = this.shadowRoot.querySelector('.banner')
             title.classList.remove('hidden')
             title.textContent = ev.detail
+            title.setAttribute('title', ev.detail)
         })
         TPEN.eventDispatcher.on('tpen-gui-action-link', ev => {
             const btn = this.shadowRoot.querySelector('.action-button')

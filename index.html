@@ -1,3 +1,12 @@
+---
+title: Projects Interface
+description: This is the main interface for managing projects in TPEN 3.0. It includes sections for viewing projects, creating new actions, and continuing work on existing projects.
+redirect_from:
+    - /landing
+    - /welcome
+    - /home
+---
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -17,19 +26,19 @@
 
 <body>
     <tpen-page>
-        <tpen-user-profile></tpen-user-profile>
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); grid-gap: .5em;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); grid-gap: .5em;">
             <tpen-card>
-                <h2 slot="header">My Projects</h2>
-                <tpen-projects-list-navigation slot="body" class="card"></tpen-projects-list-navigation>
+            <h2 slot="header">Continue Working</h2>
+            <tpen-continue-working slot="body" class="card longer-card"></tpen-continue-working>
             </tpen-card>
             <tpen-card>
-                <h2 slot="header">My Actions</h2>
-                <tpen-new-action slot="body" class="card"></tpen-new-action>
+            <h2 slot="header">My Actions</h2>
+            <tpen-new-action slot="body" class="card"></tpen-new-action>
             </tpen-card>
             <tpen-card>
-                <h2 slot="header">Continue Working</h2>
-                <tpen-continue-working slot="body" class="card longer-card"></tpen-continue-working>
+            <h2 slot="header">My Projects</h2>
+            <tpen-projects-list-navigation slot="body" class="card"></tpen-projects-list-navigation>
+            <a slot="footer" href="/projects/all">All Projects</a>
             </tpen-card>
         </div>
     </tpen-page>

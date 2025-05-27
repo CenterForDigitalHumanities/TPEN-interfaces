@@ -1,6 +1,5 @@
-import User from "../../api/User.js"
 import TPEN from "../../api/TPEN.js"
-import { eventDispatcher } from "../../api/events.js"
+const eventDispatcher = TPEN.eventDispatcher
 
 export default class ProjectsManager extends HTMLElement {
     #projects = [];
@@ -73,7 +72,8 @@ export default class ProjectsManager extends HTMLElement {
 
     async getProjects() {
         return TPEN.currentUser.getProjects()
-            .then((projects) => {
+            .then(({ projects, metrics }) => {
+                // metrics are available here if you want to use them
                 this.#projects = projects
                 return projects
             })
@@ -87,7 +87,8 @@ export default class ProjectsManager extends HTMLElement {
         if (TPEN.currentUser?._id !== user._id) {
             TPEN.currentUser = user
         }
-        TPEN.currentUser.getProjects().then((projects) => {
+        TPEN.currentUser.getProjects().then(({ projects, metrics }) => {
+            // metrics are available here if you want to use them
             this.projects = projects
             this.render()
         })

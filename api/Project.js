@@ -18,7 +18,7 @@
  * @version 0.0.1
  */
 import TPEN from './TPEN.js'
-import { eventDispatcher } from './events.js'
+const { eventDispatcher } = TPEN
 import { userMessage } from "../components/iiif-tools/index.js"
 
 export default class Project {
@@ -46,6 +46,9 @@ export default class Project {
                 .then(response => response.ok ? response : Promise.reject(response))
                 .then(response => response.json())
                 .then(data => {
+                    if (data.error ?? data.errorResponse ?? data.status >= 400) {
+                        return Promise.reject(data.error ?? data.errorResponse?.errmsg ?? data.status)
+                    }
                     Object.assign(this, data)
                     this.#isLoaded = true
                     eventDispatcher.dispatch("tpen-project-loaded", this)
@@ -56,7 +59,7 @@ export default class Project {
                     return Promise.reject(error)
                 })
         } catch (error) {
-            return userMessage(`${error.status}: ${error.statusText}`)
+            return userMessage(error)
         }
     }
 

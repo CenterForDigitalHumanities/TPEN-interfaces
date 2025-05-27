@@ -9,13 +9,68 @@ export default class ProjectsListNavigation extends HTMLElement {
         const style = document.createElement('style')
         style.textContent = `
             li {
-                margin: 5px 0px;
-                display: flex;
-                gap: 10px;
+            margin: 0px;
+            padding: 5px;
+            display: flex;
+            gap: 10px;
+            background-color: var(--light-gray);
+            transition: background-color 0.2s ease-in-out;
+            }
+            li:nth-child(odd) {
+            background-color: var(--white);
+            }
+            li:hover {
+            background-color: var(--primary-light);
+            }
+            ol {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            max-height: 20em;
+            }
+            ol.unbounded {
+            max-height: none;
+            }
+            a {
+            text-decoration: none;
+            color: var(--tpen-color-primary);
+            font-weight: 600;
+            display: block;
+            width: 100%;
+            }
+            a:hover {
+            text-decoration: none;
+            }
+            li.placeholder {
+            background-color: var(--light-gray);
+            color: var(--dark-gray);
+            border-radius: 5px;
+            animation: pulse 1.5s infinite;
+            }
+            @keyframes pulse {
+            0% {
+            background-color: var(--light-gray);
+            }
+            50% {
+            background-color: var(--white);
+            }
+            100% {
+            background-color: var(--light-gray);
+            }
             }
         `
         const projectList = document.createElement('ol')
+        if (this.classList.contains('unbounded')) {
+            projectList.classList.add('unbounded')
+        }
         projectList.id = 'projectsListView'
+        const placeholderItem = document.createElement('li')
+        placeholderItem.classList.add('placeholder')
+        placeholderItem.setAttribute('aria-hidden', 'true')
+        placeholderItem.setAttribute('role', 'presentation')
+        placeholderItem.setAttribute('tabindex', '-1')
+        placeholderItem.innerHTML = `<a href="#">Loading...</a>`
+        projectList.append(...Array.from({ length: 5 }, () => placeholderItem.cloneNode(true)))
         this.shadowRoot.prepend(style, projectList)
 
         TPEN.eventDispatcher.on("tpen-authenticated", async (ev) => {

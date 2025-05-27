@@ -2,9 +2,10 @@
  * To use this class, initialize new class, set authentication token, then call required methods
  */
 
-import { eventDispatcher } from "./events.js"
 import TPEN from "./TPEN.js"
 import { getUserFromToken } from "../components/iiif-tools/index.js"
+
+const eventDispatcher = TPEN.eventDispatcher
 
 export default class User {
   #isTheAuthenticatedUser() {
@@ -43,12 +44,16 @@ export default class User {
       Authorization: `Bearer ${TPEN.getAuthorization()}`
     })
 
+    // Response shape: { metrics, projects }
     return await fetch(`${TPEN.servicesURL}/my/projects`, { headers })
       .then((response) => {
         if (!response.ok) {
           return Promise.reject(response)
         }
         return response.json()
+      })
+      .then((data) => {
+        return data
       })
       .catch((error) => {
         // Alert user with error message

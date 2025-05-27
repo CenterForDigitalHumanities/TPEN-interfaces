@@ -57,20 +57,6 @@ class UserProfile extends HTMLElement {
             <style>
                 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
 
-                .user-profile-div {
-                    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
-                        Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-                    display: block;
-                    border: 1px solid #ddd;
-                    padding: 1.5rem;
-                    border-radius: 12px;
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-                    background-color: #ffffff;
-                    color: #2c2c2c;
-                    line-height: 1.6;
-                    width: 30%;
-                }
-
                 .user-name, .user-email, .user-public-profile, .user-metadata {
                     margin-bottom: 1rem;
                     display: flex;
