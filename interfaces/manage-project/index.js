@@ -36,7 +36,6 @@ document.getElementById('export-project-btn').addEventListener('click', async ()
 })
 
 function render() {
-    document.querySelector('tpen-project-details').setAttribute('tpen-project-id', TPEN.screen.projectInQuery)
     const collaborators = TPEN.activeProject.collaborators
     const agent = decodeUserToken(TPEN.getAuthorization())['http://store.rerum.io/agent']
     const agentRoles = collaborators[agent.split("/").pop()]?.roles
@@ -48,6 +47,7 @@ function render() {
         alert("You do not have permissions to use this page.")
         document.location.href = `/project?projectID=${TPEN.screen.projectInQuery}`
     }
+    document.querySelector('tpen-project-details').setAttribute('tpen-project-id', TPEN.screen.projectInQuery)
     document.getElementById("add-custom-role-btn").addEventListener('click', async () => {
         window.location.href = `/components/manage-role/index.html?projectID=${TPEN.screen.projectInQuery}`  
     })
