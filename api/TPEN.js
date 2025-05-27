@@ -36,7 +36,7 @@ class Tpen {
 
     constructor(tinyThingsURL = "https://dev.tiny.t-pen.org") {
         this.tinyThingsURL = tinyThingsURL
-        this.servicesURL = "https://dev.api.t-pen.org"
+        this.servicesURL = "http://localhost:3012"
         this.TPEN28URL = "https://t-pen.org"
         this.RERUMURL = "https://devstore.rerum.io/v1"
         this.BASEURL = "https://app.t-pen.org"
@@ -125,6 +125,14 @@ class Tpen {
             self.#userProjects = projects
             eventDispatcher.dispatch("tpen-user-projects-loaded")
             return projects
+        })
+    }
+
+    async getFirstPageOfProject(projectID) {
+        return import('./Project.js').then(async module => {
+            let project = new module.default(projectID)
+            project = await project.fetch()
+            return project?.layers[0]?.pages[0]
         })
     }
 
