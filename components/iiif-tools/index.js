@@ -64,7 +64,7 @@ async function fetchProject(projectID, AUTH_TOKEN) {
 function userMessage(message) {
     const modal = document.createElement('tpen-modal')
     modal.style = `position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: white; padding: 20px; border: 1px solid black;`
-    let text = "Internal Error"
+    let text
     if (typeof message === "string") text = message
     else {
         const status = message?.status ? message.status + ":" : ""
