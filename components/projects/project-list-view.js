@@ -50,7 +50,7 @@ export default class ProjectsView extends HTMLElement {
 
     render() {
         let list = this.shadowRoot.getElementById('projectsListView')
-        list.innerHTML = (!this?.#projects || !this.#projects.length) ? `No projects found` : `
+        list.innerHTML = (!this.#projects.length) ? `No projects found` : `
             <ol part="project-list-ol">
                 ${this.#projects.reduce((a, project) =>
             a + `<li tpen-project-id=${project._id}>

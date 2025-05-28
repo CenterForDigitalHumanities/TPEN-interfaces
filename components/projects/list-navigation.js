@@ -106,31 +106,21 @@ export default class ProjectsListNavigation extends HTMLElement {
     get projects() {
         return this.#projects
     }
-    async render() {
+    render() {
         let list = this.shadowRoot.getElementById('projectsListView')
-        if (!this?.#projects || !this?.#projects.length) {
+        if (!this.#projects?.length) {
             list.innerHTML = `No projects found`
             return
         }
         list.innerHTML = ""
-        for await (const project of this.#projects) {
+        for (const project of this.#projects) {
             const isManager = ["OWNER", "LEADER"].some(role => project?.roles.includes(role))
-            const isContributor = project?.roles.includes("CONTRIBUTOR")
-            let lastModifiedPage = project?._lastModified
-            let transcribeRef = `/transcribe?projectID=${project._id}`
-            if (lastModifiedPage) transcribeRef += `&pageID=${lastModifiedPage}`
-            else {
-                let fp = await TPEN.getFirstPageOfProject(project._id)
-                transcribeRef += `&pageID=${fp.id.split("/").pop()}`
-            }
             let manageLink = isManager ? `<a title="Manage Project" part="project-opt" href="/interfaces/manage-project?projectID=${project._id}">⚙</a>` : ``
-            let transcribeLink = isContributor ? `<a title="Resume or Start Transcribing" part="project-opt" href="${transcribeRef}">✎</a>` : ``
             list.innerHTML += `
                 <li tpen-project-id="${project._id}"">
                     <a title="See Project Details" class="static" href="/project?projectID=${project._id}" part="project-link">
                         ${project.label ?? project.title}
                     </a>
-                    ${transcribeLink}
                     ${manageLink}
                 </li>
             `
