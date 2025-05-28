@@ -44,15 +44,11 @@ class NewAction extends HTMLElement {
             </a>
             <a href="/interfaces/project/import" id="import-resource">
                 <span class="icon">📤</span>
-                <span>Import a Resource</span>
-            </a>
-            <a id="upgrade" href="#">
-                <span class="icon">⬆️</span>
-                <span>Upgrade from TPEN 2.8</span>
+                <span>Import a Manifest</span>
             </a>
             <a id="link-tpen-2.8" href="#">
                 <span class="icon">🔗</span>
-                <span>Link TPEN 2.8 Account</span>
+                <span>Import a TPEN 2.8 Project</span>
             </a>
             <a href="/profile" id="profile-link">
                 <span class="icon">👤</span>
@@ -70,11 +66,11 @@ class NewAction extends HTMLElement {
         let tokenDomain;
 
         if (TPEN.TPEN28URL.includes("t-pen.org")) {
-            tokenDomain = "t-pen.org";
+            tokenDomain = "t-pen.org"
         }
 
         if (TPEN.TPEN28URL.includes("localhost")) {
-            tokenDomain = "localhost";
+            tokenDomain = "localhost"
         }
         
         document.cookie = `userToken=${userToken}; path=/; domain=${tokenDomain}; secure; samesite=strict;`;    

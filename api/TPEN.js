@@ -128,6 +128,14 @@ class Tpen {
         })
     }
 
+    async getFirstPageOfProject(projectID) {
+        return import('./Project.js').then(async module => {
+            let project = new module.default(projectID)
+            project = await project.fetch()
+            return project?.layers[0]?.pages[0]
+        })
+    }
+
     async getAllPublicProjects() {
         // Logic to fetch all public projects
         return fetch(`${this.servicesURL}/projects/public`)
