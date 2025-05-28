@@ -4,19 +4,54 @@ title: Create Project
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create Project</title>
     <script type="module" src="/api/TPEN.js"></script>
     <script type="module" src="/components/gui/site/index.js"></script>
+    <script type="module" src="/components/gui/card/Card.js"></script>
 </head>
+
 <body>
-    <tpen-page>
-        <tpen-project-create>
-            [ -- create a tpen project -- ]
-        </tpen-project-create>
+    <tpen-page class="grid">
+        <!-- <tpen-project-create> -->
+        <tpen-card>
+            <span slot="icon">🧭</span>
+            <span slot="header">New Project Wizard</span>
+            <span slot="body">Step-by-step guide to create a new project.</span>
+            <a slot="footer" href="#">Start</a>
+        </tpen-card>
+        <tpen-card>
+            <span slot="icon">📋</span>
+            <span slot="header">Copy Project</span>
+            <span slot="body">Duplicate all pages from an existing project.</span>
+            <a slot="footer" href="#">Copy</a>
+        </tpen-card>
+        <tpen-card>
+            <span slot="icon">🖼️</span>
+            <span slot="header">Transcribe Image</span>
+            <span slot="body">Upload or link an image to create a single-page project.</span>
+            <a slot="footer" href="#">Transcribe</a>
+        </tpen-card>
+        <tpen-card>
+            <span slot="icon">📝</span>
+            <span slot="header">Manifest Editor</span>
+            <span slot="body">Build a custom manifest from online resources and create a project.</span>
+            <a slot="footer" href="#">Edit Manifest</a>
+        </tpen-card>
+        <tpen-card>
+            <span slot="icon">
+                <object data="/assets/icons/IIIF-logo-colored-text.svg" type="image/svg+xml" style="height:1.3em; vertical-align:middle">iiif</object>
+            </span>
+            <span slot="header">Import IIIF Manifest</span>
+            <span slot="body">Start a project from a IIIF resource.</span>
+            <a slot="footer" href="/interfaces/import-tpen28/index.html">Import</a>
+        </tpen-card>
+        <!-- </tpen-project-create> -->
     </tpen-page>
-    
+
 </body>
+
 </html>
