@@ -66,15 +66,25 @@ export default class WorkspaceTools extends HTMLElement {
           let relX = newX - shadowRootRect.left
           let relY = newY - shadowRootRect.top
 
-          relX = Math.max(img.offsetLeft, Math.min(relX, img.offsetLeft + img.width - magnifierSize))
-          relY = Math.max(img.offsetTop, Math.min(relY, img.offsetTop + img.height - magnifierSize))
+          const outOfBoundsMargin = 150
+
+          const minX = img.offsetLeft - outOfBoundsMargin
+          const maxX = img.offsetLeft + img.width - magnifierSize + outOfBoundsMargin
+
+          const minY = img.offsetTop - outOfBoundsMargin
+          const maxY = img.offsetTop + img.height - magnifierSize + outOfBoundsMargin
+
+          relX = Math.max(minX, Math.min(relX, maxX))
+          relY = Math.max(minY, Math.min(relY, maxY))
 
           magnifier.style.left = `${relX}px`
           magnifier.style.top = `${relY}px`
 
-          const bgX = -((relX - img.offsetLeft) * 2)
-          const bgY = -((relY - img.offsetTop) * 2)
-          magnifier.style.backgroundPosition = `${bgX}px ${bgY}px`
+          const scaleX = (relX - minX) / (maxX - minX)
+          const scaleY = (relY - minY) / (maxY - minY)
+
+          magnifier.style.backgroundPosition = `${(scaleX * 100) + 0.5}% ${ (scaleY * 100) - 2.5 }%`;
+
         })
 
         window.addEventListener('mouseup', () => {
@@ -92,9 +102,19 @@ export default class WorkspaceTools extends HTMLElement {
 
         const specialCharBtn = this.shadowRoot.querySelector('.special-char-btn')
         const charPanel = this.shadowRoot.querySelector('.char-panel')
+        const closeCharBtn = this.shadowRoot.querySelector('.close-char-btn')
+        const editCharBtn = this.shadowRoot.querySelector('.edit-char-btn')
+
+        closeCharBtn.addEventListener('click', () => {
+          charPanel.style.display = 'none'
+        })
+
+        editCharBtn.addEventListener('click', () => {
+          window.location.href = '/components/hot-keys/manage-hotkeys.html'
+        })
 
         specialCharBtn.addEventListener('click', () => {
-          charPanel.style.display = charPanel.style.display === 'none' ? 'flex' : 'none'
+          charPanel.style.display = 'flex'
         })
 
         this.shadowRoot.querySelectorAll('.char-button').forEach(btn => {
@@ -125,8 +145,8 @@ export default class WorkspaceTools extends HTMLElement {
       magnifier.style.backgroundSize = `${img.width * 2}px ${img.height * 2}px`
 
       // Placing magnifier at top left in the beginning
-      magnifier.style.left = `${img.offsetLeft}px`
-      magnifier.style.top = `${img.offsetTop}px`
+      magnifier.style.left = `-150px`
+      magnifier.style.top = `-150px`
       magnifier.style.backgroundPosition = `0px 0px`
 
       this.isMagnifierVisible = true
@@ -140,132 +160,217 @@ export default class WorkspaceTools extends HTMLElement {
     }
 
     render() {
-        this.shadowRoot.innerHTML = `
-            <style>
-                .workspace-tools {
-                    border: 1px solid red;
-                    margin: 10px 0px;
-                    padding: 10px;
-                    display: flex;
-                    flex-direction: column;
-                    gap: 15px;
-                    align-items: center;
-                    position: relative;
-                }
+    this.shadowRoot.innerHTML = `
+      <style>
 
-                .top-bar {
-                    display: flex;
-                    gap: 20px;
-                    justify-content: center;
-                    align-items: center;
-                    width: 100%;
-                }
+        .workspace-tools {
+          border: 1px solid #ccc;
+          margin: 0 0 20px 0;
+          padding: 15px 20px;
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+          align-items: center;
+          background: #fff;
+          border-radius: 10px;
+          box-shadow: 0 4px 6px -2px rgba(0, 0, 0, 0.1);
+          position: relative;
+          width: 100%;
+          box-sizing: border-box;
+          border-top: none;
+        }
+        
+        .no-top-radius {
+          border-top-left-radius: 0;
+          border-top-right-radius: 0;
+        }
 
-                .dropdown-select {
-                    cursor: pointer;
-                }
+        .top-bar {
+          display: flex;
+          gap: 15px;
+          justify-content: center;
+          align-items: center;
+          width: 100%;
+          flex-wrap: wrap;
+        }
 
-                .magnifier-btn {
-                    cursor: pointer;
-                    user-select: none;
-                    background: none;
-                    border: none;
-                    padding: 0 8px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                }
+        select.dropdown-select {
+          padding: 8px 14px;
+          font-size: 14px;
+          border-radius: 8px;
+          border: 1.5px solid #ccc;
+          background-color: #f0f4ff;
+          cursor: pointer;
+          transition: border-color 0.3s ease;
+          min-width: 180px;
+        }
+        select.dropdown-select:focus {
+          outline: none;
+          border-color: #3a86ff;
+          box-shadow: 0 0 6px #3a86ff;
+        }
 
-                .magnifier {
-                    display: none;
-                    position: absolute;
-                    border: 3px solid #000;
-                    border-radius: 50%;
-                    cursor: grab;
-                    width: 300px;
-                    height: 300px;
-                    background-repeat: no-repeat;
-                    background-size: 200% 200%;
-                    pointer-events: all;
-                    box-shadow: 0 0 8px rgba(0,0,0,0.5);
-                    user-select: none;
-                    z-index: 10;
-                }
+        .tools-btn {
+          padding: 8px 16px;
+          border-radius: 25px;
+          border: 1.5px solid #ccc;
+          background-color: #f0f4ff;
+          font-weight: 600;
+          font-size: 14px;
+          cursor: pointer;
+          user-select: none;
+          transition: background-color 0.3s ease, border-color 0.3s ease;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          white-space: nowrap;
+        }
+        .tools-btn:hover, .tools-btn:focus {
+          background-color: #d0e2ff;
+          border-color: #3a86ff;
+          outline: none;
+        }
 
-                .canvas-image {
-                    max-width: 100%;
-                    border: 1px solid #ccc;
-                    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-                    position: relative;
-                    user-select: none;
-                }
+        .special-char-btn {
+          background-color: #f0f4ff;
+          border-color: #ccc;
+        }
+        .special-char-btn:hover, .special-char-btn:focus {
+          background-color: #d0e2ff;
+          border-color: #3a86ff;
+        }
 
-                .tools-btn {
-                    border: 1px solid #ccc;
-                    padding: 5px 10px;
-                    border-radius: 20px;
-                    cursor: pointer;
-                }
+        .magnifier-btn {
+          user-select: none;
+        }
 
-                .char-panel {
-                    display: none;
-                    flex-wrap: wrap;
-                    gap: 5px;
-                    margin-top: 10px;
-                    background: #f9f9f9;
-                    padding: 10px;
-                    border: 1px solid #ccc;
-                    border-radius: 10px;
-                }
+        .magnifier {
+          display: none;
+          position: absolute;
+          border: 3px solid #333;
+          border-radius: 50%;
+          cursor: grab;
+          width: 320px;
+          height: 320px;
+          background-repeat: no-repeat;
+          background-size: 200% 200%;
+          pointer-events: all;
+          box-shadow: 0 0 12px rgba(0,0,0,0.3);
+          user-select: none;
+          z-index: 20;
+          top: 60px;
+          right: 20px;
+        }
 
-                .char-button {
-                    padding: 5px 10px;
-                    background: #eee;
-                    border: 1px solid #ccc;
-                    border-radius: 5px;
-                    cursor: pointer;
-                    font-size: 16px;
-                    user-select: none;
-                }
+        .canvas-image {
+          max-width: 100%;
+          border-radius: 12px;
+          border: 1.5px solid #ccc;
+          box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+          user-select: none;
+          display: block;
+        }
 
-                .char-button:hover {
-                    background: #ddd;
-                }
-            </style>
-            <div class="workspace-tools">
-              <div class="top-bar">
-                <div>
-                  <select class="dropdown-select tools-btn">
-                    <option value="" selected disabled>Splitscreen Tools</option>
-                    <option value="transcription">Transcription Progress</option>
-                    <option value="dictionary">Greek Dictionary</option>
-                    <option value="preview">Next Page Preview</option>
-                    <option value="cappelli">Cappelli</option>
-                    <option value="enigma">Enigma</option>
-                    <option value="latin-dictionary">Latin Dictionary</option>
-                    <option value="latin-vulgate">Latin Vulgate</option>
-                  </select>
-                </div>
-                <div class="tools-btn">Page Tools</div>
-                <div class="tools-btn special-char-btn">Special Characters 💻</div>
-                <div class="magnifier-btn tools-btn" title="Toggle Magnifier" aria-label="Toggle Magnifier">
-                  Inspect 🔍
-                </div>
-              </div>
-              <div class="char-panel">
-                <div class="char-button">α</div>
-                <div class="char-button">β</div>
-                <div class="char-button">γ</div>
-              </div>
-              <img 
-                class="canvas-image" 
-                src="https://iiif.io/api/image/3.0/example/reference/15f769d62ca9a3a2deca390efed75d73-3_titlepage1/full/max/0/default.jpg" 
-                alt="Reference Title Page"
-              />
-              <div class="magnifier"></div>
-            </div>
-        `
-    }
+        .char-panel {
+          width: 100%;
+          display: none;
+          flex-wrap: wrap;
+          gap: 10px;
+          padding: 12px 16px;
+          background: #f9f9f9;
+          border: 1px solid #ccc;
+          border-radius: 12px;
+          margin-top: 16px;
+          box-sizing: border-box;
+          position: relative;
+        }
+
+        .char-button {
+          padding: 8px 12px;
+          font-size: 18px;
+          background: #eee;
+          border: 1px solid #ccc;
+          border-radius: 6px;
+          cursor: pointer;
+          user-select: none;
+          transition: background 0.2s ease;
+        }
+
+        .char-button:hover {
+          background: #ddd;
+        }
+
+        .panel-controls {
+          position: absolute;
+          top: 8px;
+          right: 8px;
+          display: flex;
+          gap: 8px;
+        }
+
+        .panel-btn {
+          padding: 4px 10px;
+          font-size: 12px;
+          background-color: #f0f4ff;
+          border: 1px solid #ccc;
+          border-radius: 20px;
+          cursor: pointer;
+          transition: background-color 0.2s ease;
+        }
+
+        .panel-btn:hover {
+          background-color: #d0e2ff;
+        }
+      </style>
+
+      <div class="workspace-tools no-top-radius">
+        <div class="top-bar">
+          <select class="dropdown-select tools-btn" aria-label="Select split screen tool">
+            <option value="" selected disabled>Splitscreen Tools</option>
+            <option value="transcription">Transcription Progress</option>
+            <option value="dictionary">Greek Dictionary</option>
+            <option value="preview">Next Page Preview</option>
+            <option value="cappelli">Cappelli</option>
+            <option value="enigma">Enigma</option>
+            <option value="latin-dictionary">Latin Dictionary</option>
+            <option value="latin-vulgate">Latin Vulgate</option>
+          </select>
+
+          <button class="tools-btn" type="button" aria-label="Page Tools">Page Tools</button>
+
+          <button class="tools-btn special-char-btn" type="button" aria-label="Toggle Special Characters Panel">
+            Special Characters 💻
+          </button>
+
+          <button class="magnifier-btn tools-btn" type="button" title="Toggle Magnifier" aria-label="Toggle Magnifier">
+            Inspect 🔍
+          </button>
+        </div>
+
+       <div class="char-panel" role="region" aria-label="Special Characters Panel" tabindex="0">
+          <div class="panel-controls">
+            <button class="panel-btn edit-char-btn" type="button" aria-label="Edit special characters">Edit</button>
+            <button class="panel-btn close-char-btn" type="button" aria-label="Close special characters panel">Close</button>
+          </div>
+
+          <button class="char-button" type="button" aria-label="Greek letter alpha">α</button>
+          <button class="char-button" type="button" aria-label="Greek letter beta">β</button>
+          <button class="char-button" type="button" aria-label="Greek letter gamma">γ</button>
+        </div>
+
+        <div class="magnifier"></div>
+      </div>
+
+      <div class="workspace-tools" aria-label="Image Workspace" style="padding: 0">
+        <img
+          class="canvas-image"
+          src="https://iiif.io/api/image/3.0/example/reference/15f769d62ca9a3a2deca390efed75d73-3_titlepage1/full/max/0/default.jpg"
+          alt="Reference Title Page"
+          draggable="false"
+        />
+      </div>
+    `
+  }
 }
 
 customElements.define('tpen-workspace-tools', WorkspaceTools)

@@ -122,6 +122,10 @@ export default class TranscriptionInterface extends HTMLElement {
           display: flex;
           height: 90vh;
           overflow: hidden;
+          width: 100%;
+          background-color: #fafafa;
+          border-radius: 8px;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
           transition: all 0.3s ease;
         }
         /* In inactive splitscreen, left pane takes full width, right pane is hidden */
@@ -131,8 +135,8 @@ export default class TranscriptionInterface extends HTMLElement {
           overflow: auto;
         }
         .splitter {
-          width: 5px;
-          background-color: #ccc;
+          width: 6px;
+          background-color: #ddd;
           cursor: ew-resize;
         }
         .container.no-splitscreen .left-pane {
@@ -148,33 +152,53 @@ export default class TranscriptionInterface extends HTMLElement {
         }
         .container.active-splitscreen .right-pane {
           width: 40%;
-          border-left: 1px solid #ccc;
+          border-left: 1px solid #ddd;
+          background-color: #ffffff;
         }
-        .right-pane {
-          display: block;
-          box-sizing: border-box;
+
+        .splitter:hover {
+          background-color: #bbb;
         }
+
         .header {
           display: flex;
           justify-content: flex-end;
-          padding: 5px;
-          background-color: #f9f9f9;
+          align-items: center;
+          padding: 10px;
+          background-color: hsl(186, 84%, 90%);
+          border-bottom: 1px solid #ddd;
         }
+
         .close-button {
+          background: none;
+          border: none;
           font-size: 16px;
           cursor: pointer;
+          color: #555;
+          transition: color 0.2s;
         }
+
+        .close-button:hover {
+          color: #000;
+        }
+
         .tools {
-          padding: 10px;
-          height: calc(100% - 40px);
-          overflow: auto;
-          border-top: 1px solid #ccc;
-          margin-top: 10px;
-          padding-top: 10px;
+          padding: 15px;
+          height: calc(100% - 50px);
+          overflow-y: auto;
         }
+
         .tools p {
-          margin: 5px 0;
-          font-size: 0.9rem;
+          margin: 10px 0;
+          font-size: 0.95rem;
+          line-height: 1.5;
+          color: #444;
+        }
+
+        .transcription-section {
+          padding: 0 20px;
+          box-sizing: border-box;
+
         }
       </style>
       <tpen-project-header></tpen-project-header>
