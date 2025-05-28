@@ -66,7 +66,7 @@ class ContinueWorking extends HTMLElement {
             })
             .filter(Boolean)
         container.innerHTML = recentProjects.map(a => {
-            let lastEdited = stringFromDate(a.project.modifiedAt)
+            let lastEdited = stringFromDate(a.project._modifiedAt)
             return `
             <div class="section" data-id="${a.project._id}">
                 <h3>${a.label}</h3>
