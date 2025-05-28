@@ -42,7 +42,7 @@ function checkExpired(token) {
 
 async function fetchProject(projectID, AUTH_TOKEN) {
     try {
-        return fetch(`http://localhost:3012/project/${projectID}`, {
+        return fetch(`https://dev.api.t-pen.org/project/${projectID}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
