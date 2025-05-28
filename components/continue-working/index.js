@@ -66,18 +66,7 @@ class ContinueWorking extends HTMLElement {
             })
             .filter(Boolean)
         container.innerHTML = recentProjects.map(a => {
-            let lastEdited = ''
-            if (a.project._modifiedAt) {
-            const modifiedDate = new Date(a.project._modifiedAt)
-            const now = new Date()
-            const diffMs = now - modifiedDate
-            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
-            if (diffDays < 7) {
-                lastEdited = `${diffDays === 0 ? 'Today' : `${diffDays} day${diffDays > 1 ? 's' : ''} ago`}`
-            } else {
-                lastEdited = modifiedDate.toLocaleString('en-US', { month: 'short', day: 'numeric' })
-            }
-            }
+            let lastEdited = stringFromDate(a.project._modifiedAt)
             return `
             <div class="section" data-id="${a.project._id}">
                 <h3>${a.label}</h3>
@@ -104,4 +93,18 @@ function collapseSimilarMetrics(metrics) {
         }
     })
     return Object.values(collapsedMetrics)
+}
+
+function stringFromDate(date){
+    if (!date) return ''
+    if (date === -1) return 'Never'
+    const d = new Date(date)
+    const now = new Date()
+    const diffMs = now - d
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+    if (diffDays < 7) {
+        if (diffDays === 0) return 'Today'
+        return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`
+    }
+    return d.toLocaleString('en-US', { month: 'short', day: 'numeric' })
 }

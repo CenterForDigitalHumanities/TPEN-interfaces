@@ -41,6 +41,14 @@ class TPENCard extends HTMLElement {
                 bottom: 0;
                 width: 100%;
             }
+            .card-icon {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                padding-top: 1em;
+                padding-bottom: 0;
+                font-size:2.5em;
+            }
             ::slotted(a) {
                 background-color: var(--primary-color);
                 text-transform: capitalize;
@@ -77,6 +85,7 @@ class TPENCard extends HTMLElement {
         this.shadowRoot.innerHTML += `
             <div class="card">
                 <slot name="header" class="card-header"></slot>
+                <slot name="icon" class="card-icon"></slot>
                 <slot name="body" class="card-body"></slot>
                 <slot name="footer" class="card-footer"></slot>
             </div>
