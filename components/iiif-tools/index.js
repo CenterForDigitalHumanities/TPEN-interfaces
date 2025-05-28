@@ -42,7 +42,7 @@ function checkExpired(token) {
 
 async function fetchProject(projectID, AUTH_TOKEN) {
     try {
-        return fetch(`https://dev.api.t-pen.org/project/${projectID}`, {
+        return fetch(`http://localhost:3012/project/${projectID}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -64,7 +64,14 @@ async function fetchProject(projectID, AUTH_TOKEN) {
 function userMessage(message) {
     const modal = document.createElement('tpen-modal')
     modal.style = `position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: white; padding: 20px; border: 1px solid black;`
-    modal.innerText = message
+    let text = "Internal Error"
+    if (typeof message === "string") text = message
+    else {
+        const status = message?.status ? message.status + ":" : ""
+        const statusText = message?.statusText ?? "Internal Error"
+        text = `${status} ${statusText}`
+    }
+    modal.innerText = text
     document.body.appendChild(modal)
 }
 
