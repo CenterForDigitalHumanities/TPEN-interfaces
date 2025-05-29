@@ -60,8 +60,8 @@ class ContinueWorking extends HTMLElement {
         }
         const recentProjects = deduped
             .map(({ id, label }) => {
-                const projectId = id.split(':')[1].split('/')[0]
-                const pageId = id.split('/')[1].split(':')[1]
+                const projectId = id.split('project:')[1].split('/page:')[0]
+                const pageId = id.split('/page:')[1].split('/').pop()
                 const project = projects.find(p => p._id === projectId)
                 return project ? { project, label, pageId } : null
             })
