@@ -59,25 +59,64 @@ export default class TranscriptionBlock extends HTMLElement {
         this.shadowRoot.innerHTML = `
             <style>
                 .transcription-block {
-                    border: 1px solid;
-                    margin: 10px 0px;
-                    padding: 10px;
+                    background: rgba(255, 255, 255, 0.95);
+                    border: 1px solid #ccc;
+                    border-radius: 12px;
+                    padding: 16px;
+                    margin: 20px 0 0;
+                    margin-inline: auto;
+                    box-sizing: border-box;
+                    width: 100%;
+                    border-bottom: none;
+                    border-bottom-right-radius: 0;
+                    border-bottom-left-radius: 0;
                 }
-                .transcription-block input {
-                    padding: 10px;
-                    width: 90%;
-                    border: none;
-                    outline: none;
+
+                .transcription-block center {
+                    font-weight: 500;
+                    color: #444;
+                    margin-bottom: 12px;
+                    font-size: 15px;
                 }
+
                 .flex-center {
                     display: flex;
                     align-items: center;
-                    justify-content: center;
-                    gap: 10px;
+                    justify-content: space-between;
+                    gap: 12px;
+                    flex-wrap: wrap;
                 }
-                .prev-button, .next-button {
-                    padding: 5px 10px;
+
+                .transcription-input {
+                    padding: 10px 14px;
+                    font-size: 14px;
+                    width: 80%;
+                    border: 1px solid #ccc;
+                    border-radius: 6px;
+                    outline: none;
+                    transition: border-color 0.2s ease;
+                }
+
+                .transcription-input:focus {
+                    border-color: #3a86ff;
+                    box-shadow: 0 0 0 2px rgba(58, 134, 255, 0.2);
+                }
+
+                .prev-button,
+                .next-button {
+                    padding: 8px 16px;
+                    font-size: 14px;
+                    background-color: #f0f4ff;
+                    border: 1px solid #ccc;
+                    border-radius: 5px;
                     cursor: pointer;
+                    transition: background-color 0.2s ease, border-color 0.2s ease;
+                }
+
+                .prev-button:hover,
+                .next-button:hover {
+                    background-color: #d0e2ff;
+                    border-color: #aaa;
                 }
             </style>
             <div class="transcription-block">
