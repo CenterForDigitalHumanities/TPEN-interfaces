@@ -57,34 +57,30 @@ export default class WorkspaceTools extends HTMLElement {
           if (!this.isDragging) return
           e.preventDefault()
 
+          const shadowRootRect = this.shadowRoot.host.getBoundingClientRect()
+          const imgRect = img.getBoundingClientRect()
+          const magnifierSize = 200
+          const halfSize = magnifierSize / 2
+
           let newX = e.clientX - this.dragOffset.x
           let newY = e.clientY - this.dragOffset.y
 
-          const shadowRootRect = this.shadowRoot.host.getBoundingClientRect()
-          const magnifierSize = 300
+          newX = Math.min(Math.max(newX, imgRect.left - halfSize), imgRect.right - halfSize)
+          newY = Math.min(Math.max(newY, imgRect.top - halfSize), imgRect.bottom - halfSize)
 
-          let relX = newX - shadowRootRect.left
-          let relY = newY - shadowRootRect.top
-
-          const outOfBoundsMargin = 150
-
-          const minX = img.offsetLeft - outOfBoundsMargin
-          const maxX = img.offsetLeft + img.width - magnifierSize + outOfBoundsMargin
-
-          const minY = img.offsetTop - outOfBoundsMargin
-          const maxY = img.offsetTop + img.height - magnifierSize + outOfBoundsMargin
-
-          relX = Math.max(minX, Math.min(relX, maxX))
-          relY = Math.max(minY, Math.min(relY, maxY))
+          const relX = newX - shadowRootRect.left
+          const relY = newY - shadowRootRect.top
 
           magnifier.style.left = `${relX}px`
           magnifier.style.top = `${relY}px`
 
-          const scaleX = (relX - minX) / (maxX - minX)
-          const scaleY = (relY - minY) / (maxY - minY)
+          let posX = (newX + halfSize - imgRect.left) / imgRect.width
+          let posY = (newY + halfSize - imgRect.top) / imgRect.height
 
-          magnifier.style.backgroundPosition = `${(scaleX * 100) + 0.5}% ${ (scaleY * 100) - 2.5 }%`;
+          posX = Math.min(Math.max(posX, 0), 1)
+          posY = Math.min(Math.max(posY, 0), 1)
 
+          magnifier.style.backgroundPosition = `${posX * 100}% ${posY * 100}%`
         })
 
         window.addEventListener('mouseup', () => {
@@ -130,9 +126,9 @@ export default class WorkspaceTools extends HTMLElement {
             textAreaContent.value = value.slice(0, start) + char + value.slice(end)
             textAreaContent.selectionStart = textAreaContent.selectionEnd = start + char.length
             textAreaContent.focus()
-    }
-          })
+          }
         })
+      })
     }
 
     showMagnifier() {
@@ -140,13 +136,16 @@ export default class WorkspaceTools extends HTMLElement {
       const img = this.shadowRoot.querySelector('.canvas-image')
       if (!magnifier || !img) return
 
+      const magnifierSize = 200
+      magnifier.style.width = `${magnifierSize}px`
+      magnifier.style.height = `${magnifierSize}px`
+
       magnifier.style.display = 'block'
       magnifier.style.backgroundImage = `url(${img.src})`
       magnifier.style.backgroundSize = `${img.width * 2}px ${img.height * 2}px`
 
-      // Placing magnifier at top left in the beginning
-      magnifier.style.left = `-150px`
-      magnifier.style.top = `-150px`
+      magnifier.style.left = `${img.offsetLeft}px`
+      magnifier.style.top = `${img.offsetTop}px`
       magnifier.style.backgroundPosition = `0px 0px`
 
       this.isMagnifierVisible = true
@@ -253,7 +252,7 @@ export default class WorkspaceTools extends HTMLElement {
           width: 320px;
           height: 320px;
           background-repeat: no-repeat;
-          background-size: 200% 200%;
+          background-size: calc(100% * 3) calc(100% * 3);
           pointer-events: all;
           box-shadow: 0 0 12px rgba(0,0,0,0.3);
           user-select: none;
