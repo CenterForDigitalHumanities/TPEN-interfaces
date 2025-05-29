@@ -1,4 +1,5 @@
 import TPEN from '../../api/TPEN.js'
+import { stringFromDate } from '/js/utils.js'
 
 class ContinueWorking extends HTMLElement {
     constructor() {
@@ -93,18 +94,4 @@ function collapseSimilarMetrics(metrics) {
         }
     })
     return Object.values(collapsedMetrics)
-}
-
-function stringFromDate(date){
-    if (!date) return ''
-    if (date === -1) return 'Never'
-    const d = new Date(date)
-    const now = new Date()
-    const diffMs = now - d
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
-    if (diffDays < 7) {
-        if (diffDays === 0) return 'Today'
-        return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`
-    }
-    return d.toLocaleString('en-US', { month: 'short', day: 'numeric' })
 }
