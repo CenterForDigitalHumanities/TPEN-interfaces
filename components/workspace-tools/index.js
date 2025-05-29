@@ -60,27 +60,26 @@ export default class WorkspaceTools extends HTMLElement {
           const shadowRootRect = this.shadowRoot.host.getBoundingClientRect()
           const imgRect = img.getBoundingClientRect()
           const magnifierSize = 200
+          const zoomMultiplier = 2
           const halfSize = magnifierSize / 2
+
+          const maxOffsetX = imgRect.width - halfSize
+          const maxOffsetY = imgRect.height - halfSize
 
           let newX = e.clientX - this.dragOffset.x
           let newY = e.clientY - this.dragOffset.y
 
-          newX = Math.min(Math.max(newX, imgRect.left - halfSize), imgRect.right - halfSize)
-          newY = Math.min(Math.max(newY, imgRect.top - halfSize), imgRect.bottom - halfSize)
+          let centerXInImage = Math.min(Math.max(newX + halfSize - imgRect.left, halfSize / 2), maxOffsetX + halfSize / 2)
+          let centerYInImage = Math.min(Math.max(newY + halfSize - imgRect.top, halfSize / 2), maxOffsetY + halfSize / 2)
 
-          const relX = newX - shadowRootRect.left
-          const relY = newY - shadowRootRect.top
+          newX = centerXInImage + imgRect.left - halfSize
+          newY = centerYInImage + imgRect.top - halfSize
 
-          magnifier.style.left = `${relX}px`
-          magnifier.style.top = `${relY}px`
+          magnifier.style.left = `${newX - shadowRootRect.left}px`
+          magnifier.style.top = `${newY - shadowRootRect.top}px`
 
-          let posX = (newX + halfSize - imgRect.left) / imgRect.width
-          let posY = (newY + halfSize - imgRect.top) / imgRect.height
-
-          posX = Math.min(Math.max(posX, 0), 1)
-          posY = Math.min(Math.max(posY, 0), 1)
-
-          magnifier.style.backgroundPosition = `${posX * 100}% ${posY * 100}%`
+          magnifier.style.backgroundPositionX = `${-((centerXInImage / imgRect.width) * img.width * zoomMultiplier - halfSize)}px`
+          magnifier.style.backgroundPositionY = `${-((centerYInImage / imgRect.height) * img.height * zoomMultiplier - halfSize)}px`
         })
 
         window.addEventListener('mouseup', () => {
