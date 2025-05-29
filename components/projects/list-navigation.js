@@ -86,13 +86,16 @@ export default class ProjectsListNavigation extends HTMLElement {
             try {
                 this.projects = await TPEN.getUserProjects(ev.detail)
             } catch (error) {
+                const status = error.status ?? 500
+                const text = error.statusText ?? error.message ?? "Internal Error"
                 const toast = new CustomEvent('tpen-toast', {
                     detail: {
-                        message: `Error fetching projects: ${error.message}`,
-                        status: error.status
+                        message: `Error fetching projects: ${text}`,
+                        status: status
                     }
                 })
                 TPEN.eventDispatcher.dispatchEvent(toast)
+                this.shadowRoot.getElementById('projectsListView').innerHTML = `No projects found`
             }
         })
     }
