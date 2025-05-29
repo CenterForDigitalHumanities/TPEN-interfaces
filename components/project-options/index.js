@@ -56,7 +56,7 @@ class ProjectOptions extends HTMLElement {
                         ${layer.pages?.map(page => `
                             <li>
                                 <line-annotation-link 
-                                    page-id="${page._id}" 
+                                    page-id="${page.id}" 
                                     page-label="${page.label ?? 'Untitled Page'}"
                                     lines-count="${page.lines?.length ?? ''}">
                                 </line-annotation-link>
@@ -88,13 +88,14 @@ class LineAnnotationLink extends HTMLElement {
 
     async fetchCount() {
         if (this._linesCount) return
-        const _linesCount = await vault.get(this._pageId).then(page => page.items?.length)
+        const page = { id: this._pageId, type: 'page' }
+        this._linesCount = await vault.get(page).then(p => p.items?.length)
         this.render()
     }
 
     render() {
         this.shadowRoot.innerHTML = `
-            <a href="/annotate.html?projectID=${TPEN.activeProject._id}&pageID=${this._pageId}">
+            <a href="/annotator?projectID=${TPEN.activeProject._id}&pageID=${this._pageId}">
                 ${this._pageLabel}
                 ${this._linesCount !== '' ? ` (${this._linesCount} lines)` : ''}
             </a>

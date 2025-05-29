@@ -5,15 +5,26 @@ class Vault {
         this.store = new Map()
     }
 
+    _normalizeType(type) {
+        return (type ?? '').toString().toLowerCase() || 'none'
+    }
+
+    _getId(item) {
+        return item?._id ?? item?.id ?? item?.['@id'] ?? item
+    }
+
+    _cacheKey(itemType, id) {
+        return `vault:${itemType}:${id}`
+    }
+
     async get(item, itemType) {
-        itemType ??= item.type ?? item['@type'] ?? "none"
-        const id = item._id ?? item.id ?? item['@id'] ?? item
+        itemType = this._normalizeType(itemType ?? item?.type ?? item?.['@type'])
+        const id = this._getId(item)
         const typeStore = this.store.get(itemType)
         let result = typeStore?.get(id) ?? null
         if (result) return result
 
-        // Try localStorage as a semi-permanent cache
-        const cacheKey = `vault:${itemType}:${id}`
+        const cacheKey = this._cacheKey(itemType, id)
         const cached = localStorage.getItem(cacheKey)
         if (cached) {
             try {
@@ -29,7 +40,6 @@ class Vault {
 
             const data = await response.json()
             this.set(data, itemType)
-            // Store in localStorage
             try {
                 localStorage.setItem(cacheKey, JSON.stringify(data))
             } catch {}
@@ -40,48 +50,44 @@ class Vault {
     }
 
     set(item, itemType) {
-        itemType ??= item.type ?? item['@type'] ?? "none"
-        const id = item._id ?? item.id ?? item['@id'] ?? item
+        itemType = this._normalizeType(itemType ?? item?.type ?? item?.['@type'])
+        const id = this._getId(item)
         if (!this.store.has(itemType)) {
             this.store.set(itemType, new Map())
         }
         this.store.get(itemType).set(id, item)
-        // Also update localStorage
-        const cacheKey = `vault:${itemType}:${id}`
+        const cacheKey = this._cacheKey(itemType, id)
         try {
             localStorage.setItem(cacheKey, JSON.stringify(item))
         } catch {}
     }
 
     delete(item, itemType) {
-        itemType ??= item.type ?? item['@type'] ?? "none"
-        const id = item._id ?? item.id ?? item['@id'] ?? item
+        itemType = this._normalizeType(itemType ?? item?.type ?? item?.['@type'])
+        const id = this._getId(item)
         if (!this.store.has(itemType)) return
         const typeStore = this.store.get(itemType)
         if (!typeStore.has(id)) return
         typeStore.delete(id)
-        // Remove from localStorage
-        const cacheKey = `vault:${itemType}:${id}`
+        const cacheKey = this._cacheKey(itemType, id)
         localStorage.removeItem(cacheKey)
     }
 
     clear(itemType) {
         if (itemType) {
-            // Remove all items of this type from localStorage
+            itemType = this._normalizeType(itemType)
             for (const key of Object.keys(localStorage)) {
                 if (key.startsWith(`vault:${itemType}:`)) {
                     localStorage.removeItem(key)
                 }
             }
         } else {
-            // Remove all vault items from localStorage
             for (const key of Object.keys(localStorage)) {
                 if (key.startsWith('vault:')) {
                     localStorage.removeItem(key)
                 }
             }
         }
-        // Also clear from in-memory store
         this.store = new Map()
     }
 
