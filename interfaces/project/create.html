@@ -1,5 +1,6 @@
 ---
 title: Create Project
+permalink: /project/create
 ---
 
 <!DOCTYPE html>
@@ -19,35 +20,43 @@ title: Create Project
         <!-- <tpen-project-create> -->
         <tpen-card>
             <span slot="icon">🧭</span>
-            <span slot="header">New Project Wizard</span>
+            <h2 slot="header">New Project Wizard</h2>
             <span slot="body">Step-by-step guide to create a new project.</span>
             <a slot="footer" href="#">Start</a>
         </tpen-card>
         <tpen-card>
             <span slot="icon">📋</span>
-            <span slot="header">Copy Project</span>
+            <h2 slot="header">Copy Project</h2>
             <span slot="body">Duplicate all pages from an existing project.</span>
             <a slot="footer" href="#">Copy</a>
         </tpen-card>
         <tpen-card>
             <span slot="icon">🖼️</span>
-            <span slot="header">Transcribe Image</span>
+            <h2 slot="header">Transcribe Image</h2>
             <span slot="body">Upload or link an image to create a single-page project.</span>
             <a slot="footer" href="#">Transcribe</a>
         </tpen-card>
         <tpen-card>
             <span slot="icon">📝</span>
-            <span slot="header">Manifest Editor</span>
+            <h2 slot="header">Manifest Editor</h2>
             <span slot="body">Build a custom manifest from online resources and create a project.</span>
             <a slot="footer" href="#">Edit Manifest</a>
         </tpen-card>
         <tpen-card>
             <span slot="icon">
-                <object data="/assets/icons/IIIF-logo-colored-text.svg" type="image/svg+xml" style="height:1.3em; vertical-align:middle">iiif</object>
+                <object data="/assets/icons/IIIF-logo-colored-text.svg" type="image/svg+xml" style="height:1.3em; vertical-align:middle;">iiif</object>
             </span>
-            <span slot="header">Import IIIF Manifest</span>
+            <h2 slot="header">Import IIIF Manifest</h2>
             <span slot="body">Start a project from a IIIF resource.</span>
-            <a slot="footer" href="/interfaces/project/import.html">Import</a>
+            <a slot="footer" href="import">Import Manifest</a>
+        </tpen-card>
+        <tpen-card>
+            <span slot="icon">
+                <img src="/assets/images/tpen_badgeEmergeClear.png" style="height:1.3em; vertical-align:middle;" />
+            </span>
+            <h2 slot="header">Import T-PEN 2.8 Project</h2>
+            <span slot="body">Start a TPEN3 project from one of your T-PEN 2.8 projects.</span>
+            <a slot="footer" href="#">Import Project</a>
         </tpen-card>
         <!-- </tpen-project-create> -->
     </tpen-page>
