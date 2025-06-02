@@ -82,7 +82,7 @@ class AnnotoriousAnnotator extends HTMLElement {
         #tools-container {
           background-color: lightgray;
           position: absolute;
-          top: 4em;
+          top: 115px;
           z-index: 10;
         }
         #tools-container label {
@@ -331,7 +331,7 @@ class AnnotoriousAnnotator extends HTMLElement {
     this.#osd = OpenSeadragon({
       element: this.shadowRoot.getElementById('annotator-container'),
       tileSources: imageInfo,
-      prefixUrl: "./images/",
+      prefixUrl: "./interfaces/annotator/images/",
       gestureSettingsMouse: {
         clickToZoom: false,
         dblClickToZoom: true

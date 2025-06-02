@@ -35,6 +35,10 @@ document.getElementById('export-project-btn').addEventListener('click', async ()
     })
 })
 
+document.getElementById('manage-project-options-btn').addEventListener('click', () => {
+    window.location.href = `/project/options?projectID=${TPEN.screen.projectInQuery}`
+})
+
 function render() {
     const collaborators = TPEN.activeProject.collaborators
     const agent = decodeUserToken(TPEN.getAuthorization())['http://store.rerum.io/agent']
