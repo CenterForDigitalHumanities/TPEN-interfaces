@@ -33,8 +33,17 @@ export default class TranscriptionInterface extends HTMLElement {
       if (e.target && e.target.classList.contains("close-button")) {
         this.state.isSplitscreenActive = false
         this.toggleSplitscreen()
+        this.checkMagnifierVisibility()
       }
     })
+  }
+
+  checkMagnifierVisibility() {
+    const magnifierTool = document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('tpen-workspace-tools').shadowRoot.querySelector('tpen-magnifier-tool')
+    if (magnifierTool.isMagnifierVisible) {
+      magnifierTool.hideMagnifier()
+      magnifierTool.showMagnifier()
+    }
   }
 
   toggleSplitscreen() {
@@ -56,6 +65,7 @@ export default class TranscriptionInterface extends HTMLElement {
     const rightPane = this.shadowRoot.querySelector('.tools')
     const tool = this.state.activeTool
     rightPane.innerHTML = this.getToolHTML(tool)
+    this.checkMagnifierVisibility()
   }
 
   getToolHTML(tool) {
@@ -115,7 +125,11 @@ export default class TranscriptionInterface extends HTMLElement {
 
     splitter.addEventListener('mousedown', startDrag)
     window.addEventListener('mousemove', onDrag)
-    window.addEventListener('mouseup', stopDrag)
+    window.addEventListener('mouseup', () => {
+      if (!isDragging) return
+      this.checkMagnifierVisibility()
+      stopDrag()
+    })
   }
 
   render() {
