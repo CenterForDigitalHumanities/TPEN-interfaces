@@ -53,12 +53,6 @@ class ProjectDetails extends HTMLElement {
                 ? TPEN.activeProject 
                 : await(new Project(newValue).fetch())
             this.render()
-            TPEN.eventDispatcher.dispatchEvent(new CustomEvent('tpen-gui-action', { detail:
-                { 
-                    label: "Resume",
-                    callback: () => location.href = `/transcribe?projectID=${this.Project._id}`
-                }
-             }))
         }
     }
 
@@ -68,6 +62,12 @@ class ProjectDetails extends HTMLElement {
 
     async render() {
         const project = this.Project ?? TPEN.activeProject
+        TPEN.eventDispatcher.dispatchEvent(new CustomEvent('tpen-gui-action-link', { detail:
+            { 
+                label: "Transcribe",
+                callback: () => location.href = `/transcribe?projectID=${project._id}`
+            }
+        }))
         const projectOwner = Object.entries(project.collaborators).find(([userID, u]) => u.roles.includes('OWNER'))?.[1].profile.displayName
         const collaboratorCount = Object.keys(project.collaborators).length
 

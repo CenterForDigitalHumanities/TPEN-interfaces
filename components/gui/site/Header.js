@@ -113,7 +113,7 @@ class TpenHeader extends HTMLElement {
                     font-size: 1.2em;
                     box-shadow: rgba(0, 0, 0, .5) 0 0 .25em;
                     position: relative;
-                    bottom: -.25em;
+                    bottom: -1.25em;
                     opacity: 1;
                     visibility: visible;
                     aspect-ratio: 1 / 1;
