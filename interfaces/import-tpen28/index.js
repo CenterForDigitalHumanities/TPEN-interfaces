@@ -255,7 +255,7 @@ async function openProject() {
     const openBtn = document.getElementById("openProject")
     openBtn.classList.remove("hidden")
     openBtn.addEventListener("click", () => {
-        window.location.href = `/interfaces/manage-project/index.html?projectID=${projectID}`
+        window.location.href = `/project/manage?projectID=${projectID}`
     })
 } 
  

@@ -118,7 +118,7 @@ export default class ProjectsListNavigation extends HTMLElement {
         list.innerHTML = ""
         for (const project of this.#projects) {
             const isManager = ["OWNER", "LEADER"].some(role => project?.roles.includes(role))
-            let manageLink = isManager ? `<a title="Manage Project" part="project-opt" href="/interfaces/manage-project?projectID=${project._id}">⚙</a>` : ``
+            let manageLink = isManager ? `<a title="Manage Project" part="project-opt" href="/project/manage?projectID=${project._id}">⚙</a>` : ``
             list.innerHTML += `
                 <li tpen-project-id="${project._id}"">
                     <a title="See Project Details" class="static" href="/project?projectID=${project._id}" part="project-link">
