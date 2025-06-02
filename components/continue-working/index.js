@@ -72,7 +72,7 @@ class ContinueWorking extends HTMLElement {
             <div class="section" data-id="${a.project._id}">
                 <h3>${a.label}</h3>
                 <span style="font-size:0.9em;color:#888;">${a.project.label}</span>
-                <a href="${TPEN.BASEURL}/transcribe?projectId=${a.project._id}&pageId=${a.pageId}">
+                <a href="${TPEN.BASEURL}/transcribe?projectID=${a.project._id}&pageID=${a.pageId}">
                 <img src="../assets/images/manuscript_img.webp" alt="${a.project.label ?? 'Project'}">
                 </a>
                 <p>${lastEdited ? `Last edited: ${lastEdited}` : ''}</p>
