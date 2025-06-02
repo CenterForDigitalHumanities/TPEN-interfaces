@@ -50,7 +50,7 @@ function loadManageInterface(){
           modifyTeamBtn.addEventListener("click", () => {
             const URLParams = new URLSearchParams(window.location.search)
             const projectID = URLParams.get("projectID")
-            const url = `/interfaces/collaborators.html?projectID=${projectID}`
+            const url = `/project/manage/collaborators?projectID=${projectID}`
             window.location.href = url
           })
         } 

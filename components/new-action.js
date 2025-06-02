@@ -74,7 +74,7 @@ class NewAction extends HTMLElement {
         }
         
         document.cookie = `userToken=${userToken}; path=/; domain=${tokenDomain}; secure; samesite=strict;`;    
-        const redirectUri = encodeURIComponent(`${window.location.origin}/interfaces/import-tpen28/index.html`)
+        const redirectUri = encodeURIComponent(`${window.location.origin}/project/import28`)
         window.location.href = `${TPEN.TPEN28URL}/TPEN/login.jsp?redirect_uri=${redirectUri}`
         // window.location.href = `${TPEN.TPEN28URL}/TPEN/login.jsp?redirect_uri=${redirectUri}&userToken=${userToken}`
     }
