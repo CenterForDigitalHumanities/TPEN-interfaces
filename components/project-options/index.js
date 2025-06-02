@@ -95,7 +95,7 @@ class LineAnnotationLink extends HTMLElement {
 
     render() {
         this.shadowRoot.innerHTML = `
-            <a href="/annotator?projectID=${TPEN.activeProject._id}&pageID=${this._pageId}">
+            <a href="/annotator?projectID=${TPEN.activeProject._id}&pageID=${this._pageId.split("/").pop()}">
                 ${this._pageLabel}
                 ${this._linesCount !== '' ? ` (${this._linesCount} lines)` : ''}
             </a>
