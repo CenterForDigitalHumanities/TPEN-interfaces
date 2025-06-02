@@ -38,13 +38,13 @@ class NewAction extends HTMLElement {
             }
             </style>
             <div class="new-action">
-            <a href="/interfaces/project/create" id="create-project">
+            <a href="project/create" id="create-project">
                 <span class="icon">📁</span>
                 <span>Create a New Project</span>
             </a>
-            <a href="/interfaces/project/import" id="import-resource">
+            <a href="project/import" id="import-resource">
                 <span class="icon">📤</span>
-                <span>Import a Manifest</span>
+                <span>Import IIIF Manifest</span>
             </a>
             <a id="link-tpen-2.8" href="#">
                 <span class="icon">🔗</span>
