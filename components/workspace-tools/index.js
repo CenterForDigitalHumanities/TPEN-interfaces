@@ -9,8 +9,14 @@ export default class WorkspaceTools extends HTMLElement {
     this.attachShadow({ mode: "open" })
   }
 
-  connectedCallback() {
-    this.render()
+  static get observedAttributes() {
+    return ['imageurl']
+  }
+
+  attributeChangedCallback(name, oldVal, newVal) {
+    if (name === 'imageurl' && this.isConnected) {
+      this.render()
+    }
   }
 
   render() {
@@ -91,9 +97,10 @@ export default class WorkspaceTools extends HTMLElement {
     <div class="workspace-tools" aria-label="Image Workspace" style="padding: 0">
       <img
         class="canvas-image"
-        src="https://iiif.io/api/image/3.0/example/reference/15f769d62ca9a3a2deca390efed75d73-3_titlepage1/full/max/0/default.jpg"
-        alt="Reference Title Page"
+        src="${this.getAttribute('imageURL')}"
+        alt="Image Workspace"
         draggable="false"
+        onerror="this.src='../../assets/images/404_PageNotFound.jpeg'; this.alt='Page Not Found';"
       />
     </div>
     `

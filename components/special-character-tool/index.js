@@ -123,11 +123,10 @@ class SpecialCharacterToolButton extends HTMLElement {
     }
 
     addEventListeners() {
-        const charPanel = document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('tpen-workspace-tools').shadowRoot.querySelector('tpen-special-character-tool').shadowRoot.querySelector('.char-panel')
-        console.log(charPanel)
         const specialCharBtn = this.shadowRoot.querySelector('.special-char-btn')
 
         specialCharBtn.addEventListener('click', () => {
+            const charPanel = document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('tpen-workspace-tools').shadowRoot.querySelector('tpen-special-character-tool').shadowRoot.querySelector('.char-panel')
             charPanel.style.display === 'flex' ? charPanel.style.display = 'none' : charPanel.style.display = 'flex'
         })
     }

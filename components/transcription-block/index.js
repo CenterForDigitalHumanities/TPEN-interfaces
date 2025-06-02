@@ -3,8 +3,8 @@ export default class TranscriptionBlock extends HTMLElement {
         super()
         this.attachShadow({ mode: "open" })
         this.state = {
-            currentLineIndex: 0, // Track the current line index
-            transcriptions: [], // Store transcriptions for each line
+            currentLineIndex: 0,
+            transcriptions: [],
         }
     }
 

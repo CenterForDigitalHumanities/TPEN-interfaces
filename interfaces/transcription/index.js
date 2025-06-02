@@ -1,3 +1,5 @@
+import TPEN from "../../api/TPEN.js"
+
 export default class TranscriptionInterface extends HTMLElement {
   constructor() {
     super()
@@ -10,9 +12,11 @@ export default class TranscriptionInterface extends HTMLElement {
   }
 
   connectedCallback() {
+    TPEN.attachAuthentication(this)
     this.render()
     this.addEventListeners()
     this.setupResizableSplit()
+    TPEN.eventDispatcher.on("tpen-project-loaded", ev => this.getImage(ev.detail))
   }
 
   addEventListeners() {
@@ -219,6 +223,31 @@ export default class TranscriptionInterface extends HTMLElement {
         </div>
       </div>
     `
+  }
+
+  getImage(project) {
+    const workSpaceTool = this.shadowRoot.querySelector('tpen-workspace-tools')
+    let imageTarget
+    const allPages = project.layers.flatMap(layer => layer.pages)
+    if (TPEN?.screen?.pageInQuery) {
+      const matchingPage = allPages.find(
+        page => page.id.split('/').pop() === TPEN.screen.pageInQuery
+      )
+      imageTarget = matchingPage?.target
+    } else {
+      imageTarget = allPages[0]?.target
+    }
+    const response = fetch(imageTarget)
+    if (!response.ok) {
+      workSpaceTool.setAttribute('imageURL', "../../assets/images/404_PageNotFound.jpeg")
+    }
+    response.then(res => res.json())
+    .then(data => {
+      const imageId = data.items?.[0]?.items?.[0]?.body?.id
+      if (imageId) {
+        workSpaceTool.setAttribute('imageURL', imageId)
+      }    
+    })
   }
 }
 

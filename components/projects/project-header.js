@@ -149,7 +149,20 @@ export default class ProjectHeader extends HTMLElement {
         </div>
       </nav>
     `
-    }
+
+    const projectCanvases = this.activeProject.layers.flatMap(layer => layer.pages.map(page => page.id.split('/').pop()))
+    const projectCanvasLabels = this.activeProject.layers.flatMap(layer => layer.pages.map(page => page.label))
+    const canvasLabels = this.shadowRoot.querySelector('.canvas-label select')
+    projectCanvasLabels.map((canvasLabel, index) => {
+      const option = document.createElement('option')
+      option.value = projectCanvases[index]
+      option.textContent = canvasLabel
+      canvasLabels.appendChild(option)
+    })
+    canvasLabels.addEventListener('change', (event) => {
+      window.location = `transcribe?projectID=${this.activeProject._id}&pageID=${event.target.value}`
+    })
+  }
 }
 
 customElements.define("tpen-project-header", ProjectHeader)
