@@ -137,8 +137,7 @@ class ProjectImporter extends HTMLElement {
     manageButton.className = 'manage-btn'
     manageButton.textContent = 'Manage'
     manageButton.onclick = () => {
-      alert(`Navigating to manage project: ${project.label}`)
-      window.location.href = `/manage/?projectID=${project._id}`
+      window.location.href = `${TPEN.BASEURL}/project/manage?projectID=${project._id}`
     }
 
     projectInfo.appendChild(projectTitle)
