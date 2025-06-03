@@ -294,8 +294,10 @@ export default class TranscriptionInterface extends HTMLElement {
             <div class="workspace-tools" aria-label="Image Workspace" style="padding: 0">
               <img
                 class="canvas-image"
-                src=""
+                src="https://t-pen.org/TPEN/images/loading2.gif"
                 draggable="false"
+                alt="Canvas image"
+                onerror="this.src='../../assets/images/404_PageNotFound.jpeg';"
               />
             </div>
           </section>
