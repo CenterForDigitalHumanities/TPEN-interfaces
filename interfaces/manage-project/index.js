@@ -14,7 +14,7 @@ const container = document.body
 TPEN.attachAuthentication(container)
 
 document.getElementById('manage-collaboration-btn').addEventListener('click', () => {
-    const url = `/interfaces/collaborators.html?projectID=${TPEN.screen.projectInQuery}`
+    const url = `/project/manage/collaborators?projectID=${TPEN.screen.projectInQuery}`
     window.location.href = url
 })
 
