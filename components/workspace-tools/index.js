@@ -9,14 +9,8 @@ export default class WorkspaceTools extends HTMLElement {
     this.attachShadow({ mode: "open" })
   }
 
-  static get observedAttributes() {
-    return ['imageurl']
-  }
-
-  attributeChangedCallback(name, oldVal, newVal) {
-    if (name === 'imageurl' && this.isConnected) {
-      this.render()
-    }
+  connectedCallback() {
+    this.render()
   }
 
   render() {
@@ -52,15 +46,6 @@ export default class WorkspaceTools extends HTMLElement {
         width: 100%;
         flex-wrap: wrap;
       }
-
-      .canvas-image {
-        max-width: 100%;
-        border-radius: 12px;
-        border: 1.5px solid rgb(254, 248, 228);
-        box-shadow: 0 6px 12px rgba(0,0,0,0.1);
-        user-select: none;
-        display: block;
-      }
     </style>
     <div class="workspace-tools no-top-radius">
       <div class="top-bar">
@@ -70,16 +55,6 @@ export default class WorkspaceTools extends HTMLElement {
         <tpen-magnifier-tool></tpen-magnifier-tool>
       </div>
       <tpen-special-character-tool style="width: 100%"></tpen-special-character-tool>
-    </div>
-
-    <div class="workspace-tools" aria-label="Image Workspace" style="padding: 0">
-      <img
-        class="canvas-image"
-        src="${this.getAttribute('imageURL')}"
-        alt="Image Workspace"
-        draggable="false"
-        onerror="this.src='../../assets/images/404_PageNotFound.jpeg'; this.alt='Page Not Found';"
-      />
     </div>
     `
   }

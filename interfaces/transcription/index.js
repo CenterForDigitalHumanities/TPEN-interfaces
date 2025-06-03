@@ -132,6 +132,48 @@ export default class TranscriptionInterface extends HTMLElement {
     })
   }
 
+  getImage(project) {
+    const imageCanvas = this.shadowRoot.querySelector('.canvas-image')
+    let canvasID
+    let err = {}
+    const allPages = project.layers.flatMap(layer => layer.pages)
+    if (TPEN?.screen?.pageInQuery) {
+      const matchingPage = allPages.find(
+        page => page.id.split('/').pop() === TPEN.screen.pageInQuery
+      )
+      canvasID = matchingPage?.target
+    } else {
+      canvasID = allPages[0]?.target
+    }
+
+    fetch(canvasID)
+    .then(response => {
+      if (response.status === 404) {
+        err = {"status":404, "statusText":"Canvas not found"}
+        throw err
+      }
+      return response.json()
+    })
+    .then(canvas => {
+      const imageId = canvas.items?.[0]?.items?.[0]?.body?.id
+      if (imageId) {
+        imageCanvas.src = imageId
+      }
+      else {
+        err = {"status":500, "statusText":"Image could not be found in Canvas"}
+        throw err
+      }
+    })
+    .catch(error => {
+      if(error?.status === 404) {
+        imageCanvas.src = "../../assets/images/404_PageNotFound.jpeg"
+      }
+      else {
+        imageCanvas.src = "../../assets/images/noimage.jpg"
+      }
+    })
+  }
+
   render() {
     // Render the complete layout only once.
     this.shadowRoot.innerHTML = `
@@ -215,6 +257,33 @@ export default class TranscriptionInterface extends HTMLElement {
           box-sizing: border-box;
 
         }
+
+        .canvas-image {
+          max-width: 100%;
+          border-radius: 12px;
+          border: 1.5px solid rgb(254, 248, 228);
+          box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+          user-select: none;
+          display: block;
+        }
+
+        .workspace-tools {
+          border: 1px solid rgb(254, 248, 228);
+          margin: 0 0 20px 0;
+          padding: 15px 20px;
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+          align-items: center;
+          background: rgb(254, 248, 228);
+          border-radius: 10px;
+          box-shadow: 0 4px 6px -2px rgba(0, 0, 0, 0.1);
+          position: relative;
+          width: 100%;
+          box-sizing: border-box;
+          border-top: none;
+        }
+
       </style>
       <tpen-project-header></tpen-project-header>
       <div class="container no-splitscreen">
@@ -222,6 +291,13 @@ export default class TranscriptionInterface extends HTMLElement {
           <section class="transcription-section">
             <tpen-transcription-block></tpen-transcription-block>
             <tpen-workspace-tools></tpen-workspace-tools>
+            <div class="workspace-tools" aria-label="Image Workspace" style="padding: 0">
+              <img
+                class="canvas-image"
+                src=""
+                draggable="false"
+              />
+            </div>
           </section>
         </div>
         <div class="splitter"></div>
@@ -234,31 +310,6 @@ export default class TranscriptionInterface extends HTMLElement {
         </div>
       </div>
     `
-  }
-
-  getImage(project) {
-    const workSpaceTool = this.shadowRoot.querySelector('tpen-workspace-tools')
-    let imageTarget
-    const allPages = project.layers.flatMap(layer => layer.pages)
-    if (TPEN?.screen?.pageInQuery) {
-      const matchingPage = allPages.find(
-        page => page.id.split('/').pop() === TPEN.screen.pageInQuery
-      )
-      imageTarget = matchingPage?.target
-    } else {
-      imageTarget = allPages[0]?.target
-    }
-    const response = fetch(imageTarget)
-    if (!response.ok) {
-      workSpaceTool.setAttribute('imageURL', "../../assets/images/404_PageNotFound.jpeg")
-    }
-    response.then(res => res.json())
-    .then(data => {
-      const imageId = data.items?.[0]?.items?.[0]?.body?.id
-      if (imageId) {
-        workSpaceTool.setAttribute('imageURL', imageId)
-      }    
-    })
   }
 }
 
