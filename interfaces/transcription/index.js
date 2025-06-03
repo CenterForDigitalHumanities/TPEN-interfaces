@@ -180,7 +180,7 @@ export default class TranscriptionInterface extends HTMLElement {
       <style>
         .container {
           display: flex;
-          height: 90vh;
+          height: auto;
           overflow: hidden;
           width: 100%;
           background-color: #d0f7fb;
