@@ -15,7 +15,8 @@ export default class MagnifierTool extends HTMLElement {
     addEventListeners() {
         const magnifierBtn = this.shadowRoot.querySelector('.magnifier-btn')
         const magnifier = this.shadowRoot.querySelector('.magnifier')
-        const img = document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('tpen-workspace-tools').shadowRoot.querySelector('.canvas-image')
+        const img = document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('.canvas-image')
+        console.log(img)
 
         magnifierBtn.addEventListener('click', () => {
             if (this.isMagnifierVisible) {
@@ -81,7 +82,7 @@ export default class MagnifierTool extends HTMLElement {
 
     showMagnifier() {
         const magnifier = this.shadowRoot.querySelector('.magnifier')
-        const img = document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('tpen-workspace-tools').shadowRoot.querySelector('.canvas-image')
+        const img = document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('.canvas-image')
         if (!magnifier || !img) return
 
         const magnifierSize = 200
