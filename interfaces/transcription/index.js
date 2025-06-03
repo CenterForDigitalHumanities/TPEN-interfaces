@@ -1,3 +1,5 @@
+import TPEN from "../../api/TPEN.js"
+
 export default class TranscriptionInterface extends HTMLElement {
   constructor() {
     super()
@@ -10,9 +12,11 @@ export default class TranscriptionInterface extends HTMLElement {
   }
 
   connectedCallback() {
+    TPEN.attachAuthentication(this)
     this.render()
     this.addEventListeners()
     this.setupResizableSplit()
+    TPEN.eventDispatcher.on("tpen-project-loaded", ev => this.getImage(ev.detail))
   }
 
   addEventListeners() {
@@ -29,8 +33,17 @@ export default class TranscriptionInterface extends HTMLElement {
       if (e.target && e.target.classList.contains("close-button")) {
         this.state.isSplitscreenActive = false
         this.toggleSplitscreen()
+        this.checkMagnifierVisibility()
       }
     })
+  }
+
+  checkMagnifierVisibility() {
+    const magnifierTool = document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('tpen-workspace-tools').shadowRoot.querySelector('tpen-magnifier-tool')
+    if (magnifierTool.isMagnifierVisible) {
+      magnifierTool.hideMagnifier()
+      magnifierTool.showMagnifier()
+    }
   }
 
   toggleSplitscreen() {
@@ -52,6 +65,7 @@ export default class TranscriptionInterface extends HTMLElement {
     const rightPane = this.shadowRoot.querySelector('.tools')
     const tool = this.state.activeTool
     rightPane.innerHTML = this.getToolHTML(tool)
+    this.checkMagnifierVisibility()
   }
 
   getToolHTML(tool) {
@@ -111,7 +125,53 @@ export default class TranscriptionInterface extends HTMLElement {
 
     splitter.addEventListener('mousedown', startDrag)
     window.addEventListener('mousemove', onDrag)
-    window.addEventListener('mouseup', stopDrag)
+    window.addEventListener('mouseup', () => {
+      if (!isDragging) return
+      this.checkMagnifierVisibility()
+      stopDrag()
+    })
+  }
+
+  getImage(project) {
+    const imageCanvas = this.shadowRoot.querySelector('.canvas-image')
+    let canvasID
+    let err = {}
+    const allPages = project.layers.flatMap(layer => layer.pages)
+    if (TPEN?.screen?.pageInQuery) {
+      const matchingPage = allPages.find(
+        page => page.id.split('/').pop() === TPEN.screen.pageInQuery
+      )
+      canvasID = matchingPage?.target
+    } else {
+      canvasID = allPages[0]?.target
+    }
+
+    fetch(canvasID)
+    .then(response => {
+      if (response.status === 404) {
+        err = {"status":404, "statusText":"Canvas not found"}
+        throw err
+      }
+      return response.json()
+    })
+    .then(canvas => {
+      const imageId = canvas.items?.[0]?.items?.[0]?.body?.id
+      if (imageId) {
+        imageCanvas.src = imageId
+      }
+      else {
+        err = {"status":500, "statusText":"Image could not be found in Canvas"}
+        throw err
+      }
+    })
+    .catch(error => {
+      if(error?.status === 404) {
+        imageCanvas.src = "../../assets/images/404_PageNotFound.jpeg"
+      }
+      else {
+        imageCanvas.src = "../../assets/images/noimage.jpg"
+      }
+    })
   }
 
   render() {
@@ -120,13 +180,14 @@ export default class TranscriptionInterface extends HTMLElement {
       <style>
         .container {
           display: flex;
-          height: 90vh;
+          height: auto;
           overflow: hidden;
           width: 100%;
-          background-color: #fafafa;
-          border-radius: 8px;
+          background-color: #d0f7fb;
           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
           transition: all 0.3s ease;
+          padding: 0;
+          margin: 0;
         }
         /* In inactive splitscreen, left pane takes full width, right pane is hidden */
         .container.no-splitscreen .left-pane, 
@@ -165,7 +226,7 @@ export default class TranscriptionInterface extends HTMLElement {
           justify-content: flex-end;
           align-items: center;
           padding: 10px;
-          background-color: hsl(186, 84%, 90%);
+          background-color: rgb(166, 65, 41);
           border-bottom: 1px solid #ddd;
         }
 
@@ -174,12 +235,8 @@ export default class TranscriptionInterface extends HTMLElement {
           border: none;
           font-size: 16px;
           cursor: pointer;
-          color: #555;
+          color: white;
           transition: color 0.2s;
-        }
-
-        .close-button:hover {
-          color: #000;
         }
 
         .tools {
@@ -200,6 +257,33 @@ export default class TranscriptionInterface extends HTMLElement {
           box-sizing: border-box;
 
         }
+
+        .canvas-image {
+          max-width: 100%;
+          border-radius: 12px;
+          border: 1.5px solid rgb(254, 248, 228);
+          box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+          user-select: none;
+          display: block;
+        }
+
+        .workspace-tools {
+          border: 1px solid rgb(254, 248, 228);
+          margin: 0 0 20px 0;
+          padding: 15px 20px;
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+          align-items: center;
+          background: rgb(254, 248, 228);
+          border-radius: 10px;
+          box-shadow: 0 4px 6px -2px rgba(0, 0, 0, 0.1);
+          position: relative;
+          width: 100%;
+          box-sizing: border-box;
+          border-top: none;
+        }
+
       </style>
       <tpen-project-header></tpen-project-header>
       <div class="container no-splitscreen">
@@ -207,6 +291,15 @@ export default class TranscriptionInterface extends HTMLElement {
           <section class="transcription-section">
             <tpen-transcription-block></tpen-transcription-block>
             <tpen-workspace-tools></tpen-workspace-tools>
+            <div class="workspace-tools" aria-label="Image Workspace" style="padding: 0">
+              <img
+                class="canvas-image"
+                src="https://t-pen.org/TPEN/images/loading2.gif"
+                draggable="false"
+                alt="Canvas image"
+                onerror="this.src='../../assets/images/404_PageNotFound.jpeg';"
+              />
+            </div>
           </section>
         </div>
         <div class="splitter"></div>

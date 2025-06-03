@@ -3,8 +3,8 @@ export default class TranscriptionBlock extends HTMLElement {
         super()
         this.attachShadow({ mode: "open" })
         this.state = {
-            currentLineIndex: 0, // Track the current line index
-            transcriptions: [], // Store transcriptions for each line
+            currentLineIndex: 0,
+            transcriptions: [],
         }
     }
 
@@ -59,8 +59,8 @@ export default class TranscriptionBlock extends HTMLElement {
         this.shadowRoot.innerHTML = `
             <style>
                 .transcription-block {
-                    background: rgba(255, 255, 255, 0.95);
-                    border: 1px solid #ccc;
+                    background: rgb(254, 248, 228);
+                    border: 1px solid rgb(254, 248, 228);
                     border-radius: 12px;
                     padding: 16px;
                     margin: 20px 0 0;
@@ -73,10 +73,10 @@ export default class TranscriptionBlock extends HTMLElement {
                 }
 
                 .transcription-block center {
-                    font-weight: 500;
-                    color: #444;
+                    font-weight: bold;
+                    font-size: 18px;
                     margin-bottom: 12px;
-                    font-size: 15px;
+                    color: rgb(0, 90, 140);
                 }
 
                 .flex-center {
@@ -91,24 +91,25 @@ export default class TranscriptionBlock extends HTMLElement {
                     padding: 10px 14px;
                     font-size: 14px;
                     width: 80%;
-                    border: 1px solid #ccc;
+                    border: 1px solid black;
                     border-radius: 6px;
                     outline: none;
+                    color: black;
                     transition: border-color 0.2s ease;
                 }
 
                 .transcription-input:focus {
-                    border-color: #3a86ff;
-                    box-shadow: 0 0 0 2px rgba(58, 134, 255, 0.2);
+                    box-shadow: 0 0 0 2px rgb(0, 90, 140);
                 }
 
                 .prev-button,
                 .next-button {
                     padding: 8px 16px;
                     font-size: 14px;
-                    background-color: #f0f4ff;
-                    border: 1px solid #ccc;
+                    background-color: rgb(0, 90, 140);
+                    border: 1px solid rgb(0, 90, 140);
                     border-radius: 5px;
+                    color: white;
                     cursor: pointer;
                     transition: background-color 0.2s ease, border-color 0.2s ease;
                 }
@@ -120,7 +121,7 @@ export default class TranscriptionBlock extends HTMLElement {
                 }
             </style>
             <div class="transcription-block">
-                <center>${previousLineText}</center>
+                <center class="transcription-line">${previousLineText}</center>
                 <div class="flex-center">
                     <button class="prev-button">Prev</button>
                     <input type="text" class="transcription-input" placeholder="Transcription input text" value="${transcriptions[currentLineIndex] || ''}">
