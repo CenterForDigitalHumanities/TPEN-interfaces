@@ -159,15 +159,24 @@ export default class ProjectHeader extends HTMLElement {
       </nav>
     `
 
+    if (!this.activeProject || !this.activeProject.layers) return
     const projectCanvases = this.activeProject.layers.flatMap(layer => layer.pages.map(page => page.id.split('/').pop()))
     const projectCanvasLabels = this.activeProject.layers.flatMap(layer => layer.pages.map(page => page.label))
     const canvasLabels = this.shadowRoot.querySelector('.canvas-label select')
-    projectCanvasLabels.map((canvasLabel, index) => {
+    const urlParams = new URLSearchParams(window.location.search)
+    const currentPageId = urlParams.get("pageID")
+
+    projectCanvasLabels.forEach((canvasLabel, index) => {
       const option = document.createElement('option')
-      option.value = projectCanvases[index]
+      const canvasId = projectCanvases[index]
+      option.value = canvasId
       option.textContent = canvasLabel
+      if (canvasId === currentPageId) {
+        option.selected = true
+      }
       canvasLabels.appendChild(option)
     })
+
     canvasLabels.addEventListener('change', (event) => {
       window.location = `transcribe?projectID=${this.activeProject._id}&pageID=${event.target.value}`
     })
