@@ -141,7 +141,7 @@ export default class TranscriptionInterface extends HTMLElement {
           height: 90vh;
           overflow: hidden;
           width: 100%;
-          background-color: d0f7fb;
+          background-color: #d0f7fb;
           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
           transition: all 0.3s ease;
           padding: 0;
