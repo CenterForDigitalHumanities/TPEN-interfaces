@@ -76,6 +76,7 @@ export default class ProjectHeader extends HTMLElement {
           align-items: center;
           padding: 5px 10px;
           background: rgb(166, 65, 41);
+          margin-bottom: 5px;
         }
         .labels {
           width: 40%;
