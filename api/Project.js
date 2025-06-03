@@ -344,4 +344,29 @@ export default class Project {
     getLabel() {
         return this.label ?? this.title ?? this.metadata?.find(m => m.label === "title")?.value ?? "Untitled"
     }
+
+    getByRole(role) {
+        if (!this.roles || !this.roles[role]) {
+            return []
+        }
+        return Object.entries(this.collaborators ?? {})
+            .filter(([_, collaborator]) => collaborator.roles?.includes(role))
+            .map(([userId, collaborator]) => ({
+                userId,
+                ...collaborator.profile,
+                roles: collaborator.roles
+            }))
+    }
+
+    getOwner() {
+        return this.getByRole("OWNER")[0] || null
+    }
+
+    static async getById(projectId) {
+        if (!projectId) {
+            throw new Error("Project ID is required")
+        }
+        const project = new Project(projectId)
+        return await project.fetch()
+    }
 }

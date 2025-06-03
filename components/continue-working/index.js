@@ -1,4 +1,5 @@
 import TPEN from '../../api/TPEN.js'
+import { stringFromDate } from '/js/utils.js'
 
 class ContinueWorking extends HTMLElement {
     constructor() {
@@ -59,30 +60,19 @@ class ContinueWorking extends HTMLElement {
         }
         const recentProjects = deduped
             .map(({ id, label }) => {
-                const projectId = id.split(':')[1].split('/')[0]
-                const pageId = id.split('/')[1].split(':')[1]
+                const projectId = id.split('project:')[1].split('/page:')[0]
+                const pageId = id.split('/page:')[1].split('/').pop()
                 const project = projects.find(p => p._id === projectId)
                 return project ? { project, label, pageId } : null
             })
             .filter(Boolean)
         container.innerHTML = recentProjects.map(a => {
-            let lastEdited = ''
-            if (a.project._modifiedAt) {
-            const modifiedDate = new Date(a.project._modifiedAt)
-            const now = new Date()
-            const diffMs = now - modifiedDate
-            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
-            if (diffDays < 7) {
-                lastEdited = `${diffDays === 0 ? 'Today' : `${diffDays} day${diffDays > 1 ? 's' : ''} ago`}`
-            } else {
-                lastEdited = modifiedDate.toLocaleString('en-US', { month: 'short', day: 'numeric' })
-            }
-            }
+            let lastEdited = stringFromDate(a.project._modifiedAt)
             return `
             <div class="section" data-id="${a.project._id}">
                 <h3>${a.label}</h3>
                 <span style="font-size:0.9em;color:#888;">${a.project.label}</span>
-                <a href="${TPEN.BASEURL}/transcribe?projectId=${a.project._id}&pageId=${a.pageId}">
+                <a href="${TPEN.BASEURL}/transcribe?projectID=${a.project._id}&pageID=${a.pageId}">
                 <img src="../assets/images/manuscript_img.webp" alt="${a.project.label ?? 'Project'}">
                 </a>
                 <p>${lastEdited ? `Last edited: ${lastEdited}` : ''}</p>

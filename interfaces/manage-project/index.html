@@ -1,3 +1,8 @@
+---
+title: Project Management
+permalink: /project/manage
+---
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,7 +11,7 @@
     <title>Project Dashboard</title>
     <script type="module" src="../../components/gui/site/index.js"></script>
     <script type="module" src="../../components/gui/card/Card.js"></script>
-    <script type="module" src="./index.js"></script>
+    <script type="module" src="../../interfaces/manage-project/index.js"></script>
 </head>
 <body>
     <tpen-page title="Project Dashboard" class="grid">
@@ -25,10 +30,6 @@
             <button id="manage-collaboration-btn" slot="footer" type="button">MANAGE COLLABORATORS</button>
         </tpen-card>
         <tpen-card>
-            <h2 slot="header">All Projects</h2>
-            <tpen-projects-view slot="body"></tpen-projects-view>
-        </tpen-card>
-        <tpen-card>
             <h2 slot="header">Layers & Pages</h2>
             <tpen-project-layers slot="body"></tpen-project-layers>
             <button id="manage-layers-btn" slot="footer" type="button">SEE DETAILS / MODIFY</button>
@@ -40,7 +41,12 @@
         </tpen-card>
         <tpen-card>
             <h2 slot="header">Project Options</h2>
-            <tpen-project-options slot="body"></tpen-project-options>
+            <tpen-project-options slot="body">
+                <div>
+                    Default Transcription Interface: /transcribe
+                </div>
+            </tpen-project-options>
+            <button id="manage-project-options-btn" slot="footer" type="button">SEE DETAILS</button>
         </tpen-card>
         <tpen-card>
             <h2 slot="header">Tools</h2>
