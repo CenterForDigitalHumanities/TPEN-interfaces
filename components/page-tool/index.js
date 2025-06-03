@@ -14,8 +14,9 @@ export default class PageTool extends HTMLElement {
       .tools-btn {
         padding: 8px 16px;
         border-radius: 25px;
-        border: 1.5px solid #ccc;
-        background-color: #f0f4ff;
+        border: 1.5px solid rgb(0, 90, 140);
+        background-color: rgb(0, 90, 140);
+        color: white;
         font-weight: 600;
         font-size: 14px;
         cursor: pointer;
@@ -28,8 +29,9 @@ export default class PageTool extends HTMLElement {
       }
       
       .tools-btn:hover, .tools-btn:focus {
-        background-color: #d0e2ff;
-        border-color: #3a86ff;
+        background-color: white;
+        border-color: rgb(0, 90, 140);
+        color: rgb(0, 90, 140);
         outline: none;
       }
     </style>

@@ -23,14 +23,14 @@ export default class WorkspaceTools extends HTMLElement {
     this.shadowRoot.innerHTML = `
     <style>
       .workspace-tools {
-        border: 1px solid #ccc;
+        border: 1px solid rgb(254, 248, 228);
         margin: 0 0 20px 0;
         padding: 15px 20px;
         display: flex;
         flex-direction: column;
         gap: 20px;
         align-items: center;
-        background: #fff;
+        background: rgb(254, 248, 228);
         border-radius: 10px;
         box-shadow: 0 4px 6px -2px rgba(0, 0, 0, 0.1);
         position: relative;
@@ -53,32 +53,10 @@ export default class WorkspaceTools extends HTMLElement {
         flex-wrap: wrap;
       }
 
-      .tools-btn {
-        padding: 8px 16px;
-        border-radius: 25px;
-        border: 1.5px solid #ccc;
-        background-color: #f0f4ff;
-        font-weight: 600;
-        font-size: 14px;
-        cursor: pointer;
-        user-select: none;
-        transition: background-color 0.3s ease, border-color 0.3s ease;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        white-space: nowrap;
-      }
-      
-      .tools-btn:hover, .tools-btn:focus {
-        background-color: #d0e2ff;
-        border-color: #3a86ff;
-        outline: none;
-      }
-
       .canvas-image {
         max-width: 100%;
         border-radius: 12px;
-        border: 1.5px solid #ccc;
+        border: 1.5px solid rgb(254, 248, 228);
         box-shadow: 0 6px 12px rgba(0,0,0,0.1);
         user-select: none;
         display: block;
@@ -91,7 +69,7 @@ export default class WorkspaceTools extends HTMLElement {
         <tpen-special-character-tool-button></tpen-special-character-tool-button>
         <tpen-magnifier-tool></tpen-magnifier-tool>
       </div>
-      <tpen-special-character-tool></tpen-special-character-tool>
+      <tpen-special-character-tool style="width: 100%"></tpen-special-character-tool>
     </div>
 
     <div class="workspace-tools" aria-label="Image Workspace" style="padding: 0">

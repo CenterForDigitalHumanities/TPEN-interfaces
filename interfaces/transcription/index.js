@@ -141,10 +141,11 @@ export default class TranscriptionInterface extends HTMLElement {
           height: 90vh;
           overflow: hidden;
           width: 100%;
-          background-color: #fafafa;
-          border-radius: 8px;
+          background-color: rgb(166, 65, 41);
           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
           transition: all 0.3s ease;
+          padding: 0;
+          margin: 0;
         }
         /* In inactive splitscreen, left pane takes full width, right pane is hidden */
         .container.no-splitscreen .left-pane, 
@@ -183,7 +184,7 @@ export default class TranscriptionInterface extends HTMLElement {
           justify-content: flex-end;
           align-items: center;
           padding: 10px;
-          background-color: hsl(186, 84%, 90%);
+          background-color: rgb(166, 65, 41);
           border-bottom: 1px solid #ddd;
         }
 
@@ -192,12 +193,8 @@ export default class TranscriptionInterface extends HTMLElement {
           border: none;
           font-size: 16px;
           cursor: pointer;
-          color: #555;
+          color: white;
           transition: color 0.2s;
-        }
-
-        .close-button:hover {
-          color: #000;
         }
 
         .tools {

@@ -75,8 +75,8 @@ export default class ProjectHeader extends HTMLElement {
           justify-content: space-between;
           align-items: center;
           padding: 5px 10px;
-          border: 1px solid grey;
-          margin: 5px 0;
+          background: rgb(166, 65, 41);
+          margin-bottom: 5px;
         }
         .labels {
           width: 40%;
@@ -93,6 +93,7 @@ export default class ProjectHeader extends HTMLElement {
         }
         .line-indicator {
           border: 1px dashed;
+          color: white;
         }
         .line-indicator {
           padding: 5px;
@@ -108,7 +109,7 @@ export default class ProjectHeader extends HTMLElement {
           font-size: clamp(0.8rem, 1.2vw, 1rem);
           font-weight: bold;
           font-family: var(--header-font-family, sans-serif);
-          color: var(--header-color, #333);
+          color: white;
         }
         /* Blinking animation for loading state */
         @keyframes blink {
@@ -123,6 +124,14 @@ export default class ProjectHeader extends HTMLElement {
           background-color: #ccc;
           border-radius: 4px;
           animation: blink 1s infinite;
+        }
+        .canvas-label select {
+          padding: 5px;
+          border-radius: 5px;
+          border: none;
+          background-color: white;
+          color: rgb(166, 65, 41);
+          cursor: pointer;
         }
       </style>
       <nav>

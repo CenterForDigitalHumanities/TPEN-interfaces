@@ -44,14 +44,14 @@ class SpecialCharacterTool extends HTMLElement {
         this.shadowRoot.innerHTML = `
         <style>
             .char-panel {
-                width: 85vw;
+                width: 100%;
                 display: none;
                 flex-wrap: wrap;
                 justify-content: space-between;
                 gap: 10px;
                 padding: 12px 16px;
-                background: #f9f9f9;
-                border: 1px solid #ccc;
+                background: white;
+                border: 1px solid rgb(0, 90, 140);
                 border-radius: 12px;
                 box-sizing: border-box;
                 position: relative;
@@ -60,8 +60,9 @@ class SpecialCharacterTool extends HTMLElement {
             .char-button {
                 padding: 8px 12px;
                 font-size: 18px;
-                background: #eee;
-                border: 1px solid #ccc;
+                background: rgb(0, 90, 140);
+                border: 1px solid rgb(0, 90, 140);
+                color: white;
                 border-radius: 6px;
                 cursor: pointer;
                 user-select: none;
@@ -69,7 +70,8 @@ class SpecialCharacterTool extends HTMLElement {
             }
 
             .char-button:hover {
-                background: #ddd;
+                background: white;
+                color: rgb(0, 90, 140);
             }
 
             .panel-controls {
@@ -83,15 +85,17 @@ class SpecialCharacterTool extends HTMLElement {
             .panel-btn {
                 padding: 6px 25px;
                 font-size: 12px;
-                background-color: #f0f4ff;
-                border: 1px solid #ccc;
+                background-color: white;
+                border: 1px solid rgb(0, 90, 140);
+                color: rgb(0, 90, 140);
                 border-radius: 20px;
                 cursor: pointer;
                 transition: background-color 0.2s ease;
             }
 
             .panel-btn:hover {
-                background-color: #d0e2ff;
+                background-color: rgb(0, 90, 140);
+                color: white;
             }
         </style>
         <div class="char-panel" role="region" aria-label="Special Characters Panel" tabindex="0">
@@ -137,10 +141,11 @@ class SpecialCharacterToolButton extends HTMLElement {
             .tools-btn {
                 padding: 8px 16px;
                 border-radius: 25px;
-                border: 1.5px solid #ccc;
-                background-color: #f0f4ff;
+                border: 1.5px solid rgb(0, 90, 140);
+                background-color: rgb(0, 90, 140);
                 font-weight: 600;
                 font-size: 14px;
+                color: white;
                 cursor: pointer;
                 user-select: none;
                 transition: background-color 0.3s ease, border-color 0.3s ease;
@@ -151,19 +156,21 @@ class SpecialCharacterToolButton extends HTMLElement {
             }
 
             .tools-btn:hover, .tools-btn:focus {
-                background-color: #d0e2ff;
-                border-color: #3a86ff;
+                background-color: white;
+                border-color: rgb(0, 90, 140);
+                color: rgb(0, 90, 140);
                 outline: none;
             }
             
             .special-char-btn {
-                background-color: #f0f4ff;
-                border-color: #ccc;
+                background-color: rgb(0, 90, 140);
+                border-color: rgb(0, 90, 140);
             }
 
             .special-char-btn:hover, .special-char-btn:focus {
-                background-color: #d0e2ff;
-                border-color: #3a86ff;
+                background-color: white;
+                border-color: rgb(0, 90, 140);
+                color: rgb(0, 90, 140);
             }
         </style>
         <button class="tools-btn special-char-btn" type="button" aria-label="Toggle Special Characters Panel">

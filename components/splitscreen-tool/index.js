@@ -35,7 +35,7 @@ export default class SplitscreenTool extends HTMLElement {
                 padding: 8px 14px;
                 font-size: 14px;
                 border-radius: 8px;
-                border: 1.5px solid #ccc;
+                border: 1.5px solid rgb(0, 90, 140);
                 background-color: #f0f4ff;
                 cursor: pointer;
                 transition: border-color 0.3s ease;
@@ -44,33 +44,11 @@ export default class SplitscreenTool extends HTMLElement {
 
             select.dropdown-select:focus {
                 outline: none;
-                border-color: #3a86ff;
-                box-shadow: 0 0 6px #3a86ff;
-            }
-
-            .tools-btn {
-                padding: 8px 16px;
-                border-radius: 25px;
-                border: 1.5px solid #ccc;
-                background-color: #f0f4ff;
-                font-weight: 600;
-                font-size: 14px;
-                cursor: pointer;
-                user-select: none;
-                transition: background-color 0.3s ease, border-color 0.3s ease;
-                display: flex;
-                align-items: center;
-                gap: 6px;
-                white-space: nowrap;
-            }
-
-            .tools-btn:hover, .tools-btn:focus {
-                background-color: #d0e2ff;
-                border-color: #3a86ff;
-                outline: none;
+                border-color: rgb(0, 90, 140);
+                box-shadow: 0 0 6px rgb(0, 90, 140);
             }
         </style>
-        <select class="dropdown-select tools-btn" aria-label="Select split screen tool">
+        <select class="dropdown-select" aria-label="Select split screen tool">
             <option value="" selected disabled>Splitscreen Tools</option>
             <option value="transcription">Transcription Progress</option>
             <option value="dictionary">Greek Dictionary</option>
