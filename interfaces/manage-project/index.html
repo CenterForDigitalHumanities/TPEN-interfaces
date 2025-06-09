@@ -12,6 +12,7 @@ permalink: /project/manage
     <script type="module" src="../../components/gui/site/index.js"></script>
     <script type="module" src="../../components/gui/card/Card.js"></script>
     <script type="module" src="../../interfaces/manage-project/index.js"></script>
+    <script type="module" src="../../components/check-permissions/index.js"></script>
 </head>
 <body>
     <tpen-page title="Project Dashboard" class="grid">
@@ -19,45 +20,59 @@ permalink: /project/manage
             <h2 slot="header">This Project</h2>
             <tpen-project-details slot="body"></tpen-project-details>
         </tpen-card>
-        <tpen-card>
-            <h2 slot="header">Metadata</h2>
-            <tpen-project-metadata slot="body"></tpen-project-metadata>
-            <button id="update-metadata-btn" slot="footer" type="button">EDIT METADATA</button>
-        </tpen-card>
-        <tpen-card>
-            <h2 slot="header">Collaborators</h2>
-            <project-collaborators slot="body"></project-collaborators>
-            <button id="manage-collaboration-btn" slot="footer" type="button">MANAGE COLLABORATORS</button>
-        </tpen-card>
-        <tpen-card>
-            <h2 slot="header">Layers & Pages</h2>
-            <tpen-project-layers slot="body"></tpen-project-layers>
-            <button id="manage-layers-btn" slot="footer" type="button">SEE DETAILS / MODIFY</button>
-        </tpen-card>
-        <tpen-card>
-            <h2 slot="header">Project Roles</h2>
-            <tpen-project-permissions slot="body"></tpen-project-permissions>
-            <button id="add-custom-role-btn" slot="footer" type="button">ADD ROLE</button>
-        </tpen-card>
-        <tpen-card>
-            <h2 slot="header">Project Options</h2>
-            <tpen-project-options slot="body">
-                <div>
-                    Default Transcription Interface: /transcribe
-                </div>
-            </tpen-project-options>
-            <button id="manage-project-options-btn" slot="footer" type="button">SEE DETAILS</button>
-        </tpen-card>
-        <tpen-card>
-            <h2 slot="header">Tools</h2>
-            <tpen-project-tools slot="body"></tpen-project-tools>
-            <button id="manage-tools-btn" slot="footer" type="button">SAVE TOOLS</button>
-        </tpen-card>
-        <tpen-card>
-            <h2 slot="header">Export & Links</h2>
-            <tpen-project-export slot="body"></tpen-project-export>
-            <button id="export-project-btn" slot="footer" type="button">EXPORT PROJECT</button>
-        </tpen-card>
+        <check-permissions entity="metadata">
+            <tpen-card>
+                <h2 slot="header">Metadata</h2>
+                <tpen-project-metadata slot="body"></tpen-project-metadata>
+                <button id="update-metadata-btn" slot="footer" type="button">EDIT METADATA</button>
+            </tpen-card>
+        </check-permissions>
+        <check-permissions entity="member">
+            <tpen-card>
+                <h2 slot="header">Collaborators</h2>
+                <project-collaborators slot="body"></project-collaborators>
+                <button id="manage-collaboration-btn" slot="footer" type="button">MANAGE COLLABORATORS</button>
+            </tpen-card>
+        </check-permissions>
+        <check-permissions entity="layer">
+            <tpen-card>
+                <h2 slot="header">Layers & Pages</h2>
+                <tpen-project-layers slot="body"></tpen-project-layers>
+                <button id="manage-layers-btn" slot="footer" type="button">SEE DETAILS / MODIFY</button>
+            </tpen-card>
+        </check-permissions>
+        <check-permissions entity="role">
+            <tpen-card>
+                <h2 slot="header">Project Roles</h2>
+                <tpen-project-permissions slot="body"></tpen-project-permissions>
+                <button id="add-custom-role-btn" slot="footer" type="button">ADD ROLE</button>
+            </tpen-card>
+        </check-permissions>
+        <check-permissions entity="line">
+            <tpen-card>
+                <h2 slot="header">Project Options</h2>
+                <tpen-project-options slot="body">
+                    <div>
+                        Default Transcription Interface: /transcribe
+                    </div>
+                </tpen-project-options>
+                <button id="manage-project-options-btn" slot="footer" type="button">SEE DETAILS</button>
+            </tpen-card>
+        </check-permissions>
+        <check-permissions entity="tool">
+            <tpen-card>
+                <h2 slot="header">Tools</h2>
+                <tpen-project-tools slot="body"></tpen-project-tools>
+                <button id="manage-tools-btn" slot="footer" type="button">SAVE TOOLS</button>
+            </tpen-card>
+        </check-permissions>
+        <check-permissions entity="export">
+            <tpen-card>
+                <h2 slot="header">Export & Links</h2>
+                <tpen-project-export slot="body"></tpen-project-export>
+                <button id="export-project-btn" slot="footer" type="button">EXPORT PROJECT</button>
+            <tpen-card>
+        </check-permissions>
         <tpen-card>
             <h2 slot="header">Misc...</h2>
             <tpen-project-annotations slot="body">Annotations, Tags, Hotkeys, XML Tags</tpen-project-annotations>
