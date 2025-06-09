@@ -1,4 +1,4 @@
-import {decodeContentState} from '../iiif-tools/index.mjs'
+import {decodeContentState} from '../iiif-tools/index.js'
 
 const LINE_TEXT_HTML = `<span>
     <span style="border-radius: 1em; background-color: lightgrey; width: 100%; min-width:14em;min-height: 1em; display: inline-block;">

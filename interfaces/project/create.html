@@ -1,0 +1,66 @@
+---
+title: Create Project
+permalink: /project/create
+---
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Project</title>
+    <script type="module" src="/api/TPEN.js"></script>
+    <script type="module" src="/components/gui/site/index.js"></script>
+    <script type="module" src="/components/gui/card/Card.js"></script>
+</head>
+
+<body>
+    <tpen-page class="grid">
+        <!-- <tpen-project-create> -->
+        <tpen-card>
+            <span slot="icon">🧭</span>
+            <h2 slot="header">New Project Wizard</h2>
+            <span slot="body">Step-by-step guide to create a new project.</span>
+            <a slot="footer" href="#">Start</a>
+        </tpen-card>
+        <tpen-card>
+            <span slot="icon">📋</span>
+            <h2 slot="header">Copy Project</h2>
+            <span slot="body">Duplicate all pages from an existing project.</span>
+            <a slot="footer" href="#">Copy</a>
+        </tpen-card>
+        <tpen-card>
+            <span slot="icon">🖼️</span>
+            <h2 slot="header">Transcribe Image</h2>
+            <span slot="body">Upload or link an image to create a single-page project.</span>
+            <a slot="footer" href="#">Transcribe</a>
+        </tpen-card>
+        <tpen-card>
+            <span slot="icon">📝</span>
+            <h2 slot="header">Manifest Editor</h2>
+            <span slot="body">Build a custom manifest from online resources and create a project.</span>
+            <a slot="footer" href="#">Edit Manifest</a>
+        </tpen-card>
+        <tpen-card>
+            <span slot="icon">
+                <object data="/assets/icons/IIIF-logo-colored-text.svg" type="image/svg+xml" style="height:1.3em; vertical-align:middle;">iiif</object>
+            </span>
+            <h2 slot="header">Import IIIF Manifest</h2>
+            <span slot="body">Start a project from a IIIF resource.</span>
+            <a slot="footer" href="import">Import Manifest</a>
+        </tpen-card>
+        <tpen-card>
+            <span slot="icon">
+                <img src="/assets/images/tpen_badgeEmergeClear.png" style="height:1.3em; vertical-align:middle;" />
+            </span>
+            <h2 slot="header">Import T-PEN 2.8 Project</h2>
+            <span slot="body">Start a TPEN3 project from one of your T-PEN 2.8 projects.</span>
+            <a slot="footer" href="#">Import Project</a>
+        </tpen-card>
+        <!-- </tpen-project-create> -->
+    </tpen-page>
+
+</body>
+
+</html>

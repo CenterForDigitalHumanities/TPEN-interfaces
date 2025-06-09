@@ -1,6 +1,6 @@
-import TPEN from "../../api/TPEN.mjs"
-import User from "../../api/User.mjs"
-import { eventDispatcher } from "../../api/events.mjs"
+import TPEN from "../../api/TPEN.js"
+import User from "../../api/User.js"
+import { eventDispatcher } from "../../api/events.js"
 
 class UpdateMetadata extends HTMLElement {
     constructor() {

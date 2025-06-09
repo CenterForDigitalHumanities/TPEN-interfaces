@@ -1,0 +1,32 @@
+---
+title: Project Options
+permalink: /project/options
+---
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Options</title>
+    <script type="module" src="/api/TPEN.js"></script>
+    <script type="module" src="/components/gui/site/index.js"></script>
+    <script type="module" src="/components/project-options/index.js"></script>
+    <link href="/components/gui/site/index.css" rel="stylesheet" type="text/css" />
+</head>
+
+<body>
+    <tpen-page class="grid">
+        <tpen-card>
+            <h2 slot="header">Project Options</h2>
+            <tpen-project-options slot="body">  </tpen-project-options>
+        </tpen-card>
+        <tpen-card>
+            <h2 slot="header">Project Configuration</h2>
+            <tpen-project-config slot="body">  </tpen-project-config>
+        </tpen-card>
+    </tpen-page>
+</body>
+
+</html>

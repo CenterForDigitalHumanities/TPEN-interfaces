@@ -1,4 +1,4 @@
-import TPEN from "../../api/TPEN.mjs"
+import TPEN from "../../api/TPEN.js"
 
 class ProjectPermissions extends HTMLElement {
     constructor() {
