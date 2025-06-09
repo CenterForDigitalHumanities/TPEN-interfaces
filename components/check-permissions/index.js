@@ -8,7 +8,7 @@ export class CheckPermissions extends HTMLElement {
     }
 
     static get observedAttributes() {
-        return ['entity']
+        return ['tpen-entity']
     }
 
 
@@ -19,12 +19,12 @@ export class CheckPermissions extends HTMLElement {
 
     render(project) {
         const userId = getUserFromToken(TPEN.getAuthorization())
-        const entity = this.getAttribute('entity')
+        const entity = this.getAttribute('tpen-entity')
         const userRoles = project?.collaborators?.[userId]?.roles
         const allPermissions = Array.from(new Set(
             userRoles.flatMap(role => project.roles[role])
         ))
-        const entityUpperCase = entity.toUpperCase()
+        const entityUpperCase = entity?.toUpperCase()
 
         if(entity === 'metadata') {
             
