@@ -1,48 +1,47 @@
+---
+title: Projects Interface
+description: This is the main interface for managing projects in TPEN 3.0. It includes sections for viewing projects, creating new actions, and continuing work on existing projects.
+redirect_from:
+    - /landing
+    - /welcome
+    - /home
+---
+
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
-    <title>TPEN Interfaces</title>
     <meta charset="UTF-8">
-    <link href="favicon.ico" rel="icon" type="image/x-icon" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="api/TPEN.js" type="module"></script>
-    <script src="components/projects/index.js" type="module"></script>
-    <script src="components/public-login/index.js" type="module"></script>
-    <script src="components/user-profile/index.js" type="module"></script>
-    <script src="api/events.js" type="module"></script>
+    <title>Projects Interface</title>
+    <script type="module" src="components/new-action.js"></script>
+    <script type="module" src="components/continue-working/index.js"></script>
+    <script type="module" src="components/projects/list-navigation.js"></script>
+    <script type="module" src="components/user-profile/index.js"></script>
+    <script type="module" src="components/gui/site/index.js"></script>
+    <script type="module" src="components/gui/card/Card.js"></script>
+    <link href="components/gui/site/index.css" rel="stylesheet" type="text/css" />
+
 </head>
 
 <body>
-    <h1>TPEN Interfaces</h1>
-    <p>No style, no flash, just proof-of-life.</p>
-
-    <auth-button></auth-button>
-    <small>/components/public-login</small>
-
-    <h2>User Content</h2>
-
-    <small>/components/projects</small>
-    <h3>Projects (roles)</h3>
-    <style scoped>
-        .badge::before {
-            content: '(';
-        }
-
-        .badge::after {
-            content: ')';
-        }
-
-        li::after {
-            content: '<' attr(tpen-project-id)'>';
-        }
-    </style>
-    <tpen-projects-list></tpen-projects-list>
-
-    <small>/components/user-profile</small>
-    <h3>Profile</h3>
-    <tpen-user-profile></tpen-user-profile>
-
+    <tpen-page>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); grid-gap: .5em;">
+            <tpen-card>
+            <h2 slot="header">Continue Working</h2>
+            <tpen-continue-working slot="body" class="card longer-card"></tpen-continue-working>
+            </tpen-card>
+            <tpen-card>
+            <h2 slot="header">My Actions</h2>
+            <tpen-new-action slot="body" class="card"></tpen-new-action>
+            </tpen-card>
+            <tpen-card>
+            <h2 slot="header">My Projects</h2>
+            <tpen-projects-list-navigation slot="body" class="card"></tpen-projects-list-navigation>
+            <a slot="footer" href="/projects/all">All Projects</a>
+            </tpen-card>
+        </div>
+    </tpen-page>
 </body>
 
 </html>

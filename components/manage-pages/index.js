@@ -1,6 +1,7 @@
 import TPEN from "../../api/TPEN.js"
 
 class ManagePages extends HTMLElement {
+    #layers = TPEN.activeProject.layers
     constructor() {
         super()
         this.attachShadow({ mode: "open" })
@@ -9,7 +10,6 @@ class ManagePages extends HTMLElement {
     }
 
     connectedCallback() {
-        const layers = TPEN.activeProject.layers
         this.shadowRoot.innerHTML = `
             <style>
                 .layer-container {
@@ -94,10 +94,44 @@ class ManagePages extends HTMLElement {
                 layerActions.classList.add("layer-actions-margin")
 
                 layerCardOuter.querySelector(".layer-pages").classList.add("layer-container")
-                layerCardOuter.querySelectorAll(".layer-page")
+                let layerCard = layerCardOuter.querySelectorAll(".layer-page")
+                layerCard
                 .forEach(el => { 
                     el.classList.add("layer-card", "layer-card-flex")
                     el.setAttribute("draggable", "true")
+
+                    el.addEventListener("dragstart", (event) => {
+                        event.dataTransfer.setData("text/plain", el.dataset.index)
+                        el.style.border = "none"
+                    })
+        
+                    el.addEventListener("dragend", () => {
+                        layerCard.forEach((el) => el.style.opacity = "1")
+                    })
+        
+                    el.addEventListener("dragover", (event) => {
+                        event.preventDefault()
+                    })
+        
+                    el.addEventListener("dragleave", () => {
+                    })
+        
+                    el.addEventListener("drop", (event) => {
+                        event.preventDefault()
+                        const draggedIndex = event.dataTransfer.getData("text/plain")
+                        const targetIndex = el.dataset.index
+        
+                        if (draggedIndex !== targetIndex) {
+                            const draggedPage = this.#layers[layerIndex].pages[draggedIndex]
+                            const targetPage = this.#layers[layerIndex].pages[targetIndex]
+                            this.#layers[layerIndex].pages[draggedIndex] = targetPage
+                            this.#layers[layerIndex].pages[targetIndex] = draggedPage
+                            let temp = layerCard[targetIndex].querySelector(".page-id").textContent
+                            layerCard[targetIndex].querySelector(".page-id").textContent = layerCard[draggedIndex].querySelector(".page-id").textContent
+                            layerCard[draggedIndex].querySelector(".page-id").textContent = temp
+                        }
+                        el.style.border = "none"
+                    })
 
                     const deleteButton = document.createElement("button")
                     deleteButton.className = "layer-btn delete-page"
@@ -108,7 +142,11 @@ class ManagePages extends HTMLElement {
 
                     deleteButton.addEventListener("click", () => {
                         layerCardOuter.querySelector(".layer-pages").removeChild(el)
-                        layers[layerIndex].pages.splice(el.dataset.index, 1)
+                        this.#layers[layerIndex].pages.splice(el.dataset.index, 1)
+                        mainParent.shadowRoot.querySelectorAll(`.layer-card-outer[data-index="${layerIndex}"] .layer-page`).forEach((card, newIndex) => {
+                            card.dataset.index = newIndex
+                        })
+                        layerCard = mainParent.shadowRoot.querySelectorAll(`.layer-card-outer[data-index="${layerIndex}"] .layer-page`)
                     })
                 })
 
@@ -130,7 +168,6 @@ class ManagePages extends HTMLElement {
                 saveButton.innerText = "Save Pages"
                 layerActions.insertBefore(saveButton, layerActions.firstChild)
                 layerActions.removeChild(layerCardOuter.querySelector("tpen-manage-pages"))
-                this.rearrangePages(layerIndex, layerCardOuter)
 
                 editButton.addEventListener("click", () => {
                     labelDiv.querySelector(".layer-label").remove()
@@ -139,7 +176,7 @@ class ManagePages extends HTMLElement {
                     const labelInput = document.createElement("input")
                     labelInput.type = "text"
                     labelInput.className = "label-input"
-                    labelInput.value = layers[layerIndex].label
+                    labelInput.value = this.#layers[layerIndex].label
                     labelInput.dataset.index = layerIndex
                     labelInput.dataset.layerId = layerId
                     labelDiv.insertAdjacentElement("afterbegin", labelInput)
@@ -174,7 +211,7 @@ class ManagePages extends HTMLElement {
                 })
                     
                 saveButton.addEventListener("click", () => {
-                    const pageIds = layers[layerIndex].pages.map((page) => page["@id"] ?? page.id)
+                    const pageIds = this.#layers[layerIndex].pages.map((page) => page.id)
 
                     fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/layer/${layer_id}/pages`, {
                         method: "PUT",
@@ -194,48 +231,6 @@ class ManagePages extends HTMLElement {
                         )
                     })
                 })
-            })
-        })
-    }
-
-    rearrangePages(layerIndex, layerCardOuter) {
-        const layers = TPEN.activeProject.layers
-        const cards = layerCardOuter.querySelectorAll(".layer-card")
-        let layer = layers[layerIndex]
-
-        cards.forEach((card) => {
-            card.addEventListener("dragstart", (event) => {
-                event.dataTransfer.setData("text/plain", card.dataset.index)
-                card.style.border = "none"
-            })
-
-            card.addEventListener("dragend", () => {
-                cards.forEach((card) => card.style.opacity = "1")
-            })
-
-            card.addEventListener("dragover", (event) => {
-                event.preventDefault()
-            })
-
-            card.addEventListener("dragleave", () => {
-            })
-
-            card.addEventListener("drop", (event) => {
-                event.preventDefault()
-                const draggedIndex = event.dataTransfer.getData("text/plain")
-                const targetIndex = card.dataset.index
-
-                if (draggedIndex !== targetIndex) {
-                    const draggedPage = layer.pages[draggedIndex]
-                    const targetPage = layer.pages[targetIndex]
-                    layer.pages[draggedIndex] = targetPage
-                    layer.pages[targetIndex] = draggedPage
-                    let temp = cards[targetIndex].querySelector(".page-id").textContent
-                    cards[targetIndex].querySelector(".page-id").textContent = cards[draggedIndex].querySelector(".page-id").textContent
-                    cards[draggedIndex].querySelector(".page-id").textContent = temp
-                    layers[layerIndex] = layer
-                }
-                card.style.border = "none"
             })
         })
     }

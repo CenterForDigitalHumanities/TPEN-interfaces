@@ -1,51 +1,63 @@
+import "../../components/magnifier-tool/index.js"
+import "../../components/special-character-tool/index.js"
+import "../../components/splitscreen-tool/index.js"
+import "../../components/page-tool/index.js"
+
 export default class WorkspaceTools extends HTMLElement {
-    constructor() {
-        super()
-        this.attachShadow({ mode: "open" })
-    }
+  constructor() {
+    super()
+    this.attachShadow({ mode: "open" })
+  }
 
-    connectedCallback() {
-        this.render()
-        this.addEventListeners()
-    }
+  connectedCallback() {
+    this.render()
+  }
 
-    addEventListeners() {
-        const splitscreenTool = this.shadowRoot.querySelector('.splitscreen-tool')
-        if (splitscreenTool) {
-            splitscreenTool.addEventListener('click', () => {
-                // Dispatch a custom event when the splitscreen tool is clicked
-                this.dispatchEvent(new CustomEvent('splitscreen-toggle', {
-                    bubbles: true,
-                    composed: true,
-                }))
-            })
-        }
-    }
+  render() {
+    this.shadowRoot.innerHTML = `
+    <style>
+      .workspace-tools {
+        border: 1px solid rgb(254, 248, 228);
+        margin: 0 0 20px 0;
+        padding: 15px 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        align-items: center;
+        background: rgb(254, 248, 228);
+        border-radius: 10px;
+        box-shadow: 0 4px 6px -2px rgba(0, 0, 0, 0.1);
+        position: relative;
+        width: 100%;
+        box-sizing: border-box;
+        border-top: none;
+      }
+      
+      .no-top-radius {
+        border-top-left-radius: 0;
+        border-top-right-radius: 0;
+      }
 
-    render() {
-        this.shadowRoot.innerHTML = `
-            <style>
-                .workspace-tools {
-                    border: 1px solid red;
-                    height: 50px;
-                    margin: 10px 0px;
-                    padding: 10px;
-                    display: flex;
-                    gap: 20px;
-                    justify-content: center;
-                    align-items: center;
-                }
-                .splitscreen-tool {
-                    cursor: pointer;
-                }
-            </style>
-            <div class="workspace-tools">
-                <div class="splitscreen-tool">Splitscreen Tools</div>
-                <div>Page Tools</div>
-                <div>Hotkeys</div>
-            </div>
-        `
-    }
+      .top-bar {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        flex-wrap: wrap;
+      }
+    </style>
+    <div class="workspace-tools no-top-radius">
+      <div class="top-bar">
+        <tpen-splitscreen-tool></tpen-splitscreen-tool>
+        <tpen-page-tool></tpen-page-tool>
+        <tpen-special-character-tool-button></tpen-special-character-tool-button>
+        <tpen-magnifier-tool></tpen-magnifier-tool>
+      </div>
+      <tpen-special-character-tool style="width: 100%"></tpen-special-character-tool>
+    </div>
+    `
+  }
 }
 
 customElements.define('tpen-workspace-tools', WorkspaceTools)

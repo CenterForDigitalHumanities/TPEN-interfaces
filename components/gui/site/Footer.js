@@ -3,7 +3,7 @@ import TPEN from '../../../api/TPEN.js'
 class TpenFooter extends HTMLElement {
 
     links = [
-        { href: '/home', text: 'Home' },
+        { href: '/index', text: 'Home' },
         { href: '/account', text: 'Account' },
         { href: '/contact', text: 'Contact' },
         { href: '/about', text: 'About Us' },
@@ -14,11 +14,6 @@ class TpenFooter extends HTMLElement {
     constructor() {
         super()
         const shadow = this.attachShadow({ mode: 'open' })
-
-        const linkElem = document.createElement('link');
-        linkElem.setAttribute('rel', 'stylesheet');
-        linkElem.setAttribute('href', './index.css');
-        shadow.appendChild(linkElem);
 
         const footer = document.createElement('footer')
         footer.className = 'site-footer'
@@ -71,6 +66,7 @@ class TpenFooter extends HTMLElement {
                 display: flex;
                 align-items: center;
                 justify-content: space-evenly;
+                flex-wrap: wrap;
             }
             .footer-nav ul {
                 list-style: none;
@@ -88,6 +84,16 @@ class TpenFooter extends HTMLElement {
             img {
                 mix-blend-mode: multiply;
                 height: 100px;
+            }
+
+            img:last-of-type {
+                transition: all 3s;
+                opacity: 1;
+                clip-path: polygon(50% 0%, 100% 0, 100% 37%, 100% 83%, 100% 100%, 81% 100%, 0 100%, 0 92%, 0 35%, 0 0);
+            }
+            img:last-of-type:hover {
+                opacity: 0.5;
+                clip-path: polygon(54% 51%, 23% 1%, 100% 16%, 68% 57%, 100% 100%, 51% 59%, 76% 99%, 13% 100%, 29% 78%, 18% 64%);
             }
         `
         shadow.appendChild(style)

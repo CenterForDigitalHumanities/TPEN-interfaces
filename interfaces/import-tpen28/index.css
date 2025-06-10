@@ -1,0 +1,116 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+   
+.container {
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f5f8fa;
+    color: #333;
+    padding: 40px;
+    line-height: 1.6;
+}
+   
+.header {
+    font-size: 28px;
+    margin-bottom: 25px;
+    color: #2c3e50;
+}
+   
+.message {
+    font-weight: bold;
+    font-size: 16px;
+    color: #555;
+    margin-bottom: 20px;
+    padding: 10px;
+    background-color: #eaf1f8;
+    border-left: 4px solid #3498db;
+    border-radius: 4px;
+}
+   
+#projectSelect {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    background-color: #fff;
+    transition: border-color 0.3s ease;
+}
+   
+#projectSelect:focus {
+    border-color: #3498db;
+    outline: none;
+}
+   
+button {
+    padding: 12px 24px;
+    font-size: 15px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+   
+button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+   
+.primary-btn {
+    background-color: #3498db;
+    color: #fff;
+}
+   
+.primary-btn:hover {
+    background-color: #2980b9;
+}
+   
+.secondary-btn {
+    background-color: #27ae60;
+    color: white;
+    margin-top: 30px;
+}
+   
+.secondary-btn:hover {
+    background-color: #219150;
+}
+   
+#projectCollaborators {
+    margin-top: 40px;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+   
+#projectCollaborators h2 {
+    font-size: 22px;
+    margin-bottom: 15px;
+    color: #2c3e50;
+}
+   
+.collaborator-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+   
+.collaborator-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+   
+.success-message {
+    color: #2ecc71;
+    margin-left: 10px;
+    font-size: 14px;
+}
+   
+.hidden {
+    display: none;
+}  

@@ -154,7 +154,7 @@ class ProjectLayers extends HTMLElement {
                 .map(
                     (layer, layerIndex) => `
                     <div class="layer-card-outer" data-index="${layerIndex}" style="cursor:default;}">
-                        <p class="layer-id"><strong>Layer ID:</strong> ${layer["@id"] ?? layer.id}</p>
+                        <p class="layer-id"><strong>Layer ID:</strong> ${layer.id}</p>
                         <div class="layer-label-div">
                             ${layer.label ? `<p class="layer-label"><strong>Label:</strong> ${layer.label}</p>` : ``}
                         </div>
@@ -164,16 +164,16 @@ class ProjectLayers extends HTMLElement {
                                 (page, pageIndex) =>
                                 `
                                 <div class="layer-page" data-index="${pageIndex}">
-                                    <p class="page-id" data-index="${pageIndex}">${page["@id"] ?? page.id ?? page.map((page) => page["@id"] ?? page.id )}</p>
+                                    <p class="page-id" data-index="${pageIndex}">${page.id ?? page.map((page) => page.id )}</p>
                                 </div>
                                 `
                                 )
                             .join("")}
                         </div>
-                        ${(String(layer.id) ?? String(layer["@id"])).includes("store.rerum.io") ?
+                        ${(String(layer.id)).includes("store.rerum.io") ?
                         `<div class="layer-actions">
-                            <tpen-manage-pages data-index="${layerIndex}" data-layer-id="${layer["@id"] ?? layer.id}"></tpen-manage-pages>
-                            <button class="layer-btn delete-layer" data-index="${layerIndex}" data-layer-id="${layer["@id"] ?? layer.id}">Delete Layer</button>
+                            <tpen-manage-pages data-index="${layerIndex}" data-layer-id="${layer.id}"></tpen-manage-pages>
+                            <button class="layer-btn delete-layer" data-index="${layerIndex}" data-layer-id="${layer.id}">Delete Layer</button>
                         </div>`
                         : ``}
                     </div>`
@@ -206,8 +206,8 @@ class ProjectLayers extends HTMLElement {
         this.shadowRoot.querySelector(".add-layer").addEventListener("click", () => {
             const canvases = []
             layers.map(layer => (layer.pages).map(page => {
-                if (!canvases.includes(page.canvas) && page.canvas) {
-                    canvases.push(page.canvas)
+                if (!canvases.includes(page.target) && page.target) {
+                    canvases.push(page.target)
                 }
             }))
 

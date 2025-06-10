@@ -19,6 +19,8 @@ class Tpen {
     #activeLine
     #activeProject
     #activeCollection
+    #userMetrics
+    #userProjects
 
     eventDispatcher = eventDispatcher
 
@@ -35,6 +37,9 @@ class Tpen {
     constructor(tinyThingsURL = "https://dev.tiny.t-pen.org") {
         this.tinyThingsURL = tinyThingsURL
         this.servicesURL = "https://dev.api.t-pen.org"
+        this.TPEN28URL = "https://t-pen.org"
+        this.RERUMURL = "https://devstore.rerum.io/v1"
+        this.BASEURL = "https://app.t-pen.org"
         this.currentUser
         this.activeProject
 
@@ -90,6 +95,14 @@ class Tpen {
         return this.#activeProject
     }
 
+    get userMetrics() {
+        return this.#userMetrics
+    }
+
+    get userProjects() {
+        return this.#userProjects
+    }
+
     set activeProject(project) {
         this.#activeProject = project
     }
@@ -103,10 +116,23 @@ class Tpen {
     }
 
     async getUserProjects(idToken) {
+        let self = this
         const userId = getUserFromToken(idToken)
-        return import('./User.js').then(module => {
+        return import('./User.js').then(async module => {
             const u = new module.default(userId)
-            return u.getProjects()
+            const { projects, metrics } = await u.getProjects()
+            self.#userMetrics = metrics
+            self.#userProjects = projects
+            eventDispatcher.dispatch("tpen-user-projects-loaded")
+            return projects
+        })
+    }
+
+    async getFirstPageOfProject(projectID) {
+        return import('./Project.js').then(async module => {
+            let project = new module.default(projectID)
+            project = await project.fetch()
+            return project?.layers[0]?.pages[0]
         })
     }
 
@@ -128,7 +154,6 @@ class Tpen {
     }
 
     logout(redirect = origin + location.pathname) {
-        this.currentUser = null
         localStorage.clear()
         location.href = `https://three.t-pen.org/logout?returnTo=${encodeURIComponent(redirect)}`
         return

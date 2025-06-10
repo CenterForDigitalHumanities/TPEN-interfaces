@@ -18,7 +18,7 @@
  * @version 0.0.1
  */
 import TPEN from './TPEN.js'
-import { eventDispatcher } from './events.js'
+const { eventDispatcher } = TPEN
 import { userMessage } from "../components/iiif-tools/index.js"
 
 export default class Project {
@@ -46,6 +46,9 @@ export default class Project {
                 .then(response => response.ok ? response : Promise.reject(response))
                 .then(response => response.json())
                 .then(data => {
+                    if (data.error ?? data.errorResponse ?? data.status >= 400) {
+                        return Promise.reject(data.error ?? data.errorResponse?.errmsg ?? data.status)
+                    }
                     Object.assign(this, data)
                     this.#isLoaded = true
                     eventDispatcher.dispatch("tpen-project-loaded", this)
@@ -56,7 +59,7 @@ export default class Project {
                     return Promise.reject(error)
                 })
         } catch (error) {
-            return userMessage(`${error.status}: ${error.statusText}`)
+            return userMessage(error)
         }
     }
 
@@ -82,7 +85,7 @@ export default class Project {
             })
     }
 
-    async addMember(email) {
+    async addMember(email, roles = undefined) {
         try {
             const AUTH_TOKEN = TPEN.getAuthorization() ?? TPEN.login()
             const response = await fetch(`${TPEN.servicesURL}/project/${this._id}/invite-member`, {
@@ -91,7 +94,7 @@ export default class Project {
                     'Content-Type': 'application/json',
                 },
                 method: "POST",
-                body: JSON.stringify({ email }),
+                body: JSON.stringify({ email, roles }),
             })
             if (!response.ok) {
                 const errorData = await response.json()
@@ -340,5 +343,30 @@ export default class Project {
 
     getLabel() {
         return this.label ?? this.title ?? this.metadata?.find(m => m.label === "title")?.value ?? "Untitled"
+    }
+
+    getByRole(role) {
+        if (!this.roles || !this.roles[role]) {
+            return []
+        }
+        return Object.entries(this.collaborators ?? {})
+            .filter(([_, collaborator]) => collaborator.roles?.includes(role))
+            .map(([userId, collaborator]) => ({
+                userId,
+                ...collaborator.profile,
+                roles: collaborator.roles
+            }))
+    }
+
+    getOwner() {
+        return this.getByRole("OWNER")[0] || null
+    }
+
+    static async getById(projectId) {
+        if (!projectId) {
+            throw new Error("Project ID is required")
+        }
+        const project = new Project(projectId)
+        return await project.fetch()
     }
 }

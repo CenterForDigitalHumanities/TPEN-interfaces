@@ -14,6 +14,8 @@ class TPENCard extends HTMLElement {
                 height          : 100%;
                 min-height      : 10em;
                 position: relative;
+                display: flex;
+                flex-direction: column;
             }
             .card-header, .card-body, .card-footer > * {
                 display: block;
@@ -21,6 +23,8 @@ class TPENCard extends HTMLElement {
             }
             .card-body {
                 margin-bottom: 2em;
+                flex-grow: 1;
+                overflow: auto;
             }
             .card-header {
                 color: var(--accent);
@@ -36,6 +40,30 @@ class TPENCard extends HTMLElement {
                 position: absolute;
                 bottom: 0;
                 width: 100%;
+            }
+            .card-icon {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                padding-top: 1em;
+                padding-bottom: 0;
+                font-size:2.5em;
+            }
+            ::slotted(a) {
+                background-color: var(--primary-color);
+                text-transform: capitalize;
+                outline: var(--primary-light) 1px solid;
+                outline-offset: -3.5px;
+                color: var(--white) !important;
+                border-radius: 5px;
+                text-decoration: none;
+                padding: 0.5em 1em !important;
+                transition: all 0.3s;
+            }
+            ::slotted(a:hover) {
+                background-color: var(--primary-light);
+                outline: var(--primary-color) 1px solid;
+                outline-offset: -1.5px;
             }
             ::slotted(button) {
                 background-color: var(--primary-color) !important;
@@ -57,6 +85,7 @@ class TPENCard extends HTMLElement {
         this.shadowRoot.innerHTML += `
             <div class="card">
                 <slot name="header" class="card-header"></slot>
+                <slot name="icon" class="card-icon"></slot>
                 <slot name="body" class="card-body"></slot>
                 <slot name="footer" class="card-footer"></slot>
             </div>

@@ -2,90 +2,47 @@
 <html lang="en">
 
 <head>
+    <title>TPEN Interfaces</title>
     <meta charset="UTF-8">
+    <link href="favicon.ico" rel="icon" type="image/x-icon" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Projects Interface</title>
-    <script type="module" src="../components/new-action.js"></script>
-    <script type="module" src="../components/continue-working/index.js"></script>
-    <script type="module" src="../components/projects/index.js"></script>
-    <script type="module" src="../components/projects/project-list-view.js"></script>
-    <script type="module" src="../components/user-profile/index.js"></script>
-
-    <style>
-        .container {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 10px;
-            padding: 20px;
-            margin: 25px auto;
-            width: 90%;
-        }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        tpen-user-profile {
-            width: 300px;
-            margin-bottom: 10px;
-            padding: 10px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-
-        .card-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 10px;
-        }
-
-        .card {
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            padding: 10px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            max-height: 400px;
-            overflow-y: scroll;
-        }
-
-        /* Custom scrollbar */
-        .card::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .card::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 10px;
-        }
-
-        .card::-webkit-scrollbar-thumb {
-            background: #888;
-            border-radius: 10px;
-        }
-
-        .card::-webkit-scrollbar-thumb:hover {
-            background: #555;
-        }
-
-        .longer-card {
-            min-width: 500px;
-        }
-    </style>
+    <script src="../api/TPEN.js" type="module"></script>
+    <script src="../components/projects/index.js" type="module"></script>
+    <script src="../components/public-login/index.js" type="module"></script>
+    <script src="../components/user-profile/index.js" type="module"></script>
+    <script src="../api/events.js" type="module"></script>
 </head>
 
 <body>
-    <div class="container">
-        <div class="header">
-            <div class="logo">TPEN Logo</div>
-            <tpen-user-profile></tpen-user-profile>
-        </div>
-        <div class="card-container">
-            <tpen-projects-view class="card"></tpen-projects-view>
-            <tpen-new-action class="card"></tpen-new-action>
-            <tpen-continue-working class="card longer-card"></tpen-continue-working>
-        </div>
-    </div>
+    <h1>TPEN Interfaces</h1>
+    <p>No style, no flash, just proof-of-life.</p>
+
+    <auth-button></auth-button>
+    <small>/components/public-login</small>
+
+    <h2>User Content</h2>
+
+    <small>/components/projects</small>
+    <h3>Projects (roles)</h3>
+    <style scoped>
+        .badge::before {
+            content: '(';
+        }
+
+        .badge::after {
+            content: ')';
+        }
+
+        li::after {
+            content: '<' attr(tpen-project-id)'>';
+        }
+    </style>
+    <tpen-projects-list></tpen-projects-list>
+
+    <small>/components/user-profile</small>
+    <h3>Profile</h3>
+    <tpen-user-profile></tpen-user-profile>
+
 </body>
 
 </html>
