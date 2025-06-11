@@ -1,5 +1,6 @@
 // Local simulacrum vault for use in client without something like webpack
-
+import TPEN from "../api/TPEN.js"
+import { urlFromIdAndType } from "../js/utils.js"
 class Vault {
     constructor() {
         this.store = new Map()
@@ -18,27 +19,60 @@ class Vault {
     }
 
     async get(item, itemType) {
-        itemType = this._normalizeType(itemType ?? item?.type ?? item?.['@type'])
+        const type = this._normalizeType(itemType ?? item?.type ?? item?.['@type'])
         const id = this._getId(item)
-        const typeStore = this.store.get(itemType)
+        const typeStore = this.store.get(type)
         let result = typeStore?.get(id) ?? null
         if (result) return result
 
-        const cacheKey = this._cacheKey(itemType, id)
+        const cacheKey = this._cacheKey(type, id)
         const cached = localStorage.getItem(cacheKey)
         if (cached) {
             try {
                 const parsed = JSON.parse(cached)
-                this.set(parsed, itemType)
+                this.set(parsed, type)
                 return parsed
             } catch {}
         }
 
         try {
-            const response = await fetch(id)
+            const uri = urlFromIdAndType(id, type, {
+                projectId: TPEN.screen?.projectInQuery,
+                pageId: TPEN.screen?.pageInQuery,
+                layerId: TPEN.screen?.layerInQuery
+            })
+            const response = await fetch(uri)
             if (!response.ok) return null
 
             const data = await response.json()
+            const queue = [{ obj: data, depth: 0 }]
+            const visited = new Set()
+
+            while (queue.length) {
+                const { obj, depth } = queue.shift()
+                if (depth >= 4 || !obj || typeof obj !== 'object') continue
+
+                for (const key of Object.keys(obj)) {
+                    const value = obj[key]
+                    if (Array.isArray(value)) {
+                        for (const item of value) {
+                            if (item && typeof item === 'object') queue.push({ obj: item, depth: depth + 1 })
+                        }
+                    } else if (value && typeof value === 'object') {
+                        queue.push({ obj: value, depth: depth + 1 })
+                    }
+
+                    const id = value?.['@id'] ?? value?.id
+                    const type = value?.['@type'] ?? value?.type
+                    if (id && type && !visited.has(id)) {
+                        visited.add(id)
+                        this.get(id, type)
+                        // Project embedded object to minimal form
+                        const label = value?.label ?? value?.title
+                        obj[key] = { id, type, ...(label && { label }) }
+                    }
+                }
+            }
             this.set(data, itemType)
             try {
                 localStorage.setItem(cacheKey, JSON.stringify(data))
@@ -50,45 +84,37 @@ class Vault {
     }
 
     set(item, itemType) {
-        itemType = this._normalizeType(itemType ?? item?.type ?? item?.['@type'])
+        const type = this._normalizeType(itemType ?? item?.type ?? item?.['@type'])
         const id = this._getId(item)
-        if (!this.store.has(itemType)) {
-            this.store.set(itemType, new Map())
+        if (!this.store.has(type)) {
+            this.store.set(type, new Map())
         }
-        this.store.get(itemType).set(id, item)
-        const cacheKey = this._cacheKey(itemType, id)
+        this.store.get(type).set(id, item)
+        const cacheKey = this._cacheKey(type, id)
         try {
             localStorage.setItem(cacheKey, JSON.stringify(item))
         } catch {}
     }
 
     delete(item, itemType) {
-        itemType = this._normalizeType(itemType ?? item?.type ?? item?.['@type'])
+        const type = this._normalizeType(itemType ?? item?.type ?? item?.['@type'])
         const id = this._getId(item)
-        if (!this.store.has(itemType)) return
-        const typeStore = this.store.get(itemType)
+        if (!this.store.has(type)) return
+        const typeStore = this.store.get(type)
         if (!typeStore.has(id)) return
         typeStore.delete(id)
-        const cacheKey = this._cacheKey(itemType, id)
+        const cacheKey = this._cacheKey(type, id)
         localStorage.removeItem(cacheKey)
     }
 
     clear(itemType) {
-        if (itemType) {
-            itemType = this._normalizeType(itemType)
-            for (const key of Object.keys(localStorage)) {
-                if (key.startsWith(`vault:${itemType}:`)) {
-                    localStorage.removeItem(key)
-                }
-            }
-        } else {
-            for (const key of Object.keys(localStorage)) {
-                if (key.startsWith('vault:')) {
-                    localStorage.removeItem(key)
-                }
+        const type = this._normalizeType(itemType)
+        for (const key of Object.keys(localStorage)) {
+            if (key.startsWith(`vault:${type}:`)) {
+                localStorage.removeItem(key)
             }
         }
-        this.store = new Map()
+        this.store.delete(type)
     }
 
     all() {

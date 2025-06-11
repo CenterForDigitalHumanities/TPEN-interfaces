@@ -1,6 +1,11 @@
 import TPEN from '../../api/TPEN.js'
 import '../line-image/index.js'
+import '../../js/vault.js'
+import vault from '../../js/vault.js'
 export default class TranscriptionBlock extends HTMLElement {
+    #page
+    #lines
+
     constructor() {
         super()
         this.attachShadow({ mode: "open" })
@@ -13,12 +18,35 @@ export default class TranscriptionBlock extends HTMLElement {
     connectedCallback() {
         this.render()
         this.addEventListeners()
-        TPEN.eventDispatcher.on('tpen-project-loaded', () => {
-            const pageID = TPEN.screen?.pageID
+        TPEN.eventDispatcher.on('tpen-project-loaded', async () => {
+            const pageID = TPEN.screen?.pageInQuery
             this.render()
             const topImage = this.shadowRoot.querySelector('#topImage')
-            topImage?.setAttribute('page-id', pageID) 
-            /// TODO Load line and get xywh
+            const bottomImage = this.shadowRoot.querySelector('#bottomImage')
+            topImage.manifest = bottomImage.manifest = TPEN.activeProject?.manifest[0]
+            const page = this.#page ?? await vault.get(pageID, 'annotationpage')
+            let thisLine = page.items?.[0]
+            let targetString, canvasID, region
+            if (thisLine) {
+                thisLine = await vault.get(thisLine, 'annotation')
+                targetString = thisLine?.target?.id ?? thisLine.target?.['@id'] ?? thisLine.target
+                ;[ canvasID, region] = targetString.split('#xywh=')
+                topImage.line = thisLine.id
+            } else {
+                targetString = page?.target?.id ?? page?.target?.['@id'] ?? page?.target
+                ;[ canvasID, region] = targetString.split('#xywh=')
+            }
+            const canvas = await vault.get(canvasID, 'canvas')
+            region ??= `0,0,${canvas.width ?? 'full'},${(canvas.height && canvas.height/10) ?? 120}`
+
+            topImage.canvas = bottomImage.canvas = canvasID
+            if(region) topImage.setAttribute('region', region)
+            // Calculate the remaining region below the topImage line for bottomImage
+            const [x, y, w, h] = region.split(',').map(Number)
+            const canvasHeight = canvas?.height ?? 0
+            const remainingY = (y + h) ?? 0
+            const remainingHeight = canvasHeight - remainingY
+            bottomImage.setAttribute('region', `${x},${remainingY},${w},${remainingHeight}`)
         })
     }
 
@@ -129,8 +157,8 @@ export default class TranscriptionBlock extends HTMLElement {
                     border-color: #aaa;
                 }
             </style>
+            <tpen-line-image id="topImage"></tpen-line-image>
             <div class="transcription-block">
-                <tpen-line-image id="topImage"></tpen-line-image>
                 <center class="transcription-line">${previousLineText}</center>
                 <div class="flex-center">
                     <button class="prev-button">Prev</button>
@@ -138,6 +166,7 @@ export default class TranscriptionBlock extends HTMLElement {
                     <button class="next-button">Next</button>
                 </div>
             </div>
+            <tpen-line-image id="bottomImage"></tpen-line-image>
         `
     }
 }

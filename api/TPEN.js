@@ -137,6 +137,11 @@ class Tpen {
         })
     }
 
+    getLastModifiedPageId() {
+        if(!this.activeProject || !this.activeProject.layers) return null
+        return this.activeProject._lastModified
+    }
+
     async getAllPublicProjects() {
         // Logic to fetch all public projects
         return fetch(`${this.servicesURL}/projects/public`)
