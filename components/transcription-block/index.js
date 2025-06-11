@@ -1,3 +1,5 @@
+import TPEN from '../../api/TPEN.js'
+import '../line-image/index.js'
 export default class TranscriptionBlock extends HTMLElement {
     constructor() {
         super()
@@ -11,6 +13,13 @@ export default class TranscriptionBlock extends HTMLElement {
     connectedCallback() {
         this.render()
         this.addEventListeners()
+        TPEN.eventDispatcher.on('tpen-project-loaded', () => {
+            const pageID = TPEN.screen?.pageID
+            this.render()
+            const topImage = this.shadowRoot.querySelector('#topImage')
+            topImage?.setAttribute('page-id', pageID) 
+            /// TODO Load line and get xywh
+        })
     }
 
     addEventListeners() {
@@ -121,6 +130,7 @@ export default class TranscriptionBlock extends HTMLElement {
                 }
             </style>
             <div class="transcription-block">
+                <tpen-line-image id="topImage"></tpen-line-image>
                 <center class="transcription-line">${previousLineText}</center>
                 <div class="flex-center">
                     <button class="prev-button">Prev</button>
