@@ -1,4 +1,4 @@
-const CENTRAL = "https://three.t-pen.org"
+const CENTRAL = "http://localhost:4001"
 
 class AuthButton extends HTMLElement {
     constructor() {

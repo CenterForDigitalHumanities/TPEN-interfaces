@@ -36,10 +36,10 @@ class Tpen {
 
     constructor(tinyThingsURL = "https://dev.tiny.t-pen.org") {
         this.tinyThingsURL = tinyThingsURL
-        this.servicesURL = "https://dev.api.t-pen.org"
+        this.servicesURL = "http://localhost:3012"
         this.TPEN28URL = "https://t-pen.org"
         this.RERUMURL = "https://devstore.rerum.io/v1"
-        this.BASEURL = "https://app.t-pen.org"
+        this.BASEURL = "http://localhost:4000"
         this.currentUser
         this.activeProject
 
@@ -155,13 +155,29 @@ class Tpen {
 
     logout(redirect = origin + location.pathname) {
         localStorage.clear()
-        location.href = `https://three.t-pen.org/logout?returnTo=${encodeURIComponent(redirect)}`
+        location.href = `http://localhost:4001/logout?returnTo=${encodeURIComponent(redirect)}`
         return
     }
 
     login(redirect = location.href) {
-        location.href = `https://three.t-pen.org/login?returnTo=${encodeURIComponent(redirect)}`
+        location.href = `http://localhost:4001/login?returnTo=${encodeURIComponent(redirect)}`
         return
+    }
+
+    async specialTempUserFix(inviteCode, userID, projectID) {
+        if(!inviteCode && userID && projectID) return
+        if(inviteCode === userID) return 
+        let result = await fetch(`${this.servicesURL}/project/tempUserFix?inviteCode=${inviteCode}&userID=${userID}&projectID=${projectID}`, {
+            method: "GET",
+            headers: new Headers({
+                "Content-Type": "application/json"
+            })
+        })
+        .then(response => response.json())     
+        .catch(err => { 
+            throw err 
+        })
+        return result    
     }
 
     attachAuthentication = (element) => {
@@ -170,16 +186,22 @@ class Tpen {
             return
         }
         const token = new URLSearchParams(location.search).get("idToken") ?? this.getAuthorization()
+        const inviteCode = new URLSearchParams(window.location.search).get('inviteCode')
         history.replaceState(null, "", location.pathname + location.search.replace(/[\?&]idToken=[^&]+/, ''))
         if (!token) {
             this.login()
             return
+        }
+        const userID = decodeUserToken(token)["http://store.rerum.io/agent"].split("/").pop()
+        if(inviteCode && inviteCode !== userID) {
+            this.specialTempUserFix(inviteCode, userID, this.screen.projectInQuery)
         }
         localStorage.setItem("userToken", token)
         element.setAttribute("require-auth", true)
         updateUser(element, token)
         eventDispatcher.on("token-expiration", () => element.classList.add("expired"))
         eventDispatcher.dispatch("tpen-authenticated", token)
+        return
     }
 }
 
