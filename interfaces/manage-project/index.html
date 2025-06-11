@@ -82,7 +82,12 @@ permalink: /project/manage
                     const cardButton = card.querySelector('button')
                     if (cardButton) {
                         const hasEditAccess = await CheckPermissions.checkEditAccess(entity.toUpperCase())
-                        cardButton.style.display = hasEditAccess ? 'inline-block' : cardButton.remove()
+                        if(hasEditAccess && entity !== 'role')
+                            cardButton.style.display = hasEditAccess ? 'inline-block' : cardButton.remove()
+                        else if (entity === 'role') {
+                            const hasCreateRoleAccess = await CheckPermissions.checkCreateAccess('ROLE')
+                            cardButton.style.display = hasCreateRoleAccess ? 'inline-block' : cardButton.remove()
+                        }
                     }
                 }
             }
