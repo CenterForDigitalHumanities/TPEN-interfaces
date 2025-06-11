@@ -4,21 +4,17 @@ export default class ProjectHeader extends HTMLElement {
     static get observedAttributes() {
         return ["tpen-project", "tpen-user-id"]
     }
-    // activeProject is undefined while loading
-    activeProject = undefined
     loadFailed = false
 
     constructor() {
         super()
         this.attachShadow({ mode: "open" })
         eventDispatcher.on("tpen-user-loaded", (ev) => (this.currentUser = ev.detail))
-        eventDispatcher.on("tpen-project-loaded", (ev) => {
-            this.activeProject = ev.detail
+        eventDispatcher.on("tpen-project-loaded", () => {
             this.loadFailed = false
             this.render()
         })
-        eventDispatcher.on("tpen-project-load-failed", (ev) => {
-            this.activeProject = null
+        eventDispatcher.on("tpen-project-load-failed", () => {
             this.loadFailed = true
             this.render()
         })
@@ -53,14 +49,14 @@ export default class ProjectHeader extends HTMLElement {
 
     render() {
         let titleContent = ""
-        if (this.activeProject === undefined && !this.loadFailed) {
+        if (TPEN.activeProject === undefined && !this.loadFailed) {
             // Loading in progress: show a blinking placeholder shape
             titleContent = `<div class="title-placeholder"></div>`
-        } else if (this.loadFailed || !this.activeProject || !this.activeProject.label) {
+        } else if (this.loadFailed || !TPEN.activeProject || !TPEN.activeProject.label) {
             // Loading complete but no project available (error or empty)
             titleContent = `--`
         } else {
-            titleContent = this.activeProject.label
+            titleContent = TPEN.activeProject.label
         }
 
         this.shadowRoot.innerHTML = `
@@ -158,9 +154,9 @@ export default class ProjectHeader extends HTMLElement {
       </nav>
     `
 
-    if (!this.activeProject || !this.activeProject.layers) return
-    const projectCanvases = this.activeProject.layers.flatMap(layer => layer.pages.map(page => page.id.split('/').pop()))
-    const projectCanvasLabels = this.activeProject.layers.flatMap(layer => layer.pages.map(page => page.label))
+    if (!TPEN.activeProject || !TPEN.activeProject.layers) return
+    const projectCanvases = TPEN.activeProject.layers.flatMap(layer => layer.pages.map(page => page.id.split('/').pop()))
+    const projectCanvasLabels = TPEN.activeProject.layers.flatMap(layer => layer.pages.map(page => page.label))
     const canvasLabels = this.shadowRoot.querySelector('.canvas-label select')
     if (!TPEN.screen.pageInQuery) location.href += `&pageID=${TPEN.activeProject.getFirstPageID().split('/').pop()}`
     if (!canvasLabels) {
