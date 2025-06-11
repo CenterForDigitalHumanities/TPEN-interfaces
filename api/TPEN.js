@@ -194,6 +194,8 @@ class Tpen {
         }
         const userID = decodeUserToken(token)["http://store.rerum.io/agent"].split("/").pop()
         if(inviteCode && inviteCode !== userID) {
+            const projectID = this.screen.projectInQuery ?? this.activeProject._id
+            if(!projectID) throw new Error("We need a project id so we can align the user with their project.")
             this.specialTempUserFix(inviteCode, userID, this.screen.projectInQuery)
         }
         localStorage.setItem("userToken", token)
