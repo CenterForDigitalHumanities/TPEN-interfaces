@@ -1,10 +1,6 @@
-import TPEN from '../../api/TPEN.js'
-import '../line-image/index.js'
-import '../../js/vault.js'
-import vault from '../../js/vault.js'
+import { eventDispatcher } from "../../api/events.js"
+
 export default class TranscriptionBlock extends HTMLElement {
-    #page
-    #lines
 
     constructor() {
         super()
@@ -18,36 +14,6 @@ export default class TranscriptionBlock extends HTMLElement {
     connectedCallback() {
         this.render()
         this.addEventListeners()
-        TPEN.eventDispatcher.on('tpen-project-loaded', async () => {
-            const pageID = TPEN.screen?.pageInQuery
-            this.render()
-            const topImage = this.shadowRoot.querySelector('#topImage')
-            const bottomImage = this.shadowRoot.querySelector('#bottomImage')
-            topImage.manifest = bottomImage.manifest = TPEN.activeProject?.manifest[0]
-            const page = this.#page ?? await vault.get(pageID, 'annotationpage')
-            let thisLine = page.items?.[0]
-            let targetString, canvasID, region
-            if (thisLine) {
-                thisLine = await vault.get(thisLine, 'annotation')
-                targetString = thisLine?.target?.id ?? thisLine.target?.['@id'] ?? thisLine.target
-                ;[ canvasID, region] = targetString.split('#xywh=')
-                topImage.line = thisLine.id
-            } else {
-                targetString = page?.target?.id ?? page?.target?.['@id'] ?? page?.target
-                ;[ canvasID, region] = targetString.split('#xywh=')
-            }
-            const canvas = await vault.get(canvasID, 'canvas')
-            region ??= `0,0,${canvas.width ?? 'full'},${(canvas.height && canvas.height/10) ?? 120}`
-
-            topImage.canvas = bottomImage.canvas = canvasID
-            if(region) topImage.setAttribute('region', region)
-            // Calculate the remaining region below the topImage line for bottomImage
-            const [x, y, w, h] = region.split(',').map(Number)
-            const canvasHeight = canvas?.height ?? 0
-            const remainingY = (y + h) ?? 0
-            const remainingHeight = canvasHeight - remainingY
-            bottomImage.setAttribute('region', `${x},${remainingY},${w},${remainingHeight}`)
-        })
     }
 
     addEventListeners() {
@@ -57,12 +23,12 @@ export default class TranscriptionBlock extends HTMLElement {
 
         // Move to the previous line
         if (prevButton) {
-            prevButton.addEventListener('click', () => this.moveToPreviousLine())
+            prevButton.addEventListener('click', this.moveToPreviousLine.bind(this))
         }
 
         // Move to the next line
         if (nextButton) {
-            nextButton.addEventListener('click', () => this.moveToNextLine())
+            nextButton.addEventListener('click', this.moveToNextLine.bind(this))
         }
 
         // Save transcription when the input field loses focus
@@ -72,15 +38,19 @@ export default class TranscriptionBlock extends HTMLElement {
     }
 
     moveToPreviousLine() {
-        if (this.state.currentLineIndex > 0) {
-            this.state.currentLineIndex--
-            this.render()
-        }
+        this.state.currentLineIndex--
+        eventDispatcher.dispatch('tpen-transcription-previous-line', {
+            currentLineIndex: this.state.currentLineIndex,
+            transcriptions: this.state.transcriptions
+        })
     }
 
     moveToNextLine() {
         this.state.currentLineIndex++
-        this.render()
+        eventDispatcher.dispatch('tpen-transcription-next-line', {
+            currentLineIndex: this.state.currentLineIndex,
+            transcriptions: this.state.transcriptions
+        })
     }
 
     saveTranscription(text) {
@@ -100,7 +70,6 @@ export default class TranscriptionBlock extends HTMLElement {
                     border: 1px solid rgb(254, 248, 228);
                     border-radius: 12px;
                     padding: 16px;
-                    margin: 20px 0 0;
                     margin-inline: auto;
                     box-sizing: border-box;
                     width: 100%;
@@ -157,7 +126,6 @@ export default class TranscriptionBlock extends HTMLElement {
                     border-color: #aaa;
                 }
             </style>
-            <tpen-line-image id="topImage"></tpen-line-image>
             <div class="transcription-block">
                 <center class="transcription-line">${previousLineText}</center>
                 <div class="flex-center">
@@ -166,7 +134,6 @@ export default class TranscriptionBlock extends HTMLElement {
                     <button class="next-button">Next</button>
                 </div>
             </div>
-            <tpen-line-image id="bottomImage"></tpen-line-image>
         `
     }
 }
