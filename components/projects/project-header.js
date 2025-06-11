@@ -9,6 +9,21 @@ export default class ProjectHeader extends HTMLElement {
     constructor() {
         super()
         this.attachShadow({ mode: "open" })
+        const style = document.createElement('style')
+        style.textContent = `
+            * { padding: 0; margin: 0; }
+            nav { display: flex; justify-content: space-between; align-items: center; padding: 5px 10px; background: rgb(166, 65, 41); margin-bottom: 5px; }
+            .labels { width: 40%; display: flex; align-items: center; gap: 10px; }
+            .nav-icon { width: 20px; cursor: pointer; }
+            .nav-icon img { width: 100%; }
+            .line-indicator { border: 1px dashed; color: white; padding: 5px; border-radius: 5px; }
+            .control-buttons { display: flex; align-items: center; gap: 20px; }
+            .project-title { font-size: clamp(0.8rem, 1.2vw, 1rem); font-weight: bold; font-family: var(--header-font-family, sans-serif); color: white; }
+            @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
+            .title-placeholder { width: 7.2rem; height: 1.5em; background-color: #ccc; border-radius: 4px; animation: blink 1s infinite; }
+            .canvas-label select { padding: 5px; border-radius: 5px; border: none; background-color: white; color: rgb(166, 65, 41); cursor: pointer; }
+        `
+        this.shadowRoot.appendChild(style)
         eventDispatcher.on("tpen-user-loaded", (ev) => (this.currentUser = ev.detail))
         eventDispatcher.on("tpen-project-loaded", () => {
             this.loadFailed = false
@@ -33,154 +48,70 @@ export default class ProjectHeader extends HTMLElement {
         }
     }
 
-    handleProjectChange(projectId) {
-        console.log(`Project changed to: ${projectId}`)
-    }
-
-    handleUserChange(userId) {
-        console.log(`User changed to: ${userId}`)
-        console.log(TPEN.currentUser)
-    }
-
-    async connectedCallback() {
+    connectedCallback() {
         TPEN.attachAuthentication(this)
         this.render()
     }
 
     render() {
-        let titleContent = ""
-        if (TPEN.activeProject === undefined && !this.loadFailed) {
-            // Loading in progress: show a blinking placeholder shape
-            titleContent = `<div class="title-placeholder"></div>`
-        } else if (this.loadFailed || !TPEN.activeProject || !TPEN.activeProject.label) {
-            // Loading complete but no project available (error or empty)
-            titleContent = `--`
-        } else {
-            titleContent = TPEN.activeProject.label
+        let projectTitle = TPEN.activeProject?.label ?? ''
+        if (!TPEN.activeProject) {
+            projectTitle = '<div class="title-placeholder"></div>'
+            // Show placeholder if project is loading
+        }
+        if (this.loadFailed) {
+            projectTitle = '--'
         }
 
-        this.shadowRoot.innerHTML = `
-      <style>
-        * {
-          padding: 0;
-          margin: 0;
-        }
-        nav {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 5px 10px;
-          background: rgb(166, 65, 41);
-          margin-bottom: 5px;
-        }
-        .labels {
-          width: 40%;
-          display: flex;
-          align-items: center;
-          gap: 10px;
-        }
-        .nav-icon {
-          width: 20px;
-          cursor: pointer;
-        }
-        .nav-icon img {
-          width: 100%;
-        }
-        .line-indicator {
-          border: 1px dashed;
-          color: white;
-        }
-        .line-indicator {
-          padding: 5px;
-          border-radius: 5px;
-        }
-        .control-buttons {
-          display: flex;
-          align-items: center;
-          gap: 20px;
-        }
-        /* Responsive header styling for project title using clamp() */
-        .project-title {
-          font-size: clamp(0.8rem, 1.2vw, 1rem);
-          font-weight: bold;
-          font-family: var(--header-font-family, sans-serif);
-          color: white;
-        }
-        /* Blinking animation for loading state */
-        @keyframes blink {
-          0% { opacity: 1; }
-          50% { opacity: 0.2; }
-          100% { opacity: 1; }
-        }
-        /* Placeholder shape for loading state */
-        .title-placeholder {
-          width: 7.2rem;
-          height: 1.5em;
-          background-color: #ccc;
-          border-radius: 4px;
-          animation: blink 1s infinite;
-        }
-        .canvas-label select {
-          padding: 5px;
-          border-radius: 5px;
-          border: none;
-          background-color: white;
-          color: rgb(166, 65, 41);
-          cursor: pointer;
-        }
-      </style>
-      <nav>
-        <section class="labels">
-          <div class="project-title">${titleContent}</div>
-          <div class="canvas-label">
-            <select>
-              <option value="" disabled selected>-- Select Canvas --</option>
-            </select>
-          </div>
-        </section>
-        <tpen-layer-selector></tpen-layer-selector>
-        <div class="line-indicator">Line indicator</div>
-        <div class="control-buttons">
-          <div class="nav-icon">
-            <img draggable="false" src="../../assets/icons/home.png" alt="">
-          </div>
-          <div class="nav-icon">
-            <img draggable="false" src="../../assets/icons/contact.png" alt="">
-          </div>
-          <div class="nav-icon">
-            <img draggable="false" src="../../assets/icons/profile.png" alt="">
-          </div>
-        </div>
-      </nav>
-    `
+        const html = `
+          <nav>
+            <section class="labels">
+              <div class="project-title">${projectTitle}</div>
+              <div class="canvas-label">
+                <select>
+                  <option value="" disabled selected>-- Select Canvas --</option>
+                </select>
+              </div>
+            </section>
+            <tpen-layer-selector></tpen-layer-selector>
+            <div class="line-indicator">Line indicator</div>
+            <div class="control-buttons">
+              <div class="nav-icon"><img draggable="false" src="../../assets/icons/home.png" alt=""></div>
+              <div class="nav-icon"><img draggable="false" src="../../assets/icons/contact.png" alt=""></div>
+              <div class="nav-icon"><img draggable="false" src="../../assets/icons/profile.png" alt=""></div>
+            </div>
+          </nav>
+        `
+        Array.from(this.shadowRoot.childNodes).forEach(node => {
+            if (node.nodeName !== 'STYLE') this.shadowRoot.removeChild(node)
+        })
+        this.shadowRoot.insertAdjacentHTML('beforeend', html)
 
-    if (!TPEN.activeProject || !TPEN.activeProject.layers) return
-    const projectCanvases = TPEN.activeProject.layers.flatMap(layer => layer.pages.map(page => page.id.split('/').pop()))
-    const projectCanvasLabels = TPEN.activeProject.layers.flatMap(layer => layer.pages.map(page => page.label))
-    const canvasLabels = this.shadowRoot.querySelector('.canvas-label select')
-    if (!TPEN.screen.pageInQuery) location.href += `&pageID=${TPEN.activeProject.getFirstPageID().split('/').pop()}`
-    if (!canvasLabels) {
-      canvasLabels.replaceWith(`-- No canvases available --`)
-      return
+        // Only proceed with canvas logic if project is loaded and valid
+        if (!TPEN.activeProject?.layers || TPEN.activeProject === undefined || this.loadFailed || !TPEN.activeProject?.label) return
+        const projectCanvases = TPEN.activeProject.layers.flatMap(layer => layer.pages.map(page => page.id.split('/').pop()))
+        const projectCanvasLabels = TPEN.activeProject.layers.flatMap(layer => layer.pages.map(page => page.label))
+        const canvasLabels = this.shadowRoot.querySelector('.canvas-label select')
+        if (!canvasLabels) return
+        if (!TPEN.screen.pageInQuery) {
+            location.href += `&pageID=${TPEN.activeProject.getFirstPageID().split('/').pop()}`
+            return
+        }
+        const CanvasSelectOptions = projectCanvasLabels.map((canvasLabel, index) => {
+            const option = document.createElement('option')
+            const canvasId = projectCanvases[index]
+            option.value = canvasId
+            option.textContent = canvasLabel
+            if (canvasId === TPEN.screen.pageInQuery) option.selected = true
+            return option
+        })
+        canvasLabels.replaceChildren(...CanvasSelectOptions)
+        canvasLabels.addEventListener('change', event => {
+            const url = new URL(location.href)
+            url.searchParams.set('pageID', event.target.value ?? '')
+            location.href = url.toString()
+        })
     }
-
-    const CanvasSelectOptions = projectCanvasLabels.map((canvasLabel, index) => {
-      const option = document.createElement('option')
-      const canvasId = projectCanvases[index]
-      option.value = canvasId
-      option.textContent = canvasLabel
-      if (canvasId === TPEN.screen.pageInQuery) {
-        option.selected = true
-      }
-      return option
-    })
-    canvasLabels.replaceChildren(...CanvasSelectOptions)
-    canvasLabels.addEventListener('change', (event) => {
-      const url = new URL(location.href)
-      url.searchParams.set('pageID', event.target.value ?? '')
-      location.href = url.toString()
-    })
-  }
 }
 
 customElements.define("tpen-project-header", ProjectHeader)
