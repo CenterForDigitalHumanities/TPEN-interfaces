@@ -1,9 +1,7 @@
 import TPEN from "../../api/TPEN.js"
 const eventDispatcher = TPEN.eventDispatcher
+import "../layer-selector/index.js"
 export default class ProjectHeader extends HTMLElement {
-    static get observedAttributes() {
-        return ["tpen-project", "tpen-user-id"]
-    }
     loadFailed = false
 
     constructor() {
@@ -24,6 +22,9 @@ export default class ProjectHeader extends HTMLElement {
             .canvas-label select { padding: 5px; border-radius: 5px; border: none; background-color: white; color: rgb(166, 65, 41); cursor: pointer; }
         `
         this.shadowRoot.appendChild(style)
+        this.content = document.createElement('div')
+        this.content.id = 'content'
+        this.shadowRoot.appendChild(this.content)
         eventDispatcher.on("tpen-user-loaded", (ev) => (this.currentUser = ev.detail))
         eventDispatcher.on("tpen-project-loaded", () => {
             this.loadFailed = false
@@ -33,19 +34,6 @@ export default class ProjectHeader extends HTMLElement {
             this.loadFailed = true
             this.render()
         })
-    }
-
-    attributeChangedCallback(name, oldValue, newValue) {
-        if (oldValue !== newValue) {
-            switch (name) {
-                case "tpen-project":
-                    this.handleProjectChange(newValue)
-                    break
-                case "tpen-user-id":
-                    this.handleUserChange(newValue)
-                    break
-            }
-        }
     }
 
     connectedCallback() {
@@ -82,10 +70,7 @@ export default class ProjectHeader extends HTMLElement {
             </div>
           </nav>
         `
-        Array.from(this.shadowRoot.childNodes).forEach(node => {
-            if (node.nodeName !== 'STYLE') this.shadowRoot.removeChild(node)
-        })
-        this.shadowRoot.insertAdjacentHTML('beforeend', html)
+        this.content.innerHTML = html
 
         // Only proceed with canvas logic if project is loaded and valid
         if (!TPEN.activeProject?.layers || TPEN.activeProject === undefined || this.loadFailed || !TPEN.activeProject?.label) return
