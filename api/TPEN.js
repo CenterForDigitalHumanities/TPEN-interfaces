@@ -18,6 +18,7 @@ class Tpen {
     #currentUser
     #activeLine
     #activeProject
+    #activePage
     #activeCollection
     #userMetrics
     #userProjects

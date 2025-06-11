@@ -1,6 +1,5 @@
 import TPEN from "../../api/TPEN.js"
-import { eventDispatcher } from "../../api/events.js"
-
+const eventDispatcher = TPEN.eventDispatcher
 export default class ProjectHeader extends HTMLElement {
     static get observedAttributes() {
         return ["tpen-project", "tpen-user-id"]
@@ -139,7 +138,7 @@ export default class ProjectHeader extends HTMLElement {
           <div class="project-title">${titleContent}</div>
           <div class="canvas-label">
             <select>
-              <option value="">Canvas label</option>
+              <option value="" disabled selected>-- Select Canvas --</option>
             </select>
           </div>
         </section>
@@ -163,22 +162,27 @@ export default class ProjectHeader extends HTMLElement {
     const projectCanvases = this.activeProject.layers.flatMap(layer => layer.pages.map(page => page.id.split('/').pop()))
     const projectCanvasLabels = this.activeProject.layers.flatMap(layer => layer.pages.map(page => page.label))
     const canvasLabels = this.shadowRoot.querySelector('.canvas-label select')
-    const urlParams = new URLSearchParams(window.location.search)
-    const currentPageId = urlParams.get("pageID")
+    if (!TPEN.screen.pageInQuery) location.href += `&pageID=${TPEN.activeProject.getFirstPageID().split('/').pop()}`
+    if (!canvasLabels) {
+      canvasLabels.replaceWith(`-- No canvases available --`)
+      return
+    }
 
-    projectCanvasLabels.forEach((canvasLabel, index) => {
+    const CanvasSelectOptions = projectCanvasLabels.map((canvasLabel, index) => {
       const option = document.createElement('option')
       const canvasId = projectCanvases[index]
       option.value = canvasId
       option.textContent = canvasLabel
-      if (canvasId === currentPageId) {
+      if (canvasId === TPEN.screen.pageInQuery) {
         option.selected = true
       }
-      canvasLabels.appendChild(option)
+      return option
     })
-
+    canvasLabels.replaceChildren(...CanvasSelectOptions)
     canvasLabels.addEventListener('change', (event) => {
-      window.location = `transcribe?projectID=${this.activeProject._id}&pageID=${event.target.value}`
+      const url = new URL(location.href)
+      url.searchParams.set('pageID', event.target.value ?? '')
+      location.href = url.toString()
     })
   }
 }
