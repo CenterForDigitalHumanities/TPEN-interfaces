@@ -196,7 +196,7 @@ class Tpen {
         if(inviteCode && inviteCode !== userID) {
             const projectID = this.screen.projectInQuery ?? this.activeProject._id
             if(!projectID) throw new Error("We need a project id so we can align the user with their project.")
-            this.specialTempUserFix(inviteCode, userID, this.screen.projectInQuery)
+            this.specialTempUserFix(inviteCode, userID, projectID)
         }
         localStorage.setItem("userToken", token)
         element.setAttribute("require-auth", true)
