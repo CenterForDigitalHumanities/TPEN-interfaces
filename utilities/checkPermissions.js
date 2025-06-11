@@ -6,7 +6,7 @@ class checkPermissions {
         // TPEN.eventDispatcher.on("tpen-project-loaded", ev => this.project = ev.detail)
     }
 
-    async checkDeleteAccess() {
+    async checkDeleteAccess(entity) {
         const userId = getUserFromToken(TPEN.getAuthorization())
         const project = TPEN.activeProject || await new Promise(resolve => {
             TPEN.eventDispatcher.on("tpen-project-loaded", ev => resolve(ev.detail))
@@ -22,7 +22,7 @@ class checkPermissions {
             if (p === '*_*_*') return true
             if (p.startsWith('DELETE_')) {
                 const parts = p.split('_')
-                return parts.length === 3 && (parts[1] === 'LINE' || parts[2] === 'LINE')
+                return parts.length === 3 && (parts[1] === entity || parts[2] === entity)
             }
             return false
         })

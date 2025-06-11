@@ -17,8 +17,7 @@ permalink: /project/manage/collaborators
 </head>
 
 <body>
-    <div class="tagline">Transcription for Paleographical and Editorial Notation</div>
-    <div class="manage-interface collaborators-container">
+    <div tpen-entity="member" class="manage-interface collaborators-container">
         <header class="title">
             <h1>TRANSCRIPTION PROJECT MANAGEMENT</h1>
             <p>
@@ -33,5 +32,26 @@ permalink: /project/manage/collaborators
         </main>
         <button class="default-btn return-btn">Return to TPEN Homepage <span class="btn-icon"></span></button>
     </div>
+    <p class="permission-msg">You don't have permission to create,edit or delete Metadata</p>
+    <script type="module">
+        import CheckPermissions from '../../utilities/checkPermissions.js'
+
+        (async () => {
+            const collaboratorsContainer = document.querySelector('.collaborators-container')
+            const inviteMember = document.querySelector('invite-member')
+            const permissionMsg = document.querySelector('.permission-msg')
+            const entity = collaboratorsContainer.getAttribute('tpen-entity')
+            if (!entity) {
+                return
+            }
+            const hasEditAccess = await CheckPermissions.checkEditAccess(entity.toUpperCase())
+            collaboratorsContainer.style.display = hasEditAccess ? 'block' : collaboratorsContainer.remove()
+            permissionMsg.style.display = hasEditAccess ? 'none' : 'inline-block'
+            if (hasEditAccess) {
+                const hasCreateAccess = await CheckPermissions.checkCreateAccess(entity.toUpperCase())
+                inviteMember.style.display = hasCreateAccess ? 'block' : inviteMember.remove()
+            }   
+      })()
+    </script>
 </body>
 </html>

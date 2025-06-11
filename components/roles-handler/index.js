@@ -1,5 +1,6 @@
 import TPEN from "../../api/TPEN.js"
 import { eventDispatcher } from "../../api/events.js"
+import CheckPermissions from "../../utilities/checkPermissions.js"
 
 class RolesHandler extends HTMLElement {
     constructor() {
@@ -70,12 +71,12 @@ class RolesHandler extends HTMLElement {
     }
 
     addEventListeners() {
-        eventDispatcher.on('tpen-project-loaded', () => this.renderProjectCollaborators())
+        eventDispatcher.on('tpen-project-loaded', async () => await this.renderProjectCollaborators())
         const groupMembersElement = document.querySelector("project-collaborators").shadowRoot.querySelector(".group-members")
         groupMembersElement.addEventListener('click', this.rolesHandler.bind(this));
     }
 
-    renderProjectCollaborators() {
+    async renderProjectCollaborators() {
         if (!TPEN.activeProject) {
             return this.errorHTML.innerHTML = "No project"
         }
@@ -83,15 +84,15 @@ class RolesHandler extends HTMLElement {
         const userId = this.getAttribute('tpen-user-id')
         const collaborators = TPEN.activeProject.collaborators
         let isOwnerOrLeader = ["OWNER", "LEADER"].some(role => collaborators[userId]?.roles.includes(role))
+        const hadEditAccess = CheckPermissions.checkEditAccess("member")
 
         const groupMembersElement = document.querySelector("project-collaborators").shadowRoot.querySelector(".group-members") 
 
         Array.from(groupMembersElement.children).filter(child => {
             const groupMembersActionsElement = child.querySelector(".actions")
             for (const collaboratorId in collaborators) {
-                if (groupMembersActionsElement.getAttribute("data-member-id") == collaboratorId) {
-                    const memberData = collaborators[collaboratorId]
-                    const memberHTML = this.createMemberHTML(collaboratorId, memberData)
+                if (groupMembersActionsElement.getAttribute("data-member-id") == collaboratorId && hadEditAccess) {
+                    const memberHTML = this.createMemberHTML(collaboratorId)
                     groupMembersActionsElement.appendChild(memberHTML)
                 }  
             }
@@ -100,7 +101,7 @@ class RolesHandler extends HTMLElement {
         this.manageRoleButtons(isOwnerOrLeader)
     }
 
-    createMemberHTML(collaboratorId, memberData) {
+    createMemberHTML(collaboratorId) {
         const memberElement = document.createElement("div")
         memberElement.innerHTML = `
             <button part="manage-roles-button" class="manage-roles-button" data-member-id=${collaboratorId}>
@@ -122,7 +123,7 @@ class RolesHandler extends HTMLElement {
         this.setPermissionBasedVisibility(isOwnerOrLeader)
     }
 
-    toggleRoleManagementButtons(button) {
+    async toggleRoleManagementButtons(button) {
         const memberID = button.dataset.memberId
         const actionsDiv = button.closest(".member").querySelector(".actions")
 
@@ -132,7 +133,7 @@ class RolesHandler extends HTMLElement {
         }
 
         const collaborator = TPEN.activeProject.collaborators[memberID]
-        const buttons = this.generateRoleManagementButtons(collaborator, button.dataset)
+        const buttons = await this.generateRoleManagementButtons(collaborator, button.dataset)
 
         const roleManagementButtonsHTML = `
             <div part="role-management-buttons" class="role-management-buttons">
@@ -145,12 +146,13 @@ class RolesHandler extends HTMLElement {
         actionsDiv.appendChild(roleManagementDiv)
     }
 
-    generateRoleManagementButtons(collaborator, button) {
+    async generateRoleManagementButtons(collaborator, button) {
         const currentUserID = this.getAttribute("tpen-user-id")
         const currentUserIsOwner = TPEN.activeProject.collaborators[currentUserID]?.roles.includes("OWNER")
 
         const memberID = button.memberId
         const memberName = collaborator.profile?.displayName
+        const hasDeleteAccess = await CheckPermissions.checkDeleteAccess("member")
 
         const buttons = []
 
@@ -170,10 +172,11 @@ class RolesHandler extends HTMLElement {
             buttons.push(`<button part="set-to-viewer-button" class="set-to-viewer-button" data-member-id=${memberID}>Revoke Write Access</button>`)
         }
 
-        buttons.push(
-            `<button part="set-role-button" class="set-role-button" data-member-id=${memberID}>Set Role</button>`,
-            `<button part="remove-button" class="remove-button" data-member-id=${memberID} data-member-name=${memberName}>Remove User</button>`
-        )
+        buttons.push(`<button part="set-role-button" class="set-role-button" data-member-id=${memberID}>Set Role</button>`)
+
+        if (hasDeleteAccess) {
+            buttons.push(`<button part="remove-button" class="remove-button" data-member-id=${memberID} data-member-name=${memberName}>Remove User</button>`)
+        }
 
         return buttons
     }
