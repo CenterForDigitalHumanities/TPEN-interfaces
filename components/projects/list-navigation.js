@@ -1,4 +1,6 @@
 import TPEN from "../../api/TPEN.js"
+import CheckPermissions from "../../utilities/checkPermissions.js"
+import Project from "../../api/Project.js"
 
 export default class ProjectsListNavigation extends HTMLElement {
     #projects = []
@@ -109,7 +111,7 @@ export default class ProjectsListNavigation extends HTMLElement {
     get projects() {
         return this.#projects
     }
-    render() {
+    async render() {
         let list = this.shadowRoot.getElementById('projectsListView')
         if (!this.#projects?.length) {
             list.innerHTML = `No projects found`
@@ -117,8 +119,9 @@ export default class ProjectsListNavigation extends HTMLElement {
         }
         list.innerHTML = ""
         for (const project of this.#projects) {
-            const isManager = ["OWNER", "LEADER"].some(role => project?.roles.includes(role))
-            let manageLink = isManager ? `<a title="Manage Project" part="project-opt" href="/project/manage?projectID=${project._id}">⚙</a>` : ``
+            await(new Project(project._id).fetch())
+            const isManageProjectPermission = await CheckPermissions.checkEditAccess('PROJECT')
+            let manageLink = isManageProjectPermission ? `<a title="Manage Project" part="project-opt" href="/project/manage?projectID=${project._id}">⚙</a>` : ``
             list.innerHTML += `
                 <li tpen-project-id="${project._id}"">
                     <a title="See Project Details" class="static" href="/project?projectID=${project._id}" part="project-link">
