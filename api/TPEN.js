@@ -164,16 +164,11 @@ class Tpen {
         return
     }
 
-    async specialTempUserFix(inviteCode, userID, projectID) {
-        if(!inviteCode && userID && projectID) return
-        if(inviteCode === userID) return 
-        let result = await fetch(`${this.servicesURL}/project/tempUserFix?inviteCode=${inviteCode}&userID=${userID}&projectID=${projectID}`, {
-            method: "GET",
-            headers: new Headers({
-                "Content-Type": "application/json"
-            })
-        })
-        .then(response => response.json())     
+    async tempUserUpgrade(projectID, inviteCode, agentID) {
+        if(!inviteCode && agentID && projectID) return
+        if(inviteCode === agentID) return 
+        let result = await fetch(`${this.servicesURL}/project/${projectID}/collaborator/${inviteCode}/agent/${agentID}`)
+        .then(response => response.text())     
         .catch(err => { 
             throw err 
         })
@@ -187,16 +182,16 @@ class Tpen {
         }
         const token = new URLSearchParams(location.search).get("idToken") ?? this.getAuthorization()
         const inviteCode = new URLSearchParams(window.location.search).get('inviteCode')
-        history.replaceState(null, "", location.pathname + location.search.replace(/[\?&]idToken=[^&]+/, ''))
+        history.replaceState(null, "", location.pathname + location.search.replace(/[\?&]idToken=[^&]+/, '').replace(/[\?&]inviteCode=[^&]+/, ''))
         if (!token) {
             this.login()
             return
         }
-        const userID = decodeUserToken(token)["http://store.rerum.io/agent"].split("/").pop()
-        if(inviteCode && inviteCode !== userID) {
+        const agentID = decodeUserToken(token)["http://store.rerum.io/agent"].split("/").pop()
+        if(inviteCode && agentID && inviteCode !== agentID) {
             const projectID = this.screen.projectInQuery ?? this.activeProject._id
             if(!projectID) throw new Error("We need a project id so we can align the user with their project.")
-            this.specialTempUserFix(inviteCode, userID, projectID)
+            this.tempUserUpgrade(projectID, inviteCode, agentID)
         }
         localStorage.setItem("userToken", token)
         element.setAttribute("require-auth", true)
