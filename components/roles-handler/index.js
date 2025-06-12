@@ -152,7 +152,7 @@ class RolesHandler extends HTMLElement {
 
         const memberID = button.memberId
         const memberName = collaborator.profile?.displayName
-        const hasDeleteAccess = await CheckPermissions.checkDeleteAccess("member")
+        const hasDeleteAccess = await CheckPermissions.checkDeleteAccess("MEMBER")
 
         const buttons = []
 
