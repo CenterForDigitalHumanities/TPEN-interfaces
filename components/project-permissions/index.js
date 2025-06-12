@@ -91,7 +91,9 @@ class ProjectPermissions extends HTMLElement {
         const scopeMap = {
             METADATA: 'Metadata',
             TEXT: 'Text',
-            ORDER: 'Ordering',
+            ORDER: 'Order',
+            CONTENT: "Content",
+            OPTIONS: "options",
             SELECTOR: 'Selectors',
             DESCRIPTION: 'Descriptions',
             ALL: 'All Data'
@@ -104,6 +106,7 @@ class ProjectPermissions extends HTMLElement {
             PAGE: 'Page',
             LINE: 'Line',
             ROLE: 'Role',
+            TOOLS: 'Tools',
             PERMISSION: 'Permission',
             ALL: 'All Entities'
         }

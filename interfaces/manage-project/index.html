@@ -49,7 +49,7 @@ permalink: /project/manage
             </tpen-project-options>
             <button id="manage-project-options-btn" slot="footer" type="button">SEE DETAILS</button>
         </tpen-card>
-        <tpen-card tpen-entity="tool">
+        <tpen-card tpen-entity="tools">
             <h2 slot="header">Tools</h2>
             <tpen-project-tools slot="body"></tpen-project-tools>
             <button id="manage-tools-btn" slot="footer" type="button">SAVE TOOLS</button>
@@ -87,6 +87,9 @@ permalink: /project/manage
                         else if (entity === 'project') {
                             const hasEditProjectAccess = await CheckPermissions.checkEditAccess('PROJECT')
                             cardButton.style.display = hasEditProjectAccess ? 'inline-block' : cardButton.remove()
+                        }
+                        else {
+                            cardButton.remove()
                         }
                     }
                 }
