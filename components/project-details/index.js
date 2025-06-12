@@ -1,6 +1,7 @@
 import TPEN from "../../api/TPEN.js"
 import Project from "../../api/Project.js"
 import "../../components/line-image/index.js"
+import CheckPermissions from "../../utilities/checkPermissions.js"
 
 class ProjectDetails extends HTMLElement {
 
@@ -73,8 +74,10 @@ class ProjectDetails extends HTMLElement {
 
         TPEN.screen.title = project.label ?? project.title ?? project.name
         TPEN.eventDispatcher.dispatch('tpen-gui-title', TPEN.screen.title)
+        const isReadAccess = await CheckPermissions.checkViewAccess('PROJECT')
 
-        this.shadowRoot.innerHTML = `
+        isReadAccess ? 
+        (this.shadowRoot.innerHTML = `
             <style>${this.style}</style>
             <h3>${TPEN.screen.title}</h3>
             <small>${TPEN.screen.projectInQuery}</small>
@@ -83,7 +86,9 @@ class ProjectDetails extends HTMLElement {
                 ${collaboratorCount < 3 ? "Collaborators: "+Object.entries(project.collaborators).map(([userID, u]) => u.profile.displayName).join(', ') : `${collaboratorCount} collaborator${collaboratorCount===1? '' : 's'}`}
             </p>
             <sequence-panel manifest-id="${project.manifest}"></sequence-panel>
-        `
+        `) : (this.shadowRoot.innerHTML = `
+            <p class="permission-msg">You don't have permission to view the Project Details</p>
+        `)
     }
 }
 
