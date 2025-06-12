@@ -49,13 +49,7 @@ export default class TranscriptionInterface extends HTMLElement {
       if (region) {
         topImage.setAttribute('region', region)
       }
-      // Calculate the remaining region below the topImage line for bottomImage
-      const [x, y, w, h] = region.split(',').map(Number)
-      const canvasHeight = canvas?.height ?? 0
-      const remainingY = y + h
-      const remainingHeight = canvasHeight - remainingY
-      bottomImage.moveTo(x, remainingY, w, remainingHeight)
-      // bottomImage.setAttribute('region', `${x},${remainingY},${w},${remainingHeight}`)
+      this.slideBottomImage((canvas.height && canvas.height / 10) ?? 120)
     })
     TPEN.eventDispatcher.on('tpen-transcription-previous-line', ev => {
       const newIndex = ev.detail?.currentLineIndex
@@ -184,19 +178,21 @@ export default class TranscriptionInterface extends HTMLElement {
 
   updateLines(newIndex) {
     const topImage = this.shadowRoot.querySelector('#topImage')
-    const bottomImage = this.shadowRoot.querySelector('#bottomImage')
 
     // fake moving for now
     const segmentHeight = (this.#canvas?.height ?? 1200) / 10
     const lineTop = segmentHeight * (newIndex % 10)
 
     topImage.moveTo(0, lineTop, this.#canvas?.width ?? 'full', segmentHeight)
-    // topImage.setAttribute('region', `0,${lineTop},${this.#canvas?.width ?? 'full'},${segmentHeight}`)
-    // Calculate the remaining region below the topImage line for bottomImage
-    const canvasHeight = this.#canvas?.height ?? 0
-    const remainingY = lineTop + segmentHeight
-    const remainingHeight = Math.max(0, canvasHeight - remainingY)
-    bottomImage.moveTo(0, remainingY, this.#canvas.width, remainingHeight)
+    console.log(`Moving topImage to: 0, ${lineTop}, ${this.#canvas?.width ?? 'full'}, ${segmentHeight}`)
+    this.slideBottomImage(segmentHeight * (newIndex % 10) + segmentHeight)
+  }
+
+  slideBottomImage(offset) {
+    const bottomImage = this.shadowRoot.querySelector('#bottomImage')
+    if (!bottomImage || !this.#canvas) return
+    const scale = bottomImage.clientHeight / (this.#canvas.height ?? 1)
+    bottomImage.style.transform = `translateY(-${offset * scale}px)`
   }
 
   getImage(project) {
@@ -321,8 +317,8 @@ export default class TranscriptionInterface extends HTMLElement {
 
         .transcription-section {
           box-sizing: border-box;
-
-        }
+          z-index: 2;
+          position: relative;}
 
         .canvas-image {
           max-width: 100%;
@@ -353,6 +349,14 @@ export default class TranscriptionInterface extends HTMLElement {
           display: block;
           width: 100%;
           height: auto;
+          transition: all 1.5s cubic-bezier(0.04, 1, 0.68, 1);
+          position: relative;
+          z-index: 1;
+        }
+
+        #bottomImage {
+          z-index: 0;
+          transform: translateY(0px);
         }
 
       </style>
