@@ -21,14 +21,18 @@ class checkPermissions {
         ))
     }
 
-    #hasPermission(permissions, prefix, entity) {
-        return permissions.some(p => {
-            if (p === '*_*_*') return true
-            if (p.startsWith(prefix)) {
-                const [, ent1, ent2] = p.split('_')
-                return ent1 === entity || ent2 === entity
-            }
-            return false
+    #hasPermission(permissions, action, entity) {
+        const actionUpperCase = action.toUpperCase()
+        const entityUpperCase = entity.toUpperCase()
+        return permissions.some(permission => {
+            if (permission === '*_*_*') return true
+
+            const [permissionAction, permissionScope, permissionEntity] = permission.toUpperCase().split('_')
+            const actionMatch = permissionAction === '*' || permissionAction === actionUpperCase
+            const scopeMatch = true
+            const entityMatch = permissionEntity === '*' || permissionEntity === entityUpperCase
+
+            return actionMatch && scopeMatch && entityMatch
         })
     }
 
@@ -43,19 +47,23 @@ class checkPermissions {
     }
 
     async checkDeleteAccess(entity) {
-        return this.#checkAccess('DELETE_', entity)
+        return this.#checkAccess('DELETE', entity)
     }
 
     async checkViewAccess(entity) {
-        return this.#checkAccess('READ_', entity)
+        return this.#checkAccess('READ', entity)
     }
 
     async checkEditAccess(entity) {
-        return this.#checkAccess('UPDATE_', entity)
+        return this.#checkAccess('UPDATE', entity)
     }
 
     async checkCreateAccess(entity) {
-        return this.#checkAccess('CREATE_', entity)
+        return this.#checkAccess('CREATE', entity)
+    }
+
+    async checkAllAccess(entity) {
+        return this.#checkAccess('*', entity)
     }
 }
 

@@ -84,6 +84,10 @@ permalink: /project/manage
                             const hasCreateRoleAccess = await CheckPermissions.checkCreateAccess('ROLE')
                             cardButton.style.display = hasCreateRoleAccess ? 'inline-block' : cardButton.remove()
                         }
+                        else if (entity === 'project') {
+                            const hasEditProjectAccess = await CheckPermissions.checkEditAccess('PROJECT')
+                            cardButton.style.display = hasEditProjectAccess ? 'inline-block' : cardButton.remove()
+                        }
                     }
                 }
             }
