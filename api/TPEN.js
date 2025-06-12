@@ -206,7 +206,6 @@ class Tpen {
         updateUser(element, token)
         eventDispatcher.on("token-expiration", () => element.classList.add("expired"))
         eventDispatcher.dispatch("tpen-authenticated", token)
-        return
     }
 }
 
