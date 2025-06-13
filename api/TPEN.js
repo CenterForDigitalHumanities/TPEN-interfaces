@@ -38,6 +38,7 @@ class Tpen {
         this.tinyThingsURL = tinyThingsURL
         this.servicesURL = "https://dev.api.t-pen.org"
         this.TPEN28URL = "https://t-pen.org"
+        this.TPEN3URL = "https://three.t-pen.org"
         this.RERUMURL = "https://devstore.rerum.io/v1"
         this.BASEURL = "https://app.t-pen.org"
         this.currentUser
@@ -155,13 +156,31 @@ class Tpen {
 
     logout(redirect = origin + location.pathname) {
         localStorage.clear()
-        location.href = `https://three.t-pen.org/logout?returnTo=${encodeURIComponent(redirect)}`
+        location.href = `${this.TPEN3URL}/logout?returnTo=${encodeURIComponent(redirect)}`
         return
     }
 
     login(redirect = location.href) {
-        location.href = `https://three.t-pen.org/login?returnTo=${encodeURIComponent(redirect)}`
+        location.href = `${this.TPEN3URL}/login?returnTo=${encodeURIComponent(redirect)}`
         return
+    }
+
+    /**
+     * Upgrades a temporary collaborator to a full user connected to the provided agent.
+     *
+     * @param projectID - The project which contains the temporary TPEN3 User as a member.
+     * @param inviteCode - The temporary TPEN3 User _id wanting a new Agent that matches their _id.
+     * @param agentID - The existing Agent _id to use for 'upgrading' the TPEN3 User, instead of the inviteCode.
+     */
+    async tempUserUpgrade(projectID, inviteCode, agentID) {
+        if(!inviteCode && agentID && projectID) return
+        if(inviteCode === agentID) return 
+        let result = await fetch(`${this.servicesURL}/project/${projectID}/collaborator/${inviteCode}/agent/${agentID}`)
+        .then(response => response.text())     
+        .catch(err => { 
+            throw err 
+        })
+        return result    
     }
 
     attachAuthentication = (element) => {
@@ -170,10 +189,17 @@ class Tpen {
             return
         }
         const token = new URLSearchParams(location.search).get("idToken") ?? this.getAuthorization()
-        history.replaceState(null, "", location.pathname + location.search.replace(/[\?&]idToken=[^&]+/, ''))
+        const inviteCode = new URLSearchParams(window.location.search).get('inviteCode')
+        history.replaceState(null, "", location.pathname + location.search.replace(/[\?&]idToken=[^&]+/, '').replace(/[\?&]inviteCode=[^&]+/, ''))
         if (!token) {
             this.login()
             return
+        }
+        const agentID = decodeUserToken(token)["http://store.rerum.io/agent"].split("/").pop()
+        if(inviteCode && agentID && inviteCode !== agentID) {
+            const projectID = this.screen.projectInQuery ?? this.activeProject._id
+            if(!projectID) throw new Error("We need a project id so we can align the user with their project.")
+            this.tempUserUpgrade(projectID, inviteCode, agentID)
         }
         localStorage.setItem("userToken", token)
         element.setAttribute("require-auth", true)
