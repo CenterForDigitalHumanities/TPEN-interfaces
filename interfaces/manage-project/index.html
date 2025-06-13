@@ -20,7 +20,7 @@ permalink: /project/manage
             <h2 slot="header">This Project</h2>
             <tpen-project-details slot="body"></tpen-project-details>
         </tpen-card>
-        <tpen-card tpen-entity="metadata">
+        <tpen-card tpen-scope="metadata">
             <h2 slot="header">Metadata</h2>
             <tpen-project-metadata slot="body"></tpen-project-metadata>
             <button id="update-metadata-btn" slot="footer" type="button">EDIT METADATA</button>
@@ -40,7 +40,7 @@ permalink: /project/manage
             <tpen-project-permissions slot="body"></tpen-project-permissions>
             <button id="add-custom-role-btn" slot="footer" type="button">ADD ROLE</button>
         </tpen-card>
-        <tpen-card tpen-entity="layer">
+        <tpen-card tpen-scope="options">
             <h2 slot="header">Project Options</h2>
             <tpen-project-options slot="body">
                 <div>
@@ -67,32 +67,52 @@ permalink: /project/manage
             const cards = document.querySelectorAll('tpen-card')
             for (const card of cards) {
                 const entity = card.getAttribute('tpen-entity')
-                if (!entity) {
-                    continue
-                }
+                const scope = card.getAttribute('tpen-scope')
+                if (entity) {
 
-                const hasViewAccess = await CheckPermissions.checkViewAccess(entity.toUpperCase())
-                card.style.display = hasViewAccess ? 'inline-block' : card.remove()
+                    const hasViewAccess = await CheckPermissions.checkViewAccess(entity.toUpperCase())
+                    card.style.display = hasViewAccess ? 'inline-block' : card.remove()
 
-                if (hasViewAccess) {
-                    const cardButton = card.querySelector('button')
-                    if (cardButton) {
-                        const hasEditAccess = await CheckPermissions.checkEditAccess(entity.toUpperCase())
-                        if(hasEditAccess && entity !== 'role')
-                            cardButton.style.display = hasEditAccess ? 'inline-block' : cardButton.remove()
-                        else if (entity === 'role') {
-                            const hasCreateRoleAccess = await CheckPermissions.checkCreateAccess('ROLE')
-                            cardButton.style.display = hasCreateRoleAccess ? 'inline-block' : cardButton.remove()
-                        }
-                        else if (entity === 'project') {
-                            const hasEditProjectAccess = await CheckPermissions.checkEditAccess('PROJECT')
-                            cardButton.style.display = hasEditProjectAccess ? 'inline-block' : cardButton.remove()
-                        }
-                        else {
-                            cardButton.remove()
+                    if (hasViewAccess) {
+                        const cardButton = card.querySelector('button')
+
+                        if (cardButton) {
+                            const hasEditAccess = await CheckPermissions.checkEditAccess(entity.toUpperCase())
+
+                            if(hasEditAccess && entity !== 'role')
+                                cardButton.style.display = hasEditAccess ? 'inline-block' : cardButton.remove()
+                            
+                            else if (entity === 'role') {
+                                const hasCreateRoleAccess = await CheckPermissions.checkCreateAccess('ROLE')
+                                cardButton.style.display = hasCreateRoleAccess ? 'inline-block' : cardButton.remove()
+                            }
+
+                            else if (entity === 'project') {
+                                const hasEditProjectAccess = await CheckPermissions.checkEditAccess('PROJECT')
+                                cardButton.style.display = hasEditProjectAccess ? 'inline-block' : cardButton.remove()
+                            }
+
+                            else {
+                                cardButton.remove()
+                            }
                         }
                     }
                 }
+
+                if(scope) {
+                    const hasViewAccess = await CheckPermissions.checkViewAccess(null, scope.toUpperCase())
+                    card.style.display = hasViewAccess ? 'inline-block' : card.remove()
+
+                    if (hasViewAccess) {
+                        const cardButton = card.querySelector('button')
+                        
+                        if (cardButton) {
+                            const hasEditAccess = await CheckPermissions.checkEditAccess(null, scope.toUpperCase())
+                            cardButton.style.display = hasEditAccess ? 'inline-block' : cardButton.remove()
+                        }
+                    }
+                }
+                
             }
         })()
     </script>

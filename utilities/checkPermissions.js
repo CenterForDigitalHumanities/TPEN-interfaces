@@ -21,49 +21,62 @@ class checkPermissions {
         ))
     }
 
-    #hasPermission(permissions, action, entity) {
+    #hasPermission(permissions, action, entity, scope) {
+        if (!permissions || !Array.isArray(permissions) || permissions.length === 0) {
+            return false
+        }
         const actionUpperCase = action.toUpperCase()
-        const entityUpperCase = entity.toUpperCase()
+        const scopeUpperCase = scope ? scope.toUpperCase() : '*'
+        const entityUpperCase = entity ? entity.toUpperCase() : '*'
+
         return permissions.some(permission => {
-            if (permission === '*_*_*') return true
+            const [permAction, permScope, permEntity] = permission.toUpperCase().split('_')
 
-            const [permissionAction, permissionScope, permissionEntity] = permission.toUpperCase().split('_')
-            const actionMatch = permissionAction === '*' || permissionAction === actionUpperCase
-            const scopeMatch = true
-            const entityMatch = permissionEntity === '*' || permissionEntity === entityUpperCase
+            if (!permAction || !permScope || !permEntity) {
+                console.warn('Invalid permission format:', permission)
+                return false
+            }
 
-            return actionMatch && scopeMatch && entityMatch
+            if (permAction === '*' && permScope === '*' && permEntity === '*') {
+                return true
+            }
+
+            return (
+                (permAction === actionUpperCase || permAction === '*') &&
+                (permScope === scopeUpperCase || permScope === '*') &&
+                (permEntity === entityUpperCase || permEntity === '*')
+            )
         })
     }
 
-    async #checkAccess(prefix, entity) {
+    async #checkAccess(prefix, entity, scope) {
         const project = await this.#getProject()
         if (!project) return false
 
         const userId = this.#getUserId()
         const permissions = this.#extractPermissions(project, userId)
 
-        return this.#hasPermission(permissions, prefix, entity)
+        return this.#hasPermission(permissions, prefix, entity, scope)
     }
 
-    async checkDeleteAccess(entity) {
-        return this.#checkAccess('DELETE', entity)
+    async checkDeleteAccess(entity = null, scope = null) {
+        return this.#checkAccess('DELETE', entity, scope)
     }
 
-    async checkViewAccess(entity) {
-        return this.#checkAccess('READ', entity)
+    async checkViewAccess(entity = null, scope = null) {
+        return this.#checkAccess('READ', entity, scope)
     }
 
-    async checkEditAccess(entity) {
-        return this.#checkAccess('UPDATE', entity)
+    async checkEditAccess(entity = null, scope = null) {
+        return this.#checkAccess('UPDATE', entity, scope)
     }
 
-    async checkCreateAccess(entity) {
-        return this.#checkAccess('CREATE', entity)
+    async checkCreateAccess(entity = null, scope = null) {
+        return this.#checkAccess('CREATE', entity, scope)
     }
 
-    async checkAllAccess(entity) {
-        return this.#checkAccess('*', entity)
+    async checkAllAccess(entity = null, scope = null) {
+        return this.#checkAccess('*', entity, scope)
     }
 }
 

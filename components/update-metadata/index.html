@@ -7,7 +7,7 @@
     <title>Update Metadata</title>
 </head>
 <body>
-    <div class="tpen-metadata" tpen-entity="metadata">
+    <div class="tpen-metadata" tpen-scope="metadata">
       <update-metadata></update-metadata>
       <div id="container" class="metadata-modal-container">
           <div id="metadata-modal" class="modal hidden">
@@ -32,13 +32,13 @@
       (async () => {
         const divMetadata = document.querySelector('.tpen-metadata')
         const permissionMsg = document.querySelector('.permission-msg')
-        const entity = divMetadata.getAttribute('tpen-entity')
-          if (!entity) {
+        const scope = divMetadata.getAttribute('tpen-scope')
+          if (!scope) {
               return
           }
-          const hasEditAccess = await CheckPermissions.checkEditAccess(entity.toUpperCase())
-          const hasDeleteAccess = await CheckPermissions.checkDeleteAccess(entity.toUpperCase())
-          const checkCreateAccess = await CheckPermissions.checkCreateAccess(entity.toUpperCase())
+          const hasEditAccess = await CheckPermissions.checkEditAccess(null, scope.toUpperCase())
+          const hasDeleteAccess = await CheckPermissions.checkDeleteAccess(null, scope.toUpperCase())
+          const checkCreateAccess = await CheckPermissions.checkCreateAccess(null, scope.toUpperCase())
           divMetadata.style.display = hasEditAccess ? 'inline-block' : divMetadata.remove()
           if (hasEditAccess) {
             const deleteButton = document.querySelectorAll('.remove-field-btn')
