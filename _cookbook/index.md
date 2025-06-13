@@ -16,7 +16,7 @@ After loading the library to your page, component, or module, a `TPEN` object wi
 All other classes and their methods will be in that namespace.
 
 ```javascript
-<script src="https://app.t-pen.org/api/TPEN.js" type="module"></script>
+<script src="http://localhost:4000/api/TPEN.js" type="module"></script>
 ```
 
 The classes provided will return JSON for processing by your own interfaces with no opinion about how 

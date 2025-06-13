@@ -22,7 +22,7 @@ On the page where you would like to present the TPEN component, you will need to
 This is done by adding the following script tag to your HTML:
 
 ```html
-<script src="https://app.t-pen.org/api/TPEN.js" type="module"></script>
+<script src="http://localhost:4000/api/TPEN.js" type="module"></script>
 ```
 
 This will load the TPEN library and make it available to your application. You can then use the TPEN 
@@ -31,10 +31,10 @@ If you are building a Web Component or a React component, you can import the TPE
 project.
 
 ```javascript
-import { TPEN } from 'https://app.t-pen.org/api/TPEN.js'
+import { TPEN } from 'http://localhost:4000/api/TPEN.js'
 ```
 
-The [TPEN class docs](https://app.t-pen.org/classes/TPEN) provide a list of all the properties and methods 
+The [TPEN class docs](http://localhost:4000/classes/TPEN) provide a list of all the properties and methods 
 available to you. Here are the most important ones:
 
 ### properties
@@ -121,7 +121,7 @@ class UserProfile extends HTMLElement {
 customElements.define('tpen-user-profile', UserProfile)
 ```
 
-> index.html ([example](https://app.t-pen.org/components/user-profile/))
+> index.html ([example](http://localhost:4000/components/user-profile/))
 
 ```html
 <!DOCTYPE html>
