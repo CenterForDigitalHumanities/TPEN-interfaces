@@ -18,6 +18,7 @@ class Tpen {
     #currentUser
     #activeLine
     #activeProject
+    #activePage
     #activeCollection
     #userMetrics
     #userProjects
@@ -135,6 +136,11 @@ class Tpen {
             project = await project.fetch()
             return project?.layers[0]?.pages[0]
         })
+    }
+
+    getLastModifiedPageId() {
+        if(!this.activeProject || !this.activeProject.layers) return null
+        return this.activeProject._lastModified
     }
 
     async getAllPublicProjects() {

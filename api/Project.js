@@ -362,6 +362,21 @@ export default class Project {
         return this.getByRole("OWNER")[0] || null
     }
 
+    getPageByIndex(index,fromLayerIndex = 0) {
+        if (typeof index !== "number" || index < 0) {
+            throw new Error("Index must be a non-negative number")
+        }
+        const layer = this.layers?.[fromLayerIndex] 
+        if (!layer) {
+            return null
+        }
+        return layer.pages[index] ?? null
+    }
+
+    getFirstPageID(fromLayerIndex = 0) {
+        return this.getPageByIndex(0, fromLayerIndex)?.id ?? null
+    }
+
     static async getById(projectId) {
         if (!projectId) {
             throw new Error("Project ID is required")

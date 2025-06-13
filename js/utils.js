@@ -1,3 +1,5 @@
+import TPEN from "../api/TPEN.js"
+
 export function stringFromDate(date) {
     if (!date) return ''
     if (date === -1) return 'Never'
@@ -14,4 +16,22 @@ export function stringFromDate(date) {
         return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`
     }
     return d.toLocaleString('en-US', { month: 'short', day: 'numeric' })
+}
+
+export function urlFromIdAndType(id, type, { projectId, pageId, layerId}) {
+    if (!id || !type) return ''
+    if (typeof id === 'string' && (id.startsWith('http://') || id.startsWith('https://'))) return id
+    switch (type) {
+        case 'annotationpage':
+            if (!projectId) return ''
+            return `${TPEN.servicesURL}/project/${projectId}/page/${id}`
+        case 'annotation':
+            if (!projectId || !pageId) return ''
+            return `${TPEN.servicesURL}/project/${projectId}/page/${pageId}/line/${id}`
+        case 'annotationcollection':
+            if (!projectId) return ''
+            return `${TPEN.servicesURL}/project/${projectId}/layer/${id}`
+        default:
+            return `${TPEN.RERUMURL}/id/${id}`
+    }
 }

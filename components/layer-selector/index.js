@@ -1,6 +1,5 @@
 import TPEN from "../../api/TPEN.js"
-import { eventDispatcher } from "../../api/events.js"
-
+const eventDispatcher = TPEN.eventDispatcher
 export default class LayerSelector extends HTMLElement {
     constructor() {
         super()
