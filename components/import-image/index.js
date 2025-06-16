@@ -1,0 +1,152 @@
+import TPEN from "../../api/TPEN.js"
+
+class ImageImporter extends HTMLElement {
+  constructor() {
+    super()
+    this.attachShadow({ mode: 'open' })
+    this.shadowRoot.innerHTML = `
+      <style>
+        .importer-container {
+          font-family: Arial, sans-serif;
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          max-width: 400px;
+        }
+        input, button {
+          padding: 10px;
+          font-size: 1rem;
+        }
+        .feedback {
+          margin-top: 10px;
+        }
+        .error { color: red; }
+        .success { color: green; }
+        .loading { color: blue; }
+        .page-info {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          background: #f9f9f9;
+          border: 1px solid #ddd;
+          padding: 10px;
+          margin-top: 10px;
+          border-radius: 5px;
+        }
+        .page-info span {
+          font-weight: bold;
+        }
+        .manage-btn {
+          background: #007bff;
+          color: #fff;
+          border: none;
+          padding: 5px 10px;
+          cursor: pointer;
+          border-radius: 5px;
+        }
+        .manage-btn:hover {
+          background: #0056b3;
+        }
+      </style>
+      <div class="importer-container">
+        <h3>Create Project from Image URL</h3>
+        <label for="name">Enter Project Name:</label>
+        <input type="text" id="name" placeholder="Enter Project Name..." />
+        <label for="url">Image URL:</label>
+        <input type="url" id="url" placeholder="Enter Image URL..." />
+        <button id="submit">Create Project</button>
+        <div id="feedback" class="feedback"></div>
+        <div id="page-info-container"></div>
+      </div>
+    `
+
+    this.urlInput = this.shadowRoot.querySelector('#url')
+    this.submitButton = this.shadowRoot.querySelector('#submit')
+    this.feedback = this.shadowRoot.querySelector('#feedback')
+    this.pageInfoContainer = this.shadowRoot.querySelector('#page-info-container')
+    this.submitButton.addEventListener('click', this.handleImport.bind(this))
+  }
+
+  setLoadingState(isLoading) {
+    if (isLoading) {
+      this.feedback.textContent = 'Importing image, please wait...'
+      this.feedback.className = 'loading'
+      this.submitButton.disabled = true
+    } else {
+      this.feedback.textContent = ''
+      this.submitButton.disabled = false
+    }
+  }
+
+  async handleImport() {
+    let url = this.urlInput.value
+    const label = this.shadowRoot.querySelector('#name').value.trim()
+    this.feedback.textContent = ''
+    this.pageInfoContainer.innerHTML = ''
+
+    if (!url) {
+      this.feedback.textContent = 'Please provide an image URL.'
+      this.feedback.className = 'error'
+      return
+    }
+
+    if (!label) {
+      this.feedback.textContent = 'Please enter a project name.'
+      this.feedback.className = 'error'
+      return
+    }
+
+    this.setLoadingState(true)
+
+    try {
+      const AUTH_TOKEN = TPEN.getAuthorization() ?? TPEN.login()
+      const response = await fetch(`${TPEN.servicesURL}/project/import-image`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          "Authorization": `Bearer ${AUTH_TOKEN}`
+        },
+        body: JSON.stringify({ imageUrl : url, projectLabel : label }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        this.feedback.textContent = errorData.message
+        this.feedback.className = 'error'
+      } else {
+        const result = await response.json()
+        this.feedback.textContent = 'Page imported successfully!'
+        this.feedback.className = 'success'
+        this.displayPageInfo(result)
+      }
+    } catch (error) {
+      console.error('Error importing page:', error)
+      this.feedback.textContent = 'An unexpected error occurred.'
+      this.feedback.className = 'error'
+    } finally {
+      this.setLoadingState(false)
+    }
+  }
+
+  displayPageInfo(project) {
+    const pageInfo = document.createElement('div')
+    pageInfo.className = 'page-info'
+
+    const pageTitle = document.createElement('span')
+    pageTitle.textContent = project.label || 'Untitled Page'
+
+    const manageButton = document.createElement('button')
+    manageButton.className = 'manage-btn'
+    manageButton.textContent = 'Manage'
+    manageButton.onclick = () => {
+      window.location.href = `${TPEN.BASEURL}/project/manage?projectID=${project._id}`
+    }
+
+    pageInfo.appendChild(pageTitle)
+    pageInfo.appendChild(manageButton)
+
+    this.pageInfoContainer.appendChild(pageInfo)
+  }
+}
+
+customElements.define('tpen-image-importer', ImageImporter)
