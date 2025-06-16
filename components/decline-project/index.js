@@ -1,6 +1,4 @@
 import TPEN from "../../api/TPEN.js"
-import User from "../../api/User.js"
-import Project from "../../api/Project.js"
 
 class DeclineInvite extends HTMLElement {
     #user
@@ -37,6 +35,17 @@ class DeclineInvite extends HTMLElement {
     render() {
         this.shadowRoot.innerHTML = `
             <style>
+                #declineBtn {
+                    background-color: var(--primary-color);
+                    padding: 10px 20px;
+                    cursor: pointer;
+                    color: white;
+                    border: none;
+                }
+
+                #declineBtn:hover {
+                    background-color: var(--accent);
+                }
 
             </style>
             <h3>RE: ${this.#projectTitle}</h3>
@@ -46,7 +55,7 @@ class DeclineInvite extends HTMLElement {
                 Your E-mail address will not be stored and you will not be a TPEN3 User.  
                 Once you decline you will have to be invited into the project again.
             </p>
-            <input id="declineBtn" type="button" value="I Decline My Invitation" />
+            <button id="declineBtn">I Decline My Invitation</button>
         `
         this.attachEventListeners()
     }
@@ -57,6 +66,7 @@ class DeclineInvite extends HTMLElement {
     }
 
     async declineInvitation(collaboratorID, projectID) {
+        if(!confirm("You are declining a chance to be a part of this TPEN3 project.")) return
         let redir = true
         const declineBtn = this.shadowRoot.getElementById("declineBtn")
         declineBtn.setAttribute("disabled", "disabled")
