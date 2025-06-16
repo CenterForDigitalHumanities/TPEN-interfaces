@@ -184,14 +184,21 @@ class Tpen {
     }
 
     attachAuthentication = (element) => {
-        if (Array.isArray(element)) {
+        if(Array.isArray(element)) {
             element.forEach(elem => this.attachAuthentication(elem))
             return
         }
         const token = new URLSearchParams(location.search).get("idToken") ?? this.getAuthorization()
         const inviteCode = new URLSearchParams(window.location.search).get('inviteCode')
-        history.replaceState(null, "", location.pathname + location.search.replace(/[\?&]idToken=[^&]+/, '').replace(/[\?&]inviteCode=[^&]+/, ''))
-        if (!token) {
+        let modifiedParams = location.search.replace(/[\?&]idToken=[^&]+/, '').replace(/[\?&]inviteCode=[^&]+/, '')
+        if(modifiedParams.charAt(0) === "&") {
+            modifiedParams = modifiedParams.replace("&", "?")
+        }
+        if(modifiedParams && modifiedParams.charAt(0) !== "?") {
+            modifiedParams = "?" + modifiedParams
+        }
+        history.replaceState(null, "", location.pathname + modifiedParams)
+        if(!token) {
             this.login()
             return
         }

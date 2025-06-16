@@ -1,11 +1,12 @@
 import TPEN from "../../api/TPEN.js"
+import User from "../../api/User.js"
+import Project from "../../api/Project.js"
 
 class DeclineInvite extends HTMLElement {
     #user
     #email
     #project
     #projectTitle
-    #servicesURL = "http://localhost:3012"
 
     constructor() {
         super()
@@ -20,8 +21,6 @@ class DeclineInvite extends HTMLElement {
     }
 
     load() {
-        // Since we don't want to do anything that involves auth we can only use the information passed in.
-        // We can't use new User(userId) and new Project(projectId) or even TPEN in here.  They require authentication.
         this.#user = new URLSearchParams(window.location.search).get('user')
         this.#email = new URLSearchParams(window.location.search).get('email')
         this.#project = new URLSearchParams(window.location.search).get('project')
@@ -47,10 +46,6 @@ class DeclineInvite extends HTMLElement {
                 Your E-mail address will not be stored and you will not be a TPEN3 User.  
                 Once you decline you will have to be invited into the project again.
             </p>
-            <p>
-                You can sign up to be a TPEN3 user without accepting the invitation 
-                <a href="https://three.t-pen.org/login?returnTo=https://app.t-pen.org">by clicking here</a>.
-            </p>
             <input id="declineBtn" type="button" value="I Decline My Invitation" />
         `
         this.attachEventListeners()
@@ -62,31 +57,43 @@ class DeclineInvite extends HTMLElement {
     }
 
     async declineInvitation(collaboratorID, projectID) {
-        console.log(`/project/${this.#project}/collaborator/${this.#user}/decline`)
+        let redir = true
+        const declineBtn = this.shadowRoot.getElementById("declineBtn")
+        declineBtn.setAttribute("disabled", "disabled")
+        declineBtn.setAttribute("value", "declining...")
         await fetch(`${TPEN.servicesURL}/project/${this.#project}/collaborator/${this.#user}/decline`)
         .then(resp => {
             if(resp.ok) return resp.text()
+            redir = false
             return resp.json()
         })
         .then(message => {
             let userMessage = (typeof message === "string") ? message : message?.message
+            if(redir) {
+                this.shadowRoot.innerHTML = `
+                    <h3> ${userMessage} </h3>
+                `
+                setTimeout(() => {
+                  document.location.href = TPEN.TPEN3URL
+                }, 3000)
+                return
+            }
             this.shadowRoot.innerHTML = `
-                <h3> ${userMessage} </h3>
+                <h3> 
+                    There was an error declining this the invitation.  The message below has more details.
+                    Refresh the page to try again or contact the TPEN3 Administrators.  
+                </h3>
+                <code> ${userMessage} <code>
             `
         })
         .catch(err => {
              this.shadowRoot.innerHTML = `
                 <h3> 
-                    There was an error declining this the invitation.  Refresh the page to try again.  
-                    Contact the TPEN3 Administrators if you must. 
+                    There was an error declining this the invitation.  Refresh the page to try again 
+                    or contact the TPEN3 Administrators. 
                 </h3>
             `
         })
-        // const replacer = location.pathname + 
-        // location.search
-        // .replace(/[\?&]userID=[^&]+/, '')
-        // .replace(/[\?&]projectID=[^&]+/, '')
-        // history.replaceState(null, "", replacer)
     }
 }
 
