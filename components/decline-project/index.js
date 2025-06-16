@@ -2,6 +2,7 @@ import TPEN from "../../api/TPEN.js"
 
 class DeclineInvite extends HTMLElement {
     #user
+    #email
     #project
     #projectTitle
     #servicesURL = "http://localhost:3012"
@@ -20,13 +21,14 @@ class DeclineInvite extends HTMLElement {
 
     load() {
         // Since we don't want to do anything that involves auth we can only use the information passed in.
-        // We can't new User(userId) and new Project(projectId) or even TPEN in here.
+        // We can't use new User(userId) and new Project(projectId) or even TPEN in here.  They require authentication.
         this.#user = new URLSearchParams(window.location.search).get('user')
+        this.#email = new URLSearchParams(window.location.search).get('email')
         this.#project = new URLSearchParams(window.location.search).get('project')
         this.#projectTitle = new URLSearchParams(window.location.search).get('title') ?? "TPEN3 Project"
         if(!(this.#user && this.#project)) {
             this.shadowRoot.innerHTML = `
-                <h3> You must provide <code>userID</code> and <code>projectID</code> as URL Parameters. </h3>
+                <h3> You must provide <code>user=</code> and <code>project=</code> as URL Parameters. </h3>
             `
             return
         }
@@ -39,9 +41,15 @@ class DeclineInvite extends HTMLElement {
 
             </style>
             <h3>RE: ${this.#projectTitle}</h3>
+            <h4> Invitee: <code> ${this.#email} </code> </h4>
             <p>
                 Declining this invitation will remove you from project details and you will no longer appear in the project.
-                Your E-mail address will not be stored.  This cannot be undone.  Once you decline you will have to be invited again.
+                Your E-mail address will not be stored and you will not be a TPEN3 User.  
+                Once you decline you will have to be invited into the project again.
+            </p>
+            <p>
+                You can sign up to be a TPEN3 user without accepting the invitation 
+                <a href="https://three.t-pen.org/login?returnTo=https://app.t-pen.org">by clicking here</a>.
             </p>
             <input id="declineBtn" type="button" value="I Decline My Invitation" />
         `
