@@ -30,26 +30,17 @@ export default class TranscriptionInterface extends HTMLElement {
       const topImage = this.shadowRoot.querySelector('#topImage')
       const bottomImage = this.shadowRoot.querySelector('#bottomImage')
       topImage.manifest = bottomImage.manifest = TPEN.activeProject?.manifest[0]
-      const page = this.#page ?? await vault.get(pageID, 'annotationpage')
+      const page = this.#page = await vault.get(pageID, 'annotationpage', true)
       let thisLine = page.items?.[0]
-      let targetString, canvasID, region
-      if (thisLine) {
-        thisLine = await vault.get(thisLine, 'annotation')
-        targetString = thisLine?.target?.id ?? thisLine.target?.['@id'] ?? thisLine.target
-          ;[canvasID, region] = targetString.split('#xywh=')
-        topImage.line = thisLine.id
-      } else {
-        targetString = page?.target?.id ?? page?.target?.['@id'] ?? page?.target
-          ;[canvasID, region] = targetString.split('#xywh=')
-      }
+      thisLine = await vault.get(thisLine, 'annotation')
+      const { canvasID, region } = this.setCanvasAndSelector(thisLine, page)
       const canvas = this.#canvas = await vault.get(canvasID, 'canvas')
-      region ??= `0,0,${canvas.width ?? 'full'},${(canvas.height && canvas.height / 10) ?? 120}`
-
+      const regionValue = region ?? `0,0,${canvas.width ?? 'full'},${(canvas.height && canvas.height / 10) ?? 120}`
       topImage.canvas = bottomImage.canvas = canvasID
-      if (region) {
-        topImage.setAttribute('region', region)
+      if (regionValue) {
+        topImage.setAttribute('region', regionValue)
       }
-      this.slideBottomImage((canvas.height && canvas.height / 10) ?? 120)
+      this.slideBottomImage(regionValue)
     })
     TPEN.eventDispatcher.on('tpen-transcription-previous-line', ev => {
       const newIndex = ev.detail?.currentLineIndex
@@ -179,20 +170,25 @@ export default class TranscriptionInterface extends HTMLElement {
   updateLines(newIndex) {
     const topImage = this.shadowRoot.querySelector('#topImage')
 
-    // fake moving for now
-    const segmentHeight = (this.#canvas?.height ?? 1200) / 10
-    const lineTop = segmentHeight * (newIndex % 10)
+    const thisLine = this.#page.items?.[newIndex]
+    if (!thisLine) return
 
-    topImage.moveTo(0, lineTop, this.#canvas?.width ?? 'full', segmentHeight)
-    console.log(`Moving topImage to: 0, ${lineTop}, ${this.#canvas?.width ?? 'full'}, ${segmentHeight}`)
-    this.slideBottomImage(segmentHeight * (newIndex % 10) + segmentHeight)
+    const { region } = this.setCanvasAndSelector(thisLine, this.#page)
+    if (!region) return
+
+    const [x, y, width, height] = region.split(',').map(Number)
+
+    topImage.moveTo(x, y, width, height)
+    this.slideBottomImage(region)
   }
 
-  slideBottomImage(offset) {
+  slideBottomImage(region) {
     const bottomImage = this.shadowRoot.querySelector('#bottomImage')
-    if (!bottomImage || !this.#canvas) return
-    const scale = bottomImage.clientHeight / (this.#canvas.height ?? 1)
-    bottomImage.style.transform = `translateY(-${offset * scale}px)`
+    if (!bottomImage || !this.#canvas || !region) return
+    const [x, y, width, height] = region.split(',').map(Number)
+    const vscale = (this.#canvas.height ?? 1) / bottomImage.clientHeight || 1
+    const hscale = (this.#canvas.width ?? 1) / bottomImage.clientWidth || 1
+    bottomImage.style.transform = `translate(-${x / hscale}px, -${(y+height) / vscale}px)`
   }
 
   getImage(project) {
@@ -235,6 +231,16 @@ export default class TranscriptionInterface extends HTMLElement {
           imageCanvas.src = "../../assets/images/noimage.jpg"
         }
       })
+  }
+
+  setCanvasAndSelector(thisLine, page) {
+    let targetString, canvasID, region
+    targetString = thisLine?.target?.id ?? thisLine.target?.['@id']
+    targetString ??= thisLine?.target?.selector?.value ? `${thisLine.target?.source}#${thisLine.target.selector.value}` : null
+    targetString ??= thisLine?.target
+    targetString ??= page?.target?.id ?? page?.target?.['@id'] ?? page?.target
+    ;[canvasID, region] = targetString?.split?.('#xywh=')
+    return { canvasID, region : region?.split?.(':')?.pop() }
   }
 
   render() {
