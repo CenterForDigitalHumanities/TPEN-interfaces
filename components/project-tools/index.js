@@ -1,4 +1,5 @@
 import TPEN from "../../api/TPEN.js"
+import CheckPermissions from "../../utilities/checkPermissions.js"
 
 class ProjectTools extends HTMLElement {
     constructor() {
@@ -11,8 +12,10 @@ class ProjectTools extends HTMLElement {
         TPEN.eventDispatcher.on('tpen-project-loaded', () => this.render())
     }
 
-    render() {
+    async render() {
         const tools = TPEN.activeProject.tools
+        const isToolsEditAccess = await CheckPermissions.checkEditAccess("TOOLS")
+        const isToolsAddAccess = await CheckPermissions.checkCreateAccess("TOOLS")
         this.shadowRoot.innerHTML = `
             <style>
                 .container {
@@ -137,13 +140,13 @@ class ProjectTools extends HTMLElement {
             <div class="container">
                 ${tools.map(tool => `
                     <div class="tool-card">
-                        <input type="checkbox" name="tools" value="${tool.value}" ${tool.state ? "checked" : ""}>
+                        ${isToolsEditAccess ? `<input type="checkbox" name="tools" value="${tool.value}" ${tool.state ? "checked" : ""}>` : ""}
                         <label>${tool.name}</label>
                     </div>
                 `).join("")}
             </div>
             
-            <div class="project-tools-title"><button class="tools-btn" id="open-modal-btn">Add iFrame Tool</button></div>
+            ${isToolsAddAccess ? `<div class="project-tools-title"><button class="tools-btn" id="open-modal-btn">Add iFrame Tool</button></div>` : ""}
 
             <div class="modal" id="tool-modal">
                 <div class="modal-content">

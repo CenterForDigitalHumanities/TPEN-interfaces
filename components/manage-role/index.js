@@ -182,6 +182,12 @@ class ManageRole extends HTMLElement {
                     <input class="radio-permission" type="radio" id="scope-text" name="scope-permissions" value="TEXT">
                     <label for="scope-text" class="radio-btn permissions-label">TEXT</label>
 
+                    <input class="radio-permission" type="radio" id="scope-content" name="scope-permissions" value="CONTENT">
+                    <label for="scope-content" class="radio-btn permissions-label">CONTENT</label>
+                    
+                    <input class="radio-permission" type="radio" id="scope-options" name="scope-permissions" value="OPTIONS">
+                    <label for="scope-options" class="radio-btn permissions-label">OPTIONS</label>
+
                     <input class="radio-permission" type="radio" id="scope-order" name="scope-permissions" value="ORDER">
                     <label for="scope-order" class="radio-btn permissions-label">ORDER</label>
 
@@ -217,6 +223,9 @@ class ManageRole extends HTMLElement {
 
                     <input class="radio-permission" type="radio" id="entity-permission" name="entity-permissions" value="PERMISSION">
                     <label for="entity-permission" class="radio-btn permissions-label">PERMISSION</label>
+
+                    <input class="radio-permission" type="radio" id="entity-tools" name="entity-permissions" value="TOOLS">
+                    <label for="entity-tools" class="radio-btn permissions-label">TOOLS</label>
 
                     <input class="radio-permission" type="radio" id="entity-all" name="entity-permissions" value="*">
                     <label for="entity-all" class="radio-btn permissions-label">ALL</label>
