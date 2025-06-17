@@ -90,6 +90,33 @@ class ImageImporter extends HTMLElement {
       return
     }
 
+    if (!/^https?:\/\/.+\.(jpg|jpeg|png|tiff|webp|jp2)$/i.test(url)) {
+      this.feedback.textContent = 'Please enter a valid image URL.'
+      this.feedback.className = 'error'
+      return
+    }
+
+    try {
+      const response = await fetch(url, { method: 'HEAD' })
+      if (!response.ok) {
+        this.feedback.textContent = 'Image URL is not accessible. Please check the URL.'
+        this.feedback.className = 'error'
+        return
+      }
+    } catch (error) {
+      console.error('Error fetching image URL:', error)
+      this.feedback.textContent = 'Error accessing the image URL. Please check your network connection or the URL.'
+      this.feedback.className = 'error'
+      return
+    }
+
+    const projectNameRegex = /^[a-zA-Z0-9\s\-_.]+$/
+    if (!projectNameRegex.test(label)) {
+      this.feedback.textContent = 'Project name can only contain letters, numbers, spaces, dashes, underscores, and periods.'
+      this.feedback.className = 'error'
+      return
+    }
+
     if (!label) {
       this.feedback.textContent = 'Please enter a project name.'
       this.feedback.className = 'error'
