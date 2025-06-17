@@ -78,6 +78,15 @@ class ImageImporter extends HTMLElement {
     }
   }
 
+  async validateImageUrl(url) {
+    return new Promise((resolve, reject) => {
+      const img = new Image()
+      img.onload = () => resolve(true)
+      img.onerror = () => reject(false)
+      img.src = url
+    })
+  }
+
   async handleImport() {
     let url = this.urlInput.value
     const label = this.shadowRoot.querySelector('#name').value.trim()
@@ -97,15 +106,10 @@ class ImageImporter extends HTMLElement {
     }
 
     try {
-      const response = await fetch(url, { method: 'HEAD' })
-      if (!response.ok) {
-        this.feedback.textContent = 'Image URL is not accessible. Please check the URL.'
-        this.feedback.className = 'error'
-        return
-      }
-    } catch (error) {
-      console.error('Error fetching image URL:', error)
-      this.feedback.textContent = 'Error accessing the image URL. Please check your network connection or the URL.'
+      await this.validateImageUrl(url)
+    }
+    catch (error) {
+      this.feedback.textContent = 'The provided URL does not have to a valid image.'
       this.feedback.className = 'error'
       return
     }
