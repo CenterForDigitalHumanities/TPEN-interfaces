@@ -1,5 +1,6 @@
-import TPEN from "../../api/TPEN.js"
+import TPEN from "/api/TPEN.js"
 const eventDispatcher = TPEN.eventDispatcher
+import vault from "/js/vault.js"
 
 export default class TranscriptionBlock extends HTMLElement {
 
@@ -23,8 +24,16 @@ export default class TranscriptionBlock extends HTMLElement {
             if (page) {
                 this.state.transcriptions = page.transcriptions ?? []
                 this.state.currentLineIndex = 0
-                this.render()
+                this.updateTranscriptionUI()
             }
+        })
+        TPEN.eventDispatcher.on('tpen-transcription-previous-line', ev => {
+            this.state.currentLineIndex = ev.detail?.currentLineIndex ?? 0
+            this.updateTranscriptionUI()
+        })
+        TPEN.eventDispatcher.on('tpen-transcription-next-line', ev => {
+            this.state.currentLineIndex = ev.detail?.currentLineIndex ?? 0
+            this.updateTranscriptionUI()
         })
     }
 
@@ -47,6 +56,9 @@ export default class TranscriptionBlock extends HTMLElement {
         if (inputField) {
             inputField.addEventListener('blur', (e) => this.saveTranscription(e.target.value))
             inputField.addEventListener('keydown', (e) => this.handleKeydown(e))
+            inputField.addEventListener('input', e => {
+                this.state.transcriptions[this.state.currentLineIndex] = e.target.value ?? ''
+            })
         }
     }
 
@@ -101,12 +113,6 @@ export default class TranscriptionBlock extends HTMLElement {
         const nextIndex = this.state.currentLineIndex + 1
         this.state.transcriptions[nextIndex] = after + (this.state.transcriptions[nextIndex] ?? '')
         this.moveToNextLine()
-        // Place cursor at end of next line
-        setTimeout(() => {
-            const nextInput = this.shadowRoot?.querySelector('.transcription-input')
-            const length = nextInput?.value?.length ?? 0
-            nextInput?.setSelectionRange?.(length, length)
-        }, 0)
     }
 
     moveToLine(index, direction = 'next') {
@@ -142,82 +148,98 @@ export default class TranscriptionBlock extends HTMLElement {
         this.state.transcriptions[this.state.currentLineIndex] = text
     }
 
+    updateTranscriptionUI() {
+        const { currentLineIndex, transcriptions } = this.state
+        const previousLineText = transcriptions[currentLineIndex - 1] || 'No previous line'
+        const currentLineText = transcriptions[currentLineIndex] || ''
+        // Update previous line display
+        const prevLineElem = this.shadowRoot?.querySelector('.transcription-line')
+        if (prevLineElem) prevLineElem.textContent = previousLineText
+        // Update input value
+        const inputElem = this.shadowRoot?.querySelector('.transcription-input')
+        if (inputElem) {
+            inputElem.value = currentLineText
+            inputElem.setSelectionRange?.(inputElem.value.length, inputElem.value.length)
+            inputElem.focus?.()
+        }
+    }
+
     render() {
         const { currentLineIndex, transcriptions } = this.state
         const previousLineText = transcriptions[currentLineIndex - 1] || 'No previous line'
-
+        const currentLineText = transcriptions[currentLineIndex] || ''
         this.shadowRoot.innerHTML = `
-            <style>
-                .transcription-block {
-                    background: rgb(254, 248, 228);
-                    border: 1px solid rgb(254, 248, 228);
-                    border-radius: 12px;
-                    padding: 16px;
-                    margin-inline: auto;
-                    box-sizing: border-box;
-                    width: 100%;
-                    border-bottom: none;
-                    border-bottom-right-radius: 0;
-                    border-bottom-left-radius: 0;
-                }
+      <style>
+        .transcription-block {
+            background: rgb(254, 248, 228);
+            border: 1px solid rgb(254, 248, 228);
+            border-radius: 12px;
+            padding: 16px;
+            margin-inline: auto;
+            box-sizing: border-box;
+            width: 100%;
+            border-bottom: none;
+            border-bottom-right-radius: 0;
+            border-bottom-left-radius: 0;
+        }
 
-                .transcription-block center {
-                    font-weight: bold;
-                    font-size: 18px;
-                    margin-bottom: 12px;
-                    color: rgb(0, 90, 140);
-                }
+        .transcription-block center {
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 12px;
+            color: rgb(0, 90, 140);
+        }
 
-                .flex-center {
-                    display: flex;
-                    align-items: center;
-                    justify-content: space-between;
-                    gap: 12px;
-                    flex-wrap: wrap;
-                }
+        .flex-center {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
 
-                .transcription-input {
-                    padding: 10px 14px;
-                    font-size: 14px;
-                    width: 80%;
-                    border: 1px solid black;
-                    border-radius: 6px;
-                    outline: none;
-                    color: black;
-                    transition: border-color 0.2s ease;
-                }
+        .transcription-input {
+            padding: 10px 14px;
+            font-size: 14px;
+            width: 80%;
+            border: 1px solid black;
+            border-radius: 6px;
+            outline: none;
+            color: black;
+            transition: border-color 0.2s ease;
+        }
 
-                .transcription-input:focus {
-                    box-shadow: 0 0 0 2px rgb(0, 90, 140);
-                }
+        .transcription-input:focus {
+            box-shadow: 0 0 0 2px rgb(0, 90, 140);
+        }
 
-                .prev-button,
-                .next-button {
-                    padding: 8px 16px;
-                    font-size: 14px;
-                    background-color: rgb(0, 90, 140);
-                    border: 1px solid rgb(0, 90, 140);
-                    border-radius: 5px;
-                    color: white;
-                    cursor: pointer;
-                    transition: background-color 0.2s ease, border-color 0.2s ease;
-                }
+        .prev-button,
+        .next-button {
+            padding: 8px 16px;
+            font-size: 14px;
+            background-color: rgb(0, 90, 140);
+            border: 1px solid rgb(0, 90, 140);
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+        }
 
-                .prev-button:hover,
-                .next-button:hover {
-                    background-color: #d0e2ff;
-                    border-color: #aaa;
-                }
-            </style>
-            <div class="transcription-block">
-                <center class="transcription-line">${previousLineText}</center>
-                <div class="flex-center">
-                    <button class="prev-button">Prev</button>
-                    <input type="text" class="transcription-input" placeholder="Transcription input text" value="${transcriptions[currentLineIndex] || ''}">
-                    <button class="next-button">Next</button>
-                </div>
-            </div>
-        `
+        .prev-button:hover,
+        .next-button:hover {
+            background-color: #d0e2ff;
+            border-color: #aaa;
+        }
+      </style>
+      <div class="transcription-block">
+        <center class="transcription-line">${previousLineText}</center>
+        <div class="flex-center">
+          <button class="prev-button">Prev</button>
+          <input type="text" class="transcription-input" placeholder="Transcription input text" value="${currentLineText}">
+          <button class="next-button">Next</button>
+        </div>
+      </div>
+    `
     }
 }
 
