@@ -1,6 +1,9 @@
-import { eventDispatcher } from "../../api/events.js"
+import TPEN from "../../api/TPEN.js"
+const eventDispatcher = TPEN.eventDispatcher
 
 export default class TranscriptionBlock extends HTMLElement {
+
+    #page = null
 
     constructor() {
         super()
@@ -14,6 +17,15 @@ export default class TranscriptionBlock extends HTMLElement {
     connectedCallback() {
         this.render()
         this.addEventListeners()
+        TPEN.eventDispatcher.on('tpen-project-loaded', async () => {
+            const pageID = TPEN.screen?.pageInQuery
+            const page = this.#page = await vault.get(pageID, 'annotationpage', true)
+            if (page) {
+                this.state.transcriptions = page.transcriptions ?? []
+                this.state.currentLineIndex = 0
+                this.render()
+            }
+        })
     }
 
     addEventListeners() {
@@ -97,36 +109,31 @@ export default class TranscriptionBlock extends HTMLElement {
         }, 0)
     }
 
-    moveToTopLine() {
-        this.state.currentLineIndex = 0
-        eventDispatcher.dispatch('tpen-transcription-previous-line', {
+    moveToLine(index, direction = 'next') {
+        this.state.currentLineIndex = index
+        eventDispatcher.dispatch(
+          direction === 'previous' ? 'tpen-transcription-previous-line' : 'tpen-transcription-next-line',
+          {
             currentLineIndex: this.state.currentLineIndex,
             transcriptions: this.state.transcriptions
-        })
+          }
+        )
+      }
+
+    moveToTopLine() {
+        this.moveToLine(0, 'previous')
     }
 
     moveToLastLine() {
-        this.state.currentLineIndex = this.state.transcriptions.length - 1
-        eventDispatcher.dispatch('tpen-transcription-next-line', {
-            currentLineIndex: this.state.currentLineIndex,
-            transcriptions: this.state.transcriptions
-        })
+        this.moveToLine(this.state.transcriptions.length - 1, 'next')
     }
 
     moveToPreviousLine() {
-        this.state.currentLineIndex--
-        eventDispatcher.dispatch('tpen-transcription-previous-line', {
-            currentLineIndex: this.state.currentLineIndex,
-            transcriptions: this.state.transcriptions
-        })
+        this.moveToLine(this.state.currentLineIndex - 1, 'previous')
     }
 
     moveToNextLine() {
-        this.state.currentLineIndex++
-        eventDispatcher.dispatch('tpen-transcription-next-line', {
-            currentLineIndex: this.state.currentLineIndex,
-            transcriptions: this.state.transcriptions
-        })
+        this.moveToLine(this.state.currentLineIndex + 1, 'next')
     }
 
     saveTranscription(text) {
