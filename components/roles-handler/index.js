@@ -84,7 +84,7 @@ class RolesHandler extends HTMLElement {
         const userId = this.getAttribute('tpen-user-id')
         const collaborators = TPEN.activeProject.collaborators
         let isOwnerOrLeader = ["OWNER", "LEADER"].some(role => collaborators[userId]?.roles.includes(role))
-        const hadEditAccess = CheckPermissions.checkEditAccess("member")
+        const hadEditAccess = await CheckPermissions.checkEditAccess("member")
 
         const groupMembersElement = document.querySelector("project-collaborators").shadowRoot.querySelector(".group-members") 
 
