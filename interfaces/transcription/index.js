@@ -1,6 +1,13 @@
 import TPEN from "../../api/TPEN.js"
-
+import '../../components/projects/project-header.js'
+import '../../components/workspace-tools/index.js'
+import '../../components/transcription-block/index.js'
+import vault from '../../js/vault.js'
+import '../../components/line-image/index.js'
 export default class TranscriptionInterface extends HTMLElement {
+  #page
+  #canvas
+
   constructor() {
     super()
     this.attachShadow({ mode: "open" })
@@ -17,6 +24,43 @@ export default class TranscriptionInterface extends HTMLElement {
     this.addEventListeners()
     this.setupResizableSplit()
     TPEN.eventDispatcher.on("tpen-project-loaded", ev => this.getImage(ev.detail))
+    TPEN.eventDispatcher.on('tpen-project-loaded', async () => {
+      const pageID = TPEN.screen?.pageInQuery
+      this.render()
+      const topImage = this.shadowRoot.querySelector('#topImage')
+      const bottomImage = this.shadowRoot.querySelector('#bottomImage')
+      topImage.manifest = bottomImage.manifest = TPEN.activeProject?.manifest[0]
+      const page = this.#page ?? await vault.get(pageID, 'annotationpage')
+      let thisLine = page.items?.[0]
+      let targetString, canvasID, region
+      if (thisLine) {
+        thisLine = await vault.get(thisLine, 'annotation')
+        targetString = thisLine?.target?.id ?? thisLine.target?.['@id'] ?? thisLine.target
+          ;[canvasID, region] = targetString.split('#xywh=')
+        topImage.line = thisLine.id
+      } else {
+        targetString = page?.target?.id ?? page?.target?.['@id'] ?? page?.target
+          ;[canvasID, region] = targetString.split('#xywh=')
+      }
+      const canvas = this.#canvas = await vault.get(canvasID, 'canvas')
+      region ??= `0,0,${canvas.width ?? 'full'},${(canvas.height && canvas.height / 10) ?? 120}`
+
+      topImage.canvas = bottomImage.canvas = canvasID
+      if (region) {
+        topImage.setAttribute('region', region)
+      }
+      this.slideBottomImage((canvas.height && canvas.height / 10) ?? 120)
+    })
+    TPEN.eventDispatcher.on('tpen-transcription-previous-line', ev => {
+      const newIndex = ev.detail?.currentLineIndex
+      if (typeof newIndex === 'number') this.updateLines(newIndex)
+    })
+
+    TPEN.eventDispatcher.on('tpen-transcription-next-line', ev => {
+      const newIndex = ev.detail?.currentLineIndex
+      if (typeof newIndex === 'number') this.updateLines(newIndex)
+    })
+
   }
 
   addEventListeners() {
@@ -132,6 +176,25 @@ export default class TranscriptionInterface extends HTMLElement {
     })
   }
 
+  updateLines(newIndex) {
+    const topImage = this.shadowRoot.querySelector('#topImage')
+
+    // fake moving for now
+    const segmentHeight = (this.#canvas?.height ?? 1200) / 10
+    const lineTop = segmentHeight * (newIndex % 10)
+
+    topImage.moveTo(0, lineTop, this.#canvas?.width ?? 'full', segmentHeight)
+    console.log(`Moving topImage to: 0, ${lineTop}, ${this.#canvas?.width ?? 'full'}, ${segmentHeight}`)
+    this.slideBottomImage(segmentHeight * (newIndex % 10) + segmentHeight)
+  }
+
+  slideBottomImage(offset) {
+    const bottomImage = this.shadowRoot.querySelector('#bottomImage')
+    if (!bottomImage || !this.#canvas) return
+    const scale = bottomImage.clientHeight / (this.#canvas.height ?? 1)
+    bottomImage.style.transform = `translateY(-${offset * scale}px)`
+  }
+
   getImage(project) {
     const imageCanvas = this.shadowRoot.querySelector('.canvas-image')
     let canvasID
@@ -147,31 +210,31 @@ export default class TranscriptionInterface extends HTMLElement {
     }
 
     fetch(canvasID)
-    .then(response => {
-      if (response.status === 404) {
-        err = {"status":404, "statusText":"Canvas not found"}
-        throw err
-      }
-      return response.json()
-    })
-    .then(canvas => {
-      const imageId = canvas.items?.[0]?.items?.[0]?.body?.id
-      if (imageId) {
-        imageCanvas.src = imageId
-      }
-      else {
-        err = {"status":500, "statusText":"Image could not be found in Canvas"}
-        throw err
-      }
-    })
-    .catch(error => {
-      if(error?.status === 404) {
-        imageCanvas.src = "../../assets/images/404_PageNotFound.jpeg"
-      }
-      else {
-        imageCanvas.src = "../../assets/images/noimage.jpg"
-      }
-    })
+      .then(response => {
+        if (response.status === 404) {
+          err = { "status": 404, "statusText": "Canvas not found" }
+          throw err
+        }
+        return response.json()
+      })
+      .then(canvas => {
+        const imageId = canvas.items?.[0]?.items?.[0]?.body?.id
+        if (imageId) {
+          imageCanvas.src = imageId
+        }
+        else {
+          err = { "status": 500, "statusText": "Image could not be found in Canvas" }
+          throw err
+        }
+      })
+      .catch(error => {
+        if (error?.status === 404) {
+          imageCanvas.src = "../../assets/images/404_PageNotFound.jpeg"
+        }
+        else {
+          imageCanvas.src = "../../assets/images/noimage.jpg"
+        }
+      })
   }
 
   render() {
@@ -253,10 +316,9 @@ export default class TranscriptionInterface extends HTMLElement {
         }
 
         .transcription-section {
-          padding: 0 20px;
           box-sizing: border-box;
-
-        }
+          z-index: 2;
+          position: relative;}
 
         .canvas-image {
           max-width: 100%;
@@ -269,7 +331,6 @@ export default class TranscriptionInterface extends HTMLElement {
 
         .workspace-tools {
           border: 1px solid rgb(254, 248, 228);
-          margin: 0 0 20px 0;
           padding: 15px 20px;
           display: flex;
           flex-direction: column;
@@ -284,15 +345,30 @@ export default class TranscriptionInterface extends HTMLElement {
           border-top: none;
         }
 
+        tpen-line-image {
+          display: block;
+          width: 100%;
+          height: auto;
+          transition: all 1.5s cubic-bezier(0.04, 1, 0.68, 1);
+          position: relative;
+          z-index: 1;
+        }
+
+        #bottomImage {
+          z-index: 0;
+          transform: translateY(0px);
+        }
+
       </style>
       <tpen-project-header></tpen-project-header>
       <div class="container no-splitscreen">
         <div class="left-pane">
+          <tpen-line-image id="topImage"></tpen-line-image>
           <section class="transcription-section">
             <tpen-transcription-block></tpen-transcription-block>
             <tpen-workspace-tools></tpen-workspace-tools>
             <div class="workspace-tools" aria-label="Image Workspace" style="padding: 0">
-              <img
+              <img style="display:none;"
                 class="canvas-image"
                 src="https://t-pen.org/TPEN/images/loading2.gif"
                 draggable="false"
@@ -301,6 +377,7 @@ export default class TranscriptionInterface extends HTMLElement {
               />
             </div>
           </section>
+          <tpen-line-image id="bottomImage"></tpen-line-image>
         </div>
         <div class="splitter"></div>
         <div class="right-pane">

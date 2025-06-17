@@ -1,4 +1,7 @@
+import { eventDispatcher } from "../../api/events.js"
+
 export default class TranscriptionBlock extends HTMLElement {
+
     constructor() {
         super()
         this.attachShadow({ mode: "open" })
@@ -20,12 +23,12 @@ export default class TranscriptionBlock extends HTMLElement {
 
         // Move to the previous line
         if (prevButton) {
-            prevButton.addEventListener('click', () => this.moveToPreviousLine())
+            prevButton.addEventListener('click', this.moveToPreviousLine.bind(this))
         }
 
         // Move to the next line
         if (nextButton) {
-            nextButton.addEventListener('click', () => this.moveToNextLine())
+            nextButton.addEventListener('click', this.moveToNextLine.bind(this))
         }
 
         // Save transcription when the input field loses focus
@@ -35,15 +38,19 @@ export default class TranscriptionBlock extends HTMLElement {
     }
 
     moveToPreviousLine() {
-        if (this.state.currentLineIndex > 0) {
-            this.state.currentLineIndex--
-            this.render()
-        }
+        this.state.currentLineIndex--
+        eventDispatcher.dispatch('tpen-transcription-previous-line', {
+            currentLineIndex: this.state.currentLineIndex,
+            transcriptions: this.state.transcriptions
+        })
     }
 
     moveToNextLine() {
         this.state.currentLineIndex++
-        this.render()
+        eventDispatcher.dispatch('tpen-transcription-next-line', {
+            currentLineIndex: this.state.currentLineIndex,
+            transcriptions: this.state.transcriptions
+        })
     }
 
     saveTranscription(text) {
@@ -63,7 +70,6 @@ export default class TranscriptionBlock extends HTMLElement {
                     border: 1px solid rgb(254, 248, 228);
                     border-radius: 12px;
                     padding: 16px;
-                    margin: 20px 0 0;
                     margin-inline: auto;
                     box-sizing: border-box;
                     width: 100%;
