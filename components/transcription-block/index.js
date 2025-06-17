@@ -34,7 +34,83 @@ export default class TranscriptionBlock extends HTMLElement {
         // Save transcription when the input field loses focus
         if (inputField) {
             inputField.addEventListener('blur', (e) => this.saveTranscription(e.target.value))
+            inputField.addEventListener('keydown', (e) => this.handleKeydown(e))
         }
+    }
+
+    handleKeydown(e) {
+        // TAB: next line
+        if (e.key === 'Tab' && !e.shiftKey) {
+            e.preventDefault()
+            this.moveToNextLine()
+            return
+        }
+        // SHIFT+TAB: previous line
+        if (e.key === 'Tab' && e.shiftKey) {
+            e.preventDefault()
+            this.moveToPreviousLine()
+            return
+        }
+        // ENTER: move remaining text down to next line
+        if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey) {
+            e.preventDefault()
+            this.moveTextDown()
+            return
+        }
+        // SHIFT+ENTER: previous line
+        if (e.key === 'Enter' && e.shiftKey) {
+            e.preventDefault()
+            this.moveToPreviousLine()
+            return
+        }
+        // CTRL+Home: show top line
+        if (e.key === 'Home' && e.ctrlKey) {
+            e.preventDefault()
+            this.moveToTopLine()
+            return
+        }
+        // CTRL+End: show last line
+        if (e.key === 'End' && e.ctrlKey) {
+            e.preventDefault()
+            this.moveToLastLine()
+            return
+        }
+    }
+
+    moveTextDown() {
+        // Move remaining text after cursor to next line
+        const inputField = this.shadowRoot.querySelector('.transcription-input')
+        if (!inputField) return
+        const value = inputField.value
+        const cursorPos = inputField.selectionStart
+        const before = value.slice(0, cursorPos)
+        const after = value.slice(cursorPos)
+        this.state.transcriptions[this.state.currentLineIndex] = before
+        const nextIndex = this.state.currentLineIndex + 1
+        this.state.transcriptions[nextIndex] = after + (this.state.transcriptions[nextIndex] ?? '')
+        this.moveToNextLine()
+        // Place cursor at end of next line
+        setTimeout(() => {
+            const nextInput = this.shadowRoot?.querySelector('.transcription-input')
+            const length = nextInput?.value?.length ?? 0
+            nextInput?.setSelectionRange?.(length, length)
+        }, 0)
+    }
+
+    moveToTopLine() {
+        this.state.currentLineIndex = 0
+        eventDispatcher.dispatch('tpen-transcription-previous-line', {
+            currentLineIndex: this.state.currentLineIndex,
+            transcriptions: this.state.transcriptions
+        })
+    }
+
+    moveToLastLine() {
+        this.state.currentLineIndex = this.state.transcriptions.length - 1
+        eventDispatcher.dispatch('tpen-transcription-next-line', {
+            currentLineIndex: this.state.currentLineIndex,
+            transcriptions: this.state.transcriptions
+        })
     }
 
     moveToPreviousLine() {
