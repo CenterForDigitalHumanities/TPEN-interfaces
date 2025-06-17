@@ -170,6 +170,7 @@ class UserProfile extends HTMLElement {
         const saveBtn = this.shadowRoot.querySelector('#saveBtn')
         const cancelBtn = this.shadowRoot.querySelector('#cancelBtn')
         const divBtn = this.shadowRoot.querySelector('.btn-container')
+        const profile = this.shadowRoot.querySelector('#profile')
     
         editBtn.addEventListener('click', () => {
             nameInput.value = nameText.textContent
@@ -227,6 +228,7 @@ class UserProfile extends HTMLElement {
             }
     
             nameText.textContent = newName
+            profile.textContent = `"displayName": "${newName}"`
             nameInput.style.display = 'none'
             nameText.style.display = 'inline'
             emailText.style.display = 'inline'
