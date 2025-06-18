@@ -5,14 +5,45 @@ import vault from "/js/vault.js"
 export default class TranscriptionBlock extends HTMLElement {
 
     #page = null
+    #transcriptions
 
     constructor() {
         super()
         this.attachShadow({ mode: "open" })
-        this.state = {
-            currentLineIndex: 0,
-            transcriptions: [],
+    }
+
+    async processTranscriptions(items) {
+        if (!Array.isArray(items)) return []
+        const results = []
+        for (const item of items) {
+            const annotation = await vault.get(item, 'annotation')
+            let text = ''
+            switch (true) {
+                case typeof annotation?.body === 'string':
+                    text = annotation.body
+                    break
+                case Array.isArray(annotation?.body): {
+                    const textual = annotation.body.find(b => b.type === 'TextualBody' && typeof b.value === 'string')
+                    text = textual?.value
+                        ?? annotation.body.find(b => typeof b === 'string')
+                        ?? ''
+                    break
+                }
+                case annotation?.body?.type === 'TextualBody' && typeof annotation.body.value === 'string':
+                    text = annotation.body.value
+                    break
+                case annotation?.resource?.['@type'] === 'cnt:ContentAsText':
+                    text = annotation.resource?.['cnt:chars'] ?? annotation.resource?.chars ?? ''
+                    break
+                case typeof annotation?.body?.value === 'string':
+                    text = annotation.body.value
+                    break
+                default:
+                    text = ''
+            }
+            results.push(text)
         }
+        return results
     }
 
     connectedCallback() {
@@ -20,19 +51,14 @@ export default class TranscriptionBlock extends HTMLElement {
         this.addEventListeners()
         TPEN.eventDispatcher.on('tpen-project-loaded', async () => {
             const pageID = TPEN.screen?.pageInQuery
-            const page = this.#page = await vault.get(pageID, 'annotationpage', true)
-            if (page) {
-                this.state.transcriptions = page.transcriptions ?? []
-                this.state.currentLineIndex = 0
-                this.updateTranscriptionUI()
-            }
+            this.#page = await vault.get(pageID, 'annotationpage', true)
+            this.#transcriptions = await this.processTranscriptions(this.#page.items)
+            this.moveToTopLine()
         })
-        TPEN.eventDispatcher.on('tpen-transcription-previous-line', ev => {
-            this.state.currentLineIndex = ev.detail?.currentLineIndex ?? 0
+        TPEN.eventDispatcher.on('tpen-transcription-previous-line', _ev => {
             this.updateTranscriptionUI()
         })
-        TPEN.eventDispatcher.on('tpen-transcription-next-line', ev => {
-            this.state.currentLineIndex = ev.detail?.currentLineIndex ?? 0
+        TPEN.eventDispatcher.on('tpen-transcription-next-line', _ev => {
             this.updateTranscriptionUI()
         })
     }
@@ -57,7 +83,7 @@ export default class TranscriptionBlock extends HTMLElement {
             inputField.addEventListener('blur', (e) => this.saveTranscription(e.target.value))
             inputField.addEventListener('keydown', (e) => this.handleKeydown(e))
             inputField.addEventListener('input', e => {
-                this.state.transcriptions[this.state.currentLineIndex] = e.target.value ?? ''
+                this.#transcriptions[TPEN.activeLineIndex] = inputField.value ?? ''
             })
         }
     }
@@ -105,69 +131,61 @@ export default class TranscriptionBlock extends HTMLElement {
         // Move remaining text after cursor to next line
         const inputField = this.shadowRoot.querySelector('.transcription-input')
         if (!inputField) return
+        const nextIndex = TPEN.activeLineIndex + 1
+        if (nextIndex >= this.#transcriptions.length) {
+            console.warn('Push to next page not implemented yet')
+            return
+        }
         const value = inputField.value
         const cursorPos = inputField.selectionStart
         const before = value.slice(0, cursorPos)
         const after = value.slice(cursorPos)
-        this.state.transcriptions[this.state.currentLineIndex] = before
-        const nextIndex = this.state.currentLineIndex + 1
-        this.state.transcriptions[nextIndex] = after + (this.state.transcriptions[nextIndex] ?? '')
+        this.#transcriptions[TPEN.activeLineIndex] = before
+        this.#transcriptions[nextIndex] = after + (this.#transcriptions[nextIndex] ?? '')
         this.moveToNextLine()
     }
 
     moveToLine(index, direction = 'next') {
-        this.state.currentLineIndex = index
+        TPEN.activeLineIndex = Math.max(0, Math.min(index, this.#transcriptions.length - 1))
         eventDispatcher.dispatch(
-          direction === 'previous' ? 'tpen-transcription-previous-line' : 'tpen-transcription-next-line',
-          {
-            currentLineIndex: this.state.currentLineIndex,
-            transcriptions: this.state.transcriptions
-          }
+            direction === 'previous' ? 'tpen-transcription-previous-line' : 'tpen-transcription-next-line'
         )
-      }
+    }
 
     moveToTopLine() {
         this.moveToLine(0, 'previous')
     }
 
     moveToLastLine() {
-        this.moveToLine(this.state.transcriptions.length - 1, 'next')
+        this.moveToLine(this.#transcriptions.length - 1, 'next')
     }
 
     moveToPreviousLine() {
-        this.moveToLine(this.state.currentLineIndex - 1, 'previous')
+        this.moveToLine(TPEN.activeLineIndex - 1, 'previous')
     }
 
     moveToNextLine() {
-        this.moveToLine(this.state.currentLineIndex + 1, 'next')
+        this.moveToLine(TPEN.activeLineIndex + 1, 'next')
     }
 
     saveTranscription(text) {
-        console.log(text)
-        // Save the transcription for the current line
-        this.state.transcriptions[this.state.currentLineIndex] = text
+        this.#transcriptions[TPEN.activeLineIndex] = text
     }
 
     updateTranscriptionUI() {
-        const { currentLineIndex, transcriptions } = this.state
-        const previousLineText = transcriptions[currentLineIndex - 1] || 'No previous line'
-        const currentLineText = transcriptions[currentLineIndex] || ''
-        // Update previous line display
+        const previousLineText = this.#transcriptions[TPEN.activeLineIndex - 1] || 'No previous line'
+        const currentLineText = this.#transcriptions[TPEN.activeLineIndex] || ''
         const prevLineElem = this.shadowRoot?.querySelector('.transcription-line')
         if (prevLineElem) prevLineElem.textContent = previousLineText
-        // Update input value
         const inputElem = this.shadowRoot?.querySelector('.transcription-input')
         if (inputElem) {
             inputElem.value = currentLineText
-            inputElem.setSelectionRange?.(inputElem.value.length, inputElem.value.length)
             inputElem.focus?.()
+            inputElem.setSelectionRange?.(inputElem.value.length, inputElem.value.length)
         }
     }
 
     render() {
-        const { currentLineIndex, transcriptions } = this.state
-        const previousLineText = transcriptions[currentLineIndex - 1] || 'No previous line'
-        const currentLineText = transcriptions[currentLineIndex] || ''
         this.shadowRoot.innerHTML = `
       <style>
         .transcription-block {
@@ -232,10 +250,10 @@ export default class TranscriptionBlock extends HTMLElement {
         }
       </style>
       <div class="transcription-block">
-        <center class="transcription-line">${previousLineText}</center>
+        <center class="transcription-line"> - </center>
         <div class="flex-center">
           <button class="prev-button">Prev</button>
-          <input type="text" class="transcription-input" placeholder="Transcription input text" value="${currentLineText}">
+          <input type="text" class="transcription-input" placeholder="Transcription input text" value="">
           <button class="next-button">Next</button>
         </div>
       </div>
