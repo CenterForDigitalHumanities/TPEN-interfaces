@@ -67,13 +67,13 @@ class DeclineInvite extends HTMLElement {
         declineBtn.addEventListener('click', (ev) => this.declineInvitation(this.#user, this.#project))
     }
 
-    async declineInvitation(collaboratorID, projectID) {
+    declineInvitation(collaboratorID, projectID) {
         if (!confirm("You are declining a chance to be a part of this TPEN3 project.")) return
         let redir = true
         const declineBtn = this.shadowRoot.getElementById("declineBtn")
         declineBtn.setAttribute("disabled", "disabled")
         declineBtn.setAttribute("value", "declining...")
-        await fetch(`${TPEN.servicesURL}/project/${this.#project}/collaborator/${this.#user}/decline`)
+        fetch(`${TPEN.servicesURL}/project/${this.#project}/collaborator/${this.#user}/decline`)
         .then(resp => {
             if (resp.ok) return resp.text()
             redir = false
