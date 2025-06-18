@@ -92,7 +92,7 @@ class DeclineInvite extends HTMLElement {
             }
             this.shadowRoot.innerHTML = `
                 <h3> 
-                    There was an error declining this the invitation.  The message below has more details.
+                    There was an error declining the invitation.  The message below has more details.
                     Refresh the page to try again or contact the TPEN3 Administrators.  
                 </h3>
                 <code> ${userMessage} <code>
@@ -101,7 +101,7 @@ class DeclineInvite extends HTMLElement {
         .catch(err => {
              this.shadowRoot.innerHTML = `
                 <h3> 
-                    There was an error declining this the invitation.  Refresh the page to try again 
+                    There was an error declining the invitation.  Refresh the page to try again 
                     or contact the TPEN3 Administrators. 
                 </h3>
             `
