@@ -23,7 +23,7 @@ class DeclineInvite extends HTMLElement {
         this.#email = new URLSearchParams(window.location.search).get('email')
         this.#project = new URLSearchParams(window.location.search).get('project')
         this.#projectTitle = new URLSearchParams(window.location.search).get('projectTitle') ?? "TPEN3 Project"
-        if(!(this.#user && this.#project)) {
+        if (!(this.#user && this.#project)) {
             this.shadowRoot.innerHTML = `
                 <h3> You must provide <code>user=</code> and <code>project=</code> as URL Parameters. </h3>
             `
@@ -42,6 +42,7 @@ class DeclineInvite extends HTMLElement {
                     color: white;
                     border: none;
                     font-size: 15pt;
+                    margin-top: 1em;
                 }
 
                 #declineBtn:hover {
@@ -67,20 +68,20 @@ class DeclineInvite extends HTMLElement {
     }
 
     async declineInvitation(collaboratorID, projectID) {
-        if(!confirm("You are declining a chance to be a part of this TPEN3 project.")) return
+        if (!confirm("You are declining a chance to be a part of this TPEN3 project.")) return
         let redir = true
         const declineBtn = this.shadowRoot.getElementById("declineBtn")
         declineBtn.setAttribute("disabled", "disabled")
         declineBtn.setAttribute("value", "declining...")
         await fetch(`${TPEN.servicesURL}/project/${this.#project}/collaborator/${this.#user}/decline`)
         .then(resp => {
-            if(resp.ok) return resp.text()
+            if (resp.ok) return resp.text()
             redir = false
             return resp.json()
         })
         .then(message => {
             let userMessage = (typeof message === "string") ? message : message?.message
-            if(redir) {
+            if (redir) {
                 this.shadowRoot.innerHTML = `
                     <h3> ${userMessage} </h3>
                 `

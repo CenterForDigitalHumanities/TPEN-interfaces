@@ -173,8 +173,8 @@ class Tpen {
      * @param agentID - The existing Agent _id to use for 'upgrading' the TPEN3 User, instead of the inviteCode.
      */
     async tempUserUpgrade(projectID, inviteCode, agentID) {
-        if(!inviteCode && agentID && projectID) return
-        if(inviteCode === agentID) return 
+        if (!inviteCode && agentID && projectID) return
+        if (inviteCode === agentID) return 
         let result = await fetch(`${this.servicesURL}/project/${projectID}/collaborator/${inviteCode}/agent/${agentID}`)
         .then(response => response.text())     
         .catch(err => { 
@@ -184,28 +184,28 @@ class Tpen {
     }
 
     attachAuthentication = (element) => {
-        if(Array.isArray(element)) {
+        if (Array.isArray(element)) {
             element.forEach(elem => this.attachAuthentication(elem))
             return
         }
         const token = new URLSearchParams(location.search).get("idToken") ?? this.getAuthorization()
         const inviteCode = new URLSearchParams(window.location.search).get('inviteCode')
         let modifiedParams = location.search.replace(/[\?&]idToken=[^&]+/, '').replace(/[\?&]inviteCode=[^&]+/, '')
-        if(modifiedParams.charAt(0) === "&") {
+        if (modifiedParams.charAt(0) === "&") {
             modifiedParams = modifiedParams.replace("&", "?")
         }
-        if(modifiedParams && modifiedParams.charAt(0) !== "?") {
+        if (modifiedParams && modifiedParams.charAt(0) !== "?") {
             modifiedParams = "?" + modifiedParams
         }
         history.replaceState(null, "", location.pathname + modifiedParams)
-        if(!token) {
+        if (!token) {
             this.login()
             return
         }
         const agentID = decodeUserToken(token)["http://store.rerum.io/agent"].split("/").pop()
-        if(inviteCode && agentID && inviteCode !== agentID) {
+        if (inviteCode && agentID && inviteCode !== agentID) {
             const projectID = this.screen.projectInQuery ?? this.activeProject._id
-            if(!projectID) throw new Error("We need a project id so we can align the user with their project.")
+            if (!projectID) throw new Error("We need a project id so we can align the user with their project.")
             this.tempUserUpgrade(projectID, inviteCode, agentID)
         }
         localStorage.setItem("userToken", token)
