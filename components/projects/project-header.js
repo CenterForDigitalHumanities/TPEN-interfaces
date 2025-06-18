@@ -79,8 +79,10 @@ export default class ProjectHeader extends HTMLElement {
         const canvasLabels = this.shadowRoot.querySelector('.canvas-label select')
         if (!canvasLabels) return
         if (!TPEN.screen.pageInQuery) {
-            location.href += `&pageID=${TPEN.activeProject.getFirstPageID().split('/').pop()}`
-            return
+          const url = new URL(location.href)
+          url.searchParams.set('pageID',TPEN.activeProject.getFirstPageID().split('/').pop())
+          location.href = url.toString()
+          return
         }
         const CanvasSelectOptions = projectCanvasLabels.map((canvasLabel, index) => {
             const option = document.createElement('option')

@@ -18,7 +18,7 @@ class Vault {
         return `vault:${itemType}:${id}`
     }
 
-    async get(item, itemType) {
+    async get(item, itemType, noCache = false) {
         const type = this._normalizeType(itemType ?? item?.type ?? item?.['@type'])
         const id = this._getId(item)
         const typeStore = this.store.get(type)
@@ -27,7 +27,7 @@ class Vault {
 
         const cacheKey = this._cacheKey(type, id)
         const cached = localStorage.getItem(cacheKey)
-        if (cached) {
+        if (cached && !noCache) {
             try {
                 const parsed = JSON.parse(cached)
                 this.set(parsed, type)
