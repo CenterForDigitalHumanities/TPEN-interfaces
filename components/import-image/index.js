@@ -100,7 +100,7 @@ class ImageImporter extends HTMLElement {
     }
 
     if (!/^https?:\/\/.+\.(jpg|jpeg|png|tiff|webp|jp2)$/i.test(url)) {
-      this.feedback.textContent = 'Please enter a valid image URL.'
+      this.feedback.textContent = 'Please provide a valid image URL with these extensions (jpg, jpeg, png, tiff, webp, jp2).'
       this.feedback.className = 'error'
       return
     }
@@ -109,7 +109,7 @@ class ImageImporter extends HTMLElement {
       await this.validateImageUrl(url)
     }
     catch (error) {
-      this.feedback.textContent = 'The provided URL does not have to a valid image.'
+      this.feedback.textContent = 'The provided URL is unreachable or does not point to a valid image.'
       this.feedback.className = 'error'
       return
     }
