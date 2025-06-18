@@ -139,23 +139,30 @@ class ImageImporter extends HTMLElement {
         },
         body: JSON.stringify({ imageUrl : url, projectLabel : label }),
       })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        this.feedback.textContent = errorData.message
-        this.feedback.className = 'error'
-      } else {
-        const result = await response.json()
-        this.feedback.textContent = 'Project imported successfully!'
-        this.feedback.className = 'success'
-        this.displayPageInfo(result)
-      }
+      .then(async(response) => {
+         if (!response.ok) {
+          const errorData = await response.json()
+          this.feedback.textContent = errorData.message
+          this.feedback.className = 'error'
+          this.setLoadingState(false)
+          return errorData
+        } else {
+          const result = await response.json()
+          this.feedback.textContent = 'Page imported successfully!'
+          this.feedback.className = 'success'
+          this.displayPageInfo(result)
+          this.setLoadingState(false)
+          return result
+        }
+      })
+      .catch(error => {
+        throw error
+      })
     } catch (error) {
-      console.error('Error importing project:', error)
+      console.error('Error importing page')
+      console.error(error)
       this.feedback.textContent = 'An unexpected error occurred.'
       this.feedback.className = 'error'
-    } finally {
-      this.setLoadingState(false)
     }
   }
 
