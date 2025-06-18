@@ -18,7 +18,6 @@ export default class WorkspaceTools extends HTMLElement {
     <style>
       .workspace-tools {
         border: 1px solid rgb(254, 248, 228);
-        margin: 0 0 20px 0;
         padding: 15px 20px;
         display: flex;
         flex-direction: column;
