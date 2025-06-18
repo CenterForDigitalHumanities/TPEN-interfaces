@@ -146,12 +146,12 @@ class ImageImporter extends HTMLElement {
         this.feedback.className = 'error'
       } else {
         const result = await response.json()
-        this.feedback.textContent = 'Page imported successfully!'
+        this.feedback.textContent = 'Project imported successfully!'
         this.feedback.className = 'success'
         this.displayPageInfo(result)
       }
     } catch (error) {
-      console.error('Error importing page:', error)
+      console.error('Error importing project:', error)
       this.feedback.textContent = 'An unexpected error occurred.'
       this.feedback.className = 'error'
     } finally {
