@@ -22,7 +22,7 @@ class DeclineInvite extends HTMLElement {
         this.#user = new URLSearchParams(window.location.search).get('user')
         this.#email = new URLSearchParams(window.location.search).get('email')
         this.#project = new URLSearchParams(window.location.search).get('project')
-        this.#projectTitle = new URLSearchParams(window.location.search).get('title') ?? "TPEN3 Project"
+        this.#projectTitle = new URLSearchParams(window.location.search).get('projectTitle') ?? "TPEN3 Project"
         if(!(this.#user && this.#project)) {
             this.shadowRoot.innerHTML = `
                 <h3> You must provide <code>user=</code> and <code>project=</code> as URL Parameters. </h3>
@@ -41,6 +41,7 @@ class DeclineInvite extends HTMLElement {
                     cursor: pointer;
                     color: white;
                     border: none;
+                    font-size: 15pt;
                 }
 
                 #declineBtn:hover {
@@ -51,7 +52,7 @@ class DeclineInvite extends HTMLElement {
             <h3>RE: ${this.#projectTitle}</h3>
             <h4> Invitee: <code> ${this.#email} </code> </h4>
             <p>
-                Declining this invitation will remove you from project details and you will no longer appear in the project.
+                Declining the invitation will remove you from project details and you will no longer appear in the project.
                 Your E-mail address will not be stored and you will not be a TPEN3 User.  
                 Once you decline you will have to be invited into the project again.
             </p>
