@@ -82,7 +82,7 @@ export default class TranscriptionBlock extends HTMLElement {
         // Input field
         if (inputField) {
             inputField.addEventListener('blur', (e) => this.saveTranscription(e.target.value))
-            inputField.addEventListener('blur', () => this.checkDirtyLine())
+            inputField.addEventListener('blur', () => this.checkDirtyLines())
             inputField.addEventListener('keydown', (e) => this.handleKeydown(e))
             inputField.addEventListener('input', e => {
                 this.#transcriptions[TPEN.activeLineIndex] = inputField.value ?? ''
@@ -152,25 +152,26 @@ export default class TranscriptionBlock extends HTMLElement {
 
         // Listen for line navigation events
         TPEN.eventDispatcher.on('tpen-transcription-previous-line', () => {
-            this.checkDirtyLine()
+            this.checkDirtyLines()
         })
         TPEN.eventDispatcher.on('tpen-transcription-next-line', () => {
-            this.checkDirtyLine()
+            this.checkDirtyLines()
         })
     }
 
     // Helper to compare and queue dirty lines
-    checkDirtyLine = async () => {
-        const index = TPEN.activeLineIndex
-        const line = this.#page?.items?.[index]
-        if (!line) return
-        const newText = this.#transcriptions?.[index] ?? ''
-        const [oldText] = await this.processTranscriptions([line.id])
-        if (newText === oldText) {
-            this.$dirtyLines?.delete(index)
-            return
-        }
-        this.$dirtyLines?.add(index)
+    checkDirtyLines = async () => {
+        if (!this.#page?.items || !this.#transcriptions) return
+        // Get all old texts in one go
+        const oldTexts = await this.processTranscriptions(this.#page.items)
+        oldTexts.forEach((oldText, index) => {
+            const newText = this.#transcriptions?.[index]
+            if (newText === oldText) {
+                this.$dirtyLines.delete(index)
+                return
+            }
+            this.$dirtyLines.add(index)
+        })
         const linesCount = this.shadowRoot.querySelector('lines-count')
         if (!linesCount) return
         linesCount.textContent = this.$dirtyLines.size > 0 ? `(${this.$dirtyLines.size} unsaved)` : ''
