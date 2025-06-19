@@ -32,6 +32,7 @@ export default class ProjectHeader extends HTMLElement {
             if (projectTitleElem) {
               projectTitleElem.textContent = TPEN.activeProject?.label ?? ''
             } 
+            this.render()
         })
         const setLineIndicator = index => {
             const indicator = this.shadowRoot.querySelector('.line-indicator')
@@ -53,7 +54,6 @@ export default class ProjectHeader extends HTMLElement {
 
     connectedCallback() {
         TPEN.attachAuthentication(this)
-        this.render()
     }
 
     render() {

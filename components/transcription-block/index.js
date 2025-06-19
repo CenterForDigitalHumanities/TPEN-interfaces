@@ -121,10 +121,13 @@ export default class TranscriptionBlock extends HTMLElement {
                         })
                         return
                     }
-                    return fetch(`/project/${projectID}/page/${pageID}/line/${lineID}/text`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ text: newText })
+                    return fetch(`${TPEN.servicesURL}/project/${projectID}/page/${pageID}/line/${lineID}/text`, {
+                        method: 'PATCH',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'authorization': `Bearer ${TPEN.getAuthorization()}`
+                        },
+                        body: newText
                     })
                 })
                 Promise.all(saveLines)
