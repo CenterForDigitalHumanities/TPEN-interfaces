@@ -67,6 +67,7 @@ export default class TranscriptionBlock extends HTMLElement {
         const prevButton = this.shadowRoot.querySelector('.prev-button')
         const nextButton = this.shadowRoot.querySelector('.next-button')
         const inputField = this.shadowRoot.querySelector('.transcription-input')
+        const saveButton = this.shadowRoot.querySelector('.save-all-lines')
 
         // Move to the previous line
         if (prevButton) {
@@ -78,14 +79,101 @@ export default class TranscriptionBlock extends HTMLElement {
             nextButton.addEventListener('click', this.moveToNextLine.bind(this))
         }
 
-        // Save transcription when the input field loses focus
+        // Input field
         if (inputField) {
             inputField.addEventListener('blur', (e) => this.saveTranscription(e.target.value))
+            inputField.addEventListener('blur', () => this.checkDirtyLine())
             inputField.addEventListener('keydown', (e) => this.handleKeydown(e))
             inputField.addEventListener('input', e => {
                 this.#transcriptions[TPEN.activeLineIndex] = inputField.value ?? ''
             })
         }
+
+        // Save all lines button
+        if (saveButton) {
+            saveButton.addEventListener('click', async () => {
+                const pageID = TPEN.screen?.pageInQuery
+                const projectID = TPEN.activeProject?.id ?? TPEN.activeProject?._id
+                if (!pageID || !projectID) {
+                    console.warn('No page or project ID found, cannot save transcriptions.')
+                    TPEN.eventDispatcher.dispatch('toast', {
+                        message: 'No page or project ID found, cannot save transcriptions.',
+                        status: 'error'
+                    })
+                    return
+                }
+                if (!this.$dirtyLines || this.$dirtyLines.size === 0) {
+                    TPEN.eventDispatcher.dispatch('toast', {
+                        message: 'No unsaved changes.',
+                        status: 'info'
+                    })
+                    return
+                }
+                const saveLines = Array.from(this.$dirtyLines).map(async index => {
+                    const line = this.#page.items[index]
+                    const newText = this.#transcriptions[index]
+                    const lineID = line.id?.split?.('/').pop()
+                    if (!lineID) {
+                        console.warn('No line ID found, cannot save transcription.')
+                        TPEN.eventDispatcher.dispatch('toast', {
+                            message: 'No line ID found, cannot save transcription.',
+                            status: 'error'
+                        })
+                        return
+                    }
+                    return fetch(`/project/${projectID}/page/${pageID}/line/${lineID}/text`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ text: newText })
+                    })
+                })
+                Promise.all(saveLines)
+                    .then(res => {
+                        TPEN.eventDispatcher.dispatch('toast', {
+                            message: `Saved ${res.length} lines.`,
+                            status: 'success'
+                        })
+                        this.$dirtyLines.clear()
+                        this.#page = vault.get(pageID, 'annotationpage', true)
+                        const linesCount = this.shadowRoot.querySelector('lines-count')
+                        if (linesCount) linesCount.textContent = ''
+                    })
+                    .catch(err => {
+                        console.error('Error saving transcriptions:', err)
+                        TPEN.eventDispatcher.dispatch('toast', {
+                            message: 'Error saving transcriptions.',
+                            status: 'error'
+                        })
+                    })
+            })
+        }
+        // Track dirty lines
+        this.$dirtyLines = new Set()
+
+        // Listen for line navigation events
+        TPEN.eventDispatcher.on('tpen-transcription-previous-line', () => {
+            this.checkDirtyLine()
+        })
+        TPEN.eventDispatcher.on('tpen-transcription-next-line', () => {
+            this.checkDirtyLine()
+        })
+    }
+
+    // Helper to compare and queue dirty lines
+    checkDirtyLine = async () => {
+        const index = TPEN.activeLineIndex
+        const line = this.#page?.items?.[index]
+        if (!line) return
+        const newText = this.#transcriptions?.[index] ?? ''
+        const [oldText] = await this.processTranscriptions([line.id])
+        if (newText === oldText) {
+            this.$dirtyLines?.delete(index)
+            return
+        }
+        this.$dirtyLines?.add(index)
+        const linesCount = this.shadowRoot.querySelector('lines-count')
+        if (!linesCount) return
+        linesCount.textContent = this.$dirtyLines.size > 0 ? `(${this.$dirtyLines.size} unsaved)` : ''
     }
 
     handleKeydown(e) {
@@ -250,6 +338,7 @@ export default class TranscriptionBlock extends HTMLElement {
         }
       </style>
       <div class="transcription-block">
+        <button class="save-all-lines">Save All Lines <lines-count></lines-count></button>
         <center class="transcription-line"> - </center>
         <div class="flex-center">
           <button class="prev-button">Prev</button>
