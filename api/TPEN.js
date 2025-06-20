@@ -179,7 +179,7 @@ class Tpen {
      * @param agentID - The existing Agent _id to use for 'upgrading' the TPEN3 User, instead of the inviteCode.
      */
     async tempUserUpgrade(projectID, inviteCode, agentID) {
-        if (!inviteCode && agentID && projectID) return
+        if (!(inviteCode && agentID && projectID)) return
         if (inviteCode === agentID) return 
         let result = await fetch(`${this.servicesURL}/project/${projectID}/collaborator/${inviteCode}/agent/${agentID}`)
         .then(response => response.text())     
