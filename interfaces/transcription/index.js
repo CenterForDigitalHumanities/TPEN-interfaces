@@ -351,7 +351,7 @@ export default class TranscriptionInterface extends HTMLElement {
 
   setCanvasAndSelector(thisLine, page) {
     let targetString, canvasID, region
-    targetString = thisLine?.target?.id ?? thisLine.target?.['@id']
+    targetString = thisLine?.target?.id ?? thisLine?.target?.['@id']
     targetString ??= thisLine?.target?.selector?.value ? `${thisLine.target?.source}#${thisLine.target.selector.value}` : null
     targetString ??= thisLine?.target
     targetString ??= page?.target?.id ?? page?.target?.['@id'] ?? page?.target
