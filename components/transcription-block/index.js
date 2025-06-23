@@ -124,8 +124,8 @@ export default class TranscriptionBlock extends HTMLElement {
                     return fetch(`${TPEN.servicesURL}/project/${projectID}/page/${pageID}/line/${lineID}/text`, {
                         method: 'PATCH',
                         headers: { 
-                            'Content-Type': 'application/json',
-                            'authorization': `Bearer ${TPEN.getAuthorization()}`
+                            'Content-Type': 'text/plain; charset=utf-8',
+                            'Authorization': `Bearer ${TPEN.getAuthorization()}`
                         },
                         body: newText
                     })
