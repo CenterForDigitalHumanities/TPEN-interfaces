@@ -41,7 +41,7 @@ export default class ProjectHeader extends HTMLElement {
         }
 
         eventDispatcher.on("tpen-transcription-previous-line", () => {
-            setLineIndicator(TPEN.activeLineIndex - 1)
+            setLineIndicator(TPEN.activeLineIndex + 1)
         })
         eventDispatcher.on("tpen-transcription-next-line", () => {
             setLineIndicator(TPEN.activeLineIndex + 1)
