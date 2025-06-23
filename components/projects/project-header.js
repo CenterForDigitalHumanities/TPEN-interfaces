@@ -28,7 +28,23 @@ export default class ProjectHeader extends HTMLElement {
         eventDispatcher.on("tpen-user-loaded", (ev) => (this.currentUser = ev.detail))
         eventDispatcher.on("tpen-project-loaded", () => {
             this.loadFailed = false
+            const projectTitleElem = this.shadowRoot.querySelector('.project-title')
+            if (projectTitleElem) {
+              projectTitleElem.textContent = TPEN.activeProject?.label ?? ''
+            } 
             this.render()
+        })
+        const setLineIndicator = index => {
+            const indicator = this.shadowRoot.querySelector('.line-indicator')
+            if (!indicator) return
+            indicator.textContent = `Line ${index ?? ''}`
+        }
+
+        eventDispatcher.on("tpen-transcription-previous-line", () => {
+            setLineIndicator(TPEN.activeLineIndex - 1)
+        })
+        eventDispatcher.on("tpen-transcription-next-line", () => {
+            setLineIndicator(TPEN.activeLineIndex + 1)
         })
         eventDispatcher.on("tpen-project-load-failed", () => {
             this.loadFailed = true
@@ -38,7 +54,6 @@ export default class ProjectHeader extends HTMLElement {
 
     connectedCallback() {
         TPEN.attachAuthentication(this)
-        this.render()
     }
 
     render() {

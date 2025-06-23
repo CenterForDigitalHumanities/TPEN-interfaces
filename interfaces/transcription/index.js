@@ -23,35 +23,154 @@ export default class TranscriptionInterface extends HTMLElement {
     this.render()
     this.addEventListeners()
     this.setupResizableSplit()
-    TPEN.eventDispatcher.on("tpen-project-loaded", ev => this.getImage(ev.detail))
+    // Only set up event listeners for updates, not for re-rendering
     TPEN.eventDispatcher.on('tpen-project-loaded', async () => {
       const pageID = TPEN.screen?.pageInQuery
-      this.render()
-      const topImage = this.shadowRoot.querySelector('#topImage')
-      const bottomImage = this.shadowRoot.querySelector('#bottomImage')
-      topImage.manifest = bottomImage.manifest = TPEN.activeProject?.manifest[0]
-      const page = this.#page = await vault.get(pageID, 'annotationpage', true)
-      let thisLine = page.items?.[0]
-      thisLine = await vault.get(thisLine, 'annotation')
-      const { canvasID, region } = this.setCanvasAndSelector(thisLine, page)
-      const canvas = this.#canvas = await vault.get(canvasID, 'canvas')
-      const regionValue = region ?? `0,0,${canvas.width ?? 'full'},${(canvas.height && canvas.height / 10) ?? 120}`
-      topImage.canvas = bottomImage.canvas = canvasID
-      if (regionValue) {
-        topImage.setAttribute('region', regionValue)
-      }
-      this.slideBottomImage(regionValue)
+      await this.updateTranscriptionImages(pageID)
     })
-    TPEN.eventDispatcher.on('tpen-transcription-previous-line', ev => {
-      const newIndex = ev.detail?.currentLineIndex
-      if (typeof newIndex === 'number') this.updateLines(newIndex)
-    })
+    TPEN.eventDispatcher.on('tpen-transcription-previous-line', this.updateLines.bind(this))
+    TPEN.eventDispatcher.on('tpen-transcription-next-line', this.updateLines.bind(this))
 
-    TPEN.eventDispatcher.on('tpen-transcription-next-line', ev => {
-      const newIndex = ev.detail?.currentLineIndex
-      if (typeof newIndex === 'number') this.updateLines(newIndex)
-    })
+  }
 
+  render() {
+    this.shadowRoot.innerHTML = `
+      <style>
+        .container {
+          display: flex;
+          height: auto;
+          overflow: hidden;
+          width: 100%;
+          background-color: #d0f7fb;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+          transition: all 0.3s ease;
+          padding: 0;
+          margin: 0;
+        }
+        .container.no-splitscreen .left-pane, 
+        .container.no-splitscreen .right-pane {
+          height: 100%;
+          overflow: auto;
+        }
+        .splitter {
+          width: 6px;
+          background-color: #ddd;
+          cursor: ew-resize;
+        }
+        .container.no-splitscreen .left-pane {
+          width: 100% !important;
+        }
+        .container.no-splitscreen .right-pane,
+        .container.no-splitscreen .splitter {
+          display: none;
+        }
+        .container.active-splitscreen .left-pane {
+          width: 60%;
+        }
+        .container.active-splitscreen .right-pane {
+          width: 40%;
+          border-left: 1px solid #ddd;
+          background-color: #ffffff;
+        }
+        .splitter:hover {
+          background-color: #bbb;
+        }
+        .header {
+          display: flex;
+          justify-content: flex-end;
+          align-items: center;
+          padding: 10px;
+          background-color: rgb(166, 65, 41);
+          border-bottom: 1px solid #ddd;
+        }
+        .close-button {
+          background: none;
+          border: none;
+          font-size: 16px;
+          cursor: pointer;
+          color: white;
+          transition: color 0.2s;
+        }
+        .tools {
+          padding: 15px;
+          height: calc(100% - 50px);
+          overflow-y: auto;
+        }
+        .tools p {
+          margin: 10px 0;
+          font-size: 0.95rem;
+          line-height: 1.5;
+          color: #444;
+        }
+        .transcription-section {
+          box-sizing: border-box;
+          z-index: 2;
+          position: relative;
+        }
+        .canvas-image {
+          max-width: 100%;
+          border-radius: 12px;
+          border: 1.5px solid rgb(254, 248, 228);
+          box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+          user-select: none;
+          display: block;
+        }
+        .workspace-tools {
+          border: 1px solid rgb(254, 248, 228);
+          padding: 15px 20px;
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+          align-items: center;
+          background: rgb(254, 248, 228);
+          border-radius: 10px;
+          box-shadow: 0 4px 6px -2px rgba(0, 0, 0, 0.1);
+          position: relative;
+          width: 100%;
+          box-sizing: border-box;
+          border-top: none;
+        }
+        tpen-line-image {
+          display: block;
+          width: 100%;
+          height: auto;
+          transition: all 1.5s cubic-bezier(0.04, 1, 0.68, 1);
+          position: relative;
+          z-index: 1;
+        }
+        #bottomImage {
+          z-index: 0;
+          transform: translateY(0px);
+        }
+      </style>
+      <tpen-project-header></tpen-project-header>
+      <div class="container no-splitscreen">
+        <div class="left-pane">
+          <tpen-line-image id="topImage"></tpen-line-image>
+          <section class="transcription-section">
+            <tpen-transcription-block></tpen-transcription-block>
+            <tpen-workspace-tools></tpen-workspace-tools>
+            <div class="workspace-tools" aria-label="Image Workspace" style="padding: 0">
+              <img style="display:none;"
+                class="canvas-image"
+                src="https://t-pen.org/TPEN/images/loading2.gif"
+                draggable="false"
+                alt="Canvas image"
+                onerror="this.src='../../assets/images/404_PageNotFound.jpeg';"
+              />
+            </div>
+          </section>
+          <tpen-line-image id="bottomImage"></tpen-line-image>
+        </div>
+        <div class="splitter"></div>
+        <div class="right-pane">
+          <div class="header">
+            <button class="close-button">Close ×</button>
+          </div>
+          <div class="tools"></div>
+        </div>
+      </div>
+    `
   }
 
   addEventListeners() {
@@ -167,17 +286,14 @@ export default class TranscriptionInterface extends HTMLElement {
     })
   }
 
-  updateLines(newIndex) {
+  updateLines() {
+    if (!(TPEN.activeLineIndex >= 0) || !this.#page) return
     const topImage = this.shadowRoot.querySelector('#topImage')
-
-    const thisLine = this.#page.items?.[newIndex]
+    const thisLine = this.#page.items?.[TPEN.activeLineIndex]
     if (!thisLine) return
-
     const { region } = this.setCanvasAndSelector(thisLine, this.#page)
     if (!region) return
-
     const [x, y, width, height] = region.split(',').map(Number)
-
     topImage.moveTo(x, y, width, height)
     this.slideBottomImage(region)
   }
@@ -235,7 +351,7 @@ export default class TranscriptionInterface extends HTMLElement {
 
   setCanvasAndSelector(thisLine, page) {
     let targetString, canvasID, region
-    targetString = thisLine?.target?.id ?? thisLine.target?.['@id']
+    targetString = thisLine?.target?.id ?? thisLine?.target?.['@id']
     targetString ??= thisLine?.target?.selector?.value ? `${thisLine.target?.source}#${thisLine.target.selector.value}` : null
     targetString ??= thisLine?.target
     targetString ??= page?.target?.id ?? page?.target?.['@id'] ?? page?.target
@@ -243,159 +359,22 @@ export default class TranscriptionInterface extends HTMLElement {
     return { canvasID, region : region?.split?.(':')?.pop() }
   }
 
-  render() {
-    // Render the complete layout only once.
-    this.shadowRoot.innerHTML = `
-      <style>
-        .container {
-          display: flex;
-          height: auto;
-          overflow: hidden;
-          width: 100%;
-          background-color: #d0f7fb;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-          transition: all 0.3s ease;
-          padding: 0;
-          margin: 0;
-        }
-        /* In inactive splitscreen, left pane takes full width, right pane is hidden */
-        .container.no-splitscreen .left-pane, 
-        .container.no-splitscreen .right-pane {
-          height: 100%;
-          overflow: auto;
-        }
-        .splitter {
-          width: 6px;
-          background-color: #ddd;
-          cursor: ew-resize;
-        }
-        .container.no-splitscreen .left-pane {
-          width: 100% !important;
-        }
-        .container.no-splitscreen .right-pane,
-        .container.no-splitscreen .splitter {
-          display: none;
-        }
-        /* In active splitscreen, left pane takes 60% and right pane 40% */
-        .container.active-splitscreen .left-pane {
-          width: 60%;
-        }
-        .container.active-splitscreen .right-pane {
-          width: 40%;
-          border-left: 1px solid #ddd;
-          background-color: #ffffff;
-        }
-
-        .splitter:hover {
-          background-color: #bbb;
-        }
-
-        .header {
-          display: flex;
-          justify-content: flex-end;
-          align-items: center;
-          padding: 10px;
-          background-color: rgb(166, 65, 41);
-          border-bottom: 1px solid #ddd;
-        }
-
-        .close-button {
-          background: none;
-          border: none;
-          font-size: 16px;
-          cursor: pointer;
-          color: white;
-          transition: color 0.2s;
-        }
-
-        .tools {
-          padding: 15px;
-          height: calc(100% - 50px);
-          overflow-y: auto;
-        }
-
-        .tools p {
-          margin: 10px 0;
-          font-size: 0.95rem;
-          line-height: 1.5;
-          color: #444;
-        }
-
-        .transcription-section {
-          box-sizing: border-box;
-          z-index: 2;
-          position: relative;}
-
-        .canvas-image {
-          max-width: 100%;
-          border-radius: 12px;
-          border: 1.5px solid rgb(254, 248, 228);
-          box-shadow: 0 6px 12px rgba(0,0,0,0.1);
-          user-select: none;
-          display: block;
-        }
-
-        .workspace-tools {
-          border: 1px solid rgb(254, 248, 228);
-          padding: 15px 20px;
-          display: flex;
-          flex-direction: column;
-          gap: 20px;
-          align-items: center;
-          background: rgb(254, 248, 228);
-          border-radius: 10px;
-          box-shadow: 0 4px 6px -2px rgba(0, 0, 0, 0.1);
-          position: relative;
-          width: 100%;
-          box-sizing: border-box;
-          border-top: none;
-        }
-
-        tpen-line-image {
-          display: block;
-          width: 100%;
-          height: auto;
-          transition: all 1.5s cubic-bezier(0.04, 1, 0.68, 1);
-          position: relative;
-          z-index: 1;
-        }
-
-        #bottomImage {
-          z-index: 0;
-          transform: translateY(0px);
-        }
-
-      </style>
-      <tpen-project-header></tpen-project-header>
-      <div class="container no-splitscreen">
-        <div class="left-pane">
-          <tpen-line-image id="topImage"></tpen-line-image>
-          <section class="transcription-section">
-            <tpen-transcription-block></tpen-transcription-block>
-            <tpen-workspace-tools></tpen-workspace-tools>
-            <div class="workspace-tools" aria-label="Image Workspace" style="padding: 0">
-              <img style="display:none;"
-                class="canvas-image"
-                src="https://t-pen.org/TPEN/images/loading2.gif"
-                draggable="false"
-                alt="Canvas image"
-                onerror="this.src='../../assets/images/404_PageNotFound.jpeg';"
-              />
-            </div>
-          </section>
-          <tpen-line-image id="bottomImage"></tpen-line-image>
-        </div>
-        <div class="splitter"></div>
-        <div class="right-pane">
-          <div class="header">
-            <button class="close-button">Close ×</button>
-          </div>
-          <div class="tools">
-          </div>
-        </div>
-      </div>
-    `
+  async updateTranscriptionImages(pageID) {
+    const topImage = this.shadowRoot.querySelector('#topImage')
+    const bottomImage = this.shadowRoot.querySelector('#bottomImage')
+    topImage.manifest = bottomImage.manifest = TPEN.activeProject?.manifest[0]
+    const page = this.#page = await vault.get(pageID, 'annotationpage', true)
+    let thisLine = page.items?.[0]
+    thisLine = await vault.get(thisLine, 'annotation')
+    const { canvasID, region } = this.setCanvasAndSelector(thisLine, page)
+    const canvas = this.#canvas = await vault.get(canvasID, 'canvas')
+    const regionValue = region ?? `0,0,${canvas.width ?? 'full'},${(canvas.height && canvas.height / 10) ?? 120}`
+    topImage.canvas = bottomImage.canvas = canvasID
+    if (regionValue) {
+      topImage.setAttribute('region', regionValue)
+    }
+    this.slideBottomImage(regionValue)
   }
 }
 
-customElements.define("tpen-transcription-interface", TranscriptionInterface)
+customElements.define('tpen-transcription-interface', TranscriptionInterface)
