@@ -1,0 +1,156 @@
+.quick-tour {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: #fff;
+    border-radius: 8px;
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+}
+
+.quick-tour .header-panel {
+    width: 100%;
+    border-radius: 8px 8px 0 0;
+    padding: 20px;
+    background-color: #fff;
+    text-align: center;
+}
+
+.quick-tour .header-panel h1 {
+    font-size: 30px;
+    padding: 10px 50px;
+    text-align: center;
+    color: var(--accent);
+}
+
+.quick-tour .header-panel p {
+    font-size: 16px;
+    padding: 10px 50px;
+    color: #333;
+    width: 100%;
+    text-align: center;
+}
+
+.quick-tour .header-panel .guide-image {
+    width: 100%;
+    max-width: 600px;
+    height: auto;
+    margin-top: 20px;
+}
+
+.quick-tour .new-project-panel {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.quick-tour .new-project-panel .new-project-heading-button {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.01);
+    border-top: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
+    padding: 20px 40px;
+}
+
+.quick-tour .new-project-panel .new-project-heading-button h2 {
+    font-size: 24px;
+    color: var(--accent);
+}
+
+.quick-tour .new-project-panel .new-project-heading-button button {
+    background-color: var(--accent);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.carousel-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    position: relative;
+    max-height: 100%;
+    transition: max-height 0.4s ease-in-out, opacity 0.4s ease-in-out;
+    border-radius: 16px;
+    padding: 0 40px;
+}
+
+.carousel-wrapper {
+    overflow: hidden;
+    width: 80%;
+    position: relative;
+    margin: 20px;
+}
+
+.quick-tour .new-project-panel .carousel-track {
+    opacity: 1;
+    display: flex;
+    transition: transform 0.4s ease-in-out;
+    border-radius: 16px;
+}
+
+.quick-tour .carousel-container.collapsed {
+    max-height: 0;
+    opacity: 0;
+    padding: 0 40px;
+    border-radius: 16px;
+    transition: max-height 0.4s ease-in-out, opacity 0.4s ease-in-out;
+}
+
+.quick-tour .new-project-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--light-color);
+    border-radius: 16px;
+    padding: 0;
+    margin-top: 20px;
+    flex: 0 0 100%;
+    box-sizing: border-box;
+    border: 1px solid #ddd;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    gap:30px;
+}
+
+.quick-tour .new-project-panel .carousel-track li p {
+    font-size: 18px;
+    color: #333;
+    background-color: rgb(238, 236, 236);
+    padding: 10px;
+    width: 100%;
+    text-align: center;
+    border-bottom-left-radius: 16px;
+    border-bottom-right-radius: 16px;
+}
+
+.quick-tour .new-project-card .dummy-image {
+    width: 80%;
+    height: auto;
+    padding: 40px;
+}
+
+.carousel-buttons {
+    display: flex;
+    justify-content: center;
+    margin: 30px 0;
+}
+
+.carousel-buttons button {
+    background-color: var(--accent);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin: 0 10px;
+}
