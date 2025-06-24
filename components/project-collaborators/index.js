@@ -50,12 +50,12 @@ class ProjectCollaborators extends HTMLElement {
     createMemberHTML(collaboratorId, memberData) {
         const memberElement = document.createElement("div")
         memberElement.innerHTML = `
-            <li part="member" id="member" class="member" data-member-id=${collaboratorId}>
+            <li part="member" id="member" class="member" data-member-id="${collaboratorId}">
                 <div part="member-info" class="member-info">
                     <p part="member-name">${memberData.profile?.displayName ?? collaboratorId}</p>
                     <span part="role" class="role">${this.renderRoles(memberData.roles)}</span>
                 </div>
-                <div part="actions" class="actions" data-member-id=${collaboratorId}>
+                <div part="actions" class="actions" data-member-id="${collaboratorId}">
                 </div>
             </li>
         `
