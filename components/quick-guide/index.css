@@ -252,3 +252,33 @@
     transition: max-height 0.4s ease-in-out, opacity 0.4s ease-in-out;
     cursor: pointer;
 }
+
+.tab-nav {
+    display: flex;
+    gap: 10px;
+    margin: 20px;
+}
+
+.tab-nav button {
+    padding: 10px 20px;
+    cursor: pointer;
+    background-color: #e0e0e0;
+    color: #333;
+    border: none;
+    border-radius: 5px;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.tab-nav button.active {
+    background-color: var(--accent);
+    color: white;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
