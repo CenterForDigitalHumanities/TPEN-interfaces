@@ -35,7 +35,14 @@
     width: 100%;
     max-width: 600px;
     height: auto;
-    margin-top: 20px;
+}
+
+.image-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: auto;
 }
 
 .quick-tour .new-project-panel {
@@ -110,7 +117,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
     background-color: var(--light-color);
     border-radius: 16px;
     padding: 0;
@@ -169,9 +176,9 @@
 }
 
 .quick-tour .grid-item {
-    flex: 0 0 calc(33.333% - 20px);
-    max-width: calc(33.333% - 20px);
-    aspect-ratio: 1 / 1;
+    flex: 0 0 calc(50% - 20px);
+    max-width: calc(50% - 20px);
+    aspect-ratio: 1 / 0.75;
     box-sizing: border-box;
     background-color: var(--light-color);
     border-radius: 8px;
@@ -186,8 +193,8 @@
 .quick-tour .grid-item img {
     width: 100%;
     height: auto;
-    margin-bottom: 10px;
     object-fit: contain;
+    padding: 0 50px;
 }
 
 .quick-tour .grid-item p {
