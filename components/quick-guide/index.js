@@ -1,12 +1,13 @@
 document.querySelectorAll('.collapse-button').forEach(button => {
     button.addEventListener('click', () => {
-        const panel = button.closest('.new-project-panel').querySelector('.carousel-container')
+        const panel = button.closest('.new-project-panel').querySelector('.carousel-container') || button.closest('.new-project-panel').querySelector('.grid-container')
+        console.log(panel)
         if (panel.classList.contains('collapsed')) {
-        panel.classList.remove('collapsed')
-        button.textContent = 'Collapse Details'
+            panel.classList.remove('collapsed')
+            button.textContent = 'Collapse Details'
         } else {
-        panel.classList.add('collapsed')
-        button.textContent = 'Expand Details'
+            panel.classList.add('collapsed')
+            button.textContent = 'Expand Details'
         }
     })
 })
