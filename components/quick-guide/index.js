@@ -46,3 +46,14 @@ document.querySelectorAll(".carousel-track").forEach((track, index) => {
     window.addEventListener("resize", updateCarousel)
     updateCarousel()
 })
+
+document.querySelectorAll('.done-checkbox input').forEach(checkbox => {
+  checkbox.addEventListener('change', (e) => {
+    const gridItem = e.target.closest('.grid-item')
+    if (e.target.checked) {
+      gridItem.classList.add('done')
+    } else {
+      gridItem.classList.remove('done')
+    }
+  })
+})

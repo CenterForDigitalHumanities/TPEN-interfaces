@@ -159,3 +159,62 @@
     background-color: #ccc;
     cursor: not-allowed;
 }
+
+.quick-tour .grid-container {
+    display: flex;
+    flex-wrap: wrap;
+    border-radius: 8px;
+    padding: 20px;
+    gap: 20px;
+}
+
+.quick-tour .grid-item {
+    flex: 1 1 calc(50% - 20px);
+    background-color: var(--light-color);
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.quick-tour .grid-item img {
+    width: 500px;
+    height: auto;
+    padding: 20px;
+    margin-bottom: 10px;
+}
+
+.quick-tour .grid-item p {
+    font-size: 16px;
+    color: #333;
+    margin: 0;
+}
+
+
+.card-header {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.done-checkbox {
+  font-size: 14px;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.done-checkbox input[type="checkbox"] {
+  width: 30px;
+  height: 30px;
+}
+
+.new-project-card.done {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.grid-item.done {
+  opacity: 0.5;
+  user-select: none;
+}
