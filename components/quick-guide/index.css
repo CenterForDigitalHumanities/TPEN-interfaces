@@ -88,7 +88,6 @@
     max-height: 100%;
     transition: max-height 0.4s ease-in-out, opacity 0.4s ease-in-out;
     border-radius: 16px;
-    padding: 0 40px;
 }
 
 .carousel-wrapper {
@@ -140,9 +139,10 @@
 }
 
 .quick-tour .new-project-card .dummy-image {
-    width: 80%;
+    width: 95%;
     height: auto;
-    padding: 40px;
+    padding: 10px;
+    border-radius: 16px;
 }
 
 .carousel-buttons {
@@ -194,7 +194,8 @@
     width: 100%;
     height: auto;
     object-fit: contain;
-    padding: 0 50px;
+    border-radius: 12px;
+    padding: 5px;
 }
 
 .quick-tour .grid-item p {
@@ -231,7 +232,7 @@
   user-select: none;
 }
 
-.flowchart-image{
+.flowchart-image {
     width: 100%;
     height: auto;
     padding: 80px;
@@ -264,6 +265,9 @@
     display: flex;
     gap: 10px;
     margin: 20px;
+    width: 100%;
+    justify-content: center;
+    align-items: center;
 }
 
 .tab-nav button {
@@ -284,8 +288,144 @@
 
 .tab-content {
     display: none;
+    width: 100%;
 }
 
 .tab-content.active {
     display: block;
+}
+
+.index-panel {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 40px;
+}
+
+.index-image {
+    width: 50%;
+    height: auto;
+    padding: 20px;
+}
+
+.index-image img {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+}
+
+.index-content {
+    width: 50%;
+    padding: 5px 20px;
+    text-align: left;
+}
+
+.index-content p {
+    font-size: 16px;
+    color: #333;
+    margin-bottom: 20px;
+    line-height: 1.2;
+    font-weight: 500;
+}
+
+.index-content p span {
+    font-weight: bold;
+    color: white;
+    border-radius: 20px;
+    background-color: rgb(213,72,123);
+    padding: 5px 10px;
+    margin-right: 10px;
+}
+
+@media (max-width: 960px) {
+    .quick-tour .new-project-panel .new-project-heading-button {
+        padding: 5px 10px;
+    }
+
+    .quick-tour .new-project-panel .new-project-heading-button h2 {
+        font-size: 18px;
+        padding: 10px;
+    }
+
+    .quick-tour .new-project-panel .new-project-heading-button button {
+        padding: 10px;
+        font-size: 12px;
+    }
+
+    .quick-tour .new-project-panel .carousel-track li p {
+        font-size: 14px;
+        padding: 5px;
+    }
+
+    .quick-tour .new-project-card .dummy-image {
+        width: 100%;
+        padding: 5px;
+        border-radius: 8px;
+    }
+
+    .quick-tour .new-project-card {
+        border-radius: 8px;
+    }
+
+    .tab-nav {
+        padding: 10px;
+    }
+
+    .tab-nav button {
+        padding: 8px 16px;
+        font-size: 12px;
+    }
+
+    .quick-tour .grid-container {
+        flex-wrap: nowrap;
+        flex-direction: column;
+    }
+
+    .quick-tour .grid-item {
+        flex: 0 0 100%;
+        max-width: 100%;
+        margin-bottom: 20px;
+        height: auto;
+        aspect-ratio: none;
+    }
+
+    .done-checkbox input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+    }
+
+    .flowchart-image {
+        padding: 10px;
+        margin: 5px auto;
+    }
+}
+
+@media (max-width: 1300px) {
+     .index-panel {
+        flex-direction: column;
+        align-items: center;
+        padding: 10px 20px;
+    }
+
+    .index-image {
+        width: 100%;
+        padding: 10px;
+    }
+
+    .index-content {
+        width: 100%;
+        padding: 5px 10px;
+    }
+
+    .index-content p {
+        font-size: 16px;
+        line-height: 1.4;
+        margin-bottom: 10px;
+    }
+
+    .index-content p span {
+        font-size: 12px;
+        padding: 3px 6px;
+    }   
 }

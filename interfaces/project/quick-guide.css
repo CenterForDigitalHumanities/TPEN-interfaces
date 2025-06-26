@@ -13,6 +13,7 @@
     flex-direction: row;
     justify-content: space-between;
     background-color: #fff;
+    width: 100%;
 }
 
 .quick-guide .top-panel {
@@ -106,6 +107,7 @@
     border-radius: 8px;
     padding: 20px;
     margin: 10px 0;
+    width: 95%;
 }
 
 .right-panel p {
@@ -150,4 +152,21 @@
     border-radius: 5px;
     cursor: pointer;
     font-size: 16px;
+}
+
+
+@media (max-width: 960px) {
+    .middle-panel {
+        flex-direction: column;
+    }
+    .left-panel, .right-panel {
+        width: 100%;
+        padding: 20px;
+        border-right: none;
+        border-bottom: 1px solid #ddd;
+    }
+    .right-panel .project-card {
+        flex-direction: column;
+        align-items: center;
+    }
 }
