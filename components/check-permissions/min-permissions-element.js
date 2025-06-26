@@ -1,3 +1,16 @@
+/**
+ * This custom element is intended for use directly on an HTML interface or within in components.
+ * Include it with a <script> tag in a <head> element like 
+ * <script type="module" src="../../components/check-permissions/min-permissions-element.js"></script>
+ * or import it into your component like
+ * import "../../components/check-permissions/min-permissions-element.js"
+ * Use it like
+    <tpen-can tpen-min-view="ANY_ANY_LINES" tpen-min-edit="EDIT_*_LINES">
+        <tpen-line-annotator></tpen-line-annotator>
+    </tpen-can>
+ * All direct children of the <tpen-can>, including their shadowRoot, will be affected.
+ */
+
 import TPEN from '../../api/TPEN.js'
 import { getUserFromToken } from "../../components/iiif-tools/index.js"
 
@@ -30,14 +43,13 @@ export class PermissionCheck extends HTMLElement {
         const userId = getUserFromToken(TPEN.getAuthorization())
         // Must have been on an authenticated interface or we can't do anything
         if(!userId) return
-
         let rendered = true
         if(this.hasAttribute("tpen-min-view")) rendered = this.renderCheck(project, userId)
         if(rendered && this.hasAttribute("tpen-min-edit")) this.editCheck(project, userId)
     }
 
     /**
-     * Process a tpen-min-read attribute on a element.
+     * Process the tpen-min-view attribute.
      * If the logged in user does not have at least the minimum permission, then remove the component element.
      * A minimum permission value may include the key word "ANY" for action, scope, or entity.
      *
@@ -47,7 +59,7 @@ export class PermissionCheck extends HTMLElement {
     renderCheck(project, userId) {
         const minPermission = this.getAttribute('tpen-min-view')
         // Can't process malformed permission.  The value should be a single action_scope_entity string.
-        if(minPermission.includes(",") || !minPermission.split("_").length === 3) return true
+        if(!minPermission || minPermission.includes(",") || !minPermission.split("_").length === 3) return true
         const minAction = minPermission.split("_")[0].toUpperCase()
         const minScope = minPermission.split("_")[1].toUpperCase()
         const minEntity = minPermission.split("_")[2].toUpperCase()
@@ -72,7 +84,7 @@ export class PermissionCheck extends HTMLElement {
     }
 
     /**
-     * Process a tpen-min-read attribute on a element.
+     * Process the tpen-min-edit attribute.
      * If the logged in user does not have at least the minimum permission, then disables all inputs and buttons in the component element.
      * A minimum permission value may include the key word "ANY" for action, scope, or entity.
      *
@@ -82,7 +94,7 @@ export class PermissionCheck extends HTMLElement {
     editCheck(project, userId) {
         const minPermission = this.getAttribute('tpen-min-edit')
         // Can't process malformed permission.  The value should be a single action_scope_entity string.
-        if(minPermission.includes(",") || !minPermission.split("_").length === 3) return true
+        if(!minPermission || minPermission.includes(",") || !minPermission.split("_").length === 3) return true
         const minAction = minPermission.split("_")[0].toUpperCase()
         const minScope = minPermission.split("_")[1].toUpperCase()
         const minEntity = minPermission.split("_")[2].toUpperCase()

@@ -1,3 +1,14 @@
+/**
+ * This module is intended for use directly on an HTML interface.  It should not be used in components (see ./index.js)
+ * Include this module with a <script> tag in a <head> element like 
+ * <script type="module" src="../../components/check-permissions/min-permissions-check.js"></script>
+ * Use it like
+    <div class="container" tpen-min-view="ANY_ANY_LINES" tpen-min-edit="UPDATE_*_LINES">
+        <tpen-line-annotator></tpen-line-annotator>
+    </div>
+ * All direct children of the div, including their shadowRoot, will be affected.
+ */
+
 import TPEN from '../../api/TPEN.js'
 import { getUserFromToken } from "../../components/iiif-tools/index.js"
 
@@ -38,7 +49,7 @@ function checkElements(project) {
 }
 
 /**
- * Process a tpen-min-read attribute on a element.
+ * Process a tpen-min-view attribute on an HTML Element.
  * If the logged in user does not have at least the minimum permission, then remove the component element.
  * A minimum permission value may include the key word "ANY" for action, scope, or entity.
  *
@@ -49,7 +60,7 @@ function checkElements(project) {
 function renderCheck(element, project, userId) {
     const minPermission = element.getAttribute('tpen-min-view')
     // Can't process malformed permission so it is allowed to render.  The value should be a single action_scope_entity string.
-    if(minPermission.includes(",") || !minPermission.split("_").length === 3) return true
+    if(!minPermission || minPermission.includes(",") || !minPermission.split("_").length === 3) return true
     const minAction = minPermission.split("_")[0].toUpperCase()
     const minScope = minPermission.split("_")[1].toUpperCase()
     const minEntity = minPermission.split("_")[2].toUpperCase()
@@ -85,7 +96,7 @@ function renderCheck(element, project, userId) {
 function editCheck(element, project, userId) {
     const minPermission = element.getAttribute('tpen-min-edit')
     // Can't process malformed permission so they are allowed to edit.
-    if(minPermission.includes(",") || !minPermission.split("_").length === 3) return true
+    if(!minPermission || minPermission.includes(",") || !minPermission.split("_").length === 3) return true
     const minAction = minPermission.split("_")[0].toUpperCase()
     const minScope = minPermission.split("_")[1].toUpperCase()
     const minEntity = minPermission.split("_")[2].toUpperCase()
