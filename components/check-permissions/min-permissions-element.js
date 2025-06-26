@@ -117,7 +117,7 @@ export class PermissionCheck extends HTMLElement {
         if(!canWrite) {
             // The element itself
             this.querySelectorAll("input,textarea,select,button,.button").forEach(e => e.setAttribute("disabled", ""))
-            Array.from(this.children).forEach(child => 
+            Array.from(this.children).forEach(child => { 
                 // Direct children of the element
                 child.querySelectorAll("input,textarea,select,button,.button").forEach(e => e.setAttribute("disabled", ""))
                 // The shadowRoot of the direct children of the element.
