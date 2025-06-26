@@ -123,31 +123,34 @@ export default class TranscriptionBlock extends HTMLElement {
                     }
                     return fetch(`${TPEN.servicesURL}/project/${projectID}/page/${pageID}/line/${lineID}/text`, {
                         method: 'PATCH',
-                        headers: { 
-                            'Content-Type': 'application/json',
+                        headers: {
+                            'Content-Type': 'text/plain',
                             'authorization': `Bearer ${TPEN.getAuthorization()}`
                         },
-                        body: newText
+                        body: typeof newText === 'string' ? newText : (newText?.toString?.() ?? '')
                     })
                 })
-                Promise.all(saveLines)
-                    .then(res => {
+                ;(async () => {
+                    try {
+                        for (const saveLine of saveLines) {
+                            await saveLine
+                        }
                         TPEN.eventDispatcher.dispatch('toast', {
-                            message: `Saved ${res.length} lines.`,
+                            message: `Saved ${saveLines.length} lines.`,
                             status: 'success'
                         })
                         this.$dirtyLines.clear()
-                        this.#page = vault.get(pageID, 'annotationpage', true)
+                        this.#page = await vault.get(pageID, 'annotationpage', true)
                         const linesCount = this.shadowRoot.querySelector('lines-count')
                         if (linesCount) linesCount.textContent = ''
-                    })
-                    .catch(err => {
+                    } catch (err) {
                         console.error('Error saving transcriptions:', err)
                         TPEN.eventDispatcher.dispatch('toast', {
                             message: 'Error saving transcriptions.',
                             status: 'error'
                         })
-                    })
+                    }
+                })()
             })
         }
         // Track dirty lines
