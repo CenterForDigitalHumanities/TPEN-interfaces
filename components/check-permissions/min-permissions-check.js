@@ -41,7 +41,6 @@ function checkElements(project) {
     const elements = document.querySelectorAll("[tpen-min-view],[tpen-min-edit]")
     // Why are you using this module if there are no elements to check?
     if(!elements || elements.length === 0) return
-    elements.forEach(e => check(element))
     for (const element of elements) {
         let view = true
         let edit = true
@@ -51,8 +50,8 @@ function checkElements(project) {
             if (!view) element.remove()
         }
         if(view && element.hasAttribute("tpen-min-edit")) {
-           edit = check(element.getAttribute("tpen-min-edit"), project, userId)
-           if(!edit) {
+            edit = check(element.getAttribute("tpen-min-edit"), project, userId)
+            if(!edit) {
                 // Disables all inputs and buttons in the component element.
                 // The element itself
                 element.querySelectorAll("input,textarea,select,button,.button").forEach(e => e.setAttribute("disabled", ""))
@@ -77,7 +76,6 @@ function checkElements(project) {
  * @return boolean
  */
 function check(minPermission, project, userId) {
-    let minAction, minScope, minEntity
     // Can't process malformed permission so it is allowed to render.  The value should be a single action_scope_entity string.
     if(!minPermission || minPermission.includes(",") || !minPermission.split("_").length === 3) return true
     const minAction = minPermission.split("_")[0].toUpperCase()
