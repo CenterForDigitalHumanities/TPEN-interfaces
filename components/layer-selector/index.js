@@ -83,7 +83,7 @@ export default class LayerSelector extends HTMLElement {
             if (selectedLayer) {
                 // Update TPEN.activeLayer and dispatch the change event.
                 TPEN.activeLayer = selectedLayer
-                eventDispatcher.dispatchEvent(new CustomEvent("tpen-active-layer", {
+                eventDispatcher.dispatch(new CustomEvent("tpen-active-layer", {
                     detail: selectedLayer,
                     bubbles: true,
                     composed: true,

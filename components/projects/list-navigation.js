@@ -96,7 +96,7 @@ export default class ProjectsListNavigation extends HTMLElement {
                         status: status
                     }
                 })
-                TPEN.eventDispatcher.dispatchEvent(toast)
+                TPEN.eventDispatcher.dispatch(toast)
                 this.shadowRoot.getElementById('projectsListView').innerHTML = `No projects found`
             }
         })

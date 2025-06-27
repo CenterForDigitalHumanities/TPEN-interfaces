@@ -366,6 +366,7 @@ export default class TranscriptionInterface extends HTMLElement {
     const page = this.#page = await vault.get(pageID, 'annotationpage', true)
     let thisLine = page.items?.[0]
     thisLine = await vault.get(thisLine, 'annotation')
+    if (!thisLine.body) thisLine = await vault.get(thisLine, 'annotation', true)
     const { canvasID, region } = this.setCanvasAndSelector(thisLine, page)
     const canvas = this.#canvas = await vault.get(canvasID, 'canvas')
     const regionValue = region ?? `0,0,${canvas.width ?? 'full'},${(canvas.height && canvas.height / 10) ?? 120}`
