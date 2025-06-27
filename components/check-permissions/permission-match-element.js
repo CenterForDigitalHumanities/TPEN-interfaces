@@ -6,7 +6,7 @@
  * To use directly on an HTML interface include this module with a <script> tag in a <head> element like 
  * <script type="module" src="../../components/check-permissions/permission-match-element.js"></script>
  * Use it like
-    <tpen-can tpen-view="ANY_ANY_LINES" tpen-edit="EDIT_*_LINES">
+    <tpen-can tpen-view="ANY_ANY_LINE" tpen-edit="EDIT_*_LINE">
         <tpen-line-annotator></tpen-line-annotator>
     </tpen-can>
  * To use within a component, import the <tpen-can> element like
@@ -27,6 +27,7 @@ export class PermissionMatch extends HTMLElement {
         "MEMBER",
         "ROLE",
         "PERMISSION",
+        "TOOL",
         "*",
         "ANY"
     ]

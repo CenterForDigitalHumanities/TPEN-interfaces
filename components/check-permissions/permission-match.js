@@ -6,7 +6,7 @@
  * To use directly on an HTML interface include this module with a <script> tag in a <head> element like 
  * <script type="module" src="../../components/check-permissions/permission-match.js"></script>
  * Including the module automatically checks all elements in the document.  Decorate elements like
-    <div class="container" tpen-view="ANY_ANY_LINES" tpen-edit="UPDATE_*_LINES">
+    <div class="container" tpen-view="ANY_ANY_LINE" tpen-edit="UPDATE_*_LINE">
         <tpen-line-annotator></tpen-line-annotator>
     </div>
  * To use within a component, import the permissionMatch function like
@@ -26,6 +26,7 @@ const entities = [
     "MEMBER",
     "ROLE",
     "PERMISSION",
+    "TOOL",
     "*",
     "ANY"
 ]
