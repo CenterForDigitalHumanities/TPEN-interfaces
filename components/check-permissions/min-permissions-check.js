@@ -41,24 +41,43 @@ function checkElements(project) {
     const elements = document.querySelectorAll("[tpen-min-view],[tpen-min-edit]")
     // Why are you using this module if there are no elements to check?
     if(!elements || elements.length === 0) return
+    elements.forEach(e => check(element))
     for (const element of elements) {
-        let rendered = true
-        if(element.hasAttribute("tpen-min-view")) rendered = renderCheck(element, project, userId)
-        if(rendered && element.hasAttribute("tpen-min-edit")) editCheck(element, project, userId)
+        let view = true
+        let edit = true
+        if(element.hasAttribute("tpen-min-view")) {
+            view = check(element.getAttribute("tpen-min-view"), project, userId)
+            // Removes the element (usually a component) from the DOM or shadowRoot
+            if (!view) element.remove()
+        }
+        if(view && element.hasAttribute("tpen-min-edit")) {
+           edit = check(element.getAttribute("tpen-min-edit"), project, userId)
+           if(!edit) {
+                // Disables all inputs and buttons in the component element.
+                // The element itself
+                element.querySelectorAll("input,textarea,select,button,.button").forEach(e => e.setAttribute("disabled", ""))
+                Array.from(element.children).forEach(child => {
+                    // Direct children of the element
+                    child.querySelectorAll("input,textarea,select,button,.button").forEach(e => e.setAttribute("disabled", ""))
+                    // The shadowRoot of the direct children of the element
+                    child.shadowRoot.querySelectorAll("input,textarea,select,button,.button").forEach(e => e.setAttribute("disabled", ""))
+                })
+           }
+        } 
     }
 }
 
 /**
- * Process a tpen-min-view attribute on an HTML Element.
- * If the logged in user does not have at least the minimum permission, then remove the component element.
+ * Check if the user has the minimum permissions for the project.
  * A minimum permission value may include the key word "ANY" for action, scope, or entity.
  *
- * @param element - The HTML Element to check.
+ * @param minPermissions - A action_scope_entity string representing a single minimum permission.
  * @param project - A TPEN3 Project from a tpen-project-loaded event payload.
  * @param userId - A TPEN3 User id hash from the user encoded in a idToken.
+ * @return boolean
  */
-function renderCheck(element, project, userId) {
-    const minPermission = element.getAttribute('tpen-min-view')
+function check(minPermission, project, userId) {
+    let minAction, minScope, minEntity
     // Can't process malformed permission so it is allowed to render.  The value should be a single action_scope_entity string.
     if(!minPermission || minPermission.includes(",") || !minPermission.split("_").length === 3) return true
     const minAction = minPermission.split("_")[0].toUpperCase()
@@ -70,61 +89,12 @@ function renderCheck(element, project, userId) {
     const allPermissions = Array.from(new Set(
         userRoles.flatMap(role => project.roles[role])
     ))
-    // They will not be able to render if they have no roles/permissions
-    const canRead = allPermissions.includes("*_*_*") ? true : 
-        allPermissions.filter(p => {
-            const action = p.split("_")[0]
-            const scope = p.split("_")[1]
-            const entity = p.split("_")[2]
-            return (minAction === "ANY" || action === "*" || action === minAction)
-                && (minScope === "ANY" || scope === "*" || scope === minScope )
-                && (minEntity === "ANY" || entity === "*" || entity === minEntity)
-        }).length > 0
-    if(!canRead) element.remove()
-    return canRead
-}
-
-/**
- * Process a tpen-min-read attribute on a element.
- * If the logged in user does not have at least the minimum permission, then disables all inputs and buttons in the component element.
- * A minimum permission value may include the key word "ANY" for action, scope, or entity.
- *
- * @param element - The HTML Element to check.
- * @param project - A TPEN3 Project from a tpen-project-loaded event payload.
- * @param userId - A TPEN3 User id hash from the user encoded in a idToken.
- */
-function editCheck(element, project, userId) {
-    const minPermission = element.getAttribute('tpen-min-edit')
-    // Can't process malformed permission so they are allowed to edit.
-    if(!minPermission || minPermission.includes(",") || !minPermission.split("_").length === 3) return true
-    const minAction = minPermission.split("_")[0].toUpperCase()
-    const minScope = minPermission.split("_")[1].toUpperCase()
-    const minEntity = minPermission.split("_")[2].toUpperCase()
-    // Can't check if we don't understand the entity so they are allowed to edit.
-    if(!minEntity || !entities.includes(minEntity)) return true
-    const userRoles = project?.collaborators?.[userId]?.roles
-    const allPermissions = Array.from(new Set(
-        userRoles.flatMap(role => project.roles[role])
-    ))
-    // They will not be able to edit if they have no roles/permissions
-    const canWrite = allPermissions.includes("*_*_*") ? true : 
-        allPermissions.filter(p => {
-            const action = p.split("_")[0]
-            const scope = p.split("_")[1]
-            const entity = p.split("_")[2]
-            return (minAction === "ANY" || action === "*" || action === minAction)
-                && (minScope === "ANY" || scope === "*" || scope === minScope )
-                && (minEntity === "ANY" || entity === "*" || entity === minEntity)
-        }).length > 0
-    if(!canWrite) {
-        // The element itself
-        element.querySelectorAll("input,textarea,select,button,.button").forEach(e => e.setAttribute("disabled", ""))
-        Array.from(element.children).forEach(child => {
-            // Direct children of the element
-            child.querySelectorAll("input,textarea,select,button,.button").forEach(e => e.setAttribute("disabled", ""))
-            // The shadowRoot of the direct children of the element
-            child.shadowRoot.querySelectorAll("input,textarea,select,button,.button").forEach(e => e.setAttribute("disabled", ""))
-        })
-    }
-    return canWrite
+    return allPermissions.filter(p => {
+        const action = p.split("_")[0]
+        const scope = p.split("_")[1]
+        const entity = p.split("_")[2]
+        return (minAction === "ANY" || action === "*" || action === minAction)
+            && (minScope === "ANY" || scope === "*" || scope === minScope )
+            && (minEntity === "ANY" || entity === "*" || entity === minEntity)
+    }).length > 0
 }
