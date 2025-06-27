@@ -11,8 +11,6 @@ permalink: /annotator
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TPEN Line Parser</title>
     <script type="module" src="../../components/annotorious-annotator/line-parser.js"></script>
-    <script type="module" src="../../components/check-permissions/min-permissions-element.js"></script>
-    <script type="module" src="../../components/check-permissions/min-permissions-check.js"></script>
     <style>
       body {
         max-height: 100vh;
@@ -21,17 +19,6 @@ permalink: /annotator
     </style>
   </head>
   <body>
-    <div tpen-edit="UPDATE_*_LINE">
-        <tpen-line-parser></tpen-line-parser>
-    </div>
-    <!-- Examples for testing -->
-    <!--
-    <tpen-can tpen-view="ANY_ANY_LINE" tpen-edit="EDIT_*_LINE">
-        <tpen-line-parser></tpen-line-parser>
-    </tpen-can>
-    <div tpen-view="ANY_ANY_LINE" tpen-edit="UPDATE_*_LINE">
-        <tpen-line-parser></tpen-line-parser>
-    </div>
-    -->
+    <tpen-line-parser></tpen-line-parser>
   </body>
 </html>
