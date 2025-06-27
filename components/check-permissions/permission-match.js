@@ -39,7 +39,7 @@ TPEN.eventDispatcher.on("tpen-project-loaded", ev => checkElements(ev.detail))
  * Perform modifications to the element depending on whether or not
  * the current logged in user has sufficient project permissions.
  *
- * @param project The details from a tpen-project-loaded event.
+ * @param project - The details from a tpen-project-loaded event.
  */
 function checkElements(project) {
     // Must have a loaded project with collaborators or we can't check anything
