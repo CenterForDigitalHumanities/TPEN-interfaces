@@ -43,7 +43,7 @@ TPEN.eventDispatcher.on("tpen-project-loaded", ev => checkElements(ev.detail))
  */
 function checkElements(project) {
     // Must have a loaded project with collaborators or we can't check anything
-    if(!project || !project.collaborators || !Object.keys(project.collaborators).length) return
+    if(!project?.collaborators || !Object.keys(project.collaborators).length) return
     const userId = getUserFromToken(TPEN.getAuthorization())
     // Must have been on an authenticated interface or we can't do anything
     if(!userId) return
