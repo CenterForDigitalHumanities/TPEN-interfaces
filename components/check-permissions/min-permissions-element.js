@@ -13,6 +13,7 @@
 
 import TPEN from '../../api/TPEN.js'
 import { getUserFromToken } from "../../components/iiif-tools/index.js"
+import { minPermissionsCheck } from "../../components/check-permissions/min-permissions-check.js"
 
 export class PermissionCheck extends HTMLElement {
     #entities = [
@@ -46,11 +47,11 @@ export class PermissionCheck extends HTMLElement {
         let canView = true
         let canEdit = true
         if(this.hasAttribute("tpen-min-view")) {
-            canView = this.check(this.getAttribute("tpen-min-view"), project, userId)
+            canView = minPermissionsCheck(this.getAttribute("tpen-min-view"), project, userId)
             if(!canView) this.remove()
         }
         if(canView && this.hasAttribute("tpen-min-edit")) {
-            canEdit = this.check(this.getAttribute("tpen-min-edit"), project, userId)
+            canEdit = minPermissionsCheck(this.getAttribute("tpen-min-edit"), project, userId)
             if(!canEdit) {
                 // The element itself
                 this.querySelectorAll("input,textarea,select,button,.button").forEach(e => e.setAttribute("disabled", ""))
@@ -62,37 +63,6 @@ export class PermissionCheck extends HTMLElement {
                 })  
             }
         }
-    }
-
-    /**
-     * Check if the user has the minimum permissions for the project.
-     * A minimum permission value may include the key word "ANY" for action, scope, or entity.
-     *
-     * @param minPermissions - A action_scope_entity string representing a single minimum permission.
-     * @param project - A TPEN3 Project from a tpen-project-loaded event payload.
-     * @param userId - A TPEN3 User id hash from the user encoded in a idToken.
-     * @return boolean
-     */
-    check(minPermission, project, userId) {
-        // Can't process malformed permission so it is allowed to render.  The value should be a single action_scope_entity string.
-        if(!minPermission || minPermission.includes(",") || !minPermission.split("_").length === 3) return true
-        const minAction = minPermission.split("_")[0].toUpperCase()
-        const minScope = minPermission.split("_")[1].toUpperCase()
-        const minEntity = minPermission.split("_")[2].toUpperCase()
-        // Can't check if we don't understand the entity so it is allowed to render.  
-        if(!minEntity || !this.#entities.includes(minEntity)) return true
-        const userRoles = project?.collaborators?.[userId]?.roles
-        const allPermissions = Array.from(new Set(
-            userRoles.flatMap(role => project.roles[role])
-        ))
-        return allPermissions.filter(p => {
-            const action = p.split("_")[0]
-            const scope = p.split("_")[1]
-            const entity = p.split("_")[2]
-            return (minAction === "ANY" || action === "*" || action === minAction)
-                && (minScope === "ANY" || scope === "*" || scope === minScope )
-                && (minEntity === "ANY" || entity === "*" || entity === minEntity)
-        }).length > 0
     }
 }
 

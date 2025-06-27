@@ -45,12 +45,12 @@ function checkElements(project) {
         let canView = true
         let canEdit = true
         if(element.hasAttribute("tpen-min-view")) {
-            canView = check(element.getAttribute("tpen-min-view"), project, userId)
+            canView = minPermissionsCheck(element.getAttribute("tpen-min-view"), project, userId)
             // Removes the element (usually a component) from the DOM or shadowRoot
             if (!canView) element.remove()
         }
         if(canView && element.hasAttribute("tpen-min-edit")) {
-            canEdit = check(element.getAttribute("tpen-min-edit"), project, userId)
+            canEdit = minPermissionsCheck(element.getAttribute("tpen-min-edit"), project, userId)
             if(!canEdit) {
                 // Disables all inputs and buttons in the component element.
                 // The element itself
@@ -70,12 +70,12 @@ function checkElements(project) {
  * Check if the user has the minimum permissions for the project.
  * A minimum permission value may include the key word "ANY" for action, scope, or entity.
  *
- * @param minPermissions - A action_scope_entity string representing a single minimum permission.
+ * @param minPermission - A action_scope_entity string representing a single minimum permission.
  * @param project - A TPEN3 Project from a tpen-project-loaded event payload.
  * @param userId - A TPEN3 User id hash from the user encoded in a idToken.
  * @return boolean
  */
-function check(minPermission, project, userId) {
+export function minPermissionsCheck(minPermission, project, userId) {
     // Can't process malformed permission so it is allowed to render.  The value should be a single action_scope_entity string.
     if(!minPermission || minPermission.includes(",") || !minPermission.split("_").length === 3) return true
     const minAction = minPermission.split("_")[0].toUpperCase()
