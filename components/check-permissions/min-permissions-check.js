@@ -3,7 +3,7 @@
  * Include this module with a <script> tag in a <head> element like 
  * <script type="module" src="../../components/check-permissions/min-permissions-check.js"></script>
  * Use it like
-    <div class="container" tpen-min-view="ANY_ANY_LINES" tpen-min-edit="UPDATE_*_LINES">
+    <div class="container" tpen-view="ANY_ANY_LINES" tpen-edit="UPDATE_*_LINES">
         <tpen-line-annotator></tpen-line-annotator>
     </div>
  * All direct children of the div, including their shadowRoot, will be affected.
@@ -26,7 +26,7 @@ const entities = [
 TPEN.eventDispatcher.on("tpen-project-loaded", ev => checkElements(ev.detail))
 
 /**
- * Gather all elements with the tpen-min-view or tpen-min-edit attributes.
+ * Gather all elements with the tpen-view or tpen-edit attributes.
  * Perform modifications to the element depending on whether or not
  * the current logged in user meets the permissions threshold for the project.
  *
@@ -38,29 +38,22 @@ function checkElements(project) {
     const userId = getUserFromToken(TPEN.getAuthorization())
     // Must have been on an authenticated interface or we can't do anything
     if(!userId) return
-    const elements = document.querySelectorAll("[tpen-min-view],[tpen-min-edit]")
+    const elements = document.querySelectorAll("[tpen-view],[tpen-edit]")
     // Why are you using this module if there are no elements to check?
     if(!elements || elements.length === 0) return
     for (const element of elements) {
         let canView = true
         let canEdit = true
-        if(element.hasAttribute("tpen-min-view")) {
-            canView = minPermissionsCheck(element.getAttribute("tpen-min-view"), project, userId)
+        if(element.hasAttribute("tpen-view")) {
+            canView = minPermissionsCheck(element.getAttribute("tpen-view"), project, userId)
             // Removes the element (usually a component) from the DOM or shadowRoot
             if (!canView) element.remove()
         }
-        if(canView && element.hasAttribute("tpen-min-edit")) {
-            canEdit = minPermissionsCheck(element.getAttribute("tpen-min-edit"), project, userId)
+        if(canView && element.hasAttribute("tpen-edit")) {
+            canEdit = minPermissionsCheck(element.getAttribute("tpen-edit"), project, userId)
             if(!canEdit) {
-                // Disables all inputs and buttons in the component element.
-                // The element itself
-                element.querySelectorAll("input,textarea,select,button,.button").forEach(e => e.setAttribute("disabled", ""))
-                Array.from(element.children).forEach(child => {
-                    // Direct children of the element
-                    child.querySelectorAll("input,textarea,select,button,.button").forEach(e => e.setAttribute("disabled", ""))
-                    // The shadowRoot of the direct children of the element
-                    child.shadowRoot.querySelectorAll("input,textarea,select,button,.button").forEach(e => e.setAttribute("disabled", ""))
-                })
+                element.classList.add("tpen-readonly")
+                element.setAttribute("tpen-readonly", "")
            }
         } 
     }
@@ -84,9 +77,10 @@ export function minPermissionsCheck(minPermission, project, userId) {
     // Can't check if we don't understand the entity so it is allowed to render.  
     if(!minEntity || !entities.includes(minEntity)) return true
     const userRoles = project?.collaborators?.[userId]?.roles
-    const allPermissions = Array.from(new Set(
-        userRoles.flatMap(role => project.roles[role])
-    ))
+    // const allPermissions = Array.from(new Set(
+    //     userRoles.flatMap(role => project.roles[role])
+    // ))
+    const allPermissions = ["READ_*_LAYER"]
     return allPermissions.filter(p => {
         const action = p.split("_")[0]
         const scope = p.split("_")[1]

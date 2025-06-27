@@ -5,7 +5,7 @@
  * or import it into your component like
  * import "../../components/check-permissions/min-permissions-element.js"
  * Use it like
-    <tpen-can tpen-min-view="ANY_ANY_LINES" tpen-min-edit="EDIT_*_LINES">
+    <tpen-can tpen-view="ANY_ANY_LINES" tpen-edit="EDIT_*_LINES">
         <tpen-line-annotator></tpen-line-annotator>
     </tpen-can>
  * All direct children of the <tpen-can>, including their shadowRoot, will be affected.
@@ -46,21 +46,15 @@ export class PermissionCheck extends HTMLElement {
         if(!userId) return
         let canView = true
         let canEdit = true
-        if(this.hasAttribute("tpen-min-view")) {
-            canView = minPermissionsCheck(this.getAttribute("tpen-min-view"), project, userId)
+        if(this.hasAttribute("tpen-view")) {
+            canView = minPermissionsCheck(this.getAttribute("tpen-view"), project, userId)
             if(!canView) this.remove()
         }
-        if(canView && this.hasAttribute("tpen-min-edit")) {
-            canEdit = minPermissionsCheck(this.getAttribute("tpen-min-edit"), project, userId)
+        if(canView && this.hasAttribute("tpen-edit")) {
+            canEdit = minPermissionsCheck(this.getAttribute("tpen-edit"), project, userId)
             if(!canEdit) {
-                // The element itself
-                this.querySelectorAll("input,textarea,select,button,.button").forEach(e => e.setAttribute("disabled", ""))
-                Array.from(this.children).forEach(child => { 
-                    // Direct children of the element
-                    child.querySelectorAll("input,textarea,select,button,.button").forEach(e => e.setAttribute("disabled", ""))
-                    // The shadowRoot of the direct children of the element.
-                    child.shadowRoot.querySelectorAll("input,textarea,select,button,.button").forEach(e => e.setAttribute("disabled", ""))
-                })  
+                this.classList.add("tpen-readonly")
+                this.setAttribute("tpen-readonly", "")
             }
         }
     }

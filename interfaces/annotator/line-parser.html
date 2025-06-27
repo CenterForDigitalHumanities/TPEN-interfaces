@@ -21,13 +21,15 @@ permalink: /annotator
     </style>
   </head>
   <body>
-    <tpen-line-parser></tpen-line-parser>
+    <div tpen-edit="UPDATE_*_LINE">
+        <tpen-line-parser></tpen-line-parser>
+    </div>
     <!-- Examples for testing -->
     <!--
-    <tpen-can tpen-min-view="ANY_ANY_LINE" tpen-min-edit="EDIT_*_LINE">
+    <tpen-can tpen-view="ANY_ANY_LINE" tpen-edit="EDIT_*_LINE">
         <tpen-line-parser></tpen-line-parser>
     </tpen-can>
-    <div tpen-min-view="ANY_ANY_LINE" tpen-min-edit="UPDATE_*_LINE">
+    <div tpen-view="ANY_ANY_LINE" tpen-edit="UPDATE_*_LINE">
         <tpen-line-parser></tpen-line-parser>
     </div>
     -->
