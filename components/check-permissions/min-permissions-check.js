@@ -42,16 +42,16 @@ function checkElements(project) {
     // Why are you using this module if there are no elements to check?
     if(!elements || elements.length === 0) return
     for (const element of elements) {
-        let view = true
-        let edit = true
+        let canView = true
+        let canEdit = true
         if(element.hasAttribute("tpen-min-view")) {
-            view = check(element.getAttribute("tpen-min-view"), project, userId)
+            canView = check(element.getAttribute("tpen-min-view"), project, userId)
             // Removes the element (usually a component) from the DOM or shadowRoot
-            if (!view) element.remove()
+            if (!canView) element.remove()
         }
-        if(view && element.hasAttribute("tpen-min-edit")) {
-            edit = check(element.getAttribute("tpen-min-edit"), project, userId)
-            if(!edit) {
+        if(canView && element.hasAttribute("tpen-min-edit")) {
+            canEdit = check(element.getAttribute("tpen-min-edit"), project, userId)
+            if(!canEdit) {
                 // Disables all inputs and buttons in the component element.
                 // The element itself
                 element.querySelectorAll("input,textarea,select,button,.button").forEach(e => e.setAttribute("disabled", ""))

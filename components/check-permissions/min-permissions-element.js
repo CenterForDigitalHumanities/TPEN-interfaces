@@ -43,15 +43,15 @@ export class PermissionCheck extends HTMLElement {
         const userId = getUserFromToken(TPEN.getAuthorization())
         // Must have been on an authenticated interface or we can't do anything
         if(!userId) return
-        let view = true
-        let edit = true
+        let canView = true
+        let canEdit = true
         if(this.hasAttribute("tpen-min-view")) {
-            view = this.check(this.getAttribute("tpen-min-view"), project, userId)
-            if(!view) this.remove()
+            canView = this.check(this.getAttribute("tpen-min-view"), project, userId)
+            if(!canView) this.remove()
         }
-        if(view && this.hasAttribute("tpen-min-edit")) {
-            edit = this.check(this.getAttribute("tpen-min-edit"), project, userId)
-            if(!edit) {
+        if(canView && this.hasAttribute("tpen-min-edit")) {
+            canEdit = this.check(this.getAttribute("tpen-min-edit"), project, userId)
+            if(!canEdit) {
                 // The element itself
                 this.querySelectorAll("input,textarea,select,button,.button").forEach(e => e.setAttribute("disabled", ""))
                 Array.from(this.children).forEach(child => { 
