@@ -41,7 +41,7 @@ TPEN.eventDispatcher.on("tpen-project-loaded", ev => checkElements(ev.detail))
  */
 function checkElements(project) {
     // Must have a loaded project with collaborators or we can't check anything
-    if(!project || !project?.collaborators || !project.collaborators.length) return
+    if(!project || !project?.collaborators || !Object.keys(project.collaborators).length) return
     const userId = getUserFromToken(TPEN.getAuthorization())
     // Must have been on an authenticated interface or we can't do anything
     if(!userId) return
@@ -87,12 +87,12 @@ function checkElements(project) {
 export function permissionMatch(permission, project, userId) {
     // Can't process malformed permission so it is allowed to render.  The value should be a single action_scope_entity string.
     // Check for ',' specifically in case someone tried to supply multiple permissions in the attribute.
-    if(!permission || permission.includes(",") || permission.split("_").length !== 3) return true
-    const provided = permission.split("_")
+    if(!permission || typeof permission !== "string" || permission.includes(",") || permission.split("_").length !== 3) return true
+    const provided = permission.split("_").map(ase => ase.toUpperCase())
     // Permissions are project based.  If there is no project then the user is permitted.
     if(!project) return true
     // If it isn't an entity we expect then the user is permitted because we have no say in it.
-    if(!minEntity || !entities.includes(minEntity)) return true
+    if(!provided[2] || !entities.includes(provided[2])) return true
     const userRoles = project?.collaborators?.[userId]?.roles
     const allUserPermissions = (userRoles && userRoles.length) ? 
         Array.from(new Set(
@@ -106,7 +106,7 @@ export function permissionMatch(permission, project, userId) {
             (provided[0] === "ANY" || current[0] === "*" || provided[0] === current[0])
          && (provided[1] === "ANY" || current[1] === "*" || provided[1] === current[1])
          && (provided[2] === "ANY" || current[2] === "*" || provided[2] === current[2])
-         if(permitted) return
+         if(permitted) return permitted
     }
     return permitted
 }

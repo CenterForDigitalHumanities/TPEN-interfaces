@@ -42,7 +42,7 @@ export class PermissionMatch extends HTMLElement {
 
     render(project) {
         // Must have a loaded project with collaborators or we can't check anything
-        if(!project || !project?.collaborators || !project.collaborators.length) return
+        if(!project || !project?.collaborators || !Object.keys(project.collaborators).length) return
         const userId = getUserFromToken(TPEN.getAuthorization())
         // Must have been on an authenticated interface or we can't check anything
         if(!userId) return
