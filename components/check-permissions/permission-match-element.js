@@ -51,9 +51,13 @@ export class PermissionMatch extends HTMLElement {
         let canEdit = true
         if(this.hasAttribute("tpen-view")) {
             canView = permissionMatch(this.getAttribute("tpen-view"), project, userId)
-            if(!canView) this.remove()
+            if(!canView) {
+                this.remove()
+                // No reason to check tpen-edit.  The element is gone.
+                return
+            }
         }
-        if(canView && this.hasAttribute("tpen-edit")) {
+        if(this.hasAttribute("tpen-edit")) {
             canEdit = permissionMatch(this.getAttribute("tpen-edit"), project, userId)
             if(!canEdit) {
                 // The element itself
