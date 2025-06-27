@@ -43,7 +43,7 @@ export class PermissionMatch extends HTMLElement {
 
     render(project) {
         // Must have a loaded project with collaborators or we can't check anything
-        if(!project || !project?.collaborators || !Object.keys(project.collaborators).length) return
+        if(!project || !project.collaborators || !Object.keys(project.collaborators).length) return
         const userId = getUserFromToken(TPEN.getAuthorization())
         // Must have been on an authenticated interface or we can't check anything
         if(!userId) return
@@ -64,7 +64,7 @@ export class PermissionMatch extends HTMLElement {
                 this.classList.add("tpen-readonly")
                 this.setAttribute("tpen-readonly", "")
                 // Also mark the element's direct children since those are likely to be components that need to know.
-                if(this?.children && this.children.length) {
+                if(this.children && this.children.length) {
                     Array.from(this.children).forEach(child => {
                         child.classList.add("tpen-readonly")
                         child.setAttribute("tpen-readonly", "")

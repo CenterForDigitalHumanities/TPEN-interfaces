@@ -43,7 +43,7 @@ TPEN.eventDispatcher.on("tpen-project-loaded", ev => checkElements(ev.detail))
  */
 function checkElements(project) {
     // Must have a loaded project with collaborators or we can't check anything
-    if(!project || !project?.collaborators || !Object.keys(project.collaborators).length) return
+    if(!project || !project.collaborators || !Object.keys(project.collaborators).length) return
     const userId = getUserFromToken(TPEN.getAuthorization())
     // Must have been on an authenticated interface or we can't do anything
     if(!userId) return
@@ -69,7 +69,7 @@ function checkElements(project) {
                 element.classList.add("tpen-readonly")
                 element.setAttribute("tpen-readonly", "")
                 // Also mark the element's direct children since those are likely to be components that need to know.
-                if(element?.children && element.children.length) {
+                if(element.children && element.children.length) {
                     Array.from(element.children).forEach(child => {
                         child.classList.add("tpen-readonly")
                         child.setAttribute("tpen-readonly", "")
