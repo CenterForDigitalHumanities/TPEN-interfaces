@@ -7,12 +7,14 @@
  * <script type="module" src="../../components/check-permissions/permission-match.js"></script>
  * Including the module automatically checks all elements in the document.  Decorate elements like
     <div class="container" tpen-view="ANY_ANY_LINE" tpen-edit="UPDATE_*_LINE">
-        <tpen-line-annotator></tpen-line-annotator>
+        <tpen-line-component></tpen-line-component>
     </div>
+ *
  * To use within a component, import the permissionMatch function like
  * import { permissionMatch } from '../check-permissions/permission-match.js'
  * Use it like
     const canView = permissionMatch(elem.getAttribute("tpen-view"), project, userId)
+ *
  */
 
 import TPEN from '../../api/TPEN.js'
@@ -35,7 +37,7 @@ TPEN.eventDispatcher.on("tpen-project-loaded", ev => checkElements(ev.detail))
 /**
  * Gather all elements with the tpen-view or tpen-edit attributes.
  * Perform modifications to the element depending on whether or not
- * the current logged in user has sufficient permissions for the project.
+ * the current logged in user has sufficient project permissions.
  *
  * @param project The details from a tpen-project-loaded event.
  */

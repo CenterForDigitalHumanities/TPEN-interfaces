@@ -7,8 +7,9 @@
  * <script type="module" src="../../components/check-permissions/permission-match-element.js"></script>
  * Use it like
     <tpen-can tpen-view="ANY_ANY_LINE" tpen-edit="EDIT_*_LINE">
-        <tpen-line-annotator></tpen-line-annotator>
+        <tpen-line-component></tpen-line-component>
     </tpen-can>
+ *
  * To use within a component, import the <tpen-can> element like
  * import "../components/check-permissions/permission-match-element.js"
  * Use it the same way in the component HTML.  
