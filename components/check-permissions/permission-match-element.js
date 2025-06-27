@@ -64,7 +64,7 @@ export class PermissionMatch extends HTMLElement {
                 this.classList.add("tpen-readonly")
                 this.setAttribute("tpen-readonly", "")
                 // Also mark the element's direct children since those are likely to be components that need to know.
-                if(this.children && this.children.length) {
+                if(this.children?.length) {
                     Array.from(this.children).forEach(child => {
                         child.classList.add("tpen-readonly")
                         child.setAttribute("tpen-readonly", "")

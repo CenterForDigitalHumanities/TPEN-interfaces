@@ -69,7 +69,7 @@ function checkElements(project) {
                 element.classList.add("tpen-readonly")
                 element.setAttribute("tpen-readonly", "")
                 // Also mark the element's direct children since those are likely to be components that need to know.
-                if(element.children && element.children.length) {
+                if(element?.children.length) {
                     Array.from(element.children).forEach(child => {
                         child.classList.add("tpen-readonly")
                         child.setAttribute("tpen-readonly", "")
