@@ -14,8 +14,8 @@ class ProjectTools extends HTMLElement {
 
     async render() {
         const tools = TPEN.activeProject.tools
-        const isToolsEditAccess = await CheckPermissions.checkEditAccess("TOOLS")
-        const isToolsAddAccess = await CheckPermissions.checkCreateAccess("TOOLS")
+        const isToolsEditAccess = await CheckPermissions.checkEditAccess("TOOL")
+        const isToolsAddAccess = await CheckPermissions.checkCreateAccess("TOOL")
         this.shadowRoot.innerHTML = `
             <style>
                 .container {
