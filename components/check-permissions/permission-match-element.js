@@ -34,18 +34,16 @@ export class PermissionMatch extends HTMLElement {
     constructor() {
         super()
         TPEN.attachAuthentication(this)
-    }
-
-    connectedCallback() {
-        TPEN.attachAuthentication(this)
         TPEN.eventDispatcher.on("tpen-project-loaded", ev => this.render(ev.detail))
     }
 
+    connectedCallback() {}
+
     render(project) {
-        // Must have a loaded project or we can't do anything
-        if(!project) return
+        // Must have a loaded project with collaborators or we can't check anything
+        if(!project || !project?.collaborators || !project.collaborators.length) return
         const userId = getUserFromToken(TPEN.getAuthorization())
-        // Must have been on an authenticated interface or we can't do anything
+        // Must have been on an authenticated interface or we can't check anything
         if(!userId) return
         let canView = true
         let canEdit = true
@@ -56,8 +54,14 @@ export class PermissionMatch extends HTMLElement {
         if(canView && this.hasAttribute("tpen-edit")) {
             canEdit = permissionMatch(this.getAttribute("tpen-edit"), project, userId)
             if(!canEdit) {
+                // The element itself
                 this.classList.add("tpen-readonly")
                 this.setAttribute("tpen-readonly", "")
+                // Also mark the element's direct children since those are likely to be components that need to know.
+                Array.from(this.children).forEach(child => {
+                    child.classList.add("tpen-readonly")
+                    child.setAttribute("tpen-readonly", "")
+                })
             }
         }
     }
