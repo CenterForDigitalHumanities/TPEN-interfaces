@@ -125,7 +125,7 @@ export default class TranscriptionBlock extends HTMLElement {
                         method: 'PATCH',
                         headers: {
                             'Content-Type': 'text/plain',
-                            'authorization': `Bearer ${TPEN.getAuthorization()}`
+                            'Authorization': `Bearer ${TPEN.getAuthorization()}`
                         },
                         body: typeof newText === 'string' ? newText : (newText?.toString?.() ?? '')
                     })
