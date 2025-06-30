@@ -96,14 +96,14 @@ export default class TranscriptionBlock extends HTMLElement {
                 const projectID = TPEN.activeProject?.id ?? TPEN.activeProject?._id
                 if (!pageID || !projectID) {
                     console.warn('No page or project ID found, cannot save transcriptions.')
-                    TPEN.eventDispatcher.dispatch('toast', {
+                    TPEN.eventDispatcher.dispatch('tpen-toast', {
                         message: 'No page or project ID found, cannot save transcriptions.',
                         status: 'error'
                     })
                     return
                 }
                 if (!this.$dirtyLines || this.$dirtyLines.size === 0) {
-                    TPEN.eventDispatcher.dispatch('toast', {
+                    TPEN.eventDispatcher.dispatch('tpen-toast', {
                         message: 'No unsaved changes.',
                         status: 'info'
                     })
@@ -115,7 +115,7 @@ export default class TranscriptionBlock extends HTMLElement {
                     const lineID = line.id?.split?.('/').pop()
                     if (!lineID) {
                         console.warn('No line ID found, cannot save transcription.')
-                        TPEN.eventDispatcher.dispatch('toast', {
+                        TPEN.eventDispatcher.dispatch('tpen-toast', {
                             message: 'No line ID found, cannot save transcription.',
                             status: 'error'
                         })
@@ -135,7 +135,7 @@ export default class TranscriptionBlock extends HTMLElement {
                         for (const saveLine of saveLines) {
                             await saveLine
                         }
-                        TPEN.eventDispatcher.dispatch('toast', {
+                        TPEN.eventDispatcher.dispatch('tpen-toast', {
                             message: `Saved ${saveLines.length} lines.`,
                             status: 'success'
                         })
@@ -145,7 +145,7 @@ export default class TranscriptionBlock extends HTMLElement {
                         if (linesCount) linesCount.textContent = ''
                     } catch (err) {
                         console.error('Error saving transcriptions:', err)
-                        TPEN.eventDispatcher.dispatch('toast', {
+                        TPEN.eventDispatcher.dispatch('tpen-toast', {
                             message: 'Error saving transcriptions.',
                             status: 'error'
                         })
