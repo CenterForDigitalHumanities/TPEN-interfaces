@@ -1,0 +1,431 @@
+.quick-tour {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: #fff;
+    border-radius: 8px;
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+}
+
+.quick-tour .header-panel {
+    width: 100%;
+    border-radius: 8px 8px 0 0;
+    padding: 20px;
+    background-color: #fff;
+    text-align: center;
+}
+
+.quick-tour .header-panel h1 {
+    font-size: 30px;
+    padding: 10px 50px;
+    text-align: center;
+    color: var(--accent);
+}
+
+.quick-tour .header-panel p {
+    font-size: 16px;
+    padding: 10px 50px;
+    color: #333;
+    width: 100%;
+    text-align: center;
+}
+
+.quick-tour .header-panel .guide-image {
+    width: 100%;
+    max-width: 600px;
+    height: auto;
+}
+
+.image-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: auto;
+}
+
+.quick-tour .new-project-panel {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.quick-tour .new-project-panel .new-project-heading-button {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.01);
+    border-top: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
+    padding: 20px 40px;
+}
+
+.quick-tour .new-project-panel .new-project-heading-button h2 {
+    font-size: 24px;
+    color: var(--accent);
+}
+
+.quick-tour .new-project-panel .new-project-heading-button button {
+    background-color: var(--accent);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.carousel-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    position: relative;
+    max-height: 100%;
+    transition: max-height 0.4s ease-in-out, opacity 0.4s ease-in-out;
+    border-radius: 16px;
+}
+
+.carousel-wrapper {
+    overflow: hidden;
+    width: 80%;
+    position: relative;
+    margin: 20px;
+}
+
+.quick-tour .new-project-panel .carousel-track {
+    opacity: 1;
+    display: flex;
+    transition: transform 0.4s ease-in-out;
+    border-radius: 16px;
+}
+
+.quick-tour .carousel-container.collapsed {
+    max-height: 0;
+    opacity: 0;
+    padding: 0 40px;
+    border-radius: 16px;
+    transition: max-height 0.4s ease-in-out, opacity 0.4s ease-in-out;
+}
+
+.quick-tour .new-project-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    background-color: var(--light-color);
+    border-radius: 16px;
+    padding: 0;
+    margin-top: 20px;
+    flex: 0 0 100%;
+    box-sizing: border-box;
+    border: 1px solid #ddd;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.quick-tour .new-project-panel .carousel-track li p {
+    font-size: 18px;
+    color: #333;
+    background-color: rgb(238, 236, 236);
+    padding: 10px;
+    width: 100%;
+    text-align: center;
+    border-bottom-left-radius: 16px;
+    border-bottom-right-radius: 16px;
+}
+
+.quick-tour .new-project-card .dummy-image {
+    width: 95%;
+    height: auto;
+    padding: 10px;
+    border-radius: 16px;
+}
+
+.carousel-buttons {
+    display: flex;
+    justify-content: center;
+    margin: 30px 0;
+}
+
+.carousel-buttons button {
+    background-color: var(--accent);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin: 0 10px;
+}
+
+.carousel-buttons button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+.quick-tour .grid-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    border-radius: 8px;
+    padding: 20px;
+    gap: 20px;
+}
+
+.quick-tour .grid-item {
+    flex: 0 0 calc(50% - 20px);
+    max-width: calc(50% - 20px);
+    aspect-ratio: 1 / 0.75;
+    box-sizing: border-box;
+    background-color: var(--light-color);
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.quick-tour .grid-item img {
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+    border-radius: 12px;
+    padding: 5px;
+}
+
+.quick-tour .grid-item p {
+    font-size: 16px;
+    color: #333;
+    margin: 0;
+}
+
+.card-header {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.done-checkbox {
+  font-size: 14px;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.done-checkbox input[type="checkbox"] {
+  width: 30px;
+  height: 30px;
+}
+
+.new-project-card.done {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.grid-item.done {
+  opacity: 0.5;
+  user-select: none;
+}
+
+.flowchart-image {
+    width: 100%;
+    height: auto;
+    padding: 80px;
+    margin: 20px auto;
+}
+
+.quick-tour .grid-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    position: relative;
+    max-height: 100%;
+    transition: max-height 0.4s ease-in-out, opacity 0.4s ease-in-out;
+    border-radius: 16px;
+    padding: 40px;
+}
+
+.quick-tour .grid-container.collapsed {
+    max-height: 0;
+    opacity: 0;
+    padding: 0 40px;
+    border-radius: 16px;
+    transition: max-height 0.4s ease-in-out, opacity 0.4s ease-in-out;
+    cursor: pointer;
+}
+
+.tab-nav {
+    display: flex;
+    gap: 10px;
+    margin: 20px;
+    width: 100%;
+    justify-content: center;
+    align-items: center;
+}
+
+.tab-nav button {
+    padding: 10px 20px;
+    cursor: pointer;
+    background-color: #e0e0e0;
+    color: #333;
+    border: none;
+    border-radius: 5px;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.tab-nav button.active {
+    background-color: var(--accent);
+    color: white;
+}
+
+.tab-content {
+    display: none;
+    width: 100%;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.index-panel {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 40px;
+}
+
+.index-image {
+    width: 50%;
+    height: auto;
+    padding: 20px;
+}
+
+.index-image img {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+}
+
+.index-content {
+    width: 50%;
+    padding: 5px 20px;
+    text-align: left;
+}
+
+.index-content p {
+    font-size: 16px;
+    color: #333;
+    margin-bottom: 20px;
+    line-height: 1.5;
+    font-weight: 500;
+}
+
+.index-content p span {
+    font-weight: bold;
+    color: white;
+    border-radius: 20px;
+    background-color: rgb(213,72,123);
+    padding: 5px 10px;
+    margin-right: 10px;
+}
+
+@media (max-width: 960px) {
+    .quick-tour .new-project-panel .new-project-heading-button {
+        padding: 5px 10px;
+    }
+
+    .quick-tour .new-project-panel .new-project-heading-button h2 {
+        font-size: 18px;
+        padding: 10px;
+    }
+
+    .quick-tour .new-project-panel .new-project-heading-button button {
+        padding: 10px;
+        font-size: 12px;
+    }
+
+    .quick-tour .new-project-panel .carousel-track li p {
+        font-size: 14px;
+        padding: 5px;
+    }
+
+    .quick-tour .new-project-card .dummy-image {
+        width: 100%;
+        padding: 5px;
+        border-radius: 8px;
+    }
+
+    .quick-tour .new-project-card {
+        border-radius: 8px;
+    }
+
+    .tab-nav {
+        padding: 10px;
+    }
+
+    .tab-nav button {
+        padding: 8px 16px;
+        font-size: 12px;
+    }
+
+    .quick-tour .grid-container {
+        flex-wrap: nowrap;
+        flex-direction: column;
+    }
+
+    .quick-tour .grid-item {
+        flex: 0 0 100%;
+        max-width: 100%;
+        margin-bottom: 20px;
+        height: auto;
+        aspect-ratio: none;
+    }
+
+    .done-checkbox input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+    }
+
+    .flowchart-image {
+        padding: 10px;
+        margin: 5px auto;
+    }
+}
+
+@media (max-width: 1100px) {
+     .index-panel {
+        flex-direction: column;
+        align-items: center;
+        padding: 10px 20px;
+    }
+
+    .index-image {
+        width: 100%;
+        padding: 10px;
+    }
+
+    .index-content {
+        width: 100%;
+        padding: 5px 10px;
+    }
+
+    .index-content p {
+        font-size: 16px;
+        line-height: 1.4;
+        margin-bottom: 10px;
+    }
+
+    .index-content p span {
+        font-size: 12px;
+        padding: 3px 6px;
+    }   
+}
