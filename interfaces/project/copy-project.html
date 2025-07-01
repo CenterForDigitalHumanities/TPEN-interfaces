@@ -1,0 +1,55 @@
+---
+title: Copy Project
+permalink: /project/copy-project
+---
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Copy Project</title>
+    <script type="module" src="/api/TPEN.js"></script>
+    <script type="module" src="/components/gui/site/index.js"></script>
+    <script type="module" src="/components/gui/card/Card.js"></script>
+    <script type="module" src="/components/copy-existing-project/index.js"></script>
+</head>
+
+<body>
+    <tpen-page class="grid">
+        <tpen-card>
+            <span slot="icon">📋</span>
+            <h2 slot="header">Copy Existing Project</h2>
+            <span slot="body">Duplicate all pages from an existing project with annotations.</span>
+            <a slot="footer" href="../../components/copy-existing-project/index.html">Copy</a>
+        </tpen-card>
+        <tpen-card>
+            <span slot="icon">📋</span>
+            <h2 slot="header">Copy Existing Project Without Annotations</h2>
+            <span slot="body">Duplicate all pages from an existing project without annotations.</span>
+            <a slot="footer" href="#">Copy Without Annotations</a>
+        </tpen-card>
+        <tpen-card>
+            <span slot="icon">📋</span>
+            <h2 slot="header">Copy Group Member from a Project</h2>
+            <span slot="body">Duplicate a group member from an existing project.</span>
+            <a slot="footer" href="#">Copy Group Member</a>
+        </tpen-card>
+        <tpen-card>
+            <span slot="icon">📋</span>
+            <h2 slot="header">Copy Roles and Permissions from a Project</h2>
+            <span slot="body">Duplicate roles and permissions from an existing project.</span>
+            <a slot="footer" href="#">Copy Roles and Permissions</a>
+        </tpen-card>
+        <tpen-card>
+            <span slot="icon">📋</span>
+            <h2 slot="header">Copy Project With Customizations</h2>
+            <span slot="body">Duplicate a project with all its customizations.</span>
+            <a slot="footer" href="#">Copy With Customizations</a>
+        </tpen-card>
+    </tpen-page>
+
+</body>
+
+</html>
