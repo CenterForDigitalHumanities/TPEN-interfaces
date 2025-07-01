@@ -2,7 +2,7 @@ import TPEN from '../../api/TPEN.js'
 import User from '../../api/User.js'
 import { getUserFromToken } from "../iiif-tools/index.js"
 
-class CopyExistingProject extends HTMLElement {
+class CopyProjectWithGroupMember extends HTMLElement {
     constructor() {
         super()
         this.attachShadow({ mode: 'open' })
@@ -98,7 +98,7 @@ class CopyExistingProject extends HTMLElement {
                     background: #0056b3;
                 }
             </style>
-            <h3>Copy Existing Project</h3>
+            <h3>Copy Existing Project With Group Member</h3>
             <label for="project-select">Select a Project :</label>
             <select class="project-select" id="project-select">
                 <option value="none">Select a Project to Copy</option>
@@ -117,7 +117,7 @@ class CopyExistingProject extends HTMLElement {
                 return
             }
 
-            await fetch(`${TPEN.servicesURL}/project/${selectedProjectId}/copy`, {
+            await fetch(`${TPEN.servicesURL}/project/${selectedProjectId}/copy-with-group`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${TPEN.getAuthorization()}`,
@@ -154,4 +154,4 @@ class CopyExistingProject extends HTMLElement {
     }
 }
 
-customElements.define('tpen-copy-existing-project', CopyExistingProject)
+customElements.define('tpen-copy-project-with-group-member', CopyProjectWithGroupMember)
