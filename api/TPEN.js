@@ -229,7 +229,7 @@ function updateUser(element, token) {
     const expires = decodeUserToken(element.userToken)?.exp
     element.setAttribute("tpen-token-expires", expires)
     element.expiring = setTimeout(() => {
-        eventDispatcher.dispatchEvent("token-expiration")
+        eventDispatcher.dispatch("token-expiration")
     }, expires * 1000 - Date.now())
     element.querySelectorAll("[tpen-creator]").forEach(elem => elem.setAttribute("tpen-creator", `https://store.rerum.io/v1/id/${userId}`))
 }

@@ -38,7 +38,7 @@ export default class ProjectsView extends HTMLElement {
                         status: error.status
                     }
                 })
-                TPEN.eventDispatcher.dispatchEvent(toast)
+                TPEN.eventDispatcher.dispatch(toast)
             }
         })
     }

@@ -1,0 +1,429 @@
+---
+title: Detailed Guide to Create a New Project
+permalink: /components/quick-guide
+---
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detailed Guide to Create a New Project</title>
+    <link rel="stylesheet" href="/components/quick-guide/index.css">
+    <script src="/api/TPEN.js" type="module"></script>
+    <script src="/components/gui/site/index.js" type="module"></script>
+    <script src="/components/quick-guide/index.js" type="module"></script>
+</head>
+
+<body>
+    <tpen-page>
+        <section class="quick-tour">
+            <div class="header-panel">
+                <h1>Quick Guide to Create a New Project</h1>
+                <p>Follow these steps to create a new project in TPEN.</p>
+                <!-- Original source: https://www.lucidchart.com/blog/project-management-communication-plan -->
+                <img class="guide-image" src="https://corporate-assets.lucid.co/chart/844cb535-aa32-432b-9f86-67ec4af0ef5c.png" alt="Communication Plan Diagram">
+            </div>
+
+            <div class="tab-nav">
+                <button class="tab-btn active" data-tab="layout1">Carousel Layout</button>
+                <button class="tab-btn" data-tab="layout2">Cards Layout</button>
+                <button class="tab-btn" data-tab="layout3">Flowchart Layout</button>
+                <button class="tab-btn" data-tab="layout4">Index Layout</button>
+            </div>
+        
+            <div class="tab-content active" id="layout1">
+                <div class="new-project-panel">
+                    <div class="new-project-heading-button">
+                        <h2>Steps to Create a New Project From an Image :</h2>
+                        <button class="collapse-button">Collapse Details</button>
+                    </div>
+                    <div class="carousel-container">
+                        <div class="carousel-wrapper">
+                            <ol class="carousel-track">
+                                <li class="new-project-card">
+                                    <div class="image-container">
+                                        <img class="dummy-image" src="../../assets/images/home-page.png" alt="Create Project" />
+                                    </div>
+                                    <p>Click on the <strong><a href="/project/create">Create a New Project</a></strong> from My Actions tab on the home page.</p>
+                                </li>
+                                <li class="new-project-card">
+                                    <div class="image-container">
+                                        <img class="dummy-image" src="../../assets/images/transcribe-image.png" alt="Transcribe Image" />
+                                    </div>
+                                    <p>Click on the <strong><a href="/project/import-image">Transcribe</a></strong> button in the Transcribe Image tab.</p>
+                                </li>
+                                <li class="new-project-card">
+                                    <div class="image-container">
+                                        <img class="dummy-image" src="../../assets/images/transcribe-page.png" alt="Project Name and URL" />
+                                    </div>
+                                    <p>Enter the <strong>Project Name</strong> and a <strong>URL of the image</strong> you want to use for your project in the provided field.</p>
+                                </li>
+                                <li class="new-project-card">
+                                    <div class="image-container">
+                                        <img class="dummy-image" src="../../assets/images/transcribe-button.png" alt="Create Project Button" />
+                                    </div>
+                                    <p>Click on the <strong>Create Project</strong> button to finalize the creation of your project.</p>
+                                </li>
+                                <li class="new-project-card">
+                                    <div class="image-container">
+                                        <img class="dummy-image" src="../../assets/images/transcribe-project.png" alt="Project List" />
+                                    </div>
+                                    <p>Your new project will now appear in the project list, and you can start transcribing it.</p>
+                                </li>
+                            </ol>
+                            <div class="carousel-buttons">
+                                <button id="prevBtn0">Prev</button>
+                                <button id="nextBtn0">Next</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="new-project-panel">
+                    <div class="new-project-heading-button">
+                        <h2>Steps to Import a Project from IIIF Manifest :</h2>
+                        <button class="collapse-button">Expand Details</button>
+                    </div>
+                    <div class="carousel-container collapsed">
+                        <div class="carousel-wrapper">
+                            <ol class="carousel-track">
+                                <li class="new-project-card">
+                                    <div class="image-container">
+                                        <img class="dummy-image" src="../../assets/images/home-page.png" alt="Import IIIF Manifest" />
+                                    </div>
+                                    <p>Click on the <strong><a href="/project/create">Create a New Project</a></strong> from My Actions tab on the home page.</p>
+                                </li>
+                                <li class="new-project-card">
+                                    <div class="image-container">
+                                        <img class="dummy-image" src="../../assets/images/import-manifest.png" alt="Import IIIF Manifest" />
+                                    </div>
+                                    <p>Click on the <strong><a href="/project/import">Import Manifest</a></strong> button in the Import IIIF Manifest tab.</p>
+                                </li>
+                                <li class="new-project-card">
+                                    <div class="image-container">
+                                        <img class="dummy-image" src="../../assets/images/import-manifest-page.png" alt="Enter IIIF URL" />
+                                    </div>
+                                    <p>Enter the <strong>IIIF Manifest URL</strong> in the provided field.</p>
+                                </li>
+                                <li class="new-project-card">
+                                    <div class="image-container">
+                                        <img class="dummy-image" src="../../assets/images/import-manifest-button.png" alt="Create Project Button" />
+                                    </div>
+                                    <p>Click on the <strong>Import Project</strong> button to finalize the creation of your project.</p>
+                                </li>
+                                <li class="new-project-card">
+                                    <div class="image-container">
+                                        <img class="dummy-image" src="../../assets/images/import-manifest-project.png" alt="Project List" />
+                                    </div>
+                                    <p>Your new project will now appear in the project list, and you can start working on it.</p>
+                                </li>
+                            </ol>
+                            <div class="carousel-buttons">
+                                <button id="prevBtn1">Prev</button>
+                                <button id="nextBtn1">Next</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="new-project-panel">
+                    <div class="new-project-heading-button">
+                        <h2>Steps to Import a Project from T-PEN 2.8 :</h2>
+                        <button class="collapse-button">Expand Details</button>
+                    </div>
+                    <div class="carousel-container collapsed">
+                        <div class="carousel-wrapper">
+                            <ol class="carousel-track">
+                                <li class="new-project-card">
+                                    <img class="dummy-image" src="../../assets/images/home-page.png" alt="Import T-PEN 2.8 Project" />
+                                    <p>Click on the <strong><a href="/project/create">Create a New Project</a></strong> from My Actions tab on the home page.</p>
+                                </li>
+                                <li class="new-project-card">
+                                    <img class="dummy-image" src="../../assets/images/import-tpen28-project.png" alt="Import T-PEN 2.8 Project" />
+                                    <p>Click on the <strong><a href="/project/import-tpen">Import Project</a></strong> button in the Import T-PEN 2.8 Project tab.</p>
+                                </li>
+                                <li class="new-project-card">
+                                    <img class="dummy-image" src="../../assets/images/tpen28-login-page.png" alt="Upload T-PEN 2.8 File" />
+                                    <p>This will take you to the T-PEN 2.8 Login Page. Log in with your T-PEN 2.8 credentials.</p>
+                                </li>
+                                <li class="new-project-card">
+                                    <img class="dummy-image" src="../../assets/images/select-tpen28-project.png" alt="Create Project Button" />
+                                    <p>After successful login, you will see a list of your T-PEN 2.8 projects. Select the project you want to import.</p>
+                                </li>
+                                <li class="new-project-card">
+                                    <img class="dummy-image" src="../../assets/images/tpen28-project-imported.png" alt="Project List" />
+                                    <p>As you select a project, it will be imported into TPEN3, with all the project configurations and annotations preserved.</p>
+                                </li>
+                                <li class="new-project-card">
+                                    <img class="dummy-image" src="../../assets/images/tpen28-invite-collaborators.png" alt="Project List" />
+                                    <p>All the collaborators from the T-PEN 2.8 project will be listed and you can invite them to collaborate on the imported project.</p>
+                                </li>
+                                <li class="new-project-card">
+                                    <img class="dummy-image" src="../../assets/images/tpen28-open-project.png" alt="Project List" />
+                                    <p>Lastly, review the project details and you can start working on it.</p>
+                                </li>
+                            </ol>
+                            <div class="carousel-buttons">
+                                <button id="prevBtn2">Prev</button>
+                                <button id="nextBtn2">Next</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="layout2">
+                <div class="new-project-panel">
+                    <div class="new-project-heading-button">
+                        <h2>Steps to Create a New Project From an Image :</h2>
+                        <button class="collapse-button">Collapse Details</button>
+                    </div>
+                    <div class="grid-container">
+                        <div class="grid-item">
+                            <div class="card-header">
+                                <label class="done-checkbox">
+                                    <input type="checkbox" />
+                                </label>
+                            </div>
+                            <img class="dummy-image" src="../../assets/images/home-page.png" alt="Create Project" />
+                            <p>Click on the <strong><a href="/project/create">Create a New Project</a></strong> from My Actions tab on the home page.</p>
+                        </div>
+                        <div class="grid-item">
+                            <div class="card-header">
+                                <label class="done-checkbox">
+                                    <input type="checkbox" />
+                                </label>
+                            </div>
+                            <img class="dummy-image" src="../../assets/images/transcribe-image.png" alt="Transcribe Image" />
+                            <p>Click on the <strong><a href="/project/import-image">Transcribe</a></strong> button in the Transcribe Image tab.</p>
+                        </div>
+                        <div class="grid-item">
+                            <div class="card-header">
+                                <label class="done-checkbox">
+                                    <input type="checkbox" />
+                                </label>
+                            </div>
+                            <img class="dummy-image" src="../../assets/images/transcribe-page.png" alt="Project Name and URL" />
+                            <p>Enter the <strong>Project Name</strong> and a <strong>URL of the image</strong> you want to use for your project in the provided field.</p>
+                        </div>
+                        <div class="grid-item">
+                            <div class="card-header">
+                                <label class="done-checkbox">
+                                    <input type="checkbox" />
+                                </label>
+                            </div>
+                            <img class="dummy-image" src="../../assets/images/transcribe-button.png" alt="Create Project Button" />
+                            <p>Click on the <strong>Create Project</strong> button to finalize the creation of your project.</p>
+                        </div>
+                        <div class="grid-item">
+                            <div class="card-header">
+                                <label class="done-checkbox">
+                                    <input type="checkbox" />
+                                </label>
+                            </div>
+                            <img class="dummy-image" src="../../assets/images/transcribe-project.png" alt="Project List" />
+                            <p>Your new project will now appear in the project list, and you can start transcribing it.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="new-project-panel">
+                    <div class="new-project-heading-button">
+                        <h2>Steps to Import a Project from IIIF Manifest :</h2>
+                        <button class="collapse-button">Expand Details</button>
+                    </div>
+                    <div class="grid-container collapsed">
+                        <div class="grid-item">
+                            <div class="card-header">
+                                <label class="done-checkbox">
+                                    <input type="checkbox" />
+                                </label>
+                            </div>
+                            <img class="dummy-image" src="../../assets/images/home-page.png" alt="Import IIIF Manifest" />
+                            <p>Click on the <strong><a href="/project/create">Create a New Project</a></strong> from My Actions tab on the home page.</p>
+                        </div>
+                        <div class="grid-item">
+                            <div class="card-header">
+                                <label class="done-checkbox">
+                                    <input type="checkbox" />
+                                </label>
+                            </div>
+                            <img class="dummy-image" src="../../assets/images/import-manifest.png" alt="Import IIIF Manifest" />
+                            <p>Click on the <strong><a href="/project/import">Import Manifest</a></strong> button in the Import IIIF Manifest tab.</p>
+                        </div>
+                        <div class="grid-item">
+                            <div class="card-header">
+                                <label class="done-checkbox">
+                                    <input type="checkbox" />
+                                </label>
+                            </div>
+                            <img class="dummy-image" src="../../assets/images/import-manifest-page.png" alt="Enter IIIF URL" />
+                            <p>Enter the <strong>IIIF Manifest URL</strong> in the provided field.</p>
+                        </div>
+                        <div class="grid-item">
+                            <div class="card-header">
+                                <label class="done-checkbox">
+                                    <input type="checkbox" />
+                                </label>
+                            </div>
+                            <img class="dummy-image" src="../../assets/images/import-manifest-button.png" alt="Create Project Button" />
+                            <p>Click on the <strong>Import Project</strong> button to finalize the creation of your project.</p>
+                        </div>
+                        <div class="grid-item">
+                            <div class="card-header">
+                                <label class="done-checkbox">
+                                    <input type="checkbox" />
+                                </label>
+                            </div>
+                            <img class="dummy-image" src="../../assets/images/import-manifest-project.png" alt="Project List" />
+                            <p>Your new project will now appear in the project list, and you can start working on it.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="new-project-panel">
+                    <div class="new-project-heading-button">
+                        <h2>Steps to Import a Project from T-PEN 2.8 :</h2>
+                        <button class="collapse-button">Expand Details</button>
+                    </div>
+                    <div class="grid-container collapsed">
+                        <div class="grid-item">
+                            <div class="card-header">
+                                <label class="done-checkbox">
+                                    <input type="checkbox" />
+                                </label>
+                            </div>
+                            <img class="dummy-image" src="../../assets/images/home-page.png" alt="Import T-PEN 2.8 Project" />
+                            <p>Click on the <strong><a href="/project/create">Create a New Project</a></strong> from My Actions tab on the home page.</p>
+                        </div>
+                        <div class="grid-item">
+                            <div class="card-header">
+                                <label class="done-checkbox">
+                                    <input type="checkbox" />
+                                </label>
+                            </div>
+                            <img class="dummy-image" src="../../assets/images/import-tpen28-project.png" alt="Import T-PEN 2.8 Project" />
+                            <p>Click on the <strong><a href="/project/import-tpen">Import Project</a></strong> button in the Import T-PEN 2.8 Project tab.</p>
+                        </div>
+                        <div class="grid-item">
+                            <div class="card-header">
+                                <label class="done-checkbox">
+                                    <input type="checkbox" />
+                                </label>
+                            </div>
+                            <img class="dummy-image" src="../../assets/images/tpen28-login-page.png" alt="Upload T-PEN 2.8 File" />
+                            <p>This will take you to the T-PEN 2.8 Login Page. Log in with your T-PEN 2.8 credentials.</p>
+                        </div>
+                        <div class="grid-item">
+                            <div class="card-header">
+                                <label class="done-checkbox">
+                                    <input type="checkbox" />
+                                </label>
+                            </div>
+                            <img class="dummy-image" src="../../assets/images/select-tpen28-project.png" alt="Create Project Button" />
+                            <p>After successful login, you will see a list of your T-PEN 2.8 projects. Select the project you want to import.</p>
+                        </div>
+                        <div class="grid-item">
+                            <div class="card-header">
+                                <label class="done-checkbox">
+                                    <input type="checkbox" />
+                                </label>
+                            </div>
+                            <img class="dummy-image" src="../../assets/images/tpen28-project-imported.png" alt="Project List" />
+                            <p>As you select a project, it will be imported into TPEN3, with all the project configurations and annotations preserved.</p>
+                        </div>
+                        <div class="grid-item">
+                            <div class="card-header">
+                                <label class="done-checkbox">
+                                    <input type="checkbox" />
+                                </label>
+                            </div>
+                            <img class="dummy-image" src="../../assets/images/tpen28-invite-collaborators.png" alt="Project List" />
+                            <p>All the collaborators from the T-PEN 2.8 project will be listed and you can invite them to collaborate on the imported project.</p>
+                        </div>
+                        <div class="grid-item">
+                            <div class="card-header">
+                                <label class="done-checkbox">
+                                    <input type="checkbox" />
+                                </label>
+                            </div>
+                            <img class="dummy-image" src="../../assets/images/tpen28-open-project.png" alt="Project List" />
+                            <p>Lastly, review the project details and you can start working on it.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="layout3">
+                <div>
+                    <img class="flowchart-image" src="../../assets/images/Guide-Flowchart.jpg" alt="Create Project Flowchart">
+                </div>
+            </div>
+
+            <div class="tab-content" id="layout4">
+                <div class="index-panel">
+                    <div class="index-image">
+                        <img src="../../assets/images/home-page-index.png" alt="Create Project Index">
+                    </div>
+                    <div class="index-content">
+                            <p><span>1</span>Start creating new projects using different templates.</p>
+                            <p><span>2</span>Import IIIF manifest using the manifest URL.</p>
+                            <p><span>3</span>Import a T-PEN 2.8 old project to T-PEN 3 with the same project structure.</p>
+                            <p><span>4</span>View and Manage user profile.</p>
+                            <p><span>5</span>Easy access to all your projects.</p>
+                            <p><span>6</span>Use the setting like button to manage the project configurations.</p>
+                            <p><span>7</span>View the list of all the projects.</p>
+                            <p><span>8</span>View the newest project created with last edited date.</p>
+                    </div>
+                </div>
+                <div class="index-panel">
+                    <div class="index-image">
+                        <img src="../../assets/images/create-a-new-project.png" alt="Create Project Index">
+                    </div>
+                    <div class="index-content">
+                        <p><span>1</span>Click on Start on the New Project Wizard to go through a guide to help understand how to create a new project.</p>
+                        <p><span>2</span>Click on Copy to duplicate an existing project.</p>
+                        <p><span>3</span>Click on Transcribe to create a new project from an image.</p>
+                        <p><span>4</span>Click on Edit Manifest to build a custom manifest from online resource to create a new project.</p>
+                        <p><span>5</span>Click on Import Manifest to import a project from IIIF Manifest.</p>
+                        <p><span>6</span>Click on Import Project to import a TPEN2.8 project to TPEN3 with the same configurations.</p>
+                    </div>
+                </div>
+                <div class="index-panel">
+                    <div class="index-image">
+                        <img src="../../assets/images/profile.png " alt="Profile Index">
+                    </div>
+                    <div class="index-content">
+                        <p><span>1</span>The user profile tab has all the User details including Display Name, Email and Metadata.</p>
+                        <p><span>2</span>Click the Update Profile to edit the Display Name.</p>
+                    </div>
+                </div>
+                <div class="index-panel">
+                    <div class="index-image">
+                        <img src="../../assets/images/manage-project.png" alt="Manage Project Index">
+                    </div>
+                    <div class="index-content">
+                        <p><span>1</span>Project Name is contained in the Header.</p>
+                        <p><span>2</span>Click Transcribe button to redirect to the transcribe page directly.</p>
+                        <p><span>3</span>The Project detail tile which includes the Project Name, Project ID, Project Owner, all collaborators and Manifest page image.</p>
+                        <p><span>4</span>The Metadata tile includes the Metadata of the Project.</p>
+                        <p><span>5</span>Click the Edit Metadata button to Create/Edit/Delete metadata content.</p>
+                        <p><span>6</span>The Collaborators tile includes a list of all the collaborators with their roles.</p>
+                        <p><span>7</span>Click the Manage Collaborators button to Invite new members and edit roles for existing members.</p>
+                        <p><span>8</span>The Layers & Pages tile includes an information card about each layer and its page count.</p>
+                        <p><span>9</span>Click the See Details/Modify button to further add new layers, reorder the pages, delete or add new pages.</p>
+                        <p><span>10</span>The Project Roles tile includes all the roles and detailed permissions for each role.</p>
+                        <p><span>11</span>Click the Add Role button to add new roles and permissions.</p>
+                        <p><span>12</span>The Project Options tile includes project configurations details.</p>
+                        <p><span>13</span>Click the See Details button to view and edit project descriptions and link to a line parser for each canvas.</p>
+                        <p><span>14</span>The Tools tile includes list of all the tools available for a project.</p>
+                        <p><span>15</span>Click the Add iFrame Tool button to add new iframe tools to the project.</p>
+                        <p><span>16</span>Click the Save Tools button to save only the checked tools from the list of tools.</p>
+                        <p><span>17</span>The Exports & Links tile include a link to the latest version of manifest saved.</p>
+                        <p><span>18</span>Click the Export Project button to export the project as a JSON manifest file.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </tpen-page>
+</body>
+
+</html>

@@ -53,7 +53,7 @@ class ImageImporter extends HTMLElement {
         <label for="name">Enter Project Name:</label>
         <input type="text" id="name" placeholder="Enter Project Name..." />
         <label for="url">Image URL:</label>
-        <input type="url" id="url" placeholder="Enter Image URL..." />
+        <input type="text" id="url" placeholder="Drop an image URL here or paste..." />
         <button id="submit">Create Project</button>
         <div id="feedback" class="feedback"></div>
         <div id="page-info-container"></div>
@@ -65,6 +65,18 @@ class ImageImporter extends HTMLElement {
     this.feedback = this.shadowRoot.querySelector('#feedback')
     this.pageInfoContainer = this.shadowRoot.querySelector('#page-info-container')
     this.submitButton.addEventListener('click', this.handleImport.bind(this))
+
+    this.urlInput.addEventListener('dragover', (e) => {
+      e.preventDefault()
+    })
+
+    this.urlInput.addEventListener('drop', (e) => {
+      e.preventDefault()
+      const data = e.dataTransfer.getData('text/uri-list') || e.dataTransfer.getData('text/plain')
+      if (data) {
+        this.urlInput.value = data
+      }
+    })
   }
 
   setLoadingState(isLoading) {
