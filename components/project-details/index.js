@@ -63,7 +63,7 @@ class ProjectDetails extends HTMLElement {
 
     async render() {
         const project = this.Project ?? TPEN.activeProject
-        TPEN.eventDispatcher.dispatchEvent(new CustomEvent('tpen-gui-action-link', { detail:
+        TPEN.eventDispatcher.dispatch(new CustomEvent('tpen-gui-action-link', { detail:
             { 
                 label: "Transcribe",
                 callback: () => location.href = `/transcribe?projectID=${project._id}`

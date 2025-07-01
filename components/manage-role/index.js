@@ -224,8 +224,8 @@ class ManageRole extends HTMLElement {
                     <input class="radio-permission" type="radio" id="entity-permission" name="entity-permissions" value="PERMISSION">
                     <label for="entity-permission" class="radio-btn permissions-label">PERMISSION</label>
 
-                    <input class="radio-permission" type="radio" id="entity-tools" name="entity-permissions" value="TOOLS">
-                    <label for="entity-tools" class="radio-btn permissions-label">TOOLS</label>
+                    <input class="radio-permission" type="radio" id="entity-tools" name="entity-permissions" value="TOOL">
+                    <label for="entity-tools" class="radio-btn permissions-label">TOOL</label>
 
                     <input class="radio-permission" type="radio" id="entity-all" name="entity-permissions" value="*">
                     <label for="entity-all" class="radio-btn permissions-label">ALL</label>
@@ -323,7 +323,7 @@ class ManageRole extends HTMLElement {
                         status: 500
                     }
                 })
-                return TPEN.eventDispatcher.dispatchEvent(toast)
+                return TPEN.eventDispatcher.dispatch(toast)
             }
             if (this.checkExistingRole()) {
                 role.value = ''
@@ -335,7 +335,7 @@ class ManageRole extends HTMLElement {
                         status: 500
                     }
                 })
-                return TPEN.eventDispatcher.dispatchEvent(toast)
+                return TPEN.eventDispatcher.dispatch(toast)
             }
             this.shadowRoot.getElementById('edit-role-name').classList.remove('hide-div')
             role.disabled = true
@@ -348,7 +348,7 @@ class ManageRole extends HTMLElement {
                     status: 500
                 }
             })
-            return TPEN.eventDispatcher.dispatchEvent(toast)
+            return TPEN.eventDispatcher.dispatch(toast)
         }
 
         if (permissionString.value && !this.isValidPermissionText(permissionString.value)) {
@@ -360,7 +360,7 @@ class ManageRole extends HTMLElement {
                     status: 500
                 }
             })
-            return TPEN.eventDispatcher.dispatchEvent(toast)
+            return TPEN.eventDispatcher.dispatch(toast)
         }
 
         if (permissionString.value) {
@@ -373,7 +373,7 @@ class ManageRole extends HTMLElement {
                         status: 500
                     }
                 })
-                return TPEN.eventDispatcher.dispatchEvent(toast)
+                return TPEN.eventDispatcher.dispatch(toast)
             }
             this.permissions.push(permissionString.value)
             permissionString.value = ''
@@ -390,7 +390,7 @@ class ManageRole extends HTMLElement {
                         status: 500
                     }
                 })
-                return TPEN.eventDispatcher.dispatchEvent(toast)
+                return TPEN.eventDispatcher.dispatch(toast)
             }
         }
 
@@ -405,7 +405,7 @@ class ManageRole extends HTMLElement {
                         status: 500
                     }
                 })
-                return TPEN.eventDispatcher.dispatchEvent(toast)
+                return TPEN.eventDispatcher.dispatch(toast)
             }
             this.permissions.push(`${action.value}_${scope.value}_${entity.value}`)
             action.checked = false
@@ -429,7 +429,7 @@ class ManageRole extends HTMLElement {
                     status: 500
                 }
             })
-            return TPEN.eventDispatcher.dispatchEvent(toast)
+            return TPEN.eventDispatcher.dispatch(toast)
         }
 
         if (this.checkRoleName()) {
@@ -440,7 +440,7 @@ class ManageRole extends HTMLElement {
                     status: 500
                 }
             })
-            return TPEN.eventDispatcher.dispatchEvent(toast)
+            return TPEN.eventDispatcher.dispatch(toast)
         }
 
         if (this.checkExistingRole()) {
@@ -451,7 +451,7 @@ class ManageRole extends HTMLElement {
                     status: 500
                 }
             })
-            return TPEN.eventDispatcher.dispatchEvent(toast)
+            return TPEN.eventDispatcher.dispatch(toast)
         }
 
         if (this.permissions.length === 0) {
@@ -461,7 +461,7 @@ class ManageRole extends HTMLElement {
                     status: 500
                 }
             })
-            return TPEN.eventDispatcher.dispatchEvent(toast)
+            return TPEN.eventDispatcher.dispatch(toast)
         }
 
         await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/addCustomRoles`, {
@@ -484,7 +484,7 @@ class ManageRole extends HTMLElement {
                         message: `Custom role added successfully`
                     }
                 })
-                TPEN.eventDispatcher.dispatchEvent(toast)
+                TPEN.eventDispatcher.dispatch(toast)
             }
         })
         .catch(error => {
@@ -494,7 +494,7 @@ class ManageRole extends HTMLElement {
                     status: error.status
                 }
             })
-            TPEN.eventDispatcher.dispatchEvent(toast)
+            TPEN.eventDispatcher.dispatch(toast)
         })
     }
 
