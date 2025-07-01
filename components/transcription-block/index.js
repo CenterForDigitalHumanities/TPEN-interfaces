@@ -96,14 +96,14 @@ export default class TranscriptionBlock extends HTMLElement {
                 const projectID = TPEN.activeProject?.id ?? TPEN.activeProject?._id
                 if (!pageID || !projectID) {
                     console.warn('No page or project ID found, cannot save transcriptions.')
-                    TPEN.eventDispatcher.dispatch('toast', {
+                    TPEN.eventDispatcher.dispatch('tpen-toast', {
                         message: 'No page or project ID found, cannot save transcriptions.',
                         status: 'error'
                     })
                     return
                 }
                 if (!this.$dirtyLines || this.$dirtyLines.size === 0) {
-                    TPEN.eventDispatcher.dispatch('toast', {
+                    TPEN.eventDispatcher.dispatch('tpen-toast', {
                         message: 'No unsaved changes.',
                         status: 'info'
                     })
@@ -115,7 +115,7 @@ export default class TranscriptionBlock extends HTMLElement {
                     const lineID = line.id?.split?.('/').pop()
                     if (!lineID) {
                         console.warn('No line ID found, cannot save transcription.')
-                        TPEN.eventDispatcher.dispatch('toast', {
+                        TPEN.eventDispatcher.dispatch('tpen-toast', {
                             message: 'No line ID found, cannot save transcription.',
                             status: 'error'
                         })
@@ -123,31 +123,34 @@ export default class TranscriptionBlock extends HTMLElement {
                     }
                     return fetch(`${TPEN.servicesURL}/project/${projectID}/page/${pageID}/line/${lineID}/text`, {
                         method: 'PATCH',
-                        headers: { 
-                            'Content-Type': 'text/plain; charset=utf-8',
+                        headers: {
+                            'Content-Type': 'text/plain',
                             'Authorization': `Bearer ${TPEN.getAuthorization()}`
                         },
-                        body: newText
+                        body: typeof newText === 'string' ? newText : (newText?.toString?.() ?? '')
                     })
                 })
-                Promise.all(saveLines)
-                    .then(res => {
-                        TPEN.eventDispatcher.dispatch('toast', {
-                            message: `Saved ${res.length} lines.`,
+                ;(async () => {
+                    try {
+                        for (const saveLine of saveLines) {
+                            await saveLine
+                        }
+                        TPEN.eventDispatcher.dispatch('tpen-toast', {
+                            message: `Saved ${saveLines.length} lines.`,
                             status: 'success'
                         })
                         this.$dirtyLines.clear()
-                        this.#page = vault.get(pageID, 'annotationpage', true)
+                        this.#page = await vault.get(pageID, 'annotationpage', true)
                         const linesCount = this.shadowRoot.querySelector('lines-count')
                         if (linesCount) linesCount.textContent = ''
-                    })
-                    .catch(err => {
+                    } catch (err) {
                         console.error('Error saving transcriptions:', err)
-                        TPEN.eventDispatcher.dispatch('toast', {
+                        TPEN.eventDispatcher.dispatch('tpen-toast', {
                             message: 'Error saving transcriptions.',
                             status: 'error'
                         })
-                    })
+                    }
+                })()
             })
         }
         // Track dirty lines
