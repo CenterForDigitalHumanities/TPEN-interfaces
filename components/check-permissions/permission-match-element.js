@@ -58,12 +58,6 @@ export class PermissionMatch extends HTMLElement {
         const userId = getUserFromToken(TPEN.getAuthorization())
         // Must have been on an authenticated interface or we can't check anything
         if (!userId) return
-        const canView = this.#viewPermission ? permissionMatch(this.#viewPermission, project, userId) : true
-        if (!canView) {
-            this.remove()
-            // No reason to check tpen-edit.  The element is gone.
-            return
-        }
         const canEdit = this.#editPermission ? permissionMatch(this.#editPermission, project, userId) : true
         if (!canEdit) {
             // The element itself
@@ -77,6 +71,12 @@ export class PermissionMatch extends HTMLElement {
                 })
             }
         }
+        // If they can edit, then they can view.
+        const canView = 
+            canEdit ? true 
+            : this.#viewPermission ? permissionMatch(this.#viewPermission, project, userId) 
+            : true
+        if (!canView) this.remove() 
     }
 }
 
