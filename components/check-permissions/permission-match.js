@@ -76,6 +76,7 @@ function checkElements(project) {
             }
         }
         if (element.hasAttribute("tpen-view")) {
+            // If they can edit, then they can view.
             canView = canEdit ? true : permissionMatch(element.getAttribute("tpen-view"), project, userId)
             // Removes the element (along with everything in it, of course)
             if (!canView) element.remove()
