@@ -4,8 +4,8 @@
  * then alterations occur to the wrapped elements.  This is processed once when it is loaded
  * and does not listen for changes.
  *
- * Use the tpen-view attribute to check if a user has enough permissions to see the component.
- * Use the tpen-edit attribute to check if the component should be read-only.  
+ * Use the tpen-view attribute to check if the component should be removed as unviewable.
+ * Use the tpen-edit attribute to check if the component should be read-only as uneditable.  
  * - If the attribute is not present or is invalid they are considered permitted.
  *
  * To use directly on an HTML interface include this module with a <script> tag in a <head> element like 
