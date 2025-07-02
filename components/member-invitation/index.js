@@ -9,7 +9,7 @@ class InviteMemberElement extends HTMLElement {
     }
     
     connectedCallback() {
-        eventDispatcher.on('tpen-project-loaded', async () => this.render())
+        eventDispatcher.on('tpen-project-loaded', () => this.render())
     }
 
     render() {

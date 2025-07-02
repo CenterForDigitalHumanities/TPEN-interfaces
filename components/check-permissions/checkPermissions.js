@@ -4,44 +4,53 @@ import { permissionMatch } from "../../components/check-permissions/permission-m
 
 class checkPermissions {
     #project
+    #userId
 
     constructor() {
-        TPEN.eventDispatcher.on("tpen-project-loaded", ev => this.#project = ev.detail)
+        TPEN.eventDispatcher.on('tpen-project-loaded', (ev) => {
+            this.#project = ev.detail
+            this.#userId = getUserFromToken(TPEN.getAuthorization())
+        })
     }
 
     #getProject() {
-        return TPEN.activeProject ?? this.#project
+        return this.#project ?? TPEN.activeProject
     }
 
     #getUserId() {
-        return getUserFromToken(TPEN.getAuthorization())
+        return this.#userId ?? getUserFromToken(TPEN.getAuthorization())
     }
 
-    #checkAccess(action="*", entity="*", scope="*") {
+    // Note that this will default to 'all' instead of 'any'.
+    #checkAccess(action = '*', entity = '*', scope = '*') {
         const project = this.#getProject()
-        if (!project) throw new Error("No Project Loaded!")
+        if (!project) throw new Error('No Project Loaded!')
         const userId = this.#getUserId()
-        if(!userId) throw new Error("No User Loaded!")
-        return permissionMatch(`${action.toUpperCase()}_${scope.toUpperCase()}_${entity.toUpperCase()}`, project, userId)
+        if(!userId) throw new Error('No User Loaded!')
+        if(!(action && entity && scope)) 
+            throw new Error(`Missing permission paramaters!.  See action_scope_entity : '${action}_${scope}_${entity}'`)
+        return permissionMatch(`${action}_${scope}_${entity}`, project, userId, true)
     }
 
-    checkDeleteAccess(entity = null, scope = null) {
+    // Note that these will default to 'all' instead of 'any'.  Be specific when you use them.
+    // Ex. - CheckPermissions.checkViewAccess("PROJECT", "CONTENT")
+    checkDeleteAccess(entity = '*', scope = '*') {
         return this.#checkAccess('DELETE', entity, scope)
     }
 
-    checkViewAccess(entity = null, scope = null) {
+    checkViewAccess(entity = '*', scope = '*') {
         return this.#checkAccess('READ', entity, scope)
     }
 
-    checkEditAccess(entity = null, scope = null) {
+    checkEditAccess(entity = '*', scope = '*') {
         return this.#checkAccess('UPDATE', entity, scope)
     }
 
-    checkCreateAccess(entity = null, scope = null) {
+    checkCreateAccess(entity = '*', scope = '*') {
         return this.#checkAccess('CREATE', entity, scope)
     }
 
-    checkAllAccess(entity = null, scope = null) {
+    checkAllAccess(entity = '*', scope = '*') {
         return this.#checkAccess('*', entity, scope)
     }
 }
