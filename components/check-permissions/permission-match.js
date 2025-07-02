@@ -108,7 +108,7 @@ export function permissionMatch(permission, project, userId) {
     const userRoles = project?.collaborators?.[userId]?.roles
     const allUserPermissions = (userRoles && userRoles.length) ?
         Array.from(new Set(
-            userRoles.flatMap(role => project.roles[role])
+            userRoles.flatMap(role => project.roles?.[role])
         )) : []
     // If there are no permissions they will not be permitted.  They might not be in the project.
     let permitted = false

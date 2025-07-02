@@ -1,18 +1,8 @@
 import TPEN from '../../api/TPEN.js'
 import { getUserFromToken } from '../../components/iiif-tools/index.js'
+import { permissionMatch } from "../../components/check-permissions/permission-match.js"
 
 class checkPermissions {
-    #entities = [
-        "PROJECT",
-        "LAYER",
-        "PAGE",
-        "LINE",
-        "MEMBER",
-        "ROLE",
-        "PERMISSION",
-        "TOOL",
-        "*"
-    ]
     #project
 
     constructor() {
@@ -34,37 +24,12 @@ class checkPermissions {
         ))
     }
 
-    #hasPermission(permissions, action, entity, scope) {
-        if (!permissions || !Array.isArray(permissions) || permissions.length === 0) {
-            return false
-        }
-        const actionUpperCase = action ? action.toUpperCase() : '*'
-        const scopeUpperCase = scope ? scope.toUpperCase() : '*'
-        const entityUpperCase = entity ? entity.toUpperCase() : '*'
-
-        return permissions.some(permission => {
-            const [permAction, permScope, permEntity] = permission.toUpperCase().split('_')
-
-            if (!permAction || !permScope || !permEntity) {
-                console.warn('Invalid permission format:', permission)
-                return false
-            }
-
-            return (
-                (permAction === actionUpperCase || permAction === '*') &&
-                (permScope === scopeUpperCase || permScope === '*') &&
-                (permEntity === entityUpperCase || permEntity === '*')
-            )
-        })
-    }
-
-    #checkAccess(prefix, entity, scope) {
+    #checkAccess(action="*", entity="*", scope="*") {
         const project = this.#getProject()
         if (!project) throw new Error("No Project Loaded!")
         const userId = this.#getUserId()
         if(!userId) throw new Error("No User Loaded!")
-        const permissions = this.#extractPermissions(project, userId)
-        return this.#hasPermission(permissions, prefix, entity, scope)
+        return permissionMatch(`${action.toUpperCase()}_${scope.toUpperCase()}_${entity.toUpperCase()}`, project, userId)
     }
 
     checkDeleteAccess(entity = null, scope = null) {
