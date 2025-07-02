@@ -90,26 +90,31 @@ class RolesHandler extends HTMLElement {
         const collaborators = TPEN.activeProject.collaborators
         let isOwnerOrLeader = ["OWNER", "LEADER"].some(role => collaborators[userId]?.roles.includes(role))
         const hadEditAccess = CheckPermissions.checkEditAccess("member", "*")
-
         const groupMembersElement = document.querySelector("project-collaborators")?.shadowRoot?.querySelector(".group-members") 
         if(!groupMembersElement) return
         Array.from(groupMembersElement.children).filter(child => {
             const groupMembersActionsElement = child.querySelector(".actions")
             for (const collaboratorId in collaborators) {
-                if (groupMembersActionsElement.getAttribute("data-member-id") == collaboratorId && hadEditAccess) {
-                    const memberHTML = this.createMemberHTML(collaboratorId)
+                if (groupMembersActionsElement?.getAttribute("data-member-id") == collaboratorId) {
+                    let memberHTML
+                    if(hadEditAccess){
+                        memberHTML = this.createMemberHTML(collaboratorId)
+                    }
+                    else{
+                        memberHTML = document.createElement("div")
+                        memberHTML.innerHTML = "You do not have permission to edit member roles"
+                    }
                     groupMembersActionsElement.appendChild(memberHTML)
                 }  
             }
         })        
-
         this.manageRoleButtons(isOwnerOrLeader)
     }
 
     createMemberHTML(collaboratorId) {
         const memberElement = document.createElement("div")
         memberElement.innerHTML = `
-            <button part="manage-roles-button" class="manage-roles-button" data-member-id=${collaboratorId}>
+            <button part="manage-roles-button" class="manage-roles-button" data-member-id="${collaboratorId}">
                 Manage Roles <i class="fas fa-caret-down"></i>
             </button>
         `
@@ -118,6 +123,7 @@ class RolesHandler extends HTMLElement {
 
 
     manageRoleButtons(isOwnerOrLeader) {
+        if(!document.querySelector("project-collaborators")?.shadowRoot?.querySelector('.group-members')) return
         document.querySelector("project-collaborators").shadowRoot.querySelector('.group-members').addEventListener("click", (e) => {
             const button = e.target
             if (button.classList.contains("manage-roles-button")) {
@@ -125,10 +131,9 @@ class RolesHandler extends HTMLElement {
             }
         })
 
-        this.setPermissionBasedVisibility(isOwnerOrLeader)
     }
 
-    async toggleRoleManagementButtons(button) {
+    toggleRoleManagementButtons(button) {
         const memberID = button.dataset.memberId
         const actionsDiv = button.closest(".member").querySelector(".actions")
 
@@ -138,7 +143,7 @@ class RolesHandler extends HTMLElement {
         }
 
         const collaborator = TPEN.activeProject.collaborators[memberID]
-        const buttons = await this.generateRoleManagementButtons(collaborator, button.dataset)
+        const buttons = this.generateRoleManagementButtons(collaborator, button.dataset)
 
         const roleManagementButtonsHTML = `
             <div part="role-management-buttons" class="role-management-buttons">
@@ -151,13 +156,13 @@ class RolesHandler extends HTMLElement {
         actionsDiv.appendChild(roleManagementDiv)
     }
 
-    async generateRoleManagementButtons(collaborator, button) {
+    generateRoleManagementButtons(collaborator, button) {
         const currentUserID = this.getAttribute("tpen-user-id")
         const currentUserIsOwner = TPEN.activeProject.collaborators[currentUserID]?.roles.includes("OWNER")
 
         const memberID = button.memberId
         const memberName = collaborator.profile?.displayName
-        const hasDeleteAccess = await CheckPermissions.checkDeleteAccess("member", "*")
+        const hasDeleteAccess = CheckPermissions.checkDeleteAccess("member", "*")
 
         const buttons = []
 
@@ -184,18 +189,6 @@ class RolesHandler extends HTMLElement {
         }
 
         return buttons
-    }
-
-    setPermissionBasedVisibility(isOwnerOrLeader) {
-        const ownerLeaderActions = this.querySelectorAll('.owner-leader-action')
-
-        ownerLeaderActions.forEach(element => {
-            if (isOwnerOrLeader) {
-                element.classList.remove('is-hidden')
-            } else {
-                element.classList.add('is-hidden')
-            }
-        })
     }
 
     async rolesHandler(event) {
