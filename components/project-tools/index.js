@@ -1,5 +1,5 @@
 import TPEN from "../../api/TPEN.js"
-import CheckPermissions from "../../utilities/checkPermissions.js"
+import CheckPermissions from "../../components/check-permissions/checkPermissions.js"
 
 class ProjectTools extends HTMLElement {
     constructor() {

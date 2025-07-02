@@ -7,7 +7,7 @@ import "../../components/project-permissions/index.js"
 import "../../components/project-export/index.js"
 import "../../components/project-layers/index.js"
 import "../../components/project-tools/index.js"
-import CheckPermissions from "../../utilities/checkPermissions.js"
+import CheckPermissions from "../../components/check-permissions/checkPermissions.js"
 
 TPEN.eventDispatcher.on('tpen-project-loaded', () => render())
 const container = document.body

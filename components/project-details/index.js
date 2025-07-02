@@ -1,7 +1,7 @@
 import TPEN from "../../api/TPEN.js"
 import Project from "../../api/Project.js"
 import "../../components/line-image/index.js"
-import CheckPermissions from "../../utilities/checkPermissions.js"
+import CheckPermissions from "../../components/check-permissions/checkPermissions.js"
 
 class ProjectDetails extends HTMLElement {
 
