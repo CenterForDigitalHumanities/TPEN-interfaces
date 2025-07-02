@@ -1,5 +1,6 @@
 import TPEN from "../../api/TPEN.js"
 import { eventDispatcher } from "../../api/events.js"
+import CheckPermissions from '../../components/check-permissions/checkPermissions.js'
 
 class ProjectCollaborators extends HTMLElement {
     constructor() {
@@ -8,35 +9,36 @@ class ProjectCollaborators extends HTMLElement {
         this.attachShadow({ mode: 'open' })
     }
 
-    async connectedCallback() {
-        this.render()
-        this.addEventListeners()
+    connectedCallback() {
+        eventDispatcher.on('tpen-project-loaded', () => this.render())
     }
 
     render() {
+        const permitted = CheckPermissions.checkViewAccess("member", "*")
+        if(!permitted) {
+            this.shadowRoot.innerHTML = "<div>You do not have permissions to see group members.</div>"
+            return
+        }
         this.shadowRoot.innerHTML = `
-        <div part="group-title" class="group-title">
-            <h1 part="project-title-h1">Project: <span part="project-title" class="project-title"></span></h1>
-        </div>
-        <h4 part="group-members-title" class="title">Existing group members</h4>
-        <ol part="group-members" class="group-members"></ol>
+            <div part="group-title" class="group-title">
+                <h1 part="project-title-h1">Project: <span part="project-title" class="project-title"></span></h1>
+            </div>
+            <h4 part="group-members-title" class="title">Existing group members</h4>
+            <ol part="group-members" class="group-members"></ol>
         `
-    }
-
-    addEventListeners() {
-        eventDispatcher.on('tpen-project-loaded', () => this.renderProjectCollaborators())
+        this.renderProjectCollaborators()
     }
 
     renderProjectCollaborators() {
         if (!TPEN.activeProject) {
             return this.errorHTML.innerHTML = "No project"
         }
-
+        
         const groupMembersElement = this.shadowRoot.querySelector('.group-members')
         groupMembersElement.innerHTML = ""
-        
+
         const groupTitle = this.shadowRoot.querySelector('.project-title')
-        groupTitle.innerHTML = TPEN.activeProject.label
+        groupTitle.innerText = TPEN.activeProject.label
         
         const collaborators = TPEN.activeProject.collaborators
 
@@ -64,7 +66,6 @@ class ProjectCollaborators extends HTMLElement {
 
     renderRoles(roles) {
         const defaultRoles = ["OWNER", "LEADER", "CONTRIBUTOR", "VIEWER"]
-
         return roles
             .map(role => {
                 if (role === "OWNER") {

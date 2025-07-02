@@ -1,4 +1,6 @@
 import TPEN from "../../api/TPEN.js"
+import { eventDispatcher } from "../../api/events.js"
+import CheckPermissions from '../../components/check-permissions/checkPermissions.js'
 
 class InviteMemberElement extends HTMLElement {
     constructor() {
@@ -7,11 +9,15 @@ class InviteMemberElement extends HTMLElement {
     }
     
     connectedCallback() {
-        this.render()
-        this.addEventListeners()
+        eventDispatcher.on('tpen-project-loaded', async () => this.render())
     }
 
     render() {
+        const permitted = CheckPermissions.checkCreateAccess("member", "*")
+        if(!permitted) {
+            this.shadowRoot.innerHTML = `<div>You do not have permission to invite members to this project.</div>`
+            return
+        }
         this.shadowRoot.innerHTML = `
             <style>
             .success-message {
@@ -46,6 +52,7 @@ class InviteMemberElement extends HTMLElement {
             <div part="error" id="errorHTML" class="error"></div>
 
         `
+        this.addEventListeners()
     }
 
     addEventListeners() {

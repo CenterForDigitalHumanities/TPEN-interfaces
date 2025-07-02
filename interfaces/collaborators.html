@@ -10,6 +10,7 @@ permalink: /project/manage/collaborators
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Manage Interface</title>
+    <!-- Don't import check-permissions because "just blank" isn't a good UX for this  -->
     <script type="module" src="../../components/member-invitation/index.js"></script>
     <script type="module" src="../../components/project-collaborators/index.js"></script>
     <script type="module" src="../../components/roles-handler/index.js"></script>
@@ -17,7 +18,7 @@ permalink: /project/manage/collaborators
 </head>
 
 <body>
-    <div tpen-entity="member" class="manage-interface collaborators-container">
+    <div class="manage-interface collaborators-container">
         <header class="title">
             <h1>TRANSCRIPTION PROJECT MANAGEMENT</h1>
             <p>
@@ -25,6 +26,7 @@ permalink: /project/manage/collaborators
                 available manuscripts, and make fine adjustments to individual pages.
             </p>
         </header>
+        <!-- Choosing to let components show their "not permitted" state instead of blank -->
         <main id="content">
             <project-collaborators></project-collaborators>
             <roles-handler></roles-handler>
@@ -32,8 +34,10 @@ permalink: /project/manage/collaborators
         </main>
         <button class="default-btn return-btn">Return to TPEN Homepage <span class="btn-icon"></span></button>
     </div>
-    <p class="permission-msg" style="display: none;">You don't have permission to create, edit or delete any collaborators</p>
-    <script type="module">
+
+    <!-- <p class="permission-msg" style="display: none;">You don't have permission to create, edit or delete any collaborators</p> -->
+    
+    <!-- <script type="module">
         import CheckPermissions from '../../utilities/checkPermissions.js'
 
         (async () => {
@@ -52,6 +56,6 @@ permalink: /project/manage/collaborators
                 inviteMember.style.display = hasCreateAccess ? 'block' : inviteMember.remove()
             }   
       })()
-    </script>
+    </script> -->
 </body>
 </html>

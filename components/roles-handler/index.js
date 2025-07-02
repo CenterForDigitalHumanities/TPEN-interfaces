@@ -1,17 +1,12 @@
 import TPEN from "../../api/TPEN.js"
 import { eventDispatcher } from "../../api/events.js"
-import CheckPermissions from "../../utilities/checkPermissions.js"
+import CheckPermissions from '../../components/check-permissions/checkPermissions.js'
 
 class RolesHandler extends HTMLElement {
     constructor() {
         super()
         TPEN.attachAuthentication(this)
         this.attachShadow({ mode: 'open' })
-    }
-
-    connectedCallback() {
-        this.render()
-        this.addEventListeners()
     }
 
     observedAttributes() {
@@ -22,7 +17,16 @@ class RolesHandler extends HTMLElement {
         console.log(`Attribute ${userID} changed from ${oldValue} to ${newValue}`);
     }
 
+    connectedCallback() {
+        eventDispatcher.on('tpen-project-loaded', () => this.render())
+    }
+
     render() {
+        const permitted = CheckPermissions.checkViewAccess("member", "*")
+        if(!permitted) {
+            this.shadowRoot.innerHTML = "<div>You do not have permissions to see group member roles.</div>"
+            return
+        }
         this.shadowRoot.innerHTML = `
         <style>
         #rolesListContainer {
@@ -68,26 +72,27 @@ class RolesHandler extends HTMLElement {
             </div>
         </div>
         `
+        this.addEventListeners()
+        this.renderProjectCollaborators()
     }
 
     addEventListeners() {
-        eventDispatcher.on('tpen-project-loaded', async () => await this.renderProjectCollaborators())
-        const groupMembersElement = document.querySelector("project-collaborators").shadowRoot.querySelector(".group-members")
-        groupMembersElement.addEventListener('click', this.rolesHandler.bind(this));
+        const groupMembersElement = document.querySelector("project-collaborators")?.shadowRoot?.querySelector(".group-members")
+        if(!groupMembersElement) return
+        groupMembersElement.addEventListener('click', this.rolesHandler.bind(this))
     }
 
-    async renderProjectCollaborators() {
+    renderProjectCollaborators() {
         if (!TPEN.activeProject) {
             return this.errorHTML.innerHTML = "No project"
         }
-        
         const userId = this.getAttribute('tpen-user-id')
         const collaborators = TPEN.activeProject.collaborators
         let isOwnerOrLeader = ["OWNER", "LEADER"].some(role => collaborators[userId]?.roles.includes(role))
-        const hadEditAccess = await CheckPermissions.checkEditAccess("member")
+        const hadEditAccess = CheckPermissions.checkEditAccess("member", "*")
 
-        const groupMembersElement = document.querySelector("project-collaborators").shadowRoot.querySelector(".group-members") 
-
+        const groupMembersElement = document.querySelector("project-collaborators")?.shadowRoot?.querySelector(".group-members") 
+        if(!groupMembersElement) return
         Array.from(groupMembersElement.children).filter(child => {
             const groupMembersActionsElement = child.querySelector(".actions")
             for (const collaboratorId in collaborators) {
@@ -152,7 +157,7 @@ class RolesHandler extends HTMLElement {
 
         const memberID = button.memberId
         const memberName = collaborator.profile?.displayName
-        const hasDeleteAccess = await CheckPermissions.checkDeleteAccess("MEMBER")
+        const hasDeleteAccess = await CheckPermissions.checkDeleteAccess("member", "*")
 
         const buttons = []
 
