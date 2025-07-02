@@ -17,13 +17,6 @@ class checkPermissions {
         return getUserFromToken(TPEN.getAuthorization())
     }
 
-    #extractPermissions(project, userId) {
-        const userRoles = project.collaborators?.[userId]?.roles || []
-        return Array.from(new Set(
-            userRoles.flatMap(role => project.roles?.[role] || [])
-        ))
-    }
-
     #checkAccess(action="*", entity="*", scope="*") {
         const project = this.#getProject()
         if (!project) throw new Error("No Project Loaded!")
