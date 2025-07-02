@@ -10,7 +10,7 @@
     <tpen-manage-role tpen-entity="role"></tpen-manage-role>
     <p class="permission-msg" style="display: none;">You don't have permission to create or edit roles</p>
     <script type="module">
-        import CheckPermissions from '../../components/check-permissions/checkPermissions.js'
+        import CheckPermissions from '../../utilities/checkPermissions.js'
 
         (async () => {
             const manageRole = document.querySelector('tpen-manage-role')
