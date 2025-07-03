@@ -1,4 +1,5 @@
 import TPEN from "../../api/TPEN.js"
+import CheckPermissions from '../../components/check-permissions/checkPermissions.js'
 
 class ManageRole extends HTMLElement {
     permissions = []
@@ -13,6 +14,11 @@ class ManageRole extends HTMLElement {
     }
 
     render() {
+        const permitted = CheckPermissions.checkAllAccess("role", "*")
+        if(!permitted) {
+            this.shadowRoot.innerHTML = `<div>You don't have permission to create or edit roles</div>`
+            return
+        }
         this.shadowRoot.innerHTML = `
             <style>
                 .tpen-project-manage-permissions {
