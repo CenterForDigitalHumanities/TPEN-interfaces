@@ -240,6 +240,35 @@ class CopyExistingProjectWithCustomizations extends HTMLElement {
                     opacity: 0.5;
                 }
 
+                .project-info-div {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    background: #f9f9f9;
+                    border: 1px solid #ddd;
+                    padding: 10px;
+                    margin-top: 10px;
+                    border-radius: 5px;
+                    max-width: 400px;
+                }
+
+                .project-info-div span {
+                    font-weight: bold;
+                }
+
+                .manage-btn {
+                    background: #007bff;
+                    color: #fff;
+                    border: none;
+                    padding: 5px 10px;
+                    cursor: pointer;
+                    border-radius: 5px;
+                }
+
+                .manage-btn:hover {
+                    background: #0056b3;
+                }
+
                 .hidden {
                     display: none;
                 }
@@ -267,9 +296,7 @@ class CopyExistingProjectWithCustomizations extends HTMLElement {
             </section>
             <button class="copy-project-btn hidden" id="copy-project-btn">Copy Project</button>
             <p class="message" id="message"></p>
-            <button id="openProject" class="btn secondary-btn hidden">
-                Open the Project
-            </button>
+            <div id="project-info-container"></div>
         `
 
         this.shadowRoot.getElementById('project-select').addEventListener('change', async (event) => {
@@ -310,7 +337,7 @@ class CopyExistingProjectWithCustomizations extends HTMLElement {
                             addWithAnnotationsBtn.remove()
                             addWithoutAnnotationsBtn.remove()
                             deleteLayerBtn.remove()
-                            layersSelect.push({layerName: { withAnnotations: true }})
+                            layersSelect.push({[layerName]: { withAnnotations: true }})
                         })
                         addWithoutAnnotationsBtn.addEventListener('click', () => {
                             const layerName = addWithoutAnnotationsBtn.getAttribute('data-layer')
@@ -321,7 +348,7 @@ class CopyExistingProjectWithCustomizations extends HTMLElement {
                             addWithAnnotationsBtn.remove()
                             addWithoutAnnotationsBtn.remove()
                             deleteLayerBtn.remove()
-                            layersSelect.push({layerName: { withAnnotations: false }})
+                            layersSelect.push({[layerName]: { withAnnotations: false }})
                         })
                         deleteLayerBtn.addEventListener('click', () => {
                             if (layersList.length === 1) {
@@ -404,7 +431,7 @@ class CopyExistingProjectWithCustomizations extends HTMLElement {
 
         this.shadowRoot.getElementById('copy-project-btn').addEventListener('click', async () => {
             this.shadowRoot.getElementById('project-info').classList.add('disabled-container')
-            this.shadowRoot.getElementById('copy-project-btn').disabled = true
+            // this.shadowRoot.getElementById('copy-project-btn').disabled = true
             const projectSelect = this.shadowRoot.getElementById('project-select')
             const selectedProjectId = projectSelect.value
             if (selectedProjectId === 'none') {
@@ -413,19 +440,16 @@ class CopyExistingProjectWithCustomizations extends HTMLElement {
             }
             modules["Layers"] = this.shadowRoot.getElementById("Layers").checked ? layersSelect : false
             modules["Group Members"] = this.shadowRoot.getElementById("Group Members").checked ? groupMembersSelect : false
-            const projectData = {
-                projectID: selectedProjectId,
-                modules: modules
-            }
+            console.log("Modules to copy:", modules)
             this.shadowRoot.getElementById('message').textContent = 'Copying project... Please wait.'
 
-            await fetch(`${TPEN.servicesURL}/project/copy-with-customizations`, {
+            await fetch(`${TPEN.servicesURL}/project/${selectedProjectId}/copy-with-customizations`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${TPEN.getAuthorization()}`
                 },
-                body: JSON.stringify(projectData)
+                body: JSON.stringify({modules})
             }).then(res => {
                 if (!res.ok) {
                     throw new Error('Failed to copy project')
@@ -433,7 +457,24 @@ class CopyExistingProjectWithCustomizations extends HTMLElement {
                 return res.json()
             }).then(data => {
                 this.shadowRoot.getElementById('message').textContent = `Project copied successfully`
-                this.shadowRoot.getElementById('openProject').classList.remove('hidden')
+                this.shadowRoot.getElementById('copy-project-btn').disabled = false
+                const projectInfoContainer = this.shadowRoot.getElementById('project-info-container')
+                const projectInfo = document.createElement('div')
+                projectInfo.className = 'project-info-div'
+
+                const projectTitle = document.createElement('span')
+                projectTitle.textContent = data.label
+
+                const manageButton = document.createElement('button')
+                manageButton.className = 'manage-btn'
+                manageButton.textContent = 'Manage'
+                manageButton.onclick = () => {
+                    window.location.href = `${TPEN.BASEURL}/project/manage?projectID=${data._id}`
+                }
+
+                projectInfo.appendChild(projectTitle)
+                projectInfo.appendChild(manageButton)
+                projectInfoContainer.appendChild(projectInfo)
             }).catch(error => {
                 this.shadowRoot.getElementById('message').textContent = `Error copying project: ${error.message}`
             })

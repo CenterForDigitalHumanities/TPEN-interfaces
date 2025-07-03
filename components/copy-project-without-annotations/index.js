@@ -110,6 +110,8 @@ class CopyExistingProjectWithoutAnnotations extends HTMLElement {
         `
 
         this.shadowRoot.getElementById('copy-project-btn').addEventListener('click', async () => {
+            this.shadowRoot.getElementById('message').textContent = 'Copying project... Please wait.'
+            this.shadowRoot.getElementById('copy-project-btn').disabled = true
             const projectSelect = this.shadowRoot.getElementById('project-select')
             const selectedProjectId = projectSelect.value
             if (selectedProjectId === 'none') {
@@ -130,6 +132,7 @@ class CopyExistingProjectWithoutAnnotations extends HTMLElement {
                 return response.json()
             }).then(data => {
                     this.shadowRoot.getElementById('message').textContent = `Project copied successfully`
+                    this.shadowRoot.getElementById('copy-project-btn').disabled = false
                     const projectInfoContainer = this.shadowRoot.getElementById('project-info-container')
                     const projectInfo = document.createElement('div')
                     projectInfo.className = 'project-info'

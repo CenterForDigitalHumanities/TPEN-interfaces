@@ -129,10 +129,11 @@ class CopyProjectWithGroupMember extends HTMLElement {
                 }
                 return response.json()
             }).then(data => {
-                    this.shadowRoot.getElementById('message').textContent = `Project copied successfully`
-                    const projectInfoContainer = this.shadowRoot.getElementById('project-info-container')
-                    const projectInfo = document.createElement('div')
-                    projectInfo.className = 'project-info'
+                this.shadowRoot.getElementById('message').textContent = `Project copied successfully`
+                this.shadowRoot.getElementById('copy-project-btn').disabled = false
+                const projectInfoContainer = this.shadowRoot.getElementById('project-info-container')
+                const projectInfo = document.createElement('div')
+                projectInfo.className = 'project-info'
 
                     const projectTitle = document.createElement('span')
                     projectTitle.textContent = data.label
