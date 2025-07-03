@@ -305,8 +305,9 @@ class CopyExistingProjectWithCustomizations extends HTMLElement {
             this.shadowRoot.getElementById('copy-project-btn').classList.remove('hidden')
             this.shadowRoot.getElementById('project-info').classList.remove('hidden')
             const project = await new Project(projectSelect).fetch()
-            const groupMembersList = Object.values(project.collaborators).map(member => member.profile.displayName)
-            const layersList = project.layers.map(layer => ({label:layer.label, id: layer.id}))
+            const groupMembersList = Object.entries(project.collaborators).filter(([key]) => key !== userObj._id)
+            .map(([key, member]) => ({ id: key, name: member.profile.displayName }))
+            const layersList = project.layers.map(layer => ({ label: layer.label, id: layer.id }))
 
             this.shadowRoot.querySelectorAll(".project-customization").forEach(customization => {
                 const index = customization.getAttribute("index")
@@ -369,24 +370,25 @@ class CopyExistingProjectWithCustomizations extends HTMLElement {
                         const memberItem = document.createElement('li')
                         memberItem.innerHTML = `
                         <div class="group-item">
-                            <span class="group-label">${member[0].toUpperCase() + member.slice(1)}</span>
+                            <span class="group-label">${member.name[0].toUpperCase() + member.name.slice(1)}</span>
                             <div class="group-actions">
-                                <button class="invite-btn" data-member="${member}">Invite</button>
-                                <button class="remove-btn" data-member="${member}">Remove</button>
+                                <button class="invite-btn" data-member="${member.id}" data-member-name="${member.name}">Invite</button>
+                                <button class="remove-btn" data-member="${member.id}" data-member-name="${member.name}">Remove</button>
                             </div>
                         </div>`
                         groupMembersListGroup.appendChild(memberItem)
                         const inviteBtn = memberItem.querySelector('.invite-btn')
                         const removeBtn = memberItem.querySelector('.remove-btn')
                         inviteBtn.addEventListener('click', () => {
-                            const memberName = inviteBtn.getAttribute('data-member')
+                            const memberId = inviteBtn.getAttribute('data-member')
+                            const memberName = inviteBtn.getAttribute('data-member-name')
                             const success = document.createElement('p')
                             success.className = 'success-message'
                             success.textContent = `Inviting ${memberName}`
                             memberItem.querySelector('.group-actions').appendChild(success)
                             inviteBtn.remove()
                             removeBtn.remove()
-                            groupMembersSelect.push(memberName)
+                            groupMembersSelect.push(memberId)
                         })
                         removeBtn.addEventListener('click', () => {
                             if(groupMembersList.length === 1) {
@@ -438,8 +440,8 @@ class CopyExistingProjectWithCustomizations extends HTMLElement {
                 this.shadowRoot.getElementById('message').textContent = 'Please select a project to copy.'
                 return
             }
-            modules["Layers"] = this.shadowRoot.getElementById("Layers").checked ? layersSelect : false
-            modules["Group Members"] = this.shadowRoot.getElementById("Group Members").checked ? groupMembersSelect : false
+            modules["Layers"] = this.shadowRoot.getElementById("Layers").checked ? layersSelect : []
+            modules["Group Members"] = this.shadowRoot.getElementById("Group Members").checked ? groupMembersSelect : []
             this.shadowRoot.getElementById('message').textContent = 'Copying project... Please wait.'
 
             await fetch(`${TPEN.servicesURL}/project/${selectedProjectId}/copy-with-customizations`, {
