@@ -1,5 +1,4 @@
 import TPEN from "../../api/TPEN.js"
-import { eventDispatcher } from "../../api/events.js"
 import CheckPermissions from '../../components/check-permissions/checkPermissions.js'
 
 class RolesHandler extends HTMLElement {
@@ -9,16 +8,8 @@ class RolesHandler extends HTMLElement {
         this.attachShadow({ mode: 'open' })
     }
 
-    observedAttributes() {
-        return ["tpen-user-id"]
-    }
-
-    attributeChangedCallback(userID, oldValue, newValue) {
-        console.log(`Attribute ${userID} changed from ${oldValue} to ${newValue}`);
-    }
-
     connectedCallback() {
-        eventDispatcher.on('tpen-project-loaded', () => this.render())
+        TPEN.eventDispatcher.on('tpen-project-loaded', () => this.render())
     }
 
     render() {
@@ -89,7 +80,7 @@ class RolesHandler extends HTMLElement {
         const userId = this.getAttribute('tpen-user-id')
         const collaborators = TPEN.activeProject.collaborators
         let isOwnerOrLeader = ["OWNER", "LEADER"].some(role => collaborators[userId]?.roles.includes(role))
-        const hadEditAccess = CheckPermissions.checkEditAccess("member", "*")
+        const userHasEditAccess = CheckPermissions.checkEditAccess("member", "*")
         const groupMembersElement = document.querySelector("project-collaborators")?.shadowRoot?.querySelector(".group-members") 
         if(!groupMembersElement) return
         Array.from(groupMembersElement.children).filter(child => {
@@ -97,7 +88,7 @@ class RolesHandler extends HTMLElement {
             for (const collaboratorId in collaborators) {
                 if (groupMembersActionsElement?.getAttribute("data-member-id") == collaboratorId) {
                     let memberHTML
-                    if(hadEditAccess){
+                    if(userHasEditAccess){
                         memberHTML = this.createMemberHTML(collaboratorId)
                     }
                     else{

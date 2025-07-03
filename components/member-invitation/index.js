@@ -1,5 +1,4 @@
 import TPEN from "../../api/TPEN.js"
-import { eventDispatcher } from "../../api/events.js"
 import CheckPermissions from '../../components/check-permissions/checkPermissions.js'
 
 class InviteMemberElement extends HTMLElement {
@@ -9,7 +8,7 @@ class InviteMemberElement extends HTMLElement {
     }
     
     connectedCallback() {
-        eventDispatcher.on('tpen-project-loaded', () => this.render())
+        TPEN.eventDispatcher.on('tpen-project-loaded', () => this.render())
     }
 
     render() {

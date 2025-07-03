@@ -94,17 +94,17 @@ function checkElements(project) {
  * @param permission - A action_scope_entity string representing a single permission.
  * @param project - A TPEN3 Project from a tpen-project-loaded event payload.
  * @param userId - A TPEN3 User id hash from the user encoded in a idToken.
- * @param isCustomEntity - An optional boolean that cancels strict entity checking, which allows for custom entities.
+ * @param isCustomPermission - An optional boolean that cancels strict entity checking, which allows for custom entities.
  * @return boolean
  */
-export function permissionMatch(permission, project, userId, isCustomEntity=false) {
+export function permissionMatch(permission, project, userId, isCustomPermission=false) {
     // Can't process malformed permission so it is allowed to render.  The value should be a single action_scope_entity string.
     // Check for ',' specifically in case someone tried to supply multiple permissions in the attribute.
     if (!permission || typeof permission !== "string" || permission.includes(",") || permission.split("_").length !== 3) return true
     const provided = permission.split("_").map(ase => ase.toUpperCase())
     // Permissions are project based.  If there is no project then the user is permitted.
     if (!project) return true
-    if (!isCustomEntity) {
+    if (!isCustomPermission) {
         // If it isn't an entity we expect then the user is permitted because we have no say in it.
         if (!provided[2] || !ENTITIES.includes(provided[2])) return true
     }
