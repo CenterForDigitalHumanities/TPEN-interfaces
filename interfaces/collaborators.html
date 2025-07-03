@@ -15,9 +15,8 @@ permalink: /project/manage/collaborators
     <script type="module" src="../../components/roles-handler/index.js"></script>
     <link rel="stylesheet" href="../../css/collaborators/index.css" />
 </head>
-
 <body>
-    <div tpen-entity="member" class="manage-interface collaborators-container">
+    <div class="manage-interface collaborators-container">
         <header class="title">
             <h1>TRANSCRIPTION PROJECT MANAGEMENT</h1>
             <p>
@@ -32,26 +31,5 @@ permalink: /project/manage/collaborators
         </main>
         <button class="default-btn return-btn">Return to TPEN Homepage <span class="btn-icon"></span></button>
     </div>
-    <p class="permission-msg" style="display: none;">You don't have permission to create, edit or delete any collaborators</p>
-    <script type="module">
-        import CheckPermissions from '../../utilities/checkPermissions.js'
-
-        (async () => {
-            const collaboratorsContainer = document.querySelector('.collaborators-container')
-            const inviteMember = document.querySelector('invite-member')
-            const permissionMsg = document.querySelector('.permission-msg')
-            const entity = collaboratorsContainer.getAttribute('tpen-entity')
-            if (!entity) {
-                return
-            }
-            const hasEditAccess = await CheckPermissions.checkEditAccess(entity.toUpperCase())
-            collaboratorsContainer.style.display = hasEditAccess ? 'block' : collaboratorsContainer.remove()
-            permissionMsg.style.display = hasEditAccess ? 'none' : 'inline-block'
-            if (hasEditAccess) {
-                const hasCreateAccess = await CheckPermissions.checkCreateAccess(entity.toUpperCase())
-                inviteMember.style.display = hasCreateAccess ? 'block' : inviteMember.remove()
-            }   
-      })()
-    </script>
 </body>
 </html>
