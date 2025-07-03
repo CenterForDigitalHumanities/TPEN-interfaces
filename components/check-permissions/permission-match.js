@@ -94,7 +94,7 @@ function checkElements(project) {
  * @param permission - A action_scope_entity string representing a single permission.
  * @param project - A TPEN3 Project from a tpen-project-loaded event payload.
  * @param userId - A TPEN3 User id hash from the user encoded in a idToken.
- * @param isCustomEntity - An optional boolean that allows for checks against custom entities.
+ * @param isCustomEntity - An optional boolean that cancels strict entity checking, which allows for custom entities.
  * @return boolean
  */
 export function permissionMatch(permission, project, userId, isCustomEntity=false) {
