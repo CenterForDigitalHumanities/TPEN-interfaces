@@ -5,7 +5,7 @@
  *
  * It is intended for use in components that need to check a users permission
  * to make a decision on what to do.
-
+ *
  * To use
      import CheckPermissions from '../../components/check-permissions/checkPermissions.js'
  * Then check permissions by providing entity and scope to one of the check functions
