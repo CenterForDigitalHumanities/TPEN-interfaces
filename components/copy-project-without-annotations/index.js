@@ -132,7 +132,6 @@ class CopyExistingProjectWithoutAnnotations extends HTMLElement {
                 return response.json()
             }).then(data => {
                     this.shadowRoot.getElementById('message').textContent = `Project copied successfully`
-                    this.shadowRoot.getElementById('copy-project-btn').disabled = false
                     const projectInfoContainer = this.shadowRoot.getElementById('project-info-container')
                     const projectInfo = document.createElement('div')
                     projectInfo.className = 'project-info'

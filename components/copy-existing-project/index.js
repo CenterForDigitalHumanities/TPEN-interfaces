@@ -116,6 +116,8 @@ class CopyExistingProject extends HTMLElement {
                 this.shadowRoot.getElementById('message').textContent = 'Please select a project to copy.'
                 return
             }
+            this.shadowRoot.getElementById('message').textContent = 'Copying project... Please wait.'
+            this.shadowRoot.getElementById('copy-project-btn').disabled = true
 
             await fetch(`${TPEN.servicesURL}/project/${selectedProjectId}/copy`, {
                 method: 'POST',
@@ -130,7 +132,6 @@ class CopyExistingProject extends HTMLElement {
                 return response.json()
             }).then(data => {
                     this.shadowRoot.getElementById('message').textContent = `Project copied successfully`
-                    this.shadowRoot.getElementById('copy-project-btn').disabled = false
                     const projectInfoContainer = this.shadowRoot.getElementById('project-info-container')
                     const projectInfo = document.createElement('div')
                     projectInfo.className = 'project-info'

@@ -431,7 +431,7 @@ class CopyExistingProjectWithCustomizations extends HTMLElement {
 
         this.shadowRoot.getElementById('copy-project-btn').addEventListener('click', async () => {
             this.shadowRoot.getElementById('project-info').classList.add('disabled-container')
-            // this.shadowRoot.getElementById('copy-project-btn').disabled = true
+            this.shadowRoot.getElementById('copy-project-btn').disabled = true
             const projectSelect = this.shadowRoot.getElementById('project-select')
             const selectedProjectId = projectSelect.value
             if (selectedProjectId === 'none') {
@@ -440,7 +440,6 @@ class CopyExistingProjectWithCustomizations extends HTMLElement {
             }
             modules["Layers"] = this.shadowRoot.getElementById("Layers").checked ? layersSelect : false
             modules["Group Members"] = this.shadowRoot.getElementById("Group Members").checked ? groupMembersSelect : false
-            console.log("Modules to copy:", modules)
             this.shadowRoot.getElementById('message').textContent = 'Copying project... Please wait.'
 
             await fetch(`${TPEN.servicesURL}/project/${selectedProjectId}/copy-with-customizations`, {
@@ -457,7 +456,6 @@ class CopyExistingProjectWithCustomizations extends HTMLElement {
                 return res.json()
             }).then(data => {
                 this.shadowRoot.getElementById('message').textContent = `Project copied successfully`
-                this.shadowRoot.getElementById('copy-project-btn').disabled = false
                 const projectInfoContainer = this.shadowRoot.getElementById('project-info-container')
                 const projectInfo = document.createElement('div')
                 projectInfo.className = 'project-info-div'
