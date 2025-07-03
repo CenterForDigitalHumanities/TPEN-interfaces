@@ -9,8 +9,8 @@
  * To use
      import CheckPermissions from '../../components/check-permissions/checkPermissions.js'
  * Then check permissions by providing entity and scope to one of the check functions
-     if(!CheckPermissions.checkCreateAccess("member", "*"))
-        this.shadowRoot.innerHTML = `no permissions`
+     if(!CheckPermissions.checkReadAccess("member", "*"))
+        this.shadowRoot.innerHTML = `insufficient user permissions`
  *
  */
 
