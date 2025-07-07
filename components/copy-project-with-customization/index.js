@@ -363,7 +363,7 @@ class CopyExistingProjectWithCustomizations extends HTMLElement {
                     customization.appendChild(layersListGroup)
                 }
 
-                if (index === "Group Members") {
+                if (index === "Group Members" && groupMembersList.length > 0) {
                     const groupMembersListGroup = document.createElement('ul')
                     groupMembersListGroup.classList.add('group-members-list')
                     groupMembersList.forEach(member => {
