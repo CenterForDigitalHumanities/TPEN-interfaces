@@ -1,5 +1,4 @@
 import TPEN from "../../api/TPEN.js"
-import { eventDispatcher } from "../../api/events.js"
 
 class ProjectMetadata extends HTMLElement {
     constructor() {
@@ -19,12 +18,49 @@ class ProjectMetadata extends HTMLElement {
 
     render() {
         this.shadowRoot.innerHTML = `
+            <style>
+                .metadata {
+                    display: flex;
+                    flex-direction: column;
+                    height: 10em;
+                    list-style: none;
+                    padding: 0 10px;
+                }
+                
+                .metadata li {
+                    padding: 8px 20px;
+                    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+                    border-radius: 4px;
+                    margin-bottom: 10px;
+                }
+
+                .metadata li span {
+                    display: inline-block;
+                    overflow-wrap: break-word;
+                    word-break: break-word;
+                    line-height: 1.5;
+                }
+
+                .metadata li span.title {
+                    font-weight: bold;
+                    width: 30%;
+                    font-size: 0.9em;
+                    vertical-align: top;
+                    color: var(--primary-color);
+                }
+
+                .metadata li span.colon {
+                    margin-left: 10px;
+                    width: 65%;
+                    font-size: 0.9em;
+                }
+            </style>
             <div part="metadata" id="metadata" class="metadata"></div>
         `
     }
 
     addEventListener() {
-        eventDispatcher.on("tpen-project-loaded", () => this.loadMetadata(TPEN.activeProject))
+        TPEN.eventDispatcher.on("tpen-project-loaded", () => this.loadMetadata(TPEN.activeProject))
     }
 
     loadMetadata(project) {
@@ -38,8 +74,8 @@ class ProjectMetadata extends HTMLElement {
     
             projectMetada.innerHTML += `
             <li part="metadata-item">
-              <span part="metadata-title" class="title">${label.charAt(1).toUpperCase() + label.slice(2).toLowerCase()}</span>
-              <span part="metadata-value" class="colon"> ${value}</span>
+              <span part="metadata-title" class="title">${label.charAt(0).toUpperCase() + label.slice(1).toLowerCase()} </span>
+              <span part="metadata-value" class="colon">${value}</span>
             </li>`
         })
     }
@@ -51,7 +87,7 @@ class ProjectMetadata extends HTMLElement {
     
         if (typeof data.label === "object") {
             return Object.entries(data.label)
-                .map(([lang, values]) => `${lang != "none" ? lang + ":" : ""} ${values.join(", ")}`)
+                .map(([lang, values]) => `${values.join(", ")}`)
                 .join(" | ")
         }
     
