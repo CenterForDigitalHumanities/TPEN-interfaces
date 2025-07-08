@@ -57,11 +57,11 @@ class UpdateMetadata extends HTMLElement {
 
                 .metadata-field-header h3 {
                     margin: 0;
-                    font-size: 16px;
+                    font-size: 18px;
                     font-weight: bold;
                     color: black;
                     text-align: center;
-                    padding: 10px;
+                    padding: 5px;
                 }
                 .header-label {
                     width: 30%;
@@ -71,14 +71,9 @@ class UpdateMetadata extends HTMLElement {
                 }
 
                 @media (max-width: 968px) {
-                    .metadata-field-header {
-                        gap: 20px;
-                        width: 90%;
-                    }
                     .metadata-field-header h3 {
-                        font-size: 14px;
-                        padding: 8px;
-                        width: 50%;
+                        font-size: 16px;
+                        padding: 2px;
                     }
                 }
             </style>
@@ -160,7 +155,6 @@ class UpdateMetadata extends HTMLElement {
 
             @media (max-width: 968px) {
                 .metadata-field .input-value, .metadata-field .input-label {
-                    width: 50%;
                     font-size: 12px;
                 }
             }
