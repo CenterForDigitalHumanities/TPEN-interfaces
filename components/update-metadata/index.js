@@ -162,7 +162,10 @@ class UpdateMetadata extends HTMLElement {
         <div class="metadata-field" data-index="${index !== null ? index : 'new'}">
             <input class="input-label" type="text" name="label" placeholder="Label" value="${label}" />
             <input class="input-value" type="text" name="value" placeholder="Value" value="${value}" />
-            <button type="button" class="remove-field-btn"><img class="icon" src="../../assets/icons/delete.png" alt="Remove" /></button>
+            <button type="button" class="remove-field-btn">
+                <!-- Icon source: https://www.flaticon.com/free-icons/delete by Freepik -->
+                <img class="icon" src="../../assets/icons/delete.png" alt="Remove" />
+            </button>
         </div>
         `
         fieldsContainer.insertAdjacentHTML("beforeend", fieldHTML)
