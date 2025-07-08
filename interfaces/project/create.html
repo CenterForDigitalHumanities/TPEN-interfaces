@@ -56,11 +56,30 @@ permalink: /project/create
             </span>
             <h2 slot="header">Import T-PEN 2.8 Project</h2>
             <span slot="body">Start a TPEN3 project from one of your T-PEN 2.8 projects.</span>
-            <a slot="footer" href="#">Import Project</a>
+            <a slot="footer" id="link-tpen-2.8">Import Project</a>
         </tpen-card>
         <!-- </tpen-project-create> -->
     </tpen-page>
 
 </body>
+<script type="module">
+    import TPEN from "/api/TPEN.js"
+    document.getElementById("link-tpen-2.8").addEventListener("click", (event) => {
+        event.preventDefault()
+        const userToken = localStorage.getItem("userToken")
+        let tokenDomain
 
+        if (TPEN.TPEN28URL.includes("t-pen.org")) {
+            tokenDomain = "t-pen.org"
+        }
+
+        if (TPEN.TPEN28URL.includes("localhost")) {
+            tokenDomain = "localhost"
+        }
+        
+        document.cookie = `userToken=${userToken}; path=/; domain=${tokenDomain}; secure; samesite=strict;`;    
+        const redirectUri = encodeURIComponent(`${window.location.origin}/project/import28`)
+        window.location.href = `${TPEN.TPEN28URL}/TPEN/login.jsp?redirect_uri=${redirectUri}`
+    })
+</script>
 </html>
