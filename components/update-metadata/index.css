@@ -24,7 +24,6 @@
 
 .modal-content {
     padding: 20px;
-    background-color: #fff;
     border-radius: 8px;
     width: 100%;
 }
@@ -33,10 +32,12 @@
     margin-bottom: 20px;
     font-size: 24px;
     color: #333;
+    margin-left: 10px;
 }
 
 #metadata-form {
     display: flex;
+    background-color: #fff;
     flex-direction: row;
     flex-wrap: wrap;
     justify-content: space-between;

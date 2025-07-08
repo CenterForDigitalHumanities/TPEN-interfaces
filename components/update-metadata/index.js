@@ -47,9 +47,12 @@ class UpdateMetadata extends HTMLElement {
             <style>
                 .metadata-field-header {
                     display: flex;
-                    gap: 15px;
+                    flex-direction: row;
+                    align-items: center;
+                    justify-content: space-between;
+                    gap: 20px;
                     margin-bottom: 10px;
-                    width: 100%;
+                    width: 92%;
                 }
 
                 .metadata-field-header h3 {
@@ -59,33 +62,27 @@ class UpdateMetadata extends HTMLElement {
                     color: black;
                     text-align: center;
                     padding: 10px;
-                    background-color: #f0f0f0;
-                    border-radius: 20px;
-                }
-                .header-type{
-                    width: 10%;
                 }
                 .header-label {
                     width: 30%;
                 }
                 .header-value {
-                    width: 50%;
+                    width: 70%;
                 }
 
                 @media (max-width: 968px) {
                     .metadata-field-header {
-                        gap: 10px;
-                        width: 100%;
+                        gap: 20px;
+                        width: 90%;
                     }
                     .metadata-field-header h3 {
                         font-size: 14px;
                         padding: 8px;
-                        width: 30%;
+                        width: 50%;
                     }
                 }
             </style>
             <div class='metadata-field-header'>
-                <h3 class="header-type">Type</h3>
                 <h3 class="header-label">Label</h3>
                 <h3 class="header-value">Value</h3>
             </div>`
@@ -123,25 +120,21 @@ class UpdateMetadata extends HTMLElement {
                 width: 100%;
             }
 
-            .metadata-field input, .metadata-field select {
-                padding: 5px;
+            .metadata-field input[type="text"]{
+                padding: 10px 15px;
                 border: 1px solid #ccc;
                 border-radius: 4px;
                 font-size: 14px;
             }
 
-            .metadata-field select {
-                padding: 5px;
-                width: 10%;
+            .metadata-field .input-label {
+                width: 30%;
+                padding-left: 50px;
                 font-weight: bold;
             }
 
-            .metadata-field .input-label {
-                width: 30%;
-            }
-
             .metadata-field .input-value {
-                width: 50%;
+                width: 70%;
             }
 
             .metadata-field button {
@@ -166,20 +159,13 @@ class UpdateMetadata extends HTMLElement {
             }
 
             @media (max-width: 968px) {
-                .metadata-field .input-value, .metadata-field select, .metadata-field .input-label {
-                    width: 30%;
+                .metadata-field .input-value, .metadata-field .input-label {
+                    width: 50%;
                     font-size: 12px;
                 }
             }
         </style>
         <div class="metadata-field" data-index="${index !== null ? index : 'new'}">
-            <select name="language">
-            <option class="option" value="none" ${lang === "none" ? "selected" : ""}>None</option>
-            <option class="option" value="en" ${lang === "en" ? "selected" : ""}>English</option>
-            <option class="option" value="fr" ${lang === "fr" ? "selected" : ""}>French</option>
-            <!-- Other lnguages to come later, maybe from an API -->
-            </select>
-
             <input class="input-label" type="text" name="label" placeholder="Label" value="${label}" />
             <input class="input-value" type="text" name="value" placeholder="Value" value="${value}" />
             <button type="button" class="remove-field-btn"><img class="icon" src="../../assets/icons/delete.png" alt="Remove" /></button>
