@@ -178,7 +178,7 @@ class UpdateMetadata extends HTMLElement {
         const updatedMetadata = []
 
         fields.forEach((field) => {
-            const lang = encodeURIComponent(field.querySelector("select[name='language']").value)
+            const lang = encodeURIComponent("none")
             const label = encodeURIComponent(field.querySelector("input[name='label']").value)
             const value = encodeURIComponent(field.querySelector("input[name='value']").value)
 
