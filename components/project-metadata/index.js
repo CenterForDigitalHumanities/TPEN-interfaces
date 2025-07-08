@@ -54,6 +54,12 @@ class ProjectMetadata extends HTMLElement {
                     width: 65%;
                     font-size: 0.9em;
                 }
+
+                @media (max-width: 1080px) {
+                    .metadata {
+                        height: 18em;   
+                    }
+                }   
             </style>
             <div part="metadata" id="metadata" class="metadata"></div>
         `

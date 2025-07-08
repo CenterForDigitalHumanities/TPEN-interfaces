@@ -85,8 +85,8 @@ class TPENCard extends HTMLElement {
         this.shadowRoot.innerHTML += `
             <div class="card">
                 <slot name="header" class="card-header"></slot>
-                <slot name="icon" class="card-icon"></slot>
-                <slot name="body" class="card-body"></slot>
+                <slot name="icon" class="card-icon" part="card-icon"></slot>
+                <slot name="body" class="card-body" part="card-body"></slot>
                 <slot name="footer" class="card-footer"></slot>
             </div>
         `

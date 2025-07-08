@@ -1,16 +1,7 @@
-*{
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+tpen-card[tpen-scope="metadata"]::part(card-body) {
+  margin-bottom: 3em;
 }
 
-.page-content {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: auto;
-  align-items: center;
-  gap: 10px;
-  padding: 20px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-  border-radius: 1em;
+tpen-card[tpen-scope="metadata"]::part(card-icon) {
+  padding: 0.2em;
 }
