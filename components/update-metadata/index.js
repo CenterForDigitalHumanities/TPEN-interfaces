@@ -42,6 +42,46 @@ class UpdateMetadata extends HTMLElement {
         const modal = document.getElementById("metadata-modal")
         const fieldsContainer = document.getElementById("metadata-fields")
         fieldsContainer.innerHTML = ""
+        fieldsContainer.insertAdjacentHTML("beforeend", 
+            `
+            <style>
+                .metadata-field-header {
+                    display: flex;
+                    flex-direction: row;
+                    align-items: center;
+                    justify-content: space-between;
+                    gap: 20px;
+                    margin-bottom: 10px;
+                    width: 92%;
+                }
+
+                .metadata-field-header h3 {
+                    margin: 0;
+                    font-size: 18px;
+                    font-weight: bold;
+                    color: black;
+                    text-align: center;
+                    padding: 5px;
+                }
+                .header-label {
+                    width: 30%;
+                }
+                .header-value {
+                    width: 70%;
+                }
+
+                @media (max-width: 968px) {
+                    .metadata-field-header h3 {
+                        font-size: 16px;
+                        padding: 2px;
+                    }
+                }
+            </style>
+            <div class='metadata-field-header'>
+                <h3 class="header-label">Label</h3>
+                <h3 class="header-value">Value</h3>
+            </div>`
+        )
 
         const project = TPEN.activeProject
 
@@ -67,24 +107,72 @@ class UpdateMetadata extends HTMLElement {
     addMetadataField(lang = "none", label = "", value = "", index = null) {
         const fieldsContainer = document.getElementById("metadata-fields")
         const fieldHTML = `
-        <div class="metadata-field" data-index="${index !== null ? index : 'new'}">
-            <select name="language">
-            <option value="none" ${lang === "none" ? "selected" : ""}>None</option>
-            <option value="en" ${lang === "en" ? "selected" : ""}>English</option>
-            <option value="fr" ${lang === "fr" ? "selected" : ""}>French</option>
-            <!-- Other lnguages to come later, maybe from an API -->
-            </select>
+        <style>
+            .metadata-field {
+                display: flex;
+                gap: 20px;
+                margin-bottom: 10px;
+                width: 100%;
+            }
 
-            <input type="text" name="label" placeholder="Label" value="${label}" />
-            <input type="text" name="value" placeholder="Value" value="${value}" />
-            <button type="button" class="remove-field-btn">X</button>
+            .metadata-field input[type="text"]{
+                padding: 10px 15px;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                font-size: 14px;
+            }
+
+            .metadata-field .input-label {
+                width: 30%;
+                padding-left: 50px;
+                font-weight: bold;
+            }
+
+            .metadata-field .input-value {
+                width: 70%;
+            }
+
+            .metadata-field button {
+                background-color: #ff4d4d;
+                color: white;
+                border: none;
+                cursor: pointer;
+                border-radius: 4px;
+                display: flex !important;
+                align-items: center;
+                justify-content: center;
+                margin: 0;
+                padding: 8px 10px;
+            }
+
+            .metadata-field button:hover {
+                background-color: #ff1a1a;
+            }
+
+            .metadata-field .icon {
+                width: 18px;
+            }
+
+            @media (max-width: 968px) {
+                .metadata-field .input-value, .metadata-field .input-label {
+                    font-size: 12px;
+                }
+            }
+        </style>
+        <div class="metadata-field" data-index="${index !== null ? index : 'new'}">
+            <input class="input-label" type="text" name="label" placeholder="Label" value="${label}" />
+            <input class="input-value" type="text" name="value" placeholder="Value" value="${value}" />
+            <button type="button" class="remove-field-btn">
+                <!-- Icon source: https://www.flaticon.com/free-icons/delete by Freepik -->
+                <img class="icon" src="../../assets/icons/delete.png" alt="Remove" />
+            </button>
         </div>
         `
         fieldsContainer.insertAdjacentHTML("beforeend", fieldHTML)
         fieldsContainer
-            .querySelector(".metadata-field:last-child .remove-field-btn")
+            .querySelector(".metadata-field:last-child .remove-field-btn .icon, .metadata-field:last-child .remove-field-btn")
             .addEventListener("click", (e) => {
-                e.target.parentElement.remove()
+                e.target.closest(".metadata-field").remove()
             })
     }
 
@@ -93,7 +181,7 @@ class UpdateMetadata extends HTMLElement {
         const updatedMetadata = []
 
         fields.forEach((field) => {
-            const lang = encodeURIComponent(field.querySelector("select[name='language']").value)
+            const lang = encodeURIComponent("none")
             const label = encodeURIComponent(field.querySelector("input[name='label']").value)
             const value = encodeURIComponent(field.querySelector("input[name='value']").value)
 
@@ -103,13 +191,12 @@ class UpdateMetadata extends HTMLElement {
             })
         })
 
-        try {
-            await TPEN.activeProject.updateMetadata(updatedMetadata)
-            alert("Metadata updated successfully!")
-        } catch (error) {
-            console.error(error)
-            alert("An error occurred while updating metadata.")
-        }
+        const response = await TPEN.activeProject.updateMetadata(updatedMetadata)
+        return TPEN.eventDispatcher.dispatch("tpen-toast", 
+        response.ok ? 
+            { status: "info", message: 'Successfully Added Metadata' } : 
+            { status: "error", message: 'Error Adding Metadata' }
+        ) 
     }
 }
 
