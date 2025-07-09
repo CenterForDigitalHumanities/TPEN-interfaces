@@ -16,12 +16,37 @@ class ProjectDetails extends HTMLElement {
     h3 {
         color: var(--primary-color);
         font-style: italic;
-        margin-block-end: 0;
+        margin: 0;
     }
     small {
         color: var(--gray);
         text-align: right;
         display: block;
+    }
+    .project-title-input-container {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        gap: 0.5em;
+        margin-bottom: 0.5em;
+    }
+    .project-title-input {
+        width: 100%;
+        padding: 0.5em;
+        font-size: 1em;
+    }
+    .save-project-title {
+        padding: 0.5em;
+        background-color: var(--primary-color);
+        color: white;
+        border-radius: 0.25em;
+        cursor: pointer;
+        border: 1px solid var(--primary-color);
+    }
+    .hidden {
+        display: none;
     }
     `
 
@@ -79,7 +104,10 @@ class ProjectDetails extends HTMLElement {
         isReadAccess ? 
         (this.shadowRoot.innerHTML = `
             <style>${this.style}</style>
-            <h3>${TPEN.screen.title}</h3>
+            <div class="project-title-input-container">
+                <h3 class="project-title">${TPEN.screen.title}</h3>
+                <a id="edit-project-title" href="#">✏️</a>
+            </div>
             <small>${TPEN.screen.projectInQuery}</small>
             <p>${projectOwner}, Owner</p>
             <p>
@@ -89,6 +117,48 @@ class ProjectDetails extends HTMLElement {
         `) : (this.shadowRoot.innerHTML = `
             <p class="permission-msg">You don't have permission to view the Project Details</p>
         `)
+
+        this.shadowRoot.getElementById('edit-project-title').addEventListener('click', (e) => {
+            const screenTitle = this.shadowRoot.querySelector('.project-title')
+            const editButton = this.shadowRoot.getElementById('edit-project-title')
+            screenTitle.classList.add('hidden')
+            editButton.classList.add('hidden')
+
+            const inputDiv = document.createElement('div')
+            inputDiv.classList.add('project-title-input-container')
+            const input = document.createElement('input')
+            input.type = 'text'
+            input.value = TPEN.screen.title
+            input.classList.add('project-title-input')
+            const saveButton = document.createElement('button')
+            saveButton.textContent = 'Save'
+            saveButton.classList.add('save-project-title')
+            inputDiv.appendChild(input)
+            inputDiv.appendChild(saveButton)
+            this.shadowRoot.querySelector('small').insertAdjacentElement('beforebegin', inputDiv)
+
+            saveButton.addEventListener('click', async () => {
+                const response = await fetch(`${TPEN.servicesURL}/project/${project._id}/label`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${TPEN.getAuthorization()}`
+                    },
+                    body: JSON.stringify({ label: input.value })
+                })
+
+                if (response.ok) {
+                    screenTitle.textContent = input.value
+                    TPEN.screen.title = input.value
+                    TPEN.eventDispatcher.dispatch('tpen-toast', { message: "Project title updated successfully", status: "success" })
+                } else {
+                    TPEN.eventDispatcher.dispatch('tpen-toast', { message: "Failed to update project title", status: "error" })
+                }
+                screenTitle.classList.remove('hidden')
+                editButton.classList.remove('hidden')
+                inputDiv.remove()
+            })
+        })
     }
 }
 
