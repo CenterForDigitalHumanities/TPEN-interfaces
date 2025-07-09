@@ -4,9 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="index.js" type="module"></script>
+    <script src="/components/gui/site/index.js" type="module"></script>
+    <link rel="stylesheet" href="index.css">
     <title>Update Metadata</title>
 </head>
 <body>
+  <tpen-page>
     <div class="tpen-metadata" tpen-scope="metadata">
       <update-metadata></update-metadata>
       <div id="container" class="metadata-modal-container">
@@ -26,6 +29,7 @@
       </div>
     </div>
     <p class="permission-msg" style="display: none;">You don't have permission to create,edit or delete Metadata</p>
+  </tpen-page>
     <script type="module">
       import CheckPermissions from '../../utilities/checkPermissions.js'
 

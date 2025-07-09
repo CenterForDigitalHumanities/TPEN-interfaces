@@ -63,7 +63,7 @@ class NewAction extends HTMLElement {
     TPEN2ImportHandler = (event) => {
         event.preventDefault()
         const userToken = localStorage.getItem("userToken")
-        let tokenDomain;
+        let tokenDomain
 
         if (TPEN.TPEN28URL.includes("t-pen.org")) {
             tokenDomain = "t-pen.org"
@@ -76,7 +76,6 @@ class NewAction extends HTMLElement {
         document.cookie = `userToken=${userToken}; path=/; domain=${tokenDomain}; secure; samesite=strict;`;    
         const redirectUri = encodeURIComponent(`${window.location.origin}/project/import28`)
         window.location.href = `${TPEN.TPEN28URL}/TPEN/login.jsp?redirect_uri=${redirectUri}`
-        // window.location.href = `${TPEN.TPEN28URL}/TPEN/login.jsp?redirect_uri=${redirectUri}&userToken=${userToken}`
     }
 }
 
