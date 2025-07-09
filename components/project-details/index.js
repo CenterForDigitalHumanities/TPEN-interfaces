@@ -139,7 +139,7 @@ class ProjectDetails extends HTMLElement {
 
             saveButton.addEventListener('click', async () => {
                 const response = await fetch(`${TPEN.servicesURL}/project/${project._id}/label`, {
-                    method: 'POST',
+                    method: 'PATCH',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${TPEN.getAuthorization()}`
