@@ -9,15 +9,18 @@ class CopyExistingProject extends HTMLElement {
         TPEN.attachAuthentication(this)
     }
 
-    async connectedCallback() {
-        this.render()
+    connectedCallback() {
+        this.load()
     }
 
-    async render() {
+    async load() {
         const token = TPEN.getAuthorization()
         const userObj = new User(getUserFromToken(token))
         const { projects } = await userObj.getProjects()
+        this.render(token, userObj, projects)
+    }
 
+    render(token, userObj, projects) {
         if (!projects || projects.length === 0) {
             this.shadowRoot.innerHTML = `<p>No projects available to copy.</p>`
             return

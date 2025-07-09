@@ -4,29 +4,33 @@ import User from '../../api/User.js'
 import { getUserFromToken } from "../iiif-tools/index.js"
 
 class CopyExistingProjectWithCustomizations extends HTMLElement {
+    #modules = {
+        "Metadata": true,
+        "Group Members": true,
+        "Hotkeys": true,
+        "Tools": true,
+        "Layers": true
+    }
+
     constructor() {
         super()
         this.attachShadow({ mode: 'open' })
         TPEN.attachAuthentication(this)
     }
 
-    async connectedCallback() {
-        await this.render()
+    connectedCallback() {
+        this.load()
     }
 
-    async render() {
+    async load() {
         const token = TPEN.getAuthorization()
         const userObj = new User(getUserFromToken(token))
         const { projects } = await userObj.getProjects()
-
-        const modules = {
-            "Metadata": true,
-            "Group Members": true,
-            "Hotkeys": true,
-            "Tools": true,
-            "Layers": true
-        }
-
+        this.render(token, userObj, projects)
+    }
+    
+    render(token, userObj, projects) {
+        const modules = this.#modules
         const layersSelect = []
         const groupMembersSelect = []
 
