@@ -77,7 +77,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       <style>
         @import url("https://cdn.jsdelivr.net/npm/@annotorious/openseadragon@latest/dist/annotorious-openseadragon.css");
         #annotator-container {
-          height:  100vh;
+          height: 90vh;
         }
         #tools-container {
           background-color: lightgray;
@@ -121,6 +121,10 @@ class AnnotoriousAnnotator extends HTMLElement {
         #saveBtn[disabled] {
           background-color: gray;
           color: white;
+        }
+        :focus-visible {
+          outline: none !important;
+          border: none !important;
         }
       </style>
       <div>
