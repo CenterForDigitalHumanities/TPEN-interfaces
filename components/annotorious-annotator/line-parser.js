@@ -12,6 +12,7 @@
 import TPEN from '../../api/TPEN.js'
 import User from '../../api/User.js'
 import { decodeUserToken } from '../iiif-tools/index.js'
+import CheckPermissions from '../check-permissions/checkPermissions.js'
 
 class AnnotoriousAnnotator extends HTMLElement {
   #osd 
@@ -63,9 +64,13 @@ class AnnotoriousAnnotator extends HTMLElement {
 
   // Initialize HTML after loading in a TPEN3 Project
   render() {
+    if (!CheckPermissions.checkAllAccess("line", "selector")) {
+      this.shadowRoot.innerHTML = "You do not have permission to use this interface."
+      return
+    }
     this.#annotationPageURI = TPEN.screen.pageInQuery
     if (!this.#annotationPageURI) {
-      alert("You must provide a ?pageID=theid in the URL.  The value should be the ID of an existing TPEN3 Page.")
+      this.shadowRoot.innerHTML = "You must provide a '?pageID=theid' in the URL.  The value should be the ID of an existing TPEN3 Page."
       return
     }
     const osdScript = document.createElement("script")
