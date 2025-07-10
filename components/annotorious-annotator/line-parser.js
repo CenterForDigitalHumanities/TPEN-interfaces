@@ -1007,13 +1007,13 @@ class AnnotoriousAnnotator extends HTMLElement {
       return checkId === compareId
     })
     // Drawn Annotation dims represented as units, not pixels
-    const annoY_units = rect.y
+    const annoY_units = rect.y - this.containerTopOffset()
     const annoH_units = rect.height
     // Drawn Annotation dims represented as pixels, not units
     const annoY_pixels = parseFloat(annoDims[1])
     const annoH_pixels = parseFloat(annoDims[3])
     // Where the click happened in units relative to the height of the drawn Annotation's height in units
-    const clickY_units = annoH_units - ((event.offsetY - this.containerTopOffset()) - annoY_units)
+    const clickY_units = annoH_units - (event.offsetY - annoY_units)
     // Where the click happened, in pixels
     const clickY_pixels = annoH_pixels * (clickY_units / annoH_units) + annoY_pixels
     // Adjust the original Annotation's height (in pixels) to accomodate the split.  All other dimensions remain the same.
