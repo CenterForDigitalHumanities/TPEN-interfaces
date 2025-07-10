@@ -17,6 +17,7 @@ import CheckPermissions from '../check-permissions/checkPermissions.js'
 class AnnotoriousAnnotator extends HTMLElement {
   #osd 
   #annotoriousInstance
+  #annotoriousContainer
   #userForAnnotorious
   #annotationPageURI
   #resolvedAnnotationPage
@@ -87,14 +88,21 @@ class AnnotoriousAnnotator extends HTMLElement {
         #tools-container {
           background-color: lightgray;
           position: absolute;
-          top: 115px;
+          top: 40px;
+          left: 5px;
           z-index: 10;
+          padding: 0px 5px 5px 5px;
         }
         #tools-container label {
           display: block;
         }
         #tools-container i {
           display: block;
+        }
+        input[type="checkbox"] {
+          width: 18px;
+          height: 18px;
+          cursor: pointer;
         }
         input[type="button"].selected {
           background-color: green;
@@ -131,14 +139,21 @@ class AnnotoriousAnnotator extends HTMLElement {
           outline: none !important;
           border: none !important;
         }
+        label span {
+          position: relative;
+          display: inline-block;
+          width: 160px;
+        }
       </style>
       <div>
         <div id="tools-container">
           <p> You can zoom and pan when you are not drawing.</p>
-          <label for="drawTool">Draw Columns
+          <label for="drawTool">
+           <span>Draw Columns</span>
            <input type="checkbox" id="drawTool">
           </label>
-          <label for="editTool">Make/Edit Lines
+          <label for="editTool">
+           <span>Make/Edit Lines</span>
            <input type="checkbox" id="editTool">
           </label>
           <div class="editOptions">
@@ -152,10 +167,12 @@ class AnnotoriousAnnotator extends HTMLElement {
             <input type="button" class="toggleEditType" id="addLinesBtn" value="Add Lines" />
             <input type="button" class="toggleEditType" id="mergeLinesBtn" value="Merge Lines" />
           </div>
-          <label> Remove Lines
+          <label> 
+           <span>Remove Lines</span>
            <input type="checkbox" id="eraseTool"> 
           </label>
-          <label> Annotation Visibility
+          <label> 
+           <span>Annotation Visibility</span>
            <input type="checkbox" id="seeTool" checked> 
           </label>
           <input id="saveBtn" type="button" value="Save Annotations"/>
@@ -164,6 +181,7 @@ class AnnotoriousAnnotator extends HTMLElement {
         <div id="ruler"></div>
         <span id="sampleRuler"></span>
       </div>`
+    this.#annotoriousContainer = this.shadowRoot.getElementById('annotator-container')
     const drawTool = this.shadowRoot.getElementById("drawTool")
     const editTool = this.shadowRoot.getElementById("editTool")
     const eraseTool = this.shadowRoot.getElementById("eraseTool")
@@ -952,6 +970,20 @@ class AnnotoriousAnnotator extends HTMLElement {
     TPEN.eventDispatcher.dispatch("tpen-toast", toast)
   }
 
+  containerTopOffset() {
+    if (!this.#annotoriousContainer) return 0
+    const rect = this.#annotoriousContainer.getBoundingClientRect()
+    if(!rect?.top) return 0
+    return rect.top
+  }
+
+  containerLeftOffset() {
+    if (!this.#annotoriousContainer) return 0
+    const rect = this.#annotoriousContainer.getBoundingClientRect()
+    if(!rect?.left) return 0
+    return rect.left
+  }
+
   /**
    * Adds a line by splitting the current line where it was clicked.
    * The only DOM elem available in relation to Annotations is the selected line.
@@ -981,7 +1013,7 @@ class AnnotoriousAnnotator extends HTMLElement {
     const annoY_pixels = parseFloat(annoDims[1])
     const annoH_pixels = parseFloat(annoDims[3])
     // Where the click happened in units relative to the height of the drawn Annotation's height in units
-    const clickY_units = annoH_units - (event.offsetY - annoY_units)
+    const clickY_units = annoH_units - ((event.offsetY - this.containerTopOffset()) - annoY_units)
     // Where the click happened, in pixels
     const clickY_pixels = annoH_pixels * (clickY_units / annoH_units) + annoY_pixels
     // Adjust the original Annotation's height (in pixels) to accomodate the split.  All other dimensions remain the same.
@@ -1166,8 +1198,8 @@ class AnnotoriousAnnotator extends HTMLElement {
     // Position the ruler element to be with the cursor
     elem.addEventListener('mousemove', function(e) {
       const rect = elem.getBoundingClientRect()
-      ruler.style.left = rect.x + "px"
-      ruler.style.top = e.pageY + "px"
+      ruler.style.left = (rect.x - _this.containerLeftOffset()) + "px"
+      ruler.style.top = (e.pageY - _this.containerTopOffset()) + "px"
       ruler.style.height = '1px'
       ruler.style.width = rect.width + "px"
     })
