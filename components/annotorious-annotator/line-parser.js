@@ -241,7 +241,7 @@ class AnnotoriousAnnotator extends HTMLElement {
           </label>
           <input id="saveBtn" type="button" value="Save Annotations"/>
         </div>
-        <div id="annotator-container"> Loading Annotorious... </div>
+        <div id="annotator-container"> Loading Annotorious and getting the TPEN3 Page information... </div>
         <div id="ruler"></div>
         <span id="sampleRuler"></span>
       </div>`
