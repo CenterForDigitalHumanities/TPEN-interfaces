@@ -349,6 +349,7 @@ class AnnotoriousAnnotator extends HTMLElement {
 
   /**
    * Fetch a Canvas URI and check that it is a Canvas object.  Pass it forward to render the Image into the interface.
+   * Be prepared to recieve presentation api 2+
    *
    * FIXME
    * Give users a path when Canvas URIs do not resolve or resolve to something unexpected.
@@ -357,6 +358,7 @@ class AnnotoriousAnnotator extends HTMLElement {
    */
   async processCanvas(uri) {
     if (!uri) return
+      // TODO Vault me?
     const resolvedCanvas = await fetch(uri)
       .then(r => {
         if (!r.ok) throw r
