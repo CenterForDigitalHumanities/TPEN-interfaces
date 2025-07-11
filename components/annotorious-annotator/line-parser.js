@@ -400,16 +400,16 @@ class AnnotoriousAnnotator extends HTMLElement {
     this.shadowRoot.getElementById('annotator-container').innerHTML = ""
     const canvasID = resolvedCanvas["@id"] ?? resolvedCanvas.id
     let fullImage = resolvedCanvas?.items?.[0]?.items?.[0]?.body?.id
-    if(!fullImage) fullImage = resolvedCanvas?.images?.[0]?.resource?.["@id"]
+    if (!fullImage) fullImage = resolvedCanvas?.images?.[0]?.resource?.["@id"]
     let imageService = resolvedCanvas?.items?.[0]?.items?.[0]?.body?.service?.id
-    if(!imageService) imageService = resolvedCanvas?.images?.[0]?.resource?.service?.["@id"]
+    if (!imageService) imageService = resolvedCanvas?.images?.[0]?.resource?.service?.["@id"]
     if (!fullImage) {
       throw new Error("Cannot Resolve Canvas Image", { "cause": "The Image is 404 or unresolvable." })
     }
     let imgx = resolvedCanvas?.items?.[0]?.items?.[0]?.body?.width
-    if(!imgx) imgx = resolvedCanvas?.images[0]?.resource?.width
+    if (!imgx) imgx = resolvedCanvas?.images[0]?.resource?.width
     let imgy = resolvedCanvas?.items?.[0]?.items?.[0]?.body?.height
-    if(!imgy) imgy = resolvedCanvas?.images?.[0]?.resource?.height
+    if (!imgy) imgy = resolvedCanvas?.images?.[0]?.resource?.height
     this.#imageDims = [imgx, imgy]
     this.#canvasDims = [
       resolvedCanvas?.width,
@@ -425,6 +425,30 @@ class AnnotoriousAnnotator extends HTMLElement {
       if (lastchar !== "/") imageService += "/"
       const info = await fetch(imageService + "info.json").then(resp => resp.json()).catch(err => { return false })
       if (info) imageInfo = info
+    }
+    else{
+      let resolvable = await fetch(fullImage, {"method":"HEAD"}).then(resp => {
+        if(!resp.ok) {
+          this.shadowRoot.innerHTML = `
+            <style>${this.style}</style>
+            <h3>Image Error</h3>
+            <p>The Image could not be loaded</p>
+            <p> ${resp.status}: ${resp.statusText} </p>
+          `
+          return false
+        }
+        return true
+      })
+      .catch(err => {
+        this.shadowRoot.innerHTML = `
+          <style>${this.style}</style>
+          <h3>Image Error</h3>
+          <p>The Image could not be loaded</p>
+          <p> ${err.status ?? err.code}: ${err.statusText ?? err.message} </p>
+        `
+        return false
+      })
+      if (!resolvable) return
     }
 
     /**
