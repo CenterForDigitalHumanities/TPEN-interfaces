@@ -91,6 +91,9 @@ class AnnotoriousAnnotator extends HTMLElement {
         @import "./components/annotorious-annotator/AnnotoriousOSD.min.css";
         #annotator-container {
           height: 90vh;
+          background-image: url(https://t-pen.org/TPEN/images/loading2.gif);
+          background-repeat: no-repeat;
+          background-position: center;
         }
         #tools-container {
           background-color: lightgray;
@@ -101,6 +104,7 @@ class AnnotoriousAnnotator extends HTMLElement {
           padding: 0px 5px 5px 5px;
           width: 390px;
           border: 2px solid darkgray;
+          border-radius: 5px;
         }
         #tools-container label {
           display: block;
@@ -204,7 +208,7 @@ class AnnotoriousAnnotator extends HTMLElement {
         }
       </style>
       <div>
-        <div id="tools-container">
+        <div id="tools-container" class="card">
           <div class="dragMe leftside"><img draggable="false" src="../../assets/icons/grabspot.png" alt=""></div>
           <div class="dragMe rightside"><img draggable="false" src="../../assets/icons/grabspot.png" alt=""></div>
           <p class="helperHeading helperText"> You can zoom and pan when you are not drawing.</p>
@@ -237,7 +241,7 @@ class AnnotoriousAnnotator extends HTMLElement {
           </label>
           <input id="saveBtn" type="button" value="Save Annotations"/>
         </div>
-        <div id="annotator-container"></div>
+        <div id="annotator-container"> Loading Annotorious... </div>
         <div id="ruler"></div>
         <span id="sampleRuler"></span>
       </div>`
@@ -263,9 +267,15 @@ class AnnotoriousAnnotator extends HTMLElement {
       setTimeout(() => { this.saveAnnotations() }, 500)
     })
     this.shadowRoot.appendChild(osdScript)
-    this.shadowRoot.appendChild(annotoriousScript)
+    setTimeout(() => { 
+      this.shadowRoot.appendChild(annotoriousScript)
+      setTimeout(() => { 
+        this.processPage(this.#annotationPageURI)
+      }, 500)
+    }, 500)
+    
     // Process the page to get the data required for the component UI
-    this.processPage(this.#annotationPageURI)
+    //this.processPage(this.#annotationPageURI)
   }
 
   /**
@@ -589,13 +599,17 @@ class AnnotoriousAnnotator extends HTMLElement {
    * Annotorious will render them on screen and introduce them to the UX flow.
    */
   setInitialAnnotations() {
-    if (!this.#resolvedAnnotationPage) return
+    if (!this.#resolvedAnnotationPage) {
+      this.#annotoriousContainer.style.backgroundImage = "none"
+      return
+    }
     let allAnnotations = JSON.parse(JSON.stringify(this.#resolvedAnnotationPage.items))
     // Make sure Annotation targets and bodies are Annotorious friendly.
     allAnnotations = this.formatAnnotations(allAnnotations)
     // Convert the Annotation selectors so that they are relative to the Image dimensions
     allAnnotations = this.convertSelectors(allAnnotations, true)
     this.#annotoriousInstance.setAnnotations(allAnnotations, false)
+    this.#annotoriousContainer.style.backgroundImage = "none"
   }
 
   /**
