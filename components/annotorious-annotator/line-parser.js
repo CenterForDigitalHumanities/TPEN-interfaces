@@ -92,17 +92,19 @@ class AnnotoriousAnnotator extends HTMLElement {
           left: 5px;
           z-index: 10;
           padding: 0px 5px 5px 5px;
+          width: 390px;
+          border: 2px solid darkgray;
         }
         #tools-container label {
           display: block;
+          margin: 6px 0px;
         }
         #tools-container i {
           display: block;
         }
         input[type="checkbox"] {
-          width: 18px;
-          height: 18px;
-          cursor: pointer;
+          width: 20px;
+          height: 20px;
         }
         input[type="button"].selected {
           background-color: green;
@@ -128,12 +130,32 @@ class AnnotoriousAnnotator extends HTMLElement {
           display: none;
           padding: 5px;
         }
-        .toggleEditType, #saveBtn {
+        .toggleEditType {
+          margin-top: 6px;
+        }
+        .toggleEditType, input[type="checkbox"], #saveBtn {
           cursor: pointer;
+        }
+        #saveBtn {
+          background-color: var(--primary-color);
+          text-transform: uppercase;
+          outline: var(--primary-light) 1px solid;
+          outline-offset: -3.5px;
+          color: var(--white);
+          border-radius: 5px;
+          transition: all 0.3s;
+          padding: 10px 20px;
+          cursor: pointer;
+          width: 100%;
         }
         #saveBtn[disabled] {
           background-color: gray;
           color: white;
+        }
+        #saveBtn:hover {
+          background-color: var(--primary-light);
+          outline: var(--primary-color) 1px solid;
+          outline-offset: -1.5px;
         }
         :focus-visible {
           outline: none !important;
@@ -142,12 +164,43 @@ class AnnotoriousAnnotator extends HTMLElement {
         label span {
           position: relative;
           display: inline-block;
-          width: 160px;
+          width: 90%;
+        }
+        .dragMe {
+          position: absolute;
+          top: -5px;
+          cursor: grab;
+          height: auto;
+          width: auto;
+        }
+
+        .dragMe.leftside {
+          left: 0
+        }
+
+        .dragMe.rightside {
+          right: 0
+        }
+
+        .helperHeading {
+          margin-top: 2em;
+          text-align: center;
+        }
+
+        .helperText {
+          font-size: 9pt;
+          font-weight: bold;
+        }
+
+        .a9s-annotation.selected .a9s-inner {
+          fill-opacity: 0.48 !important;
         }
       </style>
       <div>
         <div id="tools-container">
-          <p> You can zoom and pan when you are not drawing.</p>
+          <div class="dragMe leftside"><img draggable="false" src="../../assets/icons/grabspot.png" alt=""></div>
+          <div class="dragMe rightside"><img draggable="false" src="../../assets/icons/grabspot.png" alt=""></div>
+          <p class="helperHeading helperText"> You can zoom and pan when you are not drawing.</p>
           <label for="drawTool">
            <span>Draw Columns</span>
            <input type="checkbox" id="drawTool">
@@ -157,7 +210,7 @@ class AnnotoriousAnnotator extends HTMLElement {
            <input type="checkbox" id="editTool">
           </label>
           <div class="editOptions">
-            <i>
+            <i class="helperText">
               * You must select a line.
               <br>
               * Splitting creates a new line under the selected line.
@@ -171,7 +224,7 @@ class AnnotoriousAnnotator extends HTMLElement {
            <span>Remove Lines</span>
            <input type="checkbox" id="eraseTool"> 
           </label>
-          <label> 
+          <label style="display:none;"> 
            <span>Annotation Visibility</span>
            <input type="checkbox" id="seeTool" checked> 
           </label>
@@ -189,6 +242,8 @@ class AnnotoriousAnnotator extends HTMLElement {
     const saveButton = this.shadowRoot.getElementById("saveBtn")
     const addLinesBtn = this.shadowRoot.getElementById("addLinesBtn")
     const mergeLinesBtn = this.shadowRoot.getElementById("mergeLinesBtn")
+    const drag = this.shadowRoot.querySelectorAll(".dragMe")
+    drag.forEach(elem => elem.addEventListener("mousedown", (e) => this.dragging(e)))
     addLinesBtn.addEventListener("click", (e) => this.toggleAddLines(e))
     mergeLinesBtn.addEventListener("click", (e) => this.toggleMergeLines(e))
     drawTool.addEventListener("change", (e) => this.toggleDrawingMode(e))
@@ -848,35 +903,35 @@ class AnnotoriousAnnotator extends HTMLElement {
    * Use Annotorious to show all known Annotations
    * https://annotorious.dev/api-reference/openseadragon-annotator/#setvisible
    */
-  showAnnotations() {
+  showAnnotations(toast_it = true) {
     this.#annotoriousInstance.setVisible(true)
     const toast = {
       message: "Annotations are visible",
       status: "info"
     }
-    TPEN.eventDispatcher.dispatch("tpen-toast", toast)
+    if(toast_it) TPEN.eventDispatcher.dispatch("tpen-toast", toast)
   }
 
   /**
    * Use Annotorious to hide all visible Annotations (except the one in focus, if any)
    * https://annotorious.dev/api-reference/openseadragon-annotator/#setvisible
    */
-  hideAnnotations() {
+  hideAnnotations(toast_it = true) {
     this.#annotoriousInstance.setVisible(false)
     const toast = {
       message: "Annotations are hidden",
       status: "info"
     }
-    TPEN.eventDispatcher.dispatch("tpen-toast", toast)
+    if(toast_it) TPEN.eventDispatcher.dispatch("tpen-toast", toast)
   }
 
   /**
    * Activate Annotorious annotation drawing mode.
    * This makes it so the user cannot zoom and pan.
    */
-  startDrawing() {
-    this.stopErasing()
-    this.stopLineEditing()
+  startDrawing(toast_it = true) {
+    this.stopErasing(false)
+    this.stopLineEditing(false)
     this.#isDrawing = true
     this.shadowRoot.getElementById("eraseTool").checked = false
     this.shadowRoot.getElementById("editTool").checked = false
@@ -885,30 +940,30 @@ class AnnotoriousAnnotator extends HTMLElement {
       message: "You started drawing columns",
       status: "info"
     }
-    TPEN.eventDispatcher.dispatch("tpen-toast", toast)
+    if(toast_it) TPEN.eventDispatcher.dispatch("tpen-toast", toast)
   }
 
   /**
    * Deactivate Annotorious annotation drawing mode.
    * This makes it so that the user can zoom and pan.
    */
-  stopDrawing() {
+  stopDrawing(toast_it = true) {
     this.#isDrawing = false
     this.#annotoriousInstance.setDrawingEnabled(false)
     const toast = {
       message: "You stopped drawing columns",
       status: "info"
     }
-    TPEN.eventDispatcher.dispatch("tpen-toast", toast)
+    if(toast_it) TPEN.eventDispatcher.dispatch("tpen-toast", toast)
   }
 
   /**
    * Activate Annotorious annotation chopping mode.
    * Clicking on an existing annotation will prompt the user about deleting the annotation.
    */
-  startLineEditing() {
-    this.stopDrawing()
-    this.stopErasing()
+  startLineEditing(toast_it = true) {
+    this.stopDrawing(false)
+    this.stopErasing(false)
     this.#isLineEditing = true
     this.shadowRoot.getElementById("eraseTool").checked = false
     this.shadowRoot.getElementById("drawTool").checked = false
@@ -919,14 +974,14 @@ class AnnotoriousAnnotator extends HTMLElement {
       message: "You started line editing",
       status: "info"
     }
-    TPEN.eventDispatcher.dispatch("tpen-toast", toast)
+    if(toast_it) TPEN.eventDispatcher.dispatch("tpen-toast", toast)
   }
 
   /**
    * Activate Annotorious annotation chopping mode.
    * Clicking on an existing annotation will prompt the user about deleting the annotation.
    */
-  stopLineEditing() {
+  stopLineEditing(toast_it = true) {
     this.#isLineEditing = false
     this.#editType = ""
     this.removeRuler()
@@ -936,16 +991,16 @@ class AnnotoriousAnnotator extends HTMLElement {
       message: "You stopped line editing",
       status: "info"
     }
-    TPEN.eventDispatcher.dispatch("tpen-toast", toast)
+    if(toast_it) TPEN.eventDispatcher.dispatch("tpen-toast", toast)
   }
 
   /**
    * Activate Annotorious annotation erasing mode.
    * Clicking on an existing annotation will prompt the user about deleting the annotation.
    */
-  startErasing() {
-    this.stopDrawing()
-    this.stopLineEditing()
+  startErasing(toast_it = true) {
+    this.stopDrawing(false)
+    this.stopLineEditing(false)
     this.#isErasing = true
     this.shadowRoot.getElementById("drawTool").checked = false
     this.shadowRoot.getElementById("editTool").checked = false
@@ -954,22 +1009,27 @@ class AnnotoriousAnnotator extends HTMLElement {
       message: "You started erasing",
       status: "info"
     }
-    TPEN.eventDispatcher.dispatch("tpen-toast", toast)
+    if(toast_it) TPEN.eventDispatcher.dispatch("tpen-toast", toast)
   }
 
   /**
    * Deactivate Annotorious annotation erasing mode.
    * This allows user to zoom and pan, and select annotations to edit.
    */
-  stopErasing() {
+  stopErasing(toast_it = true) {
     this.#isErasing = false
     const toast = {
       message: "You stopped erasing",
       status: "info"
     }
-    TPEN.eventDispatcher.dispatch("tpen-toast", toast)
+    if(toast_it) TPEN.eventDispatcher.dispatch("tpen-toast", toast)
   }
 
+  /**
+   * Get the amount the Annotorious container is offset from the top of the window, in units.
+   * This typically helps account for the space that page headers take up.
+   * Necessary to help adjust coordinates for accuracy while a user hovers or clicks during line parsing.
+   */
   containerTopOffset() {
     if (!this.#annotoriousContainer) return 0
     const rect = this.#annotoriousContainer.getBoundingClientRect()
@@ -977,6 +1037,11 @@ class AnnotoriousAnnotator extends HTMLElement {
     return rect.top
   }
 
+  /**
+   * Get the amount the Annotorious container is offset from the left of the window, in units.
+   * This helps account for any left side padding, margin, or text.
+   * Necessary to help adjust coordinates for accuracy while a user hovers or clicks during line parsing.
+   */
   containerLeftOffset() {
     if (!this.#annotoriousContainer) return 0
     const rect = this.#annotoriousContainer.getBoundingClientRect()
@@ -1222,6 +1287,44 @@ class AnnotoriousAnnotator extends HTMLElement {
     if (this.#editType === "add") this.splitLine(event)
     if (this.#editType === "merge") this.mergeLines(event)
   }
+
+  /*
+   * Make pasing options draggable
+   */
+  dragging(ev) {
+    ev = ev || window.event
+    let pos1 = 0, pos2 = 0, pos3 =  ev.clientX, pos4 = ev.clientY
+    let containerElem = this.shadowRoot.getElementById("tools-container")
+    ev.preventDefault()
+    document.onmouseup = closeDragElement
+    document.onmousemove = elementDrag
+    let grabber = ev.target
+    grabber.style.cursor = "grabbing"
+    containerElem.style.boxShadow = "0px 0px 20px black"
+
+    function elementDrag(e) {
+      e = e || window.event
+      e.preventDefault()
+      // calculate the new cursor position:
+      pos1 = pos3 - e.clientX
+      pos2 = pos4 - e.clientY
+      pos3 = e.clientX
+      pos4 = e.clientY
+      // set the element's new position:
+      containerElem.style.top = (containerElem.offsetTop - pos2) + "px"
+      containerElem.style.left = (containerElem.offsetLeft - pos1) + "px"
+    }
+
+    function closeDragElement(e) {
+      // stop moving when mouse button is released:
+      e = e || window.event
+      grabber.style.cursor = "grab"
+      containerElem.style.boxShadow = "none"
+      document.onmouseup = null
+      document.onmousemove = null
+    }
+  }
+
 }
 
 customElements.define('tpen-line-parser', AnnotoriousAnnotator)
