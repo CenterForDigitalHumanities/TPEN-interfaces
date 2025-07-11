@@ -66,7 +66,7 @@ class AnnotoriousAnnotator extends HTMLElement {
   // Initialize HTML after loading in a TPEN3 Project
   render() {
     if (!CheckPermissions.checkAllAccess("line", "selector")) {
-      this.shadowRoot.innerHTML = "You do not have permission to use this interface."
+      this.shadowRoot.innerHTML = "You do not have the proper project permissions to use this interface."
       return
     }
     // Must have a Page _id to continue
