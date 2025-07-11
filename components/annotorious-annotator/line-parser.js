@@ -82,13 +82,13 @@ class AnnotoriousAnnotator extends HTMLElement {
       return
     }
     const osdScript = document.createElement("script")
-    osdScript.src = "https://cdn.jsdelivr.net/npm/openseadragon@latest/build/openseadragon/openseadragon.min.js"
+    osdScript.src = "./components/annotorious-annotator/OSD.min.js"
     const annotoriousScript = document.createElement("script")
-    annotoriousScript.src = "https://cdn.jsdelivr.net/npm/@annotorious/openseadragon@latest/dist/annotorious-openseadragon.js"
+    annotoriousScript.src = "./components/annotorious-annotator/AnnotoriousOSD.min.js"
 
     this.shadowRoot.innerHTML = `
       <style>
-        @import url("https://cdn.jsdelivr.net/npm/@annotorious/openseadragon@latest/dist/annotorious-openseadragon.css");
+        @import "./components/annotorious-annotator/AnnotoriousOSD.min.css";
         #annotator-container {
           height: 90vh;
         }
@@ -421,6 +421,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       element: this.shadowRoot.getElementById('annotator-container'),
       tileSources: imageInfo,
       prefixUrl: "./interfaces/annotator/images/",
+      showFullPageControl:false,
       gestureSettingsMouse: {
         clickToZoom: false,
         dblClickToZoom: true
