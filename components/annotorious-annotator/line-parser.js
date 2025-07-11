@@ -158,6 +158,7 @@ class AnnotoriousAnnotator extends HTMLElement {
           padding: 10px 20px;
           cursor: pointer;
           width: 100%;
+          margin-top: 1em;
         }
         #saveBtn[disabled] {
           background-color: gray;
