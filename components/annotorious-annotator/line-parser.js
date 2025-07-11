@@ -13,8 +13,6 @@ import TPEN from '../../api/TPEN.js'
 import User from '../../api/User.js'
 import { decodeUserToken } from '../iiif-tools/index.js'
 import CheckPermissions from '../check-permissions/checkPermissions.js'
-import { Vault } from 'https://cdn.jsdelivr.net/npm/@iiif/helpers/+esm'
-const vault = new Vault()
 
 class AnnotoriousAnnotator extends HTMLElement {
   #osd 
