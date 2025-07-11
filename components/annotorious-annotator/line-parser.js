@@ -964,7 +964,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       message: "Annotations are visible",
       status: "info"
     }
-    if(toast_it) TPEN.eventDispatcher.dispatch("tpen-toast", toast)
+    if (toast_it) TPEN.eventDispatcher.dispatch("tpen-toast", toast)
   }
 
   /**
@@ -977,7 +977,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       message: "Annotations are hidden",
       status: "info"
     }
-    if(toast_it) TPEN.eventDispatcher.dispatch("tpen-toast", toast)
+    if (toast_it) TPEN.eventDispatcher.dispatch("tpen-toast", toast)
   }
 
   /**
@@ -995,7 +995,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       message: "You started drawing columns",
       status: "info"
     }
-    if(toast_it) TPEN.eventDispatcher.dispatch("tpen-toast", toast)
+    if (toast_it) TPEN.eventDispatcher.dispatch("tpen-toast", toast)
   }
 
   /**
@@ -1009,7 +1009,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       message: "You stopped drawing columns",
       status: "info"
     }
-    if(toast_it) TPEN.eventDispatcher.dispatch("tpen-toast", toast)
+    if (toast_it) TPEN.eventDispatcher.dispatch("tpen-toast", toast)
   }
 
   /**
@@ -1029,7 +1029,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       message: "You started line editing",
       status: "info"
     }
-    if(toast_it) TPEN.eventDispatcher.dispatch("tpen-toast", toast)
+    if (toast_it) TPEN.eventDispatcher.dispatch("tpen-toast", toast)
   }
 
   /**
@@ -1046,7 +1046,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       message: "You stopped line editing",
       status: "info"
     }
-    if(toast_it) TPEN.eventDispatcher.dispatch("tpen-toast", toast)
+    if (toast_it) TPEN.eventDispatcher.dispatch("tpen-toast", toast)
   }
 
   /**
@@ -1064,7 +1064,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       message: "You started erasing",
       status: "info"
     }
-    if(toast_it) TPEN.eventDispatcher.dispatch("tpen-toast", toast)
+    if (toast_it) TPEN.eventDispatcher.dispatch("tpen-toast", toast)
   }
 
   /**
@@ -1077,7 +1077,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       message: "You stopped erasing",
       status: "info"
     }
-    if(toast_it) TPEN.eventDispatcher.dispatch("tpen-toast", toast)
+    if (toast_it) TPEN.eventDispatcher.dispatch("tpen-toast", toast)
   }
 
   /**
