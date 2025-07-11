@@ -52,6 +52,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       this.#userForAnnotorious = agent
     }
     // Must know the Project
+    this.shadowRoot.innerHTML = "Loading the Annotator.  Please provide a ?projectID= in the URL."
     TPEN.eventDispatcher.on('tpen-project-loaded', (ev) => this.render())
     TPEN.eventDispatcher.on('tpen-project-load-failed', (err) => {
       this.shadowRoot.innerHTML = `
