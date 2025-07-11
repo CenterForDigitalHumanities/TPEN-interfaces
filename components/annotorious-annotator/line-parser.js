@@ -106,6 +106,7 @@ class AnnotoriousAnnotator extends HTMLElement {
           width: 390px;
           border: 2px solid darkgray;
           border-radius: 5px;
+          display: none;
         }
         #tools-container label {
           display: block;
@@ -641,6 +642,7 @@ class AnnotoriousAnnotator extends HTMLElement {
     allAnnotations = this.convertSelectors(allAnnotations, true)
     this.#annotoriousInstance.setAnnotations(allAnnotations, false)
     this.#annotoriousContainer.style.backgroundImage = "none"
+    this.shadowRoot.getElementById("tools-container").style.display = "block"
   }
 
   /**
