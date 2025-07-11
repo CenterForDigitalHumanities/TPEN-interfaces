@@ -13,6 +13,8 @@ import TPEN from '../../api/TPEN.js'
 import User from '../../api/User.js'
 import { decodeUserToken } from '../iiif-tools/index.js'
 import CheckPermissions from '../check-permissions/checkPermissions.js'
+import { Vault } from 'https://cdn.jsdelivr.net/npm/@iiif/helpers/+esm'
+const vault = new Vault()
 
 class AnnotoriousAnnotator extends HTMLElement {
   #osd 
@@ -356,9 +358,8 @@ class AnnotoriousAnnotator extends HTMLElement {
    * @param uri A String Canvas URI
    */
   async processCanvas(uri) {
-    const canvas = uri
-    if (!canvas) return
-    const resolvedCanvas = await fetch(canvas)
+    if (!uri) return
+    const resolvedCanvas = await fetch(uri)
       .then(r => {
         if (!r.ok) throw r
         return r.json()
@@ -368,12 +369,12 @@ class AnnotoriousAnnotator extends HTMLElement {
           <style>${this.style}</style>
           <h3>Canvas Error</h3>
           <p>The Canvas within this Page could not be loaded.</p>
-          <p> ${e.status}: ${e.statusText} </p>
+          <p> ${e.status ?? e.code}: ${e.statusText ?? e.message} </p>
         `
         throw e
       })
     const context = resolvedCanvas["@context"]
-    if (!context.includes("iiif.io/api/presentation/3/context.json")) {
+    if (!context?.includes("iiif.io/api/presentation/3/context.json")) {
       console.warn("The Canvas object did not have the IIIF Presentation API 3 context and may not be parseable.")
     }
     const id = resolvedCanvas["@id"] ?? resolvedCanvas.id
@@ -381,7 +382,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       throw new Error("Cannot Resolve Canvas or Image", { "cause": "The Canvas is 404 or unresolvable." })
     }
     const type = resolvedCanvas["@type"] ?? resolvedCanvas.type
-    if (type !== "Canvas") {
+    if (!(type === "Canvas" || type === "sc:Canvas")) {
       throw new Error(`Provided URI did not resolve a 'Canvas'.  It resolved a '${type}'`, { "cause": "URI must point to a Canvas." })
     }
     // Use the Annotations and Image on the Canvas for inititalizing the Annotorious portion of the component.
@@ -397,15 +398,18 @@ class AnnotoriousAnnotator extends HTMLElement {
   async loadAnnotorious(resolvedCanvas) {
     this.shadowRoot.getElementById('annotator-container').innerHTML = ""
     const canvasID = resolvedCanvas["@id"] ?? resolvedCanvas.id
-    const fullImage = resolvedCanvas?.items[0]?.items[0]?.body?.id
-    const imageService = resolvedCanvas?.items[0]?.items[0]?.body?.service?.id
+    let fullImage = resolvedCanvas?.items?.[0]?.items?.[0]?.body?.id
+    if(!fullImage) fullImage = resolvedCanvas?.images?.[0]?.resource?.["@id"]
+    let imageService = resolvedCanvas?.items?.[0]?.items?.[0]?.body?.service?.id
+    if(!imageService) imageService = resolvedCanvas?.images?.[0]?.resource?.service?.["@id"]
     if (!fullImage) {
       throw new Error("Cannot Resolve Canvas Image", { "cause": "The Image is 404 or unresolvable." })
     }
-    this.#imageDims = [
-      resolvedCanvas?.items[0]?.items[0]?.body?.width,
-      resolvedCanvas?.items[0]?.items[0]?.body?.height
-    ]
+    let imgx = resolvedCanvas?.items?.[0]?.items?.[0]?.body?.width
+    if(!imgx) imgx = resolvedCanvas?.images[0]?.resource?.width
+    let imgy = resolvedCanvas?.items?.[0]?.items?.[0]?.body?.height
+    if(!imgy) imgy = resolvedCanvas?.images?.[0]?.resource?.height
+    this.#imageDims = [imgx, imgy]
     this.#canvasDims = [
       resolvedCanvas?.width,
       resolvedCanvas?.height
