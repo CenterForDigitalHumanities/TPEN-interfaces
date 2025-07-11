@@ -734,5 +734,4 @@ Here's a complete example that demonstrates all authentication and permission co
 
 * [Building a Simple Interface](building-a-simple-interface.html)
 * [Project Management Workflows](project-management-workflows.html)
-* [Classroom Group Management](classroom-group-management.html)
 * [Building a Complex Interface](building-a-complex-interface.html)

@@ -37,17 +37,6 @@ class ProjectCreator extends HTMLElement {
         }
       },
       {
-        id: 'classroom',
-        name: 'Classroom Project',
-        description: 'Educational project with student access',
-        defaultSettings: {
-          allowLineBreaks: true,
-          autoSave: true,
-          collaborativeEditing: true,
-          submissionDeadline: true
-        }
-      },
-      {
         id: 'research',
         name: 'Research Project',
         description: 'Research-focused with metadata tracking',
@@ -1065,5 +1054,4 @@ Here's a complete HTML page that demonstrates all project management concepts:
 
 * [Building a Simple Interface](building-a-simple-interface.html)
 * [User Authentication and Permissions](user-authentication-permissions.html)
-* [Classroom Group Management](classroom-group-management.html)
 * [Transcription Interface Patterns](transcription-interface-patterns.html)
