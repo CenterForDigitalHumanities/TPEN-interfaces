@@ -266,16 +266,16 @@ class AnnotoriousAnnotator extends HTMLElement {
       // Timeout required in order to allow the unfocus native functionality to complete for $isDirty.
       setTimeout(() => { this.saveAnnotations() }, 500)
     })
+
+    // OSD and AnnotoriousOSD need some cycles to load, they are big files.
     this.shadowRoot.appendChild(osdScript)
     setTimeout(() => { 
       this.shadowRoot.appendChild(annotoriousScript)
       setTimeout(() => { 
+        // Process the page to get the data required for the component UI
         this.processPage(this.#annotationPageURI)
-      }, 500)
-    }, 500)
-    
-    // Process the page to get the data required for the component UI
-    //this.processPage(this.#annotationPageURI)
+      }, 200)
+    }, 200)
   }
 
   /**
@@ -1311,7 +1311,8 @@ class AnnotoriousAnnotator extends HTMLElement {
   }
 
   /*
-   * Make pasing options draggable
+   * Make parsing options draggable
+   * https://www.w3schools.com/howto/howto_js_draggable.asp
    */
   dragging(ev) {
     ev = ev || window.event
@@ -1327,18 +1328,15 @@ class AnnotoriousAnnotator extends HTMLElement {
     function elementDrag(e) {
       e = e || window.event
       e.preventDefault()
-      // calculate the new cursor position:
       pos1 = pos3 - e.clientX
       pos2 = pos4 - e.clientY
       pos3 = e.clientX
       pos4 = e.clientY
-      // set the element's new position:
       containerElem.style.top = (containerElem.offsetTop - pos2) + "px"
       containerElem.style.left = (containerElem.offsetLeft - pos1) + "px"
     }
 
     function closeDragElement(e) {
-      // stop moving when mouse button is released:
       e = e || window.event
       grabber.style.cursor = "grab"
       containerElem.style.boxShadow = "none"
