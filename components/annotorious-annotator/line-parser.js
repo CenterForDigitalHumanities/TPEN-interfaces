@@ -69,6 +69,13 @@ class AnnotoriousAnnotator extends HTMLElement {
       this.shadowRoot.innerHTML = "You do not have permission to use this interface."
       return
     }
+    // Must have a Page _id to continue
+    if (!TPEN.screen.pageInQuery) {
+      const url = new URL(location.href)
+      url.searchParams.set('pageID',TPEN.activeProject.getFirstPageID().split('/').pop())
+      location.href = url.toString()
+      return
+    }
     this.#annotationPageURI = TPEN.screen.pageInQuery
     if (!this.#annotationPageURI) {
       this.shadowRoot.innerHTML = "You must provide a '?pageID=theid' in the URL.  The value should be the ID of an existing TPEN3 Page."
