@@ -426,7 +426,8 @@ class AnnotoriousAnnotator extends HTMLElement {
       const info = await fetch(imageService + "info.json").then(resp => resp.json()).catch(err => { return false })
       if (info) imageInfo = info
     }
-    else{
+    else {
+      // If the simple image URL will not resolve, we will not be able to load.
       let resolvable = await fetch(fullImage, {"method":"HEAD"}).then(resp => {
         if (!resp.ok) {
           this.shadowRoot.innerHTML = `
