@@ -1292,7 +1292,7 @@ class AnnotoriousAnnotator extends HTMLElement {
     elem.addEventListener('mousemove', function(e) {
       const rect = elem.getBoundingClientRect()
       ruler.style.left = (rect.x - _this.containerLeftOffset()) + "px"
-      ruler.style.top = (e.pageY - _this.containerTopOffset()) + "px"
+      ruler.style.top = (e.pageY - _this.containerTopOffset() - window.scrollY) + "px"
       ruler.style.height = '1px'
       ruler.style.width = rect.width + "px"
     })
