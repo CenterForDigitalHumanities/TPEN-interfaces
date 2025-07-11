@@ -1088,7 +1088,7 @@ class AnnotoriousAnnotator extends HTMLElement {
   containerTopOffset() {
     if (!this.#annotoriousContainer) return 0
     const rect = this.#annotoriousContainer.getBoundingClientRect()
-    if(!rect?.top) return 0
+    if (!rect?.top) return 0
     return rect.top
   }
 
@@ -1100,7 +1100,7 @@ class AnnotoriousAnnotator extends HTMLElement {
   containerLeftOffset() {
     if (!this.#annotoriousContainer) return 0
     const rect = this.#annotoriousContainer.getBoundingClientRect()
-    if(!rect?.left) return 0
+    if (!rect?.left) return 0
     return rect.left
   }
 
