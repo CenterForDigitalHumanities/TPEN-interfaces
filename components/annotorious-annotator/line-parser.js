@@ -428,7 +428,7 @@ class AnnotoriousAnnotator extends HTMLElement {
     }
     else{
       let resolvable = await fetch(fullImage, {"method":"HEAD"}).then(resp => {
-        if(!resp.ok) {
+        if (!resp.ok) {
           this.shadowRoot.innerHTML = `
             <style>${this.style}</style>
             <h3>Image Error</h3>
