@@ -27,7 +27,25 @@ a good place to connect it.
 
 ## Cookbook
 
-Recipes for building interfaces to interact with the TPEN API.
+Recipes for building interfaces to interact with the TPEN API. These recipes cover real-world use cases and demonstrate how to leverage TPEN's architecture and features effectively.
 
-* [Building a Simple Interface](building-a-simple-interface.html)
-* [Building a Complex Interface](building-a-complex-interface.html)
+### Getting Started
+* [Building a Simple Interface](building-a-simple-interface.html) - Basic patterns for creating TPEN interfaces
+* [Building a Complex Interface](building-a-complex-interface.html) - Advanced patterns for full-featured applications
+
+### Authentication & User Management
+* [User Authentication and Permissions](user-authentication-permissions.html) - Implementing secure authentication, user profiles, and role-based access control
+
+### Project Management
+* [Project Management Workflows](project-management-workflows.html) - Comprehensive project lifecycle management, from creation to collaboration
+
+### Educational Use Cases
+* [Classroom Group Management](classroom-group-management.html) - Managing classes, students, assignments, and educational workflows
+
+### Transcription & Annotation
+* [Transcription Interface Patterns](transcription-interface-patterns.html) - Specialized transcription interfaces for various scholarly needs
+
+### Advanced Topics
+* [Component Integration](component-integration.html) - Using and combining TPEN's Web Components effectively
+* [API Best Practices](api-best-practices.html) - Optimal patterns for working with TPEN's API classes
+* [Performance Optimization](performance-optimization.html) - Techniques for building fast, responsive interfaces
