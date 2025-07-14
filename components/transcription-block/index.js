@@ -335,6 +335,7 @@ export default class TranscriptionBlock extends HTMLElement {
         .transcription-input[disabled] {
             border-color: transparent;
             color: #777;
+        }
 
         .transcription-input:focus {
             box-shadow: 0 0 0 2px rgb(0, 90, 140);
