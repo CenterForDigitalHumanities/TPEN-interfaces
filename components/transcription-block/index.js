@@ -1,6 +1,7 @@
 import TPEN from "/api/TPEN.js"
 const eventDispatcher = TPEN.eventDispatcher
 import vault from "/js/vault.js"
+import CheckPermissions from "/components/check-permissions/checkPermissions.js"
 
 export default class TranscriptionBlock extends HTMLElement {
 
@@ -47,9 +48,9 @@ export default class TranscriptionBlock extends HTMLElement {
     }
 
     connectedCallback() {
-        this.render()
-        this.addEventListeners()
         TPEN.eventDispatcher.on('tpen-project-loaded', async () => {
+            this.render()
+            this.addEventListeners()
             const pageID = TPEN.screen?.pageInQuery
             this.#page = await vault.get(pageID, 'annotationpage', true)
             this.#transcriptions = await this.processTranscriptions(this.#page.items)
@@ -281,6 +282,15 @@ export default class TranscriptionBlock extends HTMLElement {
     }
 
     render() {
+        if(!CheckPermissions.checkViewAccess('LINE', 'TEXT') && !CheckPermissions.checkViewAccess('LINE', 'CONTENT')) {
+            import('/components/project-permissions/index.js')
+            this.shadowRoot.innerHTML = `
+            <div class="no-access" style="color: red;background: rgba(255, 0, 0, 0.1);text-align: center;">No access to view transcription
+            <tpen-project-permissions project-id="${TPEN.activeProject?.id ?? TPEN.activeProject?._id}" user-id="${TPEN.activeUser?.id ?? TPEN.activeUser?._id}"></tpen-project-permissions>
+            </div>
+            `
+            return
+        }
         this.shadowRoot.innerHTML = `
       <style>
         .transcription-block {
@@ -322,6 +332,11 @@ export default class TranscriptionBlock extends HTMLElement {
             transition: border-color 0.2s ease;
         }
 
+        .transcription-input[disabled] {
+            border-color: transparent;
+            color: #777;
+        }
+
         .transcription-input:focus {
             box-shadow: 0 0 0 2px rgb(0, 90, 140);
         }
@@ -349,7 +364,7 @@ export default class TranscriptionBlock extends HTMLElement {
         <center class="transcription-line"> - </center>
         <div class="flex-center">
           <button class="prev-button">Prev</button>
-          <input type="text" class="transcription-input" placeholder="Transcription input text" value="">
+          <input type="text" class="transcription-input" placeholder="Transcription input text" value="" ${CheckPermissions.checkEditAccess('LINE', 'TEXT') || CheckPermissions.checkEditAccess('LINE', 'CONTENT') ? '' : 'disabled'}>
           <button class="next-button">Next</button>
         </div>
       </div>

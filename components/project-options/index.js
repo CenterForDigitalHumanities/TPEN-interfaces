@@ -58,7 +58,7 @@ class ProjectOptions extends HTMLElement {
                                 <line-annotation-link 
                                     page-id="${page.id}" 
                                     page-label="${page.label ?? 'Untitled Page'}"
-                                    lines-count="${page.lines?.length ?? ''}">
+                                    lines-count="${page.items?.length ?? ''}">
                                 </line-annotation-link>
                             </li>
                         `).join('') ?? '<li>No pages</li>'}
