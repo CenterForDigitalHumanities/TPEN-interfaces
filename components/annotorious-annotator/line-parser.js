@@ -207,6 +207,15 @@ class AnnotoriousAnnotator extends HTMLElement {
         .a9s-annotation.selected .a9s-inner {
           fill-opacity: 0.48 !important;
         }
+
+        .transcribeLink {
+          margin-left: 1em !important;
+        }
+
+        .transcribeLink img {
+          height: 35px;
+          widht: 35px;
+        }
       </style>
       <div>
         <div id="tools-container" class="card">
@@ -481,6 +490,23 @@ class AnnotoriousAnnotator extends HTMLElement {
         dblClickToZoom: true
       }
     })
+
+    // Link to transcribe if they have view permissions for it
+    if(CheckPermissions.checkViewAccess("line", "text")) {
+      let parsingRedirectButton = new OpenSeadragon.Button({
+        tooltip: "Go Transcribe",
+        srcRest: "../interfaces/annotator/images/classictpen.svg",
+        srcGroup: "../interfaces/annotator/images/classictpen.svg",
+        srcHover: "../interfaces/annotator/images/classictpen_hover.svg",
+        srcDown: "../interfaces/annotator/images/classictpen_hover.svg",
+        onClick: (e) => {
+          if (confirm("Stop transcribing and go to line parsing?  Unsaved changes will be lost."))
+            location.href = `/transcribe?projectID=${TPEN.activeProject._id}`
+        }
+      })
+      parsingRedirectButton.element.classList.add("transcribeLink")
+      this.#osd.addControl(parsingRedirectButton.element, { anchor: OpenSeadragon.ControlAnchor.TOP_LEFT })
+    }
 
     /**
      * An instance of an OpenSeaDragon Annotorious Annotation with customization options that help our desired
