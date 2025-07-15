@@ -495,8 +495,8 @@ class AnnotoriousAnnotator extends HTMLElement {
     if(CheckPermissions.checkViewAccess("line", "text")) {
       let parsingRedirectButton = new OpenSeadragon.Button({
         tooltip: "Go Transcribe",
-        srcRest: "../interfaces/annotator/images/classictpen.svg",
-        srcGroup: "../interfaces/annotator/images/classictpen.svg",
+        srcRest: "../interfaces/annotator/images/classictpen_rest.svg",
+        srcGroup: "../interfaces/annotator/images/classictpen_grouphover.svg",
         srcHover: "../interfaces/annotator/images/classictpen_hover.svg",
         srcDown: "../interfaces/annotator/images/classictpen_hover.svg",
         onClick: (e) => {
