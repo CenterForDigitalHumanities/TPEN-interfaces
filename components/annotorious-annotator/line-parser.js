@@ -42,7 +42,6 @@ class AnnotoriousAnnotator extends HTMLElement {
       const agent = decodeUserToken(this.userToken)['http://store.rerum.io/agent']
       if (!agent) {
         this.shadowRoot.innerHTML = `
-            <style>${this.style}</style>
             <h3>User Error</h3>
             <p>The user agent could not be detected or does not have access to this page.</p>
         `
@@ -56,7 +55,6 @@ class AnnotoriousAnnotator extends HTMLElement {
     TPEN.eventDispatcher.on('tpen-project-loaded', (ev) => this.render())
     TPEN.eventDispatcher.on('tpen-project-load-failed', (err) => {
       this.shadowRoot.innerHTML = `
-          <style>${this.style}</style>
           <h3>Project Error</h3>
           <p>The project you are looking for does not exist or you do not have access to it.</p>
           <p> ${err.detail.status}: ${err.detail.statusText} </p>
@@ -309,7 +307,6 @@ class AnnotoriousAnnotator extends HTMLElement {
       })
       .catch(e => {
         this.shadowRoot.innerHTML = `
-        <style>${this.style}</style>
         <h3>Page Error</h3>
         <p>The Page you are looking for does not exist or you do not have access to it.</p>
         <p> ${e.status}: ${e.statusText} </p>
@@ -368,7 +365,6 @@ class AnnotoriousAnnotator extends HTMLElement {
       })
       .catch(e => {
         this.shadowRoot.innerHTML = `
-          <style>${this.style}</style>
           <h3>Canvas Error</h3>
           <p>The Canvas within this Page could not be loaded.</p>
           <p> ${e.status ?? e.code}: ${e.statusText ?? e.message} </p>
@@ -443,7 +439,6 @@ class AnnotoriousAnnotator extends HTMLElement {
       }
       catch (err) {
         this.shadowRoot.innerHTML = `
-          <style>${this.style}</style>
           <h3>Image Error</h3>
           <p>The Image '${fullImage}' could not be loaded</p>
         `
@@ -451,7 +446,6 @@ class AnnotoriousAnnotator extends HTMLElement {
       }
       if (!resolvable) {
         this.shadowRoot.innerHTML = `
-          <style>${this.style}</style>
           <h3>Image Error</h3>
           <p>The Image '${fullImage}' could not be loaded</p>
         `
