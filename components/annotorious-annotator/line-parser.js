@@ -19,7 +19,7 @@ class AnnotoriousAnnotator extends HTMLElement {
   #annotoriousInstance
   #annotoriousContainer
   #userForAnnotorious
-  #annotationPageURI
+  #annotationPageID
   #resolvedAnnotationPage
   #modifiedAnnotationPage
   #imageDims
@@ -75,8 +75,8 @@ class AnnotoriousAnnotator extends HTMLElement {
       location.href = url.toString()
       return
     }
-    this.#annotationPageURI = TPEN.screen.pageInQuery
-    if (!this.#annotationPageURI) {
+    this.#annotationPageID = TPEN.screen.pageInQuery
+    if (!this.#annotationPageID) {
       this.shadowRoot.innerHTML = "You must provide a '?pageID=theid' in the URL.  The value should be the ID of an existing TPEN3 Page."
       return
     }
@@ -207,6 +207,7 @@ class AnnotoriousAnnotator extends HTMLElement {
         .a9s-annotation.selected .a9s-inner {
           fill-opacity: 0.48 !important;
         }
+
       </style>
       <div>
         <div id="tools-container" class="card">
@@ -274,7 +275,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       this.shadowRoot.appendChild(annotoriousScript)
       setTimeout(() => { 
         // Process the page to get the data required for the component UI
-        this.processPage(this.#annotationPageURI)
+        this.processPage(this.#annotationPageID)
       }, 200)
     }, 200)
   }
@@ -459,6 +460,24 @@ class AnnotoriousAnnotator extends HTMLElement {
      * The interface folder contains an /images/ folder with all the OpenSeaDragon icons.
      * @see https://openseadragon.github.io/docs/OpenSeadragon.html#.Options for all options and their description.
      */
+    let el = document.createElement("div")
+    let parsingRedirectButton = new OpenSeadragon.Button({
+        tooltip: "Go Transcribe",
+        srcRest: "../interfaces/annotator/images/classictpen.svg",
+        srcGroup: "../interfaces/annotator/images/classictpen.svg",
+        srcHover: "../interfaces/annotator/images/classictpen_hover.svg",
+        srcDown: "../interfaces/annotator/images/classictpen_hover.svg",
+        onClick: (e) => {
+          if (confirm("Stop transcribing and go to line parsing?  Unsaved changes will be lost."))
+            location.href = `/transcribe?projectID=${TPEN.activeProject._id}`
+        }
+    })
+    parsingRedirectButton.element.querySelectorAll("img").forEach(el => {
+      el.style.height = "35px"
+      el.style.width = "35px"
+    })
+    parsingRedirectButton.element.style.marginLeft = "1em"
+    parsingRedirectButton.element.style.cursor = "pointer"
     this.#osd = OpenSeadragon({
       element: this.shadowRoot.getElementById('annotator-container'),
       tileSources: imageInfo,
@@ -481,7 +500,8 @@ class AnnotoriousAnnotator extends HTMLElement {
         dblClickToZoom: true
       }
     })
-
+    if(CheckPermissions.checkViewAccess("line", "text")) this.#osd.addControl(parsingRedirectButton.element, { anchor: OpenSeadragon.ControlAnchor.TOP_LEFT })
+    
     /**
      * An instance of an OpenSeaDragon Annotorious Annotation with customization options that help our desired
      * "draw new column", "chop and merge lines", "delete lines" UX.
