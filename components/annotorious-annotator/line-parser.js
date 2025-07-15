@@ -455,6 +455,7 @@ class AnnotoriousAnnotator extends HTMLElement {
           <h3>Image Error</h3>
           <p>The Image '${fullImage}' could not be loaded</p>
         `
+        return
       }
     }
 
