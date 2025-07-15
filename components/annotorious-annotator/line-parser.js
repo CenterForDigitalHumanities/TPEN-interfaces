@@ -500,7 +500,7 @@ class AnnotoriousAnnotator extends HTMLElement {
         srcHover: "../interfaces/annotator/images/classictpen_hover.svg",
         srcDown: "../interfaces/annotator/images/classictpen_hover.svg",
         onClick: (e) => {
-          if (confirm("Stop transcribing and go to line parsing?  Unsaved changes will be lost."))
+          if (confirm("Stop line parsing and go transcribe?  Unsaved changes will be lost."))
             location.href = `/transcribe?projectID=${TPEN.activeProject._id}`
         }
       })
