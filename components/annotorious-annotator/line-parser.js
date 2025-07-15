@@ -391,6 +391,15 @@ class AnnotoriousAnnotator extends HTMLElement {
     this.loadAnnotorious(resolvedCanvas)
   }
 
+  async validateImageUrl(url) {
+    return new Promise((resolve, reject) => {
+      const img = new Image()
+      img.onload = () => resolve(true)
+      img.onerror = () => reject(false)
+      img.src = url
+    })
+  }
+
   /**
    * The Project, User, Page, and Canvas data has been processed.
    * The UI is ready to try to load Annotorious and Annotorious listeners.
@@ -428,29 +437,25 @@ class AnnotoriousAnnotator extends HTMLElement {
       if (info) imageInfo = info
     }
     else {
-      // If the simple image URL will not resolve, we will not be able to load.
-      let resolvable = await fetch(fullImage, {"method":"HEAD"}).then(resp => {
-        if (!resp.ok) {
-          this.shadowRoot.innerHTML = `
-            <style>${this.style}</style>
-            <h3>Image Error</h3>
-            <p>The Image could not be loaded</p>
-            <p> ${resp.status}: ${resp.statusText} </p>
-          `
-          return false
-        }
-        return true
-      })
-      .catch(err => {
+      let resolvable = false
+      try {
+        resolvable = await this.validateImageUrl(fullImage)
+      }
+      catch (err) {
         this.shadowRoot.innerHTML = `
           <style>${this.style}</style>
           <h3>Image Error</h3>
-          <p>The Image could not be loaded</p>
-          <p> ${err.status ?? err.code}: ${err.statusText ?? err.message} </p>
+          <p>The Image '${fullImage}' could not be loaded</p>
         `
-        return false
-      })
-      if (!resolvable) return
+        return
+      }
+      if (!resolvable) {
+        this.shadowRoot.innerHTML = `
+          <style>${this.style}</style>
+          <h3>Image Error</h3>
+          <p>The Image '${fullImage}' could not be loaded</p>
+        `
+      }
     }
 
     /**
