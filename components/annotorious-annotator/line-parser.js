@@ -208,6 +208,15 @@ class AnnotoriousAnnotator extends HTMLElement {
           fill-opacity: 0.48 !important;
         }
 
+        .transcribeLink {
+          margin-left: 1em !important;
+        }
+
+        .transcribeLink img {
+          height: 35px;
+          widht: 35px;
+        }
+
       </style>
       <div>
         <div id="tools-container" class="card">
@@ -460,24 +469,7 @@ class AnnotoriousAnnotator extends HTMLElement {
      * The interface folder contains an /images/ folder with all the OpenSeaDragon icons.
      * @see https://openseadragon.github.io/docs/OpenSeadragon.html#.Options for all options and their description.
      */
-    let el = document.createElement("div")
-    let parsingRedirectButton = new OpenSeadragon.Button({
-        tooltip: "Go Transcribe",
-        srcRest: "../interfaces/annotator/images/classictpen.svg",
-        srcGroup: "../interfaces/annotator/images/classictpen.svg",
-        srcHover: "../interfaces/annotator/images/classictpen_hover.svg",
-        srcDown: "../interfaces/annotator/images/classictpen_hover.svg",
-        onClick: (e) => {
-          if (confirm("Stop transcribing and go to line parsing?  Unsaved changes will be lost."))
-            location.href = `/transcribe?projectID=${TPEN.activeProject._id}`
-        }
-    })
-    parsingRedirectButton.element.querySelectorAll("img").forEach(el => {
-      el.style.height = "35px"
-      el.style.width = "35px"
-    })
-    parsingRedirectButton.element.style.marginLeft = "1em"
-    parsingRedirectButton.element.style.cursor = "pointer"
+
     this.#osd = OpenSeadragon({
       element: this.shadowRoot.getElementById('annotator-container'),
       tileSources: imageInfo,
@@ -500,7 +492,22 @@ class AnnotoriousAnnotator extends HTMLElement {
         dblClickToZoom: true
       }
     })
-    if(CheckPermissions.checkViewAccess("line", "text")) this.#osd.addControl(parsingRedirectButton.element, { anchor: OpenSeadragon.ControlAnchor.TOP_LEFT })
+    // Link to transcribe if they have view permissions for it
+    if(CheckPermissions.checkViewAccess("line", "text")) {
+      let parsingRedirectButton = new OpenSeadragon.Button({
+        tooltip: "Go Transcribe",
+        srcRest: "../interfaces/annotator/images/classictpen.svg",
+        srcGroup: "../interfaces/annotator/images/classictpen.svg",
+        srcHover: "../interfaces/annotator/images/classictpen_hover.svg",
+        srcDown: "../interfaces/annotator/images/classictpen_hover.svg",
+        onClick: (e) => {
+          if (confirm("Stop transcribing and go to line parsing?  Unsaved changes will be lost."))
+            location.href = `/transcribe?projectID=${TPEN.activeProject._id}`
+        }
+      })
+      parsingRedirectButton.element.classList.add("transcribeLink")
+      this.#osd.addControl(parsingRedirectButton.element, { anchor: OpenSeadragon.ControlAnchor.TOP_LEFT })
+    }
     
     /**
      * An instance of an OpenSeaDragon Annotorious Annotation with customization options that help our desired
