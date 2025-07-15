@@ -212,10 +212,6 @@ class AnnotoriousAnnotator extends HTMLElement {
           margin-left: 1em !important;
         }
 
-        .transcribeLink img {
-          height: 35px;
-          widht: 35px;
-        }
       </style>
       <div>
         <div id="tools-container" class="card">
@@ -496,7 +492,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       let parsingRedirectButton = new OpenSeadragon.Button({
         tooltip: "Go Transcribe",
         srcRest: "../interfaces/annotator/images/classictpen_rest.svg",
-        srcGroup: "../interfaces/annotator/images/classictpen_grouphover.svg",
+        srcGroup: "../interfaces/annotator/images/classictpen_rest.svg",
         srcHover: "../interfaces/annotator/images/classictpen_hover.svg",
         srcDown: "../interfaces/annotator/images/classictpen_hover.svg",
         onClick: (e) => {
