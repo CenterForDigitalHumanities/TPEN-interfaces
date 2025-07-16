@@ -65,7 +65,8 @@ class ProjectOptions extends HTMLElement {
                     </ul>
                 </details>
             `).join('') ?? '<div>No layers defined.</div>'}
-            <h3><a href="/transcribe?projectID=${project._id}">Transcribe</a></h3>
+            <h3>Transcribe</h3>
+            <a title="Go Transcribe" class="right" href="/transcribe?projectID=${project._id}"><img src="../../assets/icons/classictpen.svg"/></a>
         `
 
     }

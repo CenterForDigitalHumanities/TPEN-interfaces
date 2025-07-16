@@ -108,7 +108,7 @@ class ProjectDetails extends HTMLElement {
         const isTranscriber = await CheckPermissions.checkEditAccess('LINE', 'TEXT')
         const editTitle = isProjectEditor ? `<a id="edit-project-title" href="#">✏️</a>` : ``
         const parseLines = isLineEditor ? `<a title="Go Parse Lines" class="left" href="/annotator?projectID=${project._id}">📝</a>` : ``
-        const transcribe = isTranscriber ? `<a title="Go Transcribe" class="right" href="/transcribe?projectID=${project._id}"><img src="../../interfaces/annotator/images/classictpen_grouphover.svg"/></a>` : ``
+        const transcribe = isTranscriber ? `<a title="Go Transcribe" class="right" href="/transcribe?projectID=${project._id}"><img src="../../assets/icons/classictpen.svg"/></a>` : ``
 
         isReadAccess ? 
         (this.shadowRoot.innerHTML = `
