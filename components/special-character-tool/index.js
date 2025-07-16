@@ -1,3 +1,8 @@
+import TPEN from "../../api/TPEN"
+import CheckPermissions from "../check-permissions/checkPermissions.js"
+const eventDispatcher = TPEN.eventDispatcher
+import "../check-permissions/permission-match.js"
+
 class SpecialCharacterTool extends HTMLElement {
     constructor() {
         super()
@@ -5,8 +10,14 @@ class SpecialCharacterTool extends HTMLElement {
     }
 
     connectedCallback() {
-        this.render()
-        this.addEventListeners()
+        eventDispatcher.on('tpen-project-loaded', () => {
+            if(!CheckPermissions.checkViewAccess("TOOLS", "ANY")) {
+                this.remove()
+                return
+            }
+            this.render()
+            this.addEventListeners()
+        })
     }
 
     addEventListeners() {
@@ -122,8 +133,14 @@ class SpecialCharacterToolButton extends HTMLElement {
     }
 
     connectedCallback() {
-        this.render()
-        this.addEventListeners()
+        eventDispatcher.on('tpen-project-loaded', () => {
+            if(!CheckPermissions.checkViewAccess("TOOLS", "ANY")) {
+                this.remove()
+                return
+            }
+            this.render()
+            this.addEventListeners()
+        })
     }
 
     addEventListeners() {
