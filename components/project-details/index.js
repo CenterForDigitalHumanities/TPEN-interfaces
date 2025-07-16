@@ -48,6 +48,15 @@ class ProjectDetails extends HTMLElement {
     .hidden {
         display: none;
     }
+    a.left {
+        margin-top: 10px;
+        font-size: 17pt;
+        float: left;
+    }
+    a.right {
+        margin-top: 5px;
+        float: right;
+    }
     `
 
     constructor() {
@@ -88,25 +97,25 @@ class ProjectDetails extends HTMLElement {
 
     async render() {
         const project = this.Project ?? TPEN.activeProject
-        TPEN.eventDispatcher.dispatch(new CustomEvent('tpen-gui-action-link', { detail:
-            { 
-                label: "Transcribe",
-                callback: () => location.href = `/transcribe?projectID=${project._id}`
-            }
-        }))
         const projectOwner = Object.entries(project.collaborators).find(([userID, u]) => u.roles.includes('OWNER'))?.[1].profile.displayName
         const collaboratorCount = Object.keys(project.collaborators).length
 
         TPEN.screen.title = project.label ?? project.title ?? project.name
         TPEN.eventDispatcher.dispatch('tpen-gui-title', TPEN.screen.title)
         const isReadAccess = await CheckPermissions.checkViewAccess('PROJECT')
+        const isProjectEditor = await CheckPermissions.checkEditAccess('PROJECT', 'METADATA')
+        const isLineEditor = await CheckPermissions.checkEditAccess('LINE', 'SELECTOR')
+        const isTranscriber = await CheckPermissions.checkEditAccess('LINE', 'TEXT')
+        const editTitle = isProjectEditor ? `<a id="edit-project-title" href="#">✏️</a>` : ``
+        const parseLines = isLineEditor ? `<a title="Go Parse Lines" class="left" href="/annotator?projectID=${project._id}">📝</a>` : ``
+        const transcribe = isTranscriber ? `<a title="Go Transcribe" class="right" href="/transcribe?projectID=${project._id}"><img src="../../interfaces/annotator/images/classictpen_grouphover.svg"/></a>` : ``
 
         isReadAccess ? 
         (this.shadowRoot.innerHTML = `
             <style>${this.style}</style>
             <div class="project-title-input-container">
                 <h3 class="project-title">${TPEN.screen.title}</h3>
-                <a id="edit-project-title" href="#">✏️</a>
+                ${editTitle}
             </div>
             <small>${TPEN.screen.projectInQuery}</small>
             <p>${projectOwner}, Owner</p>
@@ -114,6 +123,8 @@ class ProjectDetails extends HTMLElement {
                 ${collaboratorCount < 3 ? "Collaborators: "+Object.entries(project.collaborators).map(([userID, u]) => u.profile.displayName).join(', ') : `${collaboratorCount} collaborator${collaboratorCount===1? '' : 's'}`}
             </p>
             <sequence-panel manifest-id="${project.manifest}"></sequence-panel>
+            ${parseLines}
+            ${transcribe}
         `) : (this.shadowRoot.innerHTML = `
             <p class="permission-msg">You don't have permission to view the Project Details</p>
         `)
