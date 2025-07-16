@@ -75,7 +75,6 @@ class AnnotoriousAnnotator extends HTMLElement {
       location.href = url.toString()
       return
     }
-    this.#annotationPageID = TPEN.screen.pageInQuery
     if (!this.#annotationPageID) {
       this.shadowRoot.innerHTML = "You must provide a '?pageID=theid' in the URL.  The value should be the ID of an existing TPEN3 Page."
       return
@@ -210,11 +209,6 @@ class AnnotoriousAnnotator extends HTMLElement {
 
         .transcribeLink {
           margin-left: 1em !important;
-        }
-
-        .transcribeLink img {
-          height: 35px;
-          widht: 35px;
         }
 
       </style>
@@ -496,19 +490,18 @@ class AnnotoriousAnnotator extends HTMLElement {
     if(CheckPermissions.checkViewAccess("line", "text")) {
       let parsingRedirectButton = new OpenSeadragon.Button({
         tooltip: "Go Transcribe",
-        srcRest: "../interfaces/annotator/images/classictpen.svg",
-        srcGroup: "../interfaces/annotator/images/classictpen.svg",
+        srcRest: "../interfaces/annotator/images/classictpen_rest.svg",
+        srcGroup: "../interfaces/annotator/images/classictpen_grouphover.svg",
         srcHover: "../interfaces/annotator/images/classictpen_hover.svg",
         srcDown: "../interfaces/annotator/images/classictpen_hover.svg",
         onClick: (e) => {
-          if (confirm("Stop transcribing and go to line parsing?  Unsaved changes will be lost."))
+          if (confirm("Stop line parsing and go transcribe?  Unsaved changes will be lost."))
             location.href = `/transcribe?projectID=${TPEN.activeProject._id}`
         }
       })
       parsingRedirectButton.element.classList.add("transcribeLink")
       this.#osd.addControl(parsingRedirectButton.element, { anchor: OpenSeadragon.ControlAnchor.TOP_LEFT })
     }
-    
     /**
      * An instance of an OpenSeaDragon Annotorious Annotation with customization options that help our desired
      * "draw new column", "chop and merge lines", "delete lines" UX.
