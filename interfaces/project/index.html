@@ -84,8 +84,10 @@ permalink: /project
 <script type="module">
     import TPEN from '../../api/TPEN.js'
     TPEN.eventDispatcher.on('tpen-project-loaded', ev => {
-        goParse.setAttribute("href", `/annotator/?projectID=${ev.detail._id}`)
-        goTranscribe.setAttribute("href", `/transcribe/?projectID=${ev.detail._id}`)
+        const goParse = document.getElementById("goParse")
+        const goTranscribe = document.getElementById("goTranscribe")
+        if(goParse) goParse.setAttribute("href", `/annotator/?projectID=${ev.detail._id}`)
+        if(goTranscribe) goTranscribe.setAttribute("href", `/transcribe/?projectID=${ev.detail._id}`)
     })
 </script>
 </html>
