@@ -49,14 +49,33 @@ class ProjectDetails extends HTMLElement {
         display: none;
     }
     a.left {
+        color: var(--primary-color);
+        text-decoration: inherit;
         margin-top: 10px;
-        font-size: 17pt;
         float: left;
     }
     a.right {
-        margin-top: 5px;
+        color: var(--primary-color);
+        text-decoration: inherit;
+        margin-top: 10px;
         float: right;
     }
+    a.left span, a.right span {
+        position: relative;
+        display: inline-block;
+        top: -10px;
+        margin: 0px 5px;
+    }
+
+    a.left:hover, a.right:hover {
+        color: var(--link);
+    }
+
+    a.left img, a.right img {
+        height: 35px;
+        width: 35px
+    }
+
     `
 
     constructor() {
@@ -107,8 +126,8 @@ class ProjectDetails extends HTMLElement {
         const isLineEditor = await CheckPermissions.checkEditAccess('LINE', 'SELECTOR')
         const isTranscriber = await CheckPermissions.checkEditAccess('LINE', 'TEXT')
         const editTitle = isProjectEditor ? `<a id="edit-project-title" href="#">✏️</a>` : ``
-        const parseLines = isLineEditor ? `<a title="Go Parse Lines" class="left" href="/annotator?projectID=${project._id}">📝</a>` : ``
-        const transcribe = isTranscriber ? `<a title="Go Transcribe" class="right" href="/transcribe?projectID=${project._id}"><img src="../../assets/icons/classictpen.svg"/></a>` : ``
+        const parseLines = isLineEditor ? `<a title="Go Parse Lines" class="left" href="/annotator?projectID=${project._id}"><img src="../../assets/icons/parse-lines.png"/><span>Parse Lines</span></a>` : ``
+        const transcribe = isTranscriber ? `<a title="Go Transcribe" class="right" href="/transcribe?projectID=${project._id}"><span>Transcribe Text</span><img src="../../assets/icons/transcribe.png"/></a>` : ``
 
         isReadAccess ? 
         (this.shadowRoot.innerHTML = `
