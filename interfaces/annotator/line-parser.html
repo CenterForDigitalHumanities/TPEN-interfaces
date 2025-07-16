@@ -1,5 +1,4 @@
 ---
-layout: default
 title: Line Parser
 permalink: /annotator
 ---
@@ -9,16 +8,37 @@ permalink: /annotator
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TPEN Line Parser</title>
+    <title>Line Parser</title>
     <script type="module" src="../../components/annotorious-annotator/line-parser.js"></script>
+    <script type="module" src="../../components/gui/site/Header.js"></script>
+    <script type="module" src="../../components/gui/site/index.js"></script>
+    <link href="../../components/gui/site/index.css" rel="stylesheet" type="text/css" />
     <style>
       body {
         max-height: 100vh;
+        min-height:  90vh;
         margin: 0px;
+        padding:  0px;
+      }
+      tpen-header {
+        position:  relative;
+        display:  block;
+        height:  4em;
+      }
+      tpen-line-parser {
+        display: block;
+        position:  relative;
+        margin: 0px;
+        padding:  0px;
+      }
+      :focus-visible {
+        outline: none !important;
+        border: none !important;
       }
     </style>
   </head>
   <body>
+    <tpen-header></tpen-header>
     <tpen-line-parser></tpen-line-parser>
   </body>
 </html>
