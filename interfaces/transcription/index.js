@@ -160,7 +160,7 @@ export default class TranscriptionInterface extends HTMLElement {
               />
             </div>
           </section>
-          <tpen-line-image id="bottomImage"></tpen-line-image>
+          <tpen-image-fragment id="bottomImage"></tpen-image-fragment>
         </div>
         <div class="splitter"></div>
         <div class="right-pane">

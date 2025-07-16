@@ -30,6 +30,9 @@ class TpenLineImage extends HTMLElement {
 
     set canvas(value) {
         this.setCanvas(value)
+        document.dispatchEvent?.(new CustomEvent('canvas-change', {
+            detail: { canvasId: value },
+        }))
     }
 
     set line(value) {
@@ -105,6 +108,63 @@ class TpenLineImage extends HTMLElement {
 
 customElements.define('tpen-line-image', TpenLineImage)
 
+class TpenImageFragment extends HTMLElement {
+    #lineImage = new Image()
+    #canvasId
+
+    get lineImage() {
+        return this.#lineImage
+    }
+    set lineImage(value) {
+        this.#lineImage = value
+        this.render()
+    }
+    
+    static get observedAttributes() {
+        return ['tpen-line-id', 'region']
+    }
+
+    attributeChangedCallback(name, oldValue, newValue) {
+        if (name === 'tpen-line-id' && oldValue !== newValue) {
+            this.lineId = newValue
+        }
+    }
+
+    constructor() {
+        super()
+        this.attachShadow({ mode: 'open' })
+        this.#lineImage.onload = this.render.bind(this)
+        document.addEventListener('canvas-change', (event) => {
+            this.#canvasId = event.detail.canvasId
+            fetch(this.#canvasId)
+                .then(res => res.json())
+                .then(canvas => {
+                    const imageResource = canvas?.items?.[0]?.items?.[0]?.body?.id ?? canvas?.images?.[0]?.resource?.id
+                    if (imageResource) {
+                        this.#lineImage.src = imageResource
+                    }
+                })
+                .catch(console.error)
+        })
+    }
+
+    set lineId(value) {
+        this.lineImage.setAttribute('tpen-line-id', value)
+    }
+
+    set region(value) {
+        this.lineImage.setAttribute('region', value)
+    }
+
+    render() {
+        this.shadowRoot.innerHTML = '' // Clear previous content
+        this.shadowRoot.append(this.#lineImage)
+    }
+}
+
+customElements.define('tpen-image-fragment', TpenImageFragment)
+
 export default {
-    TpenLineImage
+    TpenLineImage,
+    TpenImageFragment
 }
