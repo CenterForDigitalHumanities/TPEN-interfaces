@@ -9,22 +9,83 @@ permalink: /project
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Project Detail</title>
-    <script type="module" src="/api/TPEN.js"></script>
     <script type="module" src="/components/gui/site/index.js"></script>
     <script type="module" src="/components/project-details/index.js"></script>
     <script type="module" src="/components/gui/card/Card.js"></script>
+    <script type="module" src="/components/check-permissions/permission-match-element.js"></script>
     <link href="/components/gui/site/index.css" rel="stylesheet" type="text/css" />
     <link href="/components/gui/card/Card.css" rel="stylesheet" type="text/css" />
+    <style>
+        a.left {
+            cursor:  pointer;
+            color: var(--primary-color);
+            text-decoration: inherit;
+            margin-top: 10px;
+            float: left;
+        }
+        a.right {
+            cursor:  pointer;
+            color: var(--primary-color);
+            text-decoration: inherit;
+            margin-top: 10px;
+            float: right;
+        }
+        a.left span, a.right span {
+            position: relative;
+            display: inline-block;
+            top: -10px;
+            margin: 0px 5px;
+        }
+        a.left:hover, a.right:hover {
+            color: var(--link);
+        }
+        a.left img, a.right img {
+            height: 35px;
+            width: 35px
+        }
+    </style>
 </head>
 <body>
     <tpen-page>
         <div style="display: flex; justify-content: center;">
             <tpen-card>
                 <h2 slot="header">Project Details</h2>
-                <tpen-project-details slot="body" class="card"></tpen-project-details>
+                <div slot="body">
+                    <tpen-project-details class="card"></tpen-project-details>
+                    <tpen-can tpen-view="*_SELECTOR_LINE"> 
+                        <a id="goParse" title="Go Parse Lines" class="left"><img src="../../assets/icons/parse-lines.svg"/>
+                            <span>Parse Lines</span>
+                        </a>
+                    </tpen-can>
+                    <tpen-can tpen-view="*_TEXT_LINE"> 
+                        <a id="goTranscribe" title="Go Transcribe" class="right">
+                            <span>Transcribe Text</span>
+                            <img src="../../assets/icons/transcribe.png"/>
+                        </a>
+                    </tpen-can>
+                </div>
+                <!-- <div slot="footer"> 
+                    <tpen-can tpen-view="*_SELECTOR_LINE"> 
+                        <a id="goParse" title="Go Parse Lines" class="left"><img src="../../assets/icons/parse-lines.svg"/>
+                            <span>Parse Lines</span>
+                        </a>
+                    </tpen-can>
+                    <tpen-can tpen-view="*_TEXT_LINE"> 
+                        <a id="goTranscribe" title="Go Transcribe" class="right">
+                            <span>Transcribe Text</span>
+                            <img src="../../assets/icons/transcribe.png"/>
+                        </a>
+                    </tpen-can>
+                </div> -->
             </tpen-card>
         </div>
     </tpen-page>
-    
 </body>
+<script type="module">
+    import TPEN from '../../api/TPEN.js'
+    TPEN.eventDispatcher.on('tpen-project-loaded', ev => {
+        goParse.setAttribute("href", `/annotator/?projectID=${ev.detail._id}`)
+        goTranscribe.setAttribute("href", `/transcribe/?projectID=${ev.detail._id}`)
+    })
+</script>
 </html>

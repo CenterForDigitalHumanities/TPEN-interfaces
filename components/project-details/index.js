@@ -48,33 +48,6 @@ class ProjectDetails extends HTMLElement {
     .hidden {
         display: none;
     }
-    a.left {
-        color: var(--primary-color);
-        text-decoration: inherit;
-        margin-top: 10px;
-        float: left;
-    }
-    a.right {
-        color: var(--primary-color);
-        text-decoration: inherit;
-        margin-top: 10px;
-        float: right;
-    }
-    a.left span, a.right span {
-        position: relative;
-        display: inline-block;
-        top: -10px;
-        margin: 0px 5px;
-    }
-
-    a.left:hover, a.right:hover {
-        color: var(--link);
-    }
-
-    a.left img, a.right img {
-        height: 35px;
-        width: 35px
-    }
 
     `
 
@@ -123,12 +96,8 @@ class ProjectDetails extends HTMLElement {
         TPEN.eventDispatcher.dispatch('tpen-gui-title', TPEN.screen.title)
         const isReadAccess = await CheckPermissions.checkViewAccess('PROJECT')
         const isProjectEditor = await CheckPermissions.checkEditAccess('PROJECT', 'METADATA')
-        const isLineEditor = await CheckPermissions.checkEditAccess('LINE', 'SELECTOR')
-        const isTranscriber = await CheckPermissions.checkEditAccess('LINE', 'TEXT')
         const editTitle = isProjectEditor ? `<a id="edit-project-title" href="#">✏️</a>` : ``
-        const parseLines = isLineEditor ? `<a title="Go Parse Lines" class="left" href="/annotator?projectID=${project._id}"><img src="../../assets/icons/parse-lines.png"/><span>Parse Lines</span></a>` : ``
-        const transcribe = isTranscriber ? `<a title="Go Transcribe" class="right" href="/transcribe?projectID=${project._id}"><span>Transcribe Text</span><img src="../../assets/icons/transcribe.png"/></a>` : ``
-
+        
         isReadAccess ? 
         (this.shadowRoot.innerHTML = `
             <style>${this.style}</style>
@@ -142,8 +111,6 @@ class ProjectDetails extends HTMLElement {
                 ${collaboratorCount < 3 ? "Collaborators: "+Object.entries(project.collaborators).map(([userID, u]) => u.profile.displayName).join(', ') : `${collaboratorCount} collaborator${collaboratorCount===1? '' : 's'}`}
             </p>
             <sequence-panel manifest-id="${project.manifest}"></sequence-panel>
-            ${parseLines}
-            ${transcribe}
         `) : (this.shadowRoot.innerHTML = `
             <p class="permission-msg">You don't have permission to view the Project Details</p>
         `)
