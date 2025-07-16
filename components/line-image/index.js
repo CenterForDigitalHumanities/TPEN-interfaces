@@ -119,7 +119,17 @@ class TpenImageFragment extends HTMLElement {
         this.#lineImage = value
         this.render()
     }
-    
+
+    set region(value) {
+        if (typeof value !== 'string') {
+            this.boundingBox = null
+            return
+        }
+        const [x, y, w, h] = value.split(',').map(Number)
+        this.boundingBox = { x, y, w, h }
+        this.moveUnder(x, y, w, h)
+    }
+
     static get observedAttributes() {
         return ['tpen-line-id', 'region']
     }
@@ -127,6 +137,9 @@ class TpenImageFragment extends HTMLElement {
     attributeChangedCallback(name, oldValue, newValue) {
         if (name === 'tpen-line-id' && oldValue !== newValue) {
             this.lineId = newValue
+        }
+        if (name === 'region' && oldValue !== newValue) {
+            this.region = newValue
         }
     }
 
@@ -148,12 +161,19 @@ class TpenImageFragment extends HTMLElement {
         })
     }
 
-    set lineId(value) {
-        this.lineImage.setAttribute('tpen-line-id', value)
-    }
-
-    set region(value) {
-        this.lineImage.setAttribute('region', value)
+    moveUnder(x, y, width, height) {
+        if (this.#lineImage.complete) {
+        if (this.#lineImage.complete) {
+            this.#lineImage.style.position = 'absolute'
+            this.#lineImage.style.left = `${x}px`
+            this.#lineImage.style.top = `${y}px`
+            this.#lineImage.style.width = `${width}px`
+            this.#lineImage.style.height = `${height}px`
+        } else {
+            this.#lineImage.onload = () => {
+                this.moveUnder(x, y, width, height)
+            }
+        }
     }
 
     render() {
