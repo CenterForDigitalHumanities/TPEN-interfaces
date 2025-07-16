@@ -43,6 +43,9 @@ permalink: /project
             height: 35px;
             width: 35px
         }
+        .action-links {
+            height: 50px;
+        }
     </style>
 </head>
 <body>
@@ -52,17 +55,19 @@ permalink: /project
                 <h2 slot="header">Project Details</h2>
                 <div slot="body">
                     <tpen-project-details class="card"></tpen-project-details>
-                    <tpen-can tpen-view="*_SELECTOR_LINE"> 
-                        <a id="goParse" title="Go Parse Lines" class="left"><img src="../../assets/icons/parse-lines.svg"/>
-                            <span>Parse Lines</span>
-                        </a>
-                    </tpen-can>
-                    <tpen-can tpen-view="*_TEXT_LINE"> 
-                        <a id="goTranscribe" title="Go Transcribe" class="right">
-                            <span>Transcribe Text</span>
-                            <img src="../../assets/icons/transcribe.png"/>
-                        </a>
-                    </tpen-can>
+                    <div class="action-links">
+                        <tpen-can tpen-view="*_SELECTOR_LINE"> 
+                            <a id="goParse" title="Go Parse Lines" class="left"><img src="../../assets/icons/parse-lines.svg"/>
+                                <span>Parse Lines</span>
+                            </a>
+                        </tpen-can>
+                        <tpen-can tpen-view="*_TEXT_LINE"> 
+                            <a id="goTranscribe" title="Go Transcribe" class="right">
+                                <span>Transcribe Text</span>
+                                <img src="../../assets/icons/transcribe.png"/>
+                            </a>
+                        </tpen-can>
+                    </div>
                 </div>
                 <!-- <div slot="footer"> 
                     <tpen-can tpen-view="*_SELECTOR_LINE"> 
