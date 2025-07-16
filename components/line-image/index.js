@@ -110,7 +110,7 @@ customElements.define('tpen-line-image', TpenLineImage)
 
 class TpenImageFragment extends HTMLElement {
     #lineImage = new Image()
-    #canvasId
+    #canvas
 
     get lineImage() {
         return this.#lineImage
@@ -130,6 +130,21 @@ class TpenImageFragment extends HTMLElement {
         this.moveUnder(x, y, w, h)
     }
 
+    set canvas(value) {
+        this.#canvas = value
+        this.setContainerStyle()
+    }
+    
+    set line(annotation) {
+        if (!annotation?.target?.startsWith(this.#canvas?.id ?? '')) return
+
+        const target = annotation.target
+        const xywhMatch = target.match(/\?xywh=(\d+,\d+,\d+,\d+)/) ?? annotation.selector?.value?.match(/xywh=(?:pixel:|pct:)?(\d+,\d+,\d+,\d+)/)
+        if (xywhMatch) {
+            this.region = xywhMatch[1]
+        }
+    }
+
     static get observedAttributes() {
         return ['tpen-line-id', 'region']
     }
@@ -142,17 +157,26 @@ class TpenImageFragment extends HTMLElement {
             this.region = newValue
         }
     }
-
+    
+    setContainerStyle() {
+        this.style.position = 'relative'
+        this.style.left = `0px`
+        this.style.top = `0px`
+        this.style.width = `${this.#canvas.width}px`
+        this.style.height = `${this.#canvas.height}px`
+    }
+    
     constructor() {
         super()
         this.attachShadow({ mode: 'open' })
         this.#lineImage.onload = this.render.bind(this)
         document.addEventListener('canvas-change', (event) => {
-            this.#canvasId = event.detail.canvasId
-            fetch(this.#canvasId)
-                .then(res => res.json())
-                .then(canvas => {
-                    const imageResource = canvas?.items?.[0]?.items?.[0]?.body?.id ?? canvas?.images?.[0]?.resource?.id
+            fetch(event.detail.canvasId)
+            .then(res => res.json())
+            .then(canvas => {
+                this.#canvas = canvas
+                this.setContainerStyle()
+                const imageResource = canvas?.items?.[0]?.items?.[0]?.body?.id ?? canvas?.images?.[0]?.resource?.id
                     if (imageResource) {
                         this.#lineImage.src = imageResource
                     }
@@ -162,18 +186,19 @@ class TpenImageFragment extends HTMLElement {
     }
 
     moveUnder(x, y, width, height) {
-        if (this.#lineImage.complete) {
-        if (this.#lineImage.complete) {
-            this.#lineImage.style.position = 'absolute'
-            this.#lineImage.style.left = `${x}px`
-            this.#lineImage.style.top = `${y}px`
-            this.#lineImage.style.width = `${width}px`
-            this.#lineImage.style.height = `${height}px`
-        } else {
+        if (!this.#lineImage.complete) {
             this.#lineImage.onload = () => {
                 this.moveUnder(x, y, width, height)
             }
+            return
         }
+        const canvasHeight = this.#canvas?.height ?? 2000
+        const canvasWidth = this.#canvas?.width ?? 1250
+
+        const vscale = (this.#canvas.height ?? 1) / this.#lineImage.clientHeight || 1
+        const hscale = (this.#canvas.width ?? 1) / this.#lineImage.clientWidth || 1
+        this.#lineImage.style.transition = `transform 1.5s cubic-bezier(0.19, 1, 0.22, 1)`
+        this.#lineImage.style.transform = `translate(-${x / hscale}px, -${(y + height) / vscale}px)`
     }
 
     render() {
