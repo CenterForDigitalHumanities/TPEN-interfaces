@@ -2,14 +2,14 @@ tpen-card[tpen-scope="metadata"]::part(card-body) {
   margin-bottom: 3.5em;
 }
 a.left {
-    cursor:  pointer;
+    cursor: pointer;
     color: var(--primary-color);
     text-decoration: inherit;
     margin-top: 10px;
     float: left;
 }
 a.right {
-    cursor:  pointer;
+    cursor: pointer;
     color: var(--primary-color);
     text-decoration: inherit;
     margin-top: 10px;
@@ -29,9 +29,9 @@ a.left img, a.right img {
     width: 35px
 }
 a.left img {
-    padding:  4px 0px;
+    padding: 4px 0px;
 }
 .action-links {
-    height:  50px;
+    height: 50px;
     border-top: 1px solid black;
 }

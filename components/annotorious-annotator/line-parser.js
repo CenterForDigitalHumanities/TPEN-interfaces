@@ -191,7 +191,6 @@ class AnnotoriousAnnotator extends HTMLElement {
         .dragMe.rightside {
           right: 0
         }
-
         .helperHeading {
           margin-top: 2em;
           text-align: center;
@@ -209,13 +208,13 @@ class AnnotoriousAnnotator extends HTMLElement {
         }
         .transcribeLink:hover:after {
           content: "Go Transcribe";
+          cursor: pointer;
           position: absolute;
           width: 105px;
           top: 10px;
           margin-left: 5px;
           color: var(--link);
         }
-
       </style>
       <div>
         <div id="tools-container" class="card">
