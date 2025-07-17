@@ -491,10 +491,10 @@ class AnnotoriousAnnotator extends HTMLElement {
     if(CheckPermissions.checkViewAccess("line", "text")) {
       let parsingRedirectButton = new OpenSeadragon.Button({
         tooltip: "Go Transcribe",
-        srcRest: "../interfaces/annotator/images/classictpen_rest.svg",
-        srcGroup: "../interfaces/annotator/images/classictpen_grouphover.svg",
-        srcHover: "../interfaces/annotator/images/classictpen_hover.svg",
-        srcDown: "../interfaces/annotator/images/classictpen_hover.svg",
+        srcRest: "../interfaces/annotator/images/transcribe.png",
+        srcGroup: "../interfaces/annotator/images/transcribe.png",
+        srcHover: "../interfaces/annotator/images/transcribe.png",
+        srcDown: "../interfaces/annotator/images/transcribe.png",
         onClick: (e) => {
           if (confirm("Stop line parsing and go transcribe?  Unsaved changes will be lost."))
             location.href = `/transcribe?projectID=${TPEN.activeProject._id}`
