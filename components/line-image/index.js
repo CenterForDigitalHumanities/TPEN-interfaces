@@ -125,9 +125,9 @@ class TpenImageFragment extends HTMLElement {
             this.boundingBox = null
             return
         }
-        const [x, y, w, h] = value.split(',').map(Number)
+        const [x, y, w, h, scale] = value.split(',').map(Number)
         this.boundingBox = { x, y, w, h }
-        this.moveUnder(x, y, w, h)
+        this.moveUnder(x, y, w, h, scale)
     }
 
     set canvas(value) {
@@ -162,8 +162,10 @@ class TpenImageFragment extends HTMLElement {
         this.style.position = 'relative'
         this.style.left = `0px`
         this.style.top = `0px`
-        this.style.width = `${this.#canvas.width}px`
-        this.style.height = `${this.#canvas.height}px`
+        this.style.width = `100%`
+        this.style.height = `auto`
+        this.style.display = 'block'
+        this.style.overflow = 'visible'
     }
     
     constructor() {
@@ -185,20 +187,24 @@ class TpenImageFragment extends HTMLElement {
         })
     }
 
-    moveUnder(x, y, width, height) {
+    moveUnder(x, y, width, height, scale = 1) {
         if (!this.#lineImage.complete) {
             this.#lineImage.onload = () => {
                 this.moveUnder(x, y, width, height)
             }
             return
         }
-        const canvasHeight = this.#canvas?.height ?? 2000
-        const canvasWidth = this.#canvas?.width ?? 1250
+        const canvasHeight = (this.#canvas?.height ?? 2000)
+        const canvasWidth = (this.#canvas?.width ?? 1250)
 
-        const vscale = (this.#canvas.height ?? 1) / this.#lineImage.clientHeight || 1
-        const hscale = (this.#canvas.width ?? 1) / this.#lineImage.clientWidth || 1
         this.#lineImage.style.transition = `transform 1.5s cubic-bezier(0.19, 1, 0.22, 1)`
-        this.#lineImage.style.transform = `translate(-${x / hscale}px, -${(y + height) / vscale}px)`
+        const centerX = x + width / 2
+        const elemWidth = this.#lineImage.offsetWidth
+        const offsetX = (canvasWidth / 2 - centerX) / scale + (elemWidth / 2)
+        const offsetY = (y + height) / scale
+        this.#lineImage.style.transform = `translate(-${offsetX}px, -${offsetY}px)`
+        this.#lineImage.style.width = `${canvasWidth / scale}px`
+        this.#lineImage.style.height = `${canvasHeight / scale}px`
     }
 
     render() {
