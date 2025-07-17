@@ -28,6 +28,10 @@ a.left img, a.right img {
     height: 35px;
     width: 35px
 }
+a.left img {
+    padding:  4px 0px;
+}
 .action-links {
     height:  50px;
+    border-top: 1px solid black;
 }

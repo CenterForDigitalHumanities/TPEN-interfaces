@@ -185,11 +185,9 @@ class AnnotoriousAnnotator extends HTMLElement {
           height: auto;
           width: auto;
         }
-
         .dragMe.leftside {
           left: 0
         }
-
         .dragMe.rightside {
           right: 0
         }
@@ -198,18 +196,24 @@ class AnnotoriousAnnotator extends HTMLElement {
           margin-top: 2em;
           text-align: center;
         }
-
         .helperText {
           font-size: 9pt;
           font-weight: bold;
         }
-
         .a9s-annotation.selected .a9s-inner {
           fill-opacity: 0.48 !important;
         }
-
         .transcribeLink {
-          margin-left: 1em !important;
+          margin-left: 2em !important;
+          cursor: pointer;
+        }
+        .transcribeLink:hover:after {
+          content: "Go Transcribe";
+          position: absolute;
+          width: 105px;
+          top: 10px;
+          margin-left: 5px;
+          color: var(--link);
         }
 
       </style>
