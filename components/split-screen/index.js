@@ -1,4 +1,4 @@
-import "../check-permissions/permission-match.js"
+import CheckPermissions from "../check-permissions/permission-match.js"
 import TPEN from "../../api/TPEN.js"
 const eventDispatcher = TPEN.eventDispatcher
 export default class TpenSplitScreen extends HTMLElement {

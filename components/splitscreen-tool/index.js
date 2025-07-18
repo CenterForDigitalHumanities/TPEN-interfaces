@@ -1,4 +1,3 @@
-
 import CheckPermissions from "../check-permissions/checkPermissions.js"
 import TPEN from "../../api/TPEN.js"
 const eventDispatcher = TPEN.eventDispatcher
