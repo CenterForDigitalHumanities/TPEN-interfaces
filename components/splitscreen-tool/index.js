@@ -1,4 +1,4 @@
-import "../check-permissions/checkPermissions.js"
+import CheckPermissions from "../check-permissions/checkPermissions.js"
 import TPEN from "../../api/TPEN.js"
 const eventDispatcher = TPEN.eventDispatcher
 
@@ -11,7 +11,7 @@ export default class SplitscreenTool extends HTMLElement {
     connectedCallback() {
       eventDispatcher.on('tpen-project-loaded', () => {
         // Only render if the user has view access to the project
-        if (!TPEN.checkPermissions.checkViewAccess('TOOL', 'ANY')) {
+        if (!CheckPermissions.checkViewAccess('TOOL', 'ANY')) {
           this.remove()
           return
         }
