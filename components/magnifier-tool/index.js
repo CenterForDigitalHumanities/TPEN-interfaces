@@ -1,5 +1,5 @@
 import TPEN from "../../api/TPEN.js"
-import "../check-permissions/checkPermissions.js"
+import CheckPermissions from "../check-permissions/checkPermissions.js"
 
 export default class MagnifierTool extends HTMLElement {
     constructor() {
