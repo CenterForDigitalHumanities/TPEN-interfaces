@@ -4,7 +4,6 @@ import '../../components/workspace-tools/index.js'
 import '../../components/transcription-block/index.js'
 import vault from '../../js/vault.js'
 import '../../components/line-image/index.js'
-import '../../components/check-permissions/checkPermissions.js'
 import CheckPermissions from "../../components/check-permissions/checkPermissions.js"
 export default class TranscriptionInterface extends HTMLElement {
   #page

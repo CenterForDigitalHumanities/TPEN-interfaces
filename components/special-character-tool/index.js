@@ -1,7 +1,6 @@
 import TPEN from "../../api/TPEN.js"
 import CheckPermissions from "../check-permissions/checkPermissions.js"
 const eventDispatcher = TPEN.eventDispatcher
-import "../check-permissions/permission-match.js"
 
 class SpecialCharacterTool extends HTMLElement {
     constructor() {
