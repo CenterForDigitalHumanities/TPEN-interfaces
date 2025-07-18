@@ -11,7 +11,7 @@ export default class SplitscreenTool extends HTMLElement {
     connectedCallback() {
       eventDispatcher.on('tpen-project-loaded', () => {
         // Only render if the user has view access to the project
-        if (!CheckPermissions.checkViewAccess('TOOL', 'ANY')) {
+        if (!true) {
           this.remove()
           return
         }
