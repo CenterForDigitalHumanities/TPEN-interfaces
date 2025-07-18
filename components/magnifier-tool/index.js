@@ -1,10 +1,36 @@
 export default class MagnifierTool extends HTMLElement {
+    #imageElem
+    #magnifier
+    #magnifierBtn
+
     constructor() {
         super()
         this.attachShadow({ mode: "open" })
         this.isMagnifierVisible = false
         this.dragOffset = { x: 0, y: 0 }
         this.isDragging = false
+        this.zoomLevel = 2 // Default zoom
+    }
+
+    get imageElem() {
+        if (!this.#imageElem) {
+            this.#imageElem = document.querySelector('tpen-transcription-interface')?.shadowRoot?.querySelector('tpen-image-fragment')?.shadowRoot?.querySelector('img')
+        }
+        return this.#imageElem
+    }
+
+    get magnifier() {
+        if (!this.#magnifier) {
+            this.#magnifier = this.shadowRoot.querySelector('.magnifier')
+        }
+        return this.#magnifier
+    }
+
+    get magnifierBtn() {
+        if (!this.#magnifierBtn) {
+            this.#magnifierBtn = this.shadowRoot.querySelector('.magnifier-btn')
+        }
+        return this.#magnifierBtn
     }
 
     connectedCallback() {
@@ -12,11 +38,21 @@ export default class MagnifierTool extends HTMLElement {
         this.addEventListeners()
     }
 
+    setMagnifierView(centerX, centerY, zoomLevel = this.zoomLevel) {
+        const magnifier = this.magnifier
+        const img = this.imageElem
+        if (!magnifier || !img) return
+        const imgRect = img.getBoundingClientRect()
+        const magnifierSize = magnifier.offsetWidth || 200
+        const halfSize = magnifierSize / 2
+        magnifier.style.backgroundSize = `${img.width * zoomLevel}px ${img.height * zoomLevel}px`
+        magnifier.style.backgroundPositionX = `${-((centerX / imgRect.width) * img.width * zoomLevel - halfSize)}px`
+        magnifier.style.backgroundPositionY = `${-((centerY / imgRect.height) * img.height * zoomLevel - halfSize)}px`
+    }
+
     addEventListeners() {
-        const magnifierBtn = this.shadowRoot.querySelector('.magnifier-btn')
-        const magnifier = this.shadowRoot.querySelector('.magnifier')
-        const img = document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('.canvas-image')
-        console.log(img)
+        const magnifierBtn = this.magnifierBtn
+        const magnifier = this.magnifier
 
         magnifierBtn.addEventListener('click', () => {
             if (this.isMagnifierVisible) {
@@ -37,33 +73,34 @@ export default class MagnifierTool extends HTMLElement {
             magnifier.style.cursor = 'grabbing'
         })
 
+        magnifier.addEventListener('wheel', (e) => {
+            if (!this.isMagnifierVisible) return
+            e.preventDefault()
+            const delta = Math.sign(e.deltaY)
+            // Zoom out if delta > 0, in if < 0
+            this.zoomLevel = Math.min(6, Math.max(1.5, this.zoomLevel - delta * 0.1))
+            this.updateMagnifier()
+        })
+
         window.addEventListener('mousemove', (e) => {
             if (!this.isDragging) return
             e.preventDefault()
-
             const shadowRootRect = document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('tpen-workspace-tools').getBoundingClientRect()
-            const imgRect = img.getBoundingClientRect()
+            const imgRect = this.imageElem.getBoundingClientRect()
+            const magnifier = this.magnifier
             const magnifierSize = 200
-            const zoomMultiplier = 2
             const halfSize = magnifierSize / 2
-
             const maxOffsetX = imgRect.width - halfSize
             const maxOffsetY = imgRect.height - halfSize
-
             let newX = e.clientX - this.dragOffset.x
             let newY = e.clientY - this.dragOffset.y
-
             let centerXInImage = Math.min(Math.max(newX + halfSize - imgRect.left, halfSize / 2), maxOffsetX + halfSize / 2)
             let centerYInImage = Math.min(Math.max(newY + halfSize - imgRect.top, halfSize / 2), maxOffsetY + halfSize / 2)
-
             newX = centerXInImage + imgRect.left - halfSize
             newY = centerYInImage + imgRect.top - halfSize
-
             magnifier.style.left = `${newX - shadowRootRect.left}px`
             magnifier.style.top = `${newY - shadowRootRect.top}px`
-
-            magnifier.style.backgroundPositionX = `${-((centerXInImage / imgRect.width) * img.width * zoomMultiplier - halfSize)}px`
-            magnifier.style.backgroundPositionY = `${-((centerYInImage / imgRect.height) * img.height * zoomMultiplier - halfSize)}px`
+            this.setMagnifierView(centerXInImage, centerYInImage)
         })
 
         window.addEventListener('mouseup', () => {
@@ -81,8 +118,8 @@ export default class MagnifierTool extends HTMLElement {
     }
 
     showMagnifier() {
-        const magnifier = this.shadowRoot.querySelector('.magnifier')
-        const img = document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('.canvas-image')
+        const magnifier = this.magnifier
+        const img = this.imageElem
         if (!magnifier || !img) return
 
         const magnifierSize = 200
@@ -91,7 +128,7 @@ export default class MagnifierTool extends HTMLElement {
 
         magnifier.style.display = 'block'
         magnifier.style.backgroundImage = `url(${img.src})`
-        magnifier.style.backgroundSize = `${img.width * 2}px ${img.height * 2}px`
+        magnifier.style.backgroundSize = `${img.width * this.zoomLevel}px ${img.height * this.zoomLevel}px`
 
         magnifier.style.left = `${img.offsetLeft}px`
         magnifier.style.top = `${img.offsetTop}px`
@@ -100,8 +137,21 @@ export default class MagnifierTool extends HTMLElement {
         this.isMagnifierVisible = true
     }
 
+    updateMagnifier() {
+        const magnifier = this.magnifier
+        const img = this.imageElem
+        if (!magnifier || !img) return
+        const magnifierRect = magnifier.getBoundingClientRect()
+        const imgRect = img.getBoundingClientRect()
+        const magnifierSize = magnifierRect.width ?? 200
+        const halfSize = magnifierSize / 2
+        const centerX = (magnifierRect.left + halfSize) - imgRect.left
+        const centerY = (magnifierRect.top + halfSize) - imgRect.top
+        this.setMagnifierView(centerX, centerY)
+    }
+
     hideMagnifier() {
-        const magnifier = this.shadowRoot.querySelector('.magnifier')
+        const magnifier = this.magnifier
         if (!magnifier) return
         magnifier.style.display = 'none'
         this.isMagnifierVisible = false

@@ -295,10 +295,7 @@ export default class TranscriptionInterface extends HTMLElement {
     if (!region) return
     const [x, y, width, height] = region.split(',').map(Number)
     topImage.moveTo(x, y, width, height)
-    const scale = height && width
-      ? Math.min(topImage.offsetHeight / height, topImage.offsetWidth / width)
-      : 1
-    this.shadowRoot.querySelector('#bottomImage').region = region.concat(`,${scale}`)
+    this.shadowRoot.querySelector('#bottomImage').moveUnder(x, y, width, height, topImage)
   }
 
   getImage(project) {

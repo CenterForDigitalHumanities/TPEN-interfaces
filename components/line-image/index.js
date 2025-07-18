@@ -187,24 +187,34 @@ class TpenImageFragment extends HTMLElement {
         })
     }
 
-    moveUnder(x, y, width, height, scale = 1) {
+    moveUnder(x, y, width, height, topImage) {
         if (!this.#lineImage.complete) {
             this.#lineImage.onload = () => {
-                this.moveUnder(x, y, width, height)
+            this.moveUnder(x, y, width, height, topImage)
             }
             return
         }
-        const canvasHeight = (this.#canvas?.height ?? 2000)
-        const canvasWidth = (this.#canvas?.width ?? 1250)
+        if (!topImage) return
 
+        // Get actual dimensions of top image
+        const topImageHeight = topImage.offsetHeight ?? 1
+        const topImageWidth = topImage.offsetWidth ?? 1
+
+        // Calculate scale factors
+        const scaleY = topImageHeight / height
+        const scaleX = topImageWidth / width
+        const scaleFactor = Math.min(scaleX, scaleY)
+
+        // Set image size and position to align with top image
         this.#lineImage.style.transition = `transform 1.5s cubic-bezier(0.19, 1, 0.22, 1)`
-        const centerX = x + width / 2
-        const elemWidth = this.#lineImage.offsetWidth
-        const offsetX = (canvasWidth / 2 - centerX) / scale + (elemWidth / 2)
-        const offsetY = (y + height) / scale
+        this.#lineImage.style.width = `${this.#lineImage.naturalWidth * scaleFactor}px`
+        this.#lineImage.style.height = `${this.#lineImage.naturalHeight * scaleFactor}px`
+
+        // Calculate offsets to align the region
+        const offsetX = x * scaleFactor
+        const offsetY = (y + height) * scaleFactor
+
         this.#lineImage.style.transform = `translate(-${offsetX}px, -${offsetY}px)`
-        this.#lineImage.style.width = `${canvasWidth / scale}px`
-        this.#lineImage.style.height = `${canvasHeight / scale}px`
     }
 
     render() {
