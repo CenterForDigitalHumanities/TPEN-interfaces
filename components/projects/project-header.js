@@ -1,7 +1,7 @@
 import TPEN from "../../api/TPEN.js"
 const eventDispatcher = TPEN.eventDispatcher
 import "../layer-selector/index.js"
-import "../check-permissions/checkPermissions.js"
+import CheckPermissions from "../check-permissions/checkPermissions.js"
 export default class ProjectHeader extends HTMLElement {
     loadFailed = false
 
