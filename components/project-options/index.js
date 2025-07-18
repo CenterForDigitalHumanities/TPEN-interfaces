@@ -34,6 +34,17 @@ class ProjectOptions extends HTMLElement {
             return
         }
         this.shadowRoot.innerHTML = `
+            <style>
+                .inline img {
+                    height: 35px;
+                    width: 35px;
+                    margin-left: 1em;
+                }
+                .inline span {
+                    position: relative;
+                    display: inline-block;
+                }
+            </style>
             <p>
                 ${project.description ?? 'No description provided.'}
                 <a href="/components/update-metadata/index.html?projectID=${project._id}">✏️</a>
@@ -65,6 +76,13 @@ class ProjectOptions extends HTMLElement {
                     </ul>
                 </details>
             `).join('') ?? '<div>No layers defined.</div>'}
+            <h3>Transcribe Text</h3>
+            <div>
+                <a title="Go Transcribe" class="inline" href="/transcribe?projectID=${project._id}">
+                    <img src="../../assets/icons/transcribe.png"/><span>Go Transcribe</span>
+                </a>
+            </div>
+            
         `
 
     }

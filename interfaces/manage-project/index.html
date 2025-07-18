@@ -12,14 +12,29 @@ permalink: /project/manage
     <script type="module" src="../../components/gui/site/index.js"></script>
     <script type="module" src="../../components/gui/card/Card.js"></script>
     <script type="module" src="../../interfaces/manage-project/index.js"></script>
-    <script type="module" src="../../components/check-permissions/index.js"></script>
+    <script type="module" src="/components/check-permissions/permission-match-element.js"></script>
     <link rel="stylesheet" href="../../interfaces/manage-project/index.css">
 </head>
 <body>
     <tpen-page title="Project Dashboard" class="grid">
         <tpen-card tpen-entity="project">
             <h2 slot="header">This Project</h2>
-            <tpen-project-details slot="body"></tpen-project-details>
+            <div slot="body">
+                <tpen-project-details></tpen-project-details>
+                <div class="action-links">
+                    <tpen-can tpen-view="*_SELECTOR_LINE"> 
+                        <a id="goParse" title="Go Parse Lines" class="left"><img src="../../assets/icons/parse-lines.svg"/>
+                            <span>Parse Lines</span>
+                        </a>
+                    </tpen-can>
+                    <tpen-can tpen-view="READ_TEXT_LINE"> 
+                        <a id="goTranscribe" title="Go Transcribe" class="right">
+                            <span>Transcribe Text</span>
+                            <img src="../../assets/icons/transcribe.png"/>
+                        </a>
+                    </tpen-can>
+                </div>
+            </div>
         </tpen-card>
         <tpen-card tpen-scope="metadata">
             <h2 slot="header">Metadata</h2>
@@ -63,8 +78,15 @@ permalink: /project/manage
     </tpen-page>
     <script type="module">
         import CheckPermissions from '../../utilities/checkPermissions.js'
+        import TPEN from '../../api/TPEN.js'
 
         (async () => {
+            TPEN.eventDispatcher.on('tpen-project-loaded', ev => {
+                const goParse = document.getElementById("goParse")
+                const goTranscribe = document.getElementById("goTranscribe")
+                if(goParse) goParse.setAttribute("href", `/annotator/?projectID=${ev.detail._id}`)
+                if(goTranscribe) goTranscribe.setAttribute("href", `/transcribe/?projectID=${ev.detail._id}`)
+            })
             const cards = document.querySelectorAll('tpen-card')
             for (const card of cards) {
                 const entity = card.getAttribute('tpen-entity')
