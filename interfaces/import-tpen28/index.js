@@ -209,7 +209,7 @@ async function importTools(projectTPEN28Data, projectTPEN3Data, projectID) {
 
 async function importProject(url) {
     const messageDiv = document.getElementById("message")
-    const importResponse = await fetch(`${TPEN.servicesURL}/project/import?createFrom=URL`, {
+    const importResponse = await fetch(`${TPEN.servicesURL}/project/import?createFrom=TPEN28URL`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
