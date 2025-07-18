@@ -114,7 +114,7 @@ class ProjectDetails extends HTMLElement {
         `) : (this.shadowRoot.innerHTML = `
             <p class="permission-msg">You don't have permission to view the Project Details</p>
         `)
-
+        if(!isProjectEditor) return
         this.shadowRoot.getElementById('edit-project-title').addEventListener('click', (e) => {
             const screenTitle = this.shadowRoot.querySelector('.project-title')
             const editButton = this.shadowRoot.getElementById('edit-project-title')
