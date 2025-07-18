@@ -132,14 +132,19 @@ class SpecialCharacterToolButton extends HTMLElement {
     }
 
     connectedCallback() {
-        eventDispatcher.on('tpen-project-loaded', () => {
-            if(!CheckPermissions.checkViewAccess("TOOLS", "ANY")) {
-                this.remove()
-                return
-            }
-            this.render()
-            this.addEventListeners()
-        })
+        if(TPEN.activeProject?._createdAt){
+            this.authgate()
+        }
+        eventDispatcher.on('tpen-project-loaded', this.authgate.bind(this))
+    }
+
+    authgate() {
+        if(!CheckPermissions.checkViewAccess("TOOLS", "ANY")) {
+            this.remove()
+            return
+        }
+        this.render()
+        this.addEventListeners()
     }
 
     addEventListeners() {
