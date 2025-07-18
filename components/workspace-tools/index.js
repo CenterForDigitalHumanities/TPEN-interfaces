@@ -1,6 +1,6 @@
 import TPEN from "../../api/TPEN.js"
 const eventDispatcher = TPEN.eventDispatcher
-import "../check-permissions/checkPermissions.js"
+import CheckPermissions from "../check-permissions/checkPermissions.js"
 import "../../components/magnifier-tool/index.js"
 import "../../components/special-character-tool/index.js"
 import "../../components/splitscreen-tool/index.js"
@@ -15,7 +15,7 @@ export default class WorkspaceTools extends HTMLElement {
   connectedCallback() {
     eventDispatcher.on("tpen-project-loaded", () => {
       // Check if the user has permission to view workspace tools
-      if (!TPEN.checkPermissions.checkViewAccess("TOOLS", "ANY")) {
+      if (!CheckPermissions.checkViewAccess("TOOLS", "ANY")) {
         this.remove()
         return
       }
