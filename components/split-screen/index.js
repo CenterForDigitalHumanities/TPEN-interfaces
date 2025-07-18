@@ -1,3 +1,6 @@
+import CheckPermissions from "../check-permissions/checkPermissions.js"
+import TPEN from "../../api/TPEN.js"
+const eventDispatcher = TPEN.eventDispatcher
 export default class TpenSplitScreen extends HTMLElement {
     constructor() {
         super()
@@ -8,8 +11,15 @@ export default class TpenSplitScreen extends HTMLElement {
     }
 
     connectedCallback() {
+      eventDispatcher.on("tpen-project-loaded", () => {
+        if(!CheckPermissions.checkViewAccess("TOOLS", "ANY")) {
+          // No reason to get this far, but let's not risk it.
+          this.remove()
+          return
+        }
         this.render()
         this.addEventListeners()
+      })
     }
 
     addEventListeners() {
