@@ -34,16 +34,6 @@ customElements.define('tpen-project-export', class extends HTMLElement {
                     margin: 0;
                 }
 
-                a:hover {
-                    transform: translateY(-2px);
-                    box-shadow: 4px 4px 12px rgba(0, 0, 0, 0.2);
-                }
-
-                a:active {
-                    transform: translateY(1px);
-                    box-shadow: 1px 1px 6px rgba(0, 0, 0, 0.15);
-                }
-
                 .error {
                     display: inline-block;
                     padding: 10px 20px;
