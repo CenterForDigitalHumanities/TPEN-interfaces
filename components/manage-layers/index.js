@@ -193,7 +193,7 @@ class ProjectLayers extends HTMLElement {
         `
         this.shadowRoot.querySelectorAll(".delete-layer").forEach((button) => {
             button.addEventListener("click", (event) => {
-                if (!confirm("This Layer will be delete and the Pages will no longer be a part of this project.  This action cannot be undone.")) return
+                if (!confirm("This Layer will be deleted and the Pages will no longer be a part of this project.  This action cannot be undone.")) return
                 const url = event.target.getAttribute("data-layer-id")
                 const layerId = url.substring(url.lastIndexOf("/") + 1)
 

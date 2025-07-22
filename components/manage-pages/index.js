@@ -172,7 +172,6 @@ class ManagePages extends HTMLElement {
                         labelDiv.classList.add("hidden")
                         editPageLabelButton.classList.add("hidden")
                         
-
                         const labelInput = document.createElement("input")
                         labelInput.type = "text"
                         labelInput.className = "label-input"
