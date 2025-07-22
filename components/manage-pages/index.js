@@ -92,6 +92,7 @@ class ManagePages extends HTMLElement {
             <button class="layer-btn manage-pages">Manage Pages</button>
         `
         const layers = TPEN.activeProject?.layers
+        const pages = layers.pages
         this.shadowRoot.querySelectorAll(".manage-pages").forEach((button) => {
             button.addEventListener("click", async () => {
                 const buttonParent = button.getRootNode().host
@@ -111,6 +112,8 @@ class ManagePages extends HTMLElement {
                 .forEach(el => { 
                     const pageId = el.getAttribute("data-page-id")
                     const page_id = pageId.substring(pageId.lastIndexOf("/") + 1)
+                    const labelDiv = el.querySelector(".page-id")
+                    const pageIndex = labelDiv.getAttribute("data-index")
                     el.classList.add("layer-card", "layer-card-flex")
                     el.setAttribute("draggable", "true")
 
@@ -118,7 +121,7 @@ class ManagePages extends HTMLElement {
                         event.dataTransfer.setData("text/plain", el.dataset.index)
                         el_dragged = event.target
                     })
-        
+
                     el.addEventListener("dragend", () => {
                         layerPagesCard.forEach((el) => el.style.opacity = "1")
                     })
@@ -129,7 +132,7 @@ class ManagePages extends HTMLElement {
         
                     el.addEventListener("dragleave", () => {
                     })
-        
+
                     el.addEventListener("drop", (event) => {
                         event.preventDefault()
                         el_droppedOn = event.target
@@ -139,8 +142,7 @@ class ManagePages extends HTMLElement {
                         el_droppedOn.before(el_dragged)
                         const container = el_droppedOn.closest(".layer-pages")
                         container.$isDirty = false
-                        let i = 0
-                        for (const el of container.children) {
+                        Array.from(container.children).forEach((el, i) => {
                             if (parseInt(el.getAttribute("data-index")) !== i) {
                                 container.$isDirty = true
                                 el.style.borderLeft = "none"
@@ -148,32 +150,28 @@ class ManagePages extends HTMLElement {
                             else{
                                 el.style.borderLeft = "5px solid #007bff"
                             }
-                            i++
-                        }
+                        })
                     })
 
                     const editPageLabelButton = document.createElement("button")
                     editPageLabelButton.className = "layer-btn edit-pages"
                     editPageLabelButton.style.marginTop = "0"
-                    editPageLabelButton.dataset.index = layerIndex
+                    editPageLabelButton.dataset.index = pageIndex
                     editPageLabelButton.dataset.layerId = layerId
                     editPageLabelButton.innerText = "Edit Label"
                     el.insertBefore(editPageLabelButton, el.lastChild).insertAdjacentElement("afterend", editPageLabelButton)
 
                     const deleteButton = document.createElement("button")
                     deleteButton.className = "layer-btn delete-page"
-                    deleteButton.dataset.index = layerIndex
+                    deleteButton.dataset.index = pageIndex
                     deleteButton.dataset.layerId = layerId
                     deleteButton.innerText = "Delete Page"
                     editPageLabelButton.after(deleteButton)
-
-                    const labelDiv = el.querySelector(".page-id")
-
                     editPageLabelButton.addEventListener("click", () => {
 
                         labelDiv.classList.add("hidden")
                         editPageLabelButton.classList.add("hidden")
-                        const pageIndex = labelDiv.getAttribute("data-index")
+                        
 
                         const labelInput = document.createElement("input")
                         labelInput.type = "text"
@@ -204,7 +202,8 @@ class ManagePages extends HTMLElement {
                             })
                             .then(response => {
                                 if (response.ok) {
-                                    labelDiv.innerText = labelInput.value    
+                                    labelDiv.innerText = labelInput.value
+                                    layers[layerIndex].pages[pageIndex].label = labelInput.value
                                 }
                                 labelInput.remove()
                                 saveLabelButton.remove()
@@ -289,6 +288,7 @@ class ManagePages extends HTMLElement {
                         })
                         .then(response => {
                             if (response.ok) {
+                                layers[layerIndex].label = labelInput.value
                                 labelDiv.querySelector(".layer-label").innerHTML = `
                                     <strong>Label:</strong>
                                     ${labelInput.value}
@@ -332,12 +332,33 @@ class ManagePages extends HTMLElement {
                     })
                     .then(response => {
                         if (response.ok) {
-                            layerCardOuter.querySelectorAll(".layer-page").forEach(el => el.style.borderLeft = "5px solid #007bff")
+                            const pageElemsContainer = layerCardOuter.querySelector(".layer-pages")
+                            const pageElems = pageElemsContainer.querySelectorAll(".layer-page")
+                            const origLayer = JSON.parse(JSON.stringify(layers[layerIndex]))
+                            pageElems.forEach((el, i) => {
+                                if (el.dataset.index !== i+"") {
+                                    // swap them in the data array
+                                    layers[layerIndex].pages[i] = origLayer.pages[el.dataset.index]
+                                    // Grab any other elements noting the index of this page
+                                    const internal_els = el.querySelectorAll(`[data-index="${el.dataset.index}"]`)
+                                    // Update their data-index attributes and index properties
+                                    for (const other of internal_els) {
+                                        other.setAttribute("data-index", i + "") 
+                                        other.dataset.index = i + ""
+                                    }
+                                    // Set the current element's new data-index attibute
+                                    el.setAttribute("data-index", i + "")
+                                    // Set the current element's new index property
+                                    el.dataset.index = i
+                                }
+                                el.style.borderLeft = "5px solid #007bff"
+                            })
                             return TPEN.eventDispatcher.dispatch("tpen-toast", { status: "info", message: 'Successfully Updated Pages and Layer' })
                         }
                         return TPEN.eventDispatcher.dispatch("tpen-toast", { status: "error", message: 'Error Updating Pages and Layer' })
                     })
                     .catch(err => {
+                        console.error(err)
                         return TPEN.eventDispatcher.dispatch("tpen-toast", { status: "error", message: 'Error Updating Pages and Layer' })
                     })
                 })
