@@ -9,7 +9,7 @@ class ManagePages extends HTMLElement {
 
     connectedCallback() {
         TPEN.attachAuthentication(this)
-        if(TPEN.activeProject?._id){
+        if (TPEN.activeProject?._id) {
             this.render()
         }
         TPEN.eventDispatcher.on('tpen-project-loaded', this.render.bind(this))
@@ -203,7 +203,7 @@ class ManagePages extends HTMLElement {
                                 })
                             })
                             .then(response => {
-                                if(response.ok) {
+                                if (response.ok) {
                                     labelDiv.innerText = labelInput.value    
                                 }
                                 labelInput.remove()
@@ -227,7 +227,7 @@ class ManagePages extends HTMLElement {
                     })
 
                     deleteButton.addEventListener("click", () => {
-                        if(!confirm("This Page will be removed from this layer and deleted.  This action cannot be undone.")) return
+                        if (!confirm("This Page will be removed from this layer and deleted.  This action cannot be undone.")) return
                         layerCardOuter.querySelector(".layer-pages").removeChild(el)
                         layers[layerIndex].pages.splice(el.dataset.index, 1)
                         mainParent.shadowRoot.querySelectorAll(`.layer-card-outer[data-index="${layerIndex}"] .layer-page`).forEach((card, newIndex) => {
@@ -288,7 +288,7 @@ class ManagePages extends HTMLElement {
                             })
                         })
                         .then(response => {
-                            if(response.ok) {
+                            if (response.ok) {
                                 labelDiv.querySelector(".layer-label").innerHTML = `
                                     <strong>Label:</strong>
                                     ${labelInput.value}
@@ -315,7 +315,7 @@ class ManagePages extends HTMLElement {
                 })
                     
                 saveButton.addEventListener("click", () => {
-                    if(!layerCardOuter.querySelector(".layer-pages")?.$isDirty) {
+                    if (!layerCardOuter.querySelector(".layer-pages")?.$isDirty) {
                         TPEN.eventDispatcher.dispatch("tpen-toast", {"status":"info", "message":"No Changes to Save"})
                         return
                     }
@@ -331,7 +331,7 @@ class ManagePages extends HTMLElement {
                         }),
                     })
                     .then(response => {
-                        if(response.ok) {
+                        if (response.ok) {
                             layerCardOuter.querySelectorAll(".layer-page").forEach(el => el.style.borderLeft = "5px solid #007bff")
                             return TPEN.eventDispatcher.dispatch("tpen-toast", { status: "info", message: 'Successfully Updated Pages and Layer' })
                         }
