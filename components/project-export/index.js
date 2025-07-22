@@ -1,4 +1,5 @@
 import TPEN from '../../api/TPEN.js'
+import { checkIfUrlExists } from '../../utilities/checkIfUrlExists.js'
 
 customElements.define('tpen-project-export', class extends HTMLElement {
     constructor() {
@@ -49,7 +50,7 @@ customElements.define('tpen-project-export', class extends HTMLElement {
                 }
             </style>
             ${  (response.status 
-                ? ((await this.checkUrlExists(url) && response.message !== 'Manifest found, Recently Committed') 
+                ? ((await checkIfUrlExists(url) && response.message !== 'Manifest found, Recently Committed') 
                     ? `<a href="${url}" target="_blank">
                         ${url}
                         </a>` 
@@ -58,14 +59,5 @@ customElements.define('tpen-project-export', class extends HTMLElement {
                         : `<p class="error">Manifest Not Found</p>`))
                 : `<p class="success">Successfully Exporting Project Manifest... Please Wait</p>`)
             }`
-    }
-
-    async checkUrlExists(url) {
-        try {
-            const response = await fetch(url, { method: 'HEAD' })
-            return response.ok
-        } catch (error) {
-            return false
-        }
     }
 })         
