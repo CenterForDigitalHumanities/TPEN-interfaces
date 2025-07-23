@@ -49,15 +49,30 @@ customElements.define('tpen-project-export', class extends HTMLElement {
                     margin: 0;
                 }
             </style>
-            ${  (response.status 
-                ? ((await checkIfUrlExists(url) && response.message !== 'Manifest found, Recently Committed') 
-                    ? `<a href="${url}" target="_blank">
+        `
+        if ([1, 2, 3, 4, 6].includes(response.status)) {
+            if (await checkIfUrlExists(url) && response.status !== 2) {
+                this.shadowRoot.innerHTML += `
+                    <a href="${url}" target="_blank">
                         ${url}
-                        </a>` 
-                    : ((response.message === 'Manifest found, Recently Committed') 
-                        ? `<p class="success">Successfully Exporting Project Manifest... Please Wait</p>` 
-                        : `<p class="error">Manifest Not Found</p>`))
-                : `<p class="success">Successfully Exporting Project Manifest... Please Wait</p>`)
-            }`
+                    </a>
+                `
+            }
+            else {
+                if (response.status === 2) {
+                    this.shadowRoot.innerHTML += `
+                        <p class="success">Successfully Exporting Project Manifest... Please Wait</p>
+                    `
+                } else {
+                    this.shadowRoot.innerHTML += `
+                        <p class="error">Manifest Not Found</p>
+                    `
+                }
+            }
+        } else {
+            this.shadowRoot.innerHTML += `
+                <p class="success">Successfully Exporting Project Manifest... Please Wait</p>
+            `
+        }
     }
 })         
