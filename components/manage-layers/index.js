@@ -2,19 +2,11 @@ import TPEN from "../../api/TPEN.js"
 import "../../components/manage-pages/index.js"
 
 class ProjectLayers extends HTMLElement {
-
     constructor() {
         super()
         this.attachShadow({ mode: "open" })
-        
-    }
-
-    connectedCallback() {
         TPEN.attachAuthentication(this)
-        if (TPEN.activeProject?._id) {
-            this.render()
-        }
-        TPEN.eventDispatcher.on('tpen-project-loaded', this.render.bind(this))
+        TPEN.eventDispatcher.on("tpen-project-loaded", () => this.render())
     }
 
     render() {
@@ -92,7 +84,6 @@ class ProjectLayers extends HTMLElement {
                 .layer-btn {
                     margin-top: 10px;
                     padding: 5px 10px;
-                    min-width: fit-content;
                     border: none;
                     border-radius: 4px;
                     cursor: pointer;
@@ -146,9 +137,6 @@ class ProjectLayers extends HTMLElement {
                 .layer-actions-margin {
                     margin-top: 20px;
                 }
-                .hidden {
-                    display: none;
-                }
             </style>
 
             <h1 class="layer-title">Add Layers</h1>
@@ -175,17 +163,19 @@ class ProjectLayers extends HTMLElement {
                             .map(
                                 (page, pageIndex) =>
                                 `
-                                <div class="layer-page" data-index="${pageIndex}" data-page-id="${page.id}">
-                                    <p class="page-id" data-index="${pageIndex}" data-page-id="${page.id}">${page.label ?? page.id}</p>
+                                <div class="layer-page" data-index="${pageIndex}">
+                                    <p class="page-id" data-index="${pageIndex}">${page.id ?? page.map((page) => page.id )}</p>
                                 </div>
                                 `
                                 )
                             .join("")}
                         </div>
-                        <div class="layer-actions">
+                        ${(String(layer.id)).includes("store.rerum.io") ?
+                        `<div class="layer-actions">
                             <tpen-manage-pages data-index="${layerIndex}" data-layer-id="${layer.id}"></tpen-manage-pages>
                             <button class="layer-btn delete-layer" data-index="${layerIndex}" data-layer-id="${layer.id}">Delete Layer</button>
-                        </div>
+                        </div>`
+                        : ``}
                     </div>`
                 )
                 .join("")}     
@@ -193,7 +183,6 @@ class ProjectLayers extends HTMLElement {
         `
         this.shadowRoot.querySelectorAll(".delete-layer").forEach((button) => {
             button.addEventListener("click", (event) => {
-                if (!confirm("This Layer will be deleted and the Pages will no longer be a part of this project.  This action cannot be undone.")) return
                 const url = event.target.getAttribute("data-layer-id")
                 const layerId = url.substring(url.lastIndexOf("/") + 1)
 
