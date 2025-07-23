@@ -106,10 +106,12 @@ class TpenFeedback extends HTMLElement {
 
     if (type === "bug") {
       data.bugDescription = data.description
+      data.page = window.location.pathname + window.location.search + window.location.hash
       delete data.description
     }
     if (type === "feedback") {
       data.feedback = data.description
+      data.page = window.location.pathname + window.location.search + window.location.hash
       delete data.description
     }
     const response = await fetch(endpoint, {

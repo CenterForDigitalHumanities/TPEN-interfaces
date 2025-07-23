@@ -11,19 +11,13 @@ export default class FeedbackButton extends HTMLElement {
 
   async showFeedback() {
     if (!this.feedbackModuleLoaded) {
-      try {
-        await import("../feedback/index.js")
-        this.feedbackModuleLoaded = true
-      } catch (e) {
-        console.error("Failed to load feedback component:", e)
-        alert("Failed to load feedback form.")
-        return
-      }
+      await import("../feedback/index.js")
     }
 
     const modal = this.shadowRoot.querySelector("#feedback-modal")
     const backdrop = this.shadowRoot.querySelector("#feedback-backdrop")
     const content = this.shadowRoot.querySelector("#feedback-content")
+    const icon = this.shadowRoot.querySelector(".feedback-icon-container")
 
     if (!content.querySelector("tpen-feedback")) {
       content.innerHTML = ""
@@ -32,11 +26,13 @@ export default class FeedbackButton extends HTMLElement {
 
     modal.classList.add("show")
     backdrop.classList.add("show")
+    icon.classList.add("active")
   }
 
   closeModal() {
     this.shadowRoot.querySelector("#feedback-modal").classList.remove("show")
     this.shadowRoot.querySelector("#feedback-backdrop").classList.remove("show")
+    this.shadowRoot.querySelector(".feedback-icon-container").classList.remove("active")
   }
 
   render() {
@@ -45,7 +41,7 @@ export default class FeedbackButton extends HTMLElement {
         :host {
           position: fixed;
           bottom: 40px;
-          right: 30px;
+          right: 40px;
           z-index: 10;
         }
 
@@ -60,6 +56,13 @@ export default class FeedbackButton extends HTMLElement {
           padding: 10px 10px;
           box-shadow: 0 0 20px 4px rgba(255, 180, 60, 0.7);
           animation: glowPop 0.3s ease;
+          opacity: 0.6;
+          transition: opacity 0.3s ease;
+        }
+
+        .feedback-icon-container:hover,
+        .feedback-icon-container.active {
+          opacity: 1;
         }
 
         .feedback-icon-container img {
@@ -183,9 +186,7 @@ export default class FeedbackButton extends HTMLElement {
       </div>
     `
 
-    this.shadowRoot.querySelectorAll("#feedback-button").forEach(btn =>
-      btn.addEventListener("click", () => this.showFeedback())
-    )
+    this.shadowRoot.querySelector("#feedback-button").addEventListener("click", () => this.showFeedback())
     this.shadowRoot.querySelector("#close-modal").addEventListener("click", () => this.closeModal())
     this.shadowRoot.querySelector("#feedback-backdrop").addEventListener("click", () => this.closeModal())
   }
