@@ -126,6 +126,15 @@ class TpenFeedback extends HTMLElement {
     if (!response.ok) {
       throw new Error(`Failed to submit ${type}: ${response.statusText}`)
     }
+
+    const feedbackModalButton = document.querySelector("tpen-page").shadowRoot.querySelector("tpen-footer").shadowRoot.querySelector("tpen-feedback-button")
+    const modal = feedbackModalButton.shadowRoot.querySelector("#feedback-modal")
+    const backdrop = feedbackModalButton.shadowRoot.querySelector("#feedback-backdrop")
+    const icon = feedbackModalButton.shadowRoot.querySelector(".feedback-icon-container")
+
+    modal.classList.remove("show")
+    backdrop.classList.remove("show")
+    icon.classList.remove("active")
   }
 }
 

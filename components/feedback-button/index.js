@@ -2,7 +2,6 @@ export default class FeedbackButton extends HTMLElement {
   constructor() {
     super()
     this.attachShadow({ mode: "open" })
-    this.feedbackModuleLoaded = false
   }
 
   connectedCallback() {
@@ -10,9 +9,7 @@ export default class FeedbackButton extends HTMLElement {
   }
 
   async showFeedback() {
-    if (!this.feedbackModuleLoaded) {
-      await import("../feedback/index.js")
-    }
+    await import("../feedback/index.js")
 
     const modal = this.shadowRoot.querySelector("#feedback-modal")
     const backdrop = this.shadowRoot.querySelector("#feedback-backdrop")
