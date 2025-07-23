@@ -17,15 +17,12 @@ class TpenFeedback extends HTMLElement {
         .feedback-container {
           font-family: Arial, sans-serif;
           padding: 20px;
-          border: 1px solid var(--gray);
-          border-radius: 8px;
-          max-width: 400px;
-          margin: 20px auto;
+          margin: 10px auto 0px;
           background-color: var(--light-color);
           color: var(--dark);
         }
         .feedback-container textarea {
-          width: 100%;
+          width: calc(100% - 18px);
           padding: 8px;
           margin-bottom: 10px;
           border: 1px solid var(--gray);
