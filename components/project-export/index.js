@@ -19,7 +19,12 @@ customElements.define('tpen-project-export', class extends HTMLElement {
             headers: {
                 'Authorization': `Bearer ${TPEN.getAuthorization()}`
             }
-        }).then(response => response.json())
+        })
+        .then(async (response) => {
+            if(response.ok) return response.json()
+            const errStatus = await response.json()
+            return errStatus
+        })
         this.shadowRoot.innerHTML = `
             <style>
                 a, .success {
@@ -50,6 +55,13 @@ customElements.define('tpen-project-export', class extends HTMLElement {
                 }
             </style>
         `
+        if(response.status === -1) {
+            this.shadowRoot.innerHTML += `
+                <p class="error">Server or Service Error</p>
+            `
+            console.error(response.message)
+            return
+        }
         if ([1, 2, 3, 4, 6].includes(response.status)) {
             if (await checkIfUrlExists(url) && response.status !== 2) {
                 this.shadowRoot.innerHTML += `
