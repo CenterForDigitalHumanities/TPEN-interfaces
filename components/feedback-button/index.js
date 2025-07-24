@@ -16,20 +16,24 @@ export default class FeedbackButton extends HTMLElement {
     const content = this.shadowRoot.querySelector("#feedback-content")
     const icon = this.shadowRoot.querySelector(".feedback-icon-container")
 
-    if (!content.querySelector("tpen-feedback")) {
-      content.innerHTML = ""
-      content.appendChild(document.createElement("tpen-feedback"))
-    }
+    icon.classList.add("active", "shrunk")
 
-    modal.classList.add("show")
-    backdrop.classList.add("show")
-    icon.classList.add("active")
+    const handleTransitionEnd = () => {
+      modal.classList.add("show")
+      backdrop.classList.add("show")
+      if (!content.querySelector("tpen-feedback")) {
+        content.innerHTML = ""
+        content.appendChild(document.createElement("tpen-feedback"))
+      }
+      icon.removeEventListener("transitionend", handleTransitionEnd)
+    }
+    icon.addEventListener("transitionend", handleTransitionEnd)
   }
 
   closeModal() {
     this.shadowRoot.querySelector("#feedback-modal").classList.remove("show")
     this.shadowRoot.querySelector("#feedback-backdrop").classList.remove("show")
-    this.shadowRoot.querySelector(".feedback-icon-container").classList.remove("active")
+    this.shadowRoot.querySelector(".feedback-icon-container").classList.remove("active", "shrunk")
   }
 
   render() {
@@ -54,7 +58,11 @@ export default class FeedbackButton extends HTMLElement {
           box-shadow: 0 0 20px 4px rgba(255, 180, 60, 0.7);
           animation: glowPop 0.3s ease;
           opacity: 0.6;
-          transition: opacity 0.3s ease;
+          transition: 
+            opacity 0.3s ease,
+            transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+            padding 0.4s ease,
+            border-radius 0.4s ease;
         }
 
         .feedback-icon-container:hover,
@@ -66,8 +74,23 @@ export default class FeedbackButton extends HTMLElement {
           width: 55px;
           height: 55px;
           cursor: pointer;
-          transition: transform 0.3s ease;
+          transition: 
+            transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+            width 0.4s ease,
+            height 0.4s ease;
           margin: 0 auto;
+        }
+
+        .feedback-icon-container.shrunk {
+          padding: 4px;
+          border-radius: 30px;
+          transform: scale(0.85);
+        }
+
+        .feedback-icon-container.shrunk img {
+          width: 30px;
+          height: 30px;
+          transform: scale(0.9);
         }
 
         button {
@@ -98,7 +121,7 @@ export default class FeedbackButton extends HTMLElement {
 
         .modal {
           position: absolute;
-          bottom: 90px;
+          bottom: 50px;
           right: 0;
           width: 360px;
           max-height: 75vh;
