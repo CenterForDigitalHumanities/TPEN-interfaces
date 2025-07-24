@@ -55,36 +55,44 @@ customElements.define('tpen-project-export', class extends HTMLElement {
                 }
             </style>
         `
-        if(response.status === -1) {
-            this.shadowRoot.innerHTML += `
-                <p class="error">Server or Service Error</p>
-            `
-            console.error(response.message)
-            return
-        }
-        if ([1, 2, 3, 4, 6].includes(response.status)) {
-            if (await checkIfUrlExists(url) && response.status !== 2) {
-                this.shadowRoot.innerHTML += `
-                    <a href="${url}" target="_blank">
-                        ${url}
-                    </a>
-                `
-            }
-            else {
-                if (response.status === 2) {
-                    this.shadowRoot.innerHTML += `
-                        <p class="success">Successfully Exporting Project Manifest... Please Wait</p>
-                    `
+        let html = ''
+        switch (response) {
+            case -1:
+                html += `<p class="error">Server or Service Error</p>`
+                console.error(response.message)
+                break
+            case 1:
+                // This case indicates that there is no manifest
+                html += `<p class="error">Manifest Not Found</p>`
+                break
+            case 2:
+                // This case indicates that the manifest is being generated and is recently committed
+            case 5:
+                // This case indicates that the manifest is being generated and the deployment is in progress
+            case 7:
+                // This case indicates that the deployment is unknown
+            case 8:
+                // This case indicates that the deployment is not found
+                html += `<p class="success">Successfully Exporting Project Manifest... Please Wait</p>`
+                break
+            case 3:
+                // This case indicates that the manifest is being generated and is not recently committed
+            case 6:
+                // This case indicates that the deployment is inactive
+                if (await checkIfUrlExists(url) && response.status !== 2) {
+                    html += `<a href="${url}" target="_blank">${url}</a>`
                 } else {
-                    this.shadowRoot.innerHTML += `
-                        <p class="error">Manifest Not Found</p>
-                    `
+                    html += `<p class="error">Manifest Not Found</p>`
                 }
-            }
-        } else {
-            this.shadowRoot.innerHTML += `
-                <p class="success">Successfully Exporting Project Manifest... Please Wait</p>
-            `
+                break
+            case 4:
+                // This case indicates that the manifest is being generated successfully
+                html += `<a href="${url}" target="_blank">${url}</a>`
+                break
+            default:
+                html += `<p class="error">Unknown Status</p>`
+                break
         }
+        this.shadowRoot.innerHTML += html
     }
 })         
