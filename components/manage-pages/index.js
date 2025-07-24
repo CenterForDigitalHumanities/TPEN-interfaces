@@ -69,6 +69,10 @@ class ManagePages extends HTMLElement {
                     border-radius: 4px;
                     cursor: pointer;
                 }
+                .layer-btn:disabled {
+                    opacity: 0.45;
+                    cursor: default;
+                }
                 .manage-pages {
                     background: #007bff;
                     color: white;
@@ -92,7 +96,7 @@ class ManagePages extends HTMLElement {
             <button class="layer-btn manage-pages">Manage Pages</button>
         `
         const layers = TPEN.activeProject?.layers
-        const pages = layers.pages
+        const pages = layers?.pages
         this.shadowRoot.querySelectorAll(".manage-pages").forEach((button) => {
             button.addEventListener("click", async () => {
                 const buttonParent = button.getRootNode().host
@@ -101,10 +105,8 @@ class ManagePages extends HTMLElement {
                 const layerId = buttonParent.getAttribute("data-layer-id")
                 const layer_id = layerId.substring(layerId.lastIndexOf("/") + 1)
                 const layerCardOuter = mainParent.shadowRoot.querySelector(`.layer-card-outer[data-index="${layerIndex}"]`)
-
                 const layerActions = layerCardOuter.querySelector(".layer-actions")
                 layerActions.classList.add("layer-actions-margin")
-
                 layerCardOuter.querySelector(".layer-pages").classList.add("layer-container")
                 let layerPagesCard = layerCardOuter.querySelectorAll(".layer-page")
                 let el_dragged, el_droppedOn
@@ -121,18 +123,14 @@ class ManagePages extends HTMLElement {
                         event.dataTransfer.setData("text/plain", el.dataset.index)
                         el_dragged = event.target
                     })
-
                     el.addEventListener("dragend", () => {
                         layerPagesCard.forEach((el) => el.style.opacity = "1")
                     })
-        
                     el.addEventListener("dragover", (event) => {
                         event.preventDefault()
                     })
-        
                     el.addEventListener("dragleave", () => {
                     })
-
                     el.addEventListener("drop", (event) => {
                         event.preventDefault()
                         el_droppedOn = event.target
@@ -160,18 +158,16 @@ class ManagePages extends HTMLElement {
                     editPageLabelButton.dataset.layerId = layerId
                     editPageLabelButton.innerText = "Edit Label"
                     el.insertBefore(editPageLabelButton, el.lastChild).insertAdjacentElement("afterend", editPageLabelButton)
-
                     const deleteButton = document.createElement("button")
                     deleteButton.className = "layer-btn delete-page"
                     deleteButton.dataset.index = pageIndex
                     deleteButton.dataset.layerId = layerId
                     deleteButton.innerText = "Delete Page"
                     editPageLabelButton.after(deleteButton)
-                    editPageLabelButton.addEventListener("click", () => {
 
+                    editPageLabelButton.addEventListener("click", () => {
                         labelDiv.classList.add("hidden")
                         editPageLabelButton.classList.add("hidden")
-                        
                         const labelInput = document.createElement("input")
                         labelInput.type = "text"
                         labelInput.className = "label-input"
@@ -179,7 +175,6 @@ class ManagePages extends HTMLElement {
                         labelInput.dataset.index = pageIndex
                         labelInput.dataset.pageId = pageId
                         labelDiv.after(labelInput)
-
                         const saveLabelButton = document.createElement("button")
                         saveLabelButton.className = "layer-btn save-label"
                         saveLabelButton.style.marginTop = "0"
@@ -187,7 +182,6 @@ class ManagePages extends HTMLElement {
                         saveLabelButton.dataset.pageId = pageId
                         saveLabelButton.innerText = "Save Label"
                         labelInput.after(saveLabelButton)
-
                         saveLabelButton.addEventListener("click", () => {
                             fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/page/${page_id}`, {
                                 method: "PUT",
@@ -237,7 +231,6 @@ class ManagePages extends HTMLElement {
 
                 const labelDiv = layerCardOuter.querySelector(".layer-label-div")
                 labelDiv.style.display = "flex"
-
                 const editLayerLabelButton = document.createElement("button")
                 editLayerLabelButton.className = "layer-btn edit-pages"
                 editLayerLabelButton.style.marginTop = "0"
@@ -245,7 +238,6 @@ class ManagePages extends HTMLElement {
                 editLayerLabelButton.dataset.layerId = layerId
                 editLayerLabelButton.innerText = "Edit Label"
                 layerCardOuter.querySelector(".layer-label").insertAdjacentElement("afterend", editLayerLabelButton)
-
                 const saveButton = document.createElement("button")
                 saveButton.className = "layer-btn save-pages"
                 saveButton.dataset.index = layerIndex
@@ -257,7 +249,6 @@ class ManagePages extends HTMLElement {
                 editLayerLabelButton.addEventListener("click", () => {
                     labelDiv.querySelector(".layer-label").classList.add("hidden")
                     editLayerLabelButton.classList.add("hidden")
-
                     const labelInput = document.createElement("input")
                     labelInput.type = "text"
                     labelInput.className = "label-input"
@@ -312,12 +303,14 @@ class ManagePages extends HTMLElement {
                         })
                     })
                 })
-                    
+
                 saveButton.addEventListener("click", () => {
                     if (!layerCardOuter.querySelector(".layer-pages")?.$isDirty) {
                         TPEN.eventDispatcher.dispatch("tpen-toast", {"status":"info", "message":"No Changes to Save"})
                         return
                     }
+                    layerCardOuter.querySelectorAll("button").forEach(button => button.setAttribute("disabled", "true"))
+                    saveButton.innerText = "Saving Pages..."
                     const pageIds = Array.from(layerCardOuter.querySelectorAll(".layer-page")).map((elem) => elem.getAttribute("data-page-id").split("/").pop())
                     fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/layer/${layer_id}`, {
                         method: "PUT",
@@ -352,12 +345,16 @@ class ManagePages extends HTMLElement {
                                 }
                                 el.style.borderLeft = "5px solid #007bff"
                             })
+                            layerCardOuter.querySelectorAll("button").forEach(button => button.removeAttribute("disabled"))
+                            saveButton.innerText = "Save Pages"
                             return TPEN.eventDispatcher.dispatch("tpen-toast", { status: "info", message: 'Successfully Updated Pages and Layer' })
                         }
+                        saveButton.innerText = "ERROR"
                         return TPEN.eventDispatcher.dispatch("tpen-toast", { status: "error", message: 'Error Updating Pages and Layer' })
                     })
                     .catch(err => {
                         console.error(err)
+                        saveButton.innerText = "ERROR"
                         return TPEN.eventDispatcher.dispatch("tpen-toast", { status: "error", message: 'Error Updating Pages and Layer' })
                     })
                 })

@@ -97,6 +97,10 @@ class ProjectLayers extends HTMLElement {
                     border-radius: 4px;
                     cursor: pointer;
                 }
+                .layer-btn:disabled {
+                    opacity: 0.45;
+                    cursor: default;
+                }
                 .delete-layer {
                     background: #dc3545;
                     color: white;
