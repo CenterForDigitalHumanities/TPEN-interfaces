@@ -44,6 +44,8 @@ export default class FeedbackButton extends HTMLElement {
           bottom: 40px;
           right: 40px;
           z-index: 10;
+          --primary-color: hsl(186, 84%, 40%);
+          --primary-light: hsl(186, 84%, 60%);
         }
 
         .feedback-icon-container {

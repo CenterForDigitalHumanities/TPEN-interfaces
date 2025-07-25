@@ -14,6 +14,15 @@ class TpenFeedback extends HTMLElement {
   render() {
     this.shadowRoot.innerHTML = `
       <style>
+        :host {
+          --primary-color: hsl(186, 84%, 40%);
+          --primary-light: hsl(186, 84%, 60%);
+          --light-color  : hsl(186, 84%, 90%);
+          --dark         : #2d2d2d;
+          --white        : hsl(0, 0%, 100%);
+          --gray         : hsl(0, 0%, 60%);
+          --light-gray   : hsl(0, 0%, 90%);
+        }
         .feedback-container {
           font-family: Arial, sans-serif;
           padding: 20px;
