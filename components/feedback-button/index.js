@@ -36,6 +36,7 @@ export default class FeedbackButton extends HTMLElement {
     this.shadowRoot.querySelector(".feedback-icon-container").classList.remove("active", "shrunk")
   }
 
+  // FIXME we copied the :root rules from /components/gui/site/index.css.  Importing it was too much.
   render() {
     this.shadowRoot.innerHTML = `
       <style>

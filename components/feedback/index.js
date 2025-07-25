@@ -11,6 +11,7 @@ class TpenFeedback extends HTMLElement {
     this.setupEventListeners()
   }
 
+  // FIXME we copied the :root rules from /components/gui/site/index.css.  Importing it was too much.
   render() {
     this.shadowRoot.innerHTML = `
       <style>
