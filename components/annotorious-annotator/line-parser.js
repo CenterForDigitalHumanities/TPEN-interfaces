@@ -19,7 +19,7 @@ class AnnotoriousAnnotator extends HTMLElement {
   #annotoriousInstance
   #annotoriousContainer
   #userForAnnotorious
-  #annotationPageURI
+  #annotationPageID
   #resolvedAnnotationPage
   #modifiedAnnotationPage
   #imageDims
@@ -75,8 +75,8 @@ class AnnotoriousAnnotator extends HTMLElement {
       location.href = url.toString()
       return
     }
-    this.#annotationPageURI = TPEN.screen.pageInQuery
-    if (!this.#annotationPageURI) {
+    this.#annotationPageID = TPEN.screen.pageInQuery
+    if (!this.#annotationPageID) {
       this.shadowRoot.innerHTML = "You must provide a '?pageID=theid' in the URL.  The value should be the ID of an existing TPEN3 Page."
       return
     }
@@ -185,33 +185,36 @@ class AnnotoriousAnnotator extends HTMLElement {
           height: auto;
           width: auto;
         }
-
         .dragMe.leftside {
           left: 0
         }
-
         .dragMe.rightside {
           right: 0
         }
-
         .helperHeading {
           margin-top: 2em;
           text-align: center;
         }
-
         .helperText {
           font-size: 9pt;
           font-weight: bold;
         }
-
         .a9s-annotation.selected .a9s-inner {
           fill-opacity: 0.48 !important;
         }
-
         .transcribeLink {
-          margin-left: 1em !important;
+          margin-left: 2em !important;
+          cursor: pointer;
         }
-
+        .transcribeLink:hover:after {
+          content: "Go Transcribe";
+          cursor: pointer;
+          position: absolute;
+          width: 105px;
+          top: 10px;
+          margin-left: 5px;
+          color: var(--link);
+        }
       </style>
       <div>
         <div id="tools-container" class="card">
@@ -279,7 +282,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       this.shadowRoot.appendChild(annotoriousScript)
       setTimeout(() => { 
         // Process the page to get the data required for the component UI
-        this.processPage(this.#annotationPageURI)
+        this.processPage(this.#annotationPageID)
       }, 200)
     }, 200)
   }
@@ -464,6 +467,7 @@ class AnnotoriousAnnotator extends HTMLElement {
      * The interface folder contains an /images/ folder with all the OpenSeaDragon icons.
      * @see https://openseadragon.github.io/docs/OpenSeadragon.html#.Options for all options and their description.
      */
+
     this.#osd = OpenSeadragon({
       element: this.shadowRoot.getElementById('annotator-container'),
       tileSources: imageInfo,
@@ -486,15 +490,14 @@ class AnnotoriousAnnotator extends HTMLElement {
         dblClickToZoom: true
       }
     })
-
     // Link to transcribe if they have view permissions for it
     if(CheckPermissions.checkViewAccess("line", "text")) {
       let parsingRedirectButton = new OpenSeadragon.Button({
         tooltip: "Go Transcribe",
-        srcRest: "../interfaces/annotator/images/classictpen_rest.svg",
-        srcGroup: "../interfaces/annotator/images/classictpen_rest.svg",
-        srcHover: "../interfaces/annotator/images/classictpen_hover.svg",
-        srcDown: "../interfaces/annotator/images/classictpen_hover.svg",
+        srcRest: "../interfaces/annotator/images/transcribe.png",
+        srcGroup: "../interfaces/annotator/images/transcribe.png",
+        srcHover: "../interfaces/annotator/images/transcribe.png",
+        srcDown: "../interfaces/annotator/images/transcribe.png",
         onClick: (e) => {
           if (confirm("Stop line parsing and go transcribe?  Unsaved changes will be lost."))
             location.href = `/transcribe?projectID=${TPEN.activeProject._id}`
@@ -503,7 +506,6 @@ class AnnotoriousAnnotator extends HTMLElement {
       parsingRedirectButton.element.classList.add("transcribeLink")
       this.#osd.addControl(parsingRedirectButton.element, { anchor: OpenSeadragon.ControlAnchor.TOP_LEFT })
     }
-
     /**
      * An instance of an OpenSeaDragon Annotorious Annotation with customization options that help our desired
      * "draw new column", "chop and merge lines", "delete lines" UX.
@@ -864,7 +866,16 @@ class AnnotoriousAnnotator extends HTMLElement {
         },
         body: JSON.stringify({ "items": page.items })
       })
-      .then(res => res.json())
+      .then(res => {
+        if(!res.ok) {
+          TPEN.eventDispatcher.dispatch("tpen-toast", {
+            message: "ERROR Annotations Not Saved",
+            status: "error"
+          })
+          throw new Error("Could not save annotations", { "cause": `\n${res.status} Error from TPEN Services.  Check the Network response.` })
+        }
+        return res.json()
+      })
       .catch(err => {
         saveButton.value = "ERROR"
         throw err
