@@ -134,7 +134,7 @@ class TpenFeedback extends HTMLElement {
 
     modal.classList.remove("show")
     backdrop.classList.remove("show")
-    icon.classList.remove("active")
+    icon.classList.remove("active", "shrunk")
   }
 }
 
