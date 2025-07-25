@@ -88,8 +88,8 @@ export default class FeedbackButton extends HTMLElement {
         }
 
         .feedback-icon-container.shrunk img {
-          width: 30px;
-          height: 30px;
+          width: 40px;
+          height: 40px;
           transform: scale(0.9);
         }
 
@@ -121,7 +121,7 @@ export default class FeedbackButton extends HTMLElement {
 
         .modal {
           position: absolute;
-          bottom: 50px;
+          bottom: 60px;
           right: 0;
           width: 360px;
           max-height: 75vh;
