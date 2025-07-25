@@ -137,7 +137,9 @@ class ManagePages extends HTMLElement {
                         if (!el_droppedOn.classList.contains("layer-page")) el_droppedOn = el_droppedOn.closest(".layer-page")
                         const draggedIndex = el_dragged.getAttribute("data-index")
                         const targetIndex = el_droppedOn.getAttribute("data-index")
-                        el_droppedOn.before(el_dragged)
+                        if (draggedIndex === targetIndex) return
+                        if(parseInt(draggedIndex) < parseInt(targetIndex)) el_droppedOn.after(el_dragged)
+                        else el_droppedOn.before(el_dragged)
                         const container = el_droppedOn.closest(".layer-pages")
                         container.$isDirty = false
                         Array.from(container.children).forEach((el, i) => {
