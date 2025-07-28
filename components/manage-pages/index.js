@@ -135,14 +135,15 @@ class ManagePages extends HTMLElement {
                         event.preventDefault()
                         el_droppedOn = event.target
                         if (!el_droppedOn.classList.contains("layer-page")) el_droppedOn = el_droppedOn.closest(".layer-page")
-                        const draggedIndex = el_dragged.getAttribute("data-index")
-                        const targetIndex = el_droppedOn.getAttribute("data-index")
+                        const draggedIndex = el_dragged.getAttribute("position")
+                        const targetIndex = el_droppedOn.getAttribute("position")
                         if (draggedIndex === targetIndex) return
                         if(parseInt(draggedIndex) < parseInt(targetIndex)) el_droppedOn.after(el_dragged)
                         else el_droppedOn.before(el_dragged)
                         const container = el_droppedOn.closest(".layer-pages")
                         container.$isDirty = false
                         Array.from(container.children).forEach((el, i) => {
+                            el.setAttribute("position", i)
                             if (parseInt(el.getAttribute("data-index")) !== i) {
                                 container.$isDirty = true
                                 el.style.borderLeft = "none"
@@ -330,6 +331,7 @@ class ManagePages extends HTMLElement {
                             const pageElems = pageElemsContainer.querySelectorAll(".layer-page")
                             const origLayer = JSON.parse(JSON.stringify(layers[layerIndex]))
                             pageElems.forEach((el, i) => {
+                                el.setAttribute("position", i)
                                 if (el.dataset.index !== i+"") {
                                     // swap them in the data array
                                     layers[layerIndex].pages[i] = origLayer.pages[el.dataset.index]
@@ -337,7 +339,7 @@ class ManagePages extends HTMLElement {
                                     const internal_els = el.querySelectorAll(`[data-index="${el.dataset.index}"]`)
                                     // Update their data-index attributes and index properties
                                     for (const other of internal_els) {
-                                        other.setAttribute("data-index", i + "") 
+                                        other.setAttribute("data-index", i + "")
                                         other.dataset.index = i + ""
                                     }
                                     // Set the current element's new data-index attibute

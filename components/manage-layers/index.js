@@ -179,16 +179,16 @@ class ProjectLayers extends HTMLElement {
                             .map(
                                 (page, pageIndex) =>
                                 `
-                                <div class="layer-page" data-index="${pageIndex}" data-page-id="${page.id}">
-                                    <p class="page-id" data-index="${pageIndex}" data-page-id="${page.id}">${page.label ?? page.id}</p>
+                                <div class="layer-page" data-index="${pageIndex}" data-page-id="${page.id}" position="${pageIndex}">
+                                    <p class="page-id" data-index="${pageIndex}" data-page-id="${page.id}" position="${pageIndex}">${page.label ?? page.id}</p>
                                 </div>
                                 `
                                 )
                             .join("")}
                         </div>
                         <div class="layer-actions">
-                            <tpen-manage-pages data-index="${layerIndex}" data-layer-id="${layer.id}"></tpen-manage-pages>
-                            <button class="layer-btn delete-layer" data-index="${layerIndex}" data-layer-id="${layer.id}">Delete Layer</button>
+                            <tpen-manage-pages data-index="${layerIndex}" data-layer-id="${layer.id}" position="${layerIndex}"></tpen-manage-pages>
+                            <button class="layer-btn delete-layer" data-index="${layerIndex}" data-layer-id="${layer.id}" position="${layerIndex}">Delete Layer</button>
                         </div>
                     </div>`
                 )

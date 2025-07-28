@@ -323,7 +323,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       })
     this.#resolvedAnnotationPage.$isDirty = false
     const context = this.#resolvedAnnotationPage["@context"]
-    if (!(context.includes("iiif.io/api/presentation/3/context.json") || context.includes("w3.org/ns/anno.jsonld"))) {
+    if (!(context?.includes("iiif.io/api/presentation/3/context.json") || context?.includes("w3.org/ns/anno.jsonld"))) {
       console.warn("The AnnotationPage object did not have the IIIF Presentation API 3 context and may not be parseable.")
     }
     const id = this.#resolvedAnnotationPage["@id"] ?? this.#resolvedAnnotationPage.id
