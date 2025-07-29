@@ -69,9 +69,9 @@ customElements.define('tpen-project-export', class extends HTMLElement {
                 // This case indicates that the manifest is being generated and is recently committed
             case 5:
                 // This case indicates that the manifest is being generated and the deployment is in progress
-            case 7:
-                // This case indicates that the deployment is unknown
             case 8:
+                // This case indicates that the deployment is unknown
+            case 9:
                 // This case indicates that the deployment is not found
                 html += `<p class="success">Successfully Exporting Project Manifest... Please Wait</p>`
                 break
@@ -79,6 +79,8 @@ customElements.define('tpen-project-export', class extends HTMLElement {
                 // This case indicates that the manifest is being generated and is not recently committed
             case 6:
                 // This case indicates that the deployment is inactive
+            case 7:
+                // This case indicates that the deployment is failed
                 if (await checkIfUrlExists(url) && response.status !== 2) {
                     html += `<a href="${url}" target="_blank">${url}</a>`
                 } else {
