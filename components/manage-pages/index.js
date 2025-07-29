@@ -135,13 +135,19 @@ class ManagePages extends HTMLElement {
                         event.preventDefault()
                         el_droppedOn = event.target
                         if (!el_droppedOn.classList.contains("layer-page")) el_droppedOn = el_droppedOn.closest(".layer-page")
-                        const draggedIndex = el_dragged.getAttribute("position")
-                        const targetIndex = el_droppedOn.getAttribute("position")
-                        if (draggedIndex === targetIndex) return
-                        if(parseInt(draggedIndex) < parseInt(targetIndex)) el_droppedOn.after(el_dragged)
-                        else el_droppedOn.before(el_dragged)
+                        const draggedIndex = parseInt(el_dragged.getAttribute("position"))
+                        const targetIndex = parseInt(el_droppedOn.getAttribute("position"))
                         const container = el_droppedOn.closest(".layer-pages")
-                        container.$isDirty = false
+                        if (draggedIndex === targetIndex) return
+                        if(draggedIndex < targetIndex) {
+                            container.insertBefore(el_dragged, el_droppedOn)
+                            container.insertBefore(el_droppedOn, container.children[draggedIndex])    
+                        }
+                        else{
+                            container.insertBefore(el_dragged, el_droppedOn)
+                            container.insertBefore(el_droppedOn, container.children[draggedIndex + 1])
+                        }
+                        
                         Array.from(container.children).forEach((el, i) => {
                             el.setAttribute("position", i)
                             if (parseInt(el.getAttribute("data-index")) !== i) {
