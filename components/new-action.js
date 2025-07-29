@@ -42,11 +42,15 @@ class NewAction extends HTMLElement {
                 <span class="icon">📁</span>
                 <span>Create a New Project</span>
             </a>
-            <a href="project/import" id="import-resource">
+            <a href="project/import" id="import-manifest">
                 <span class="icon">📤</span>
                 <span>Import IIIF Manifest</span>
             </a>
-            <a id="link-tpen-2.8" href="#">
+            <a href="project/import-image" id="import-image">
+                <span class="icon">📄</span>
+                <span>Import Image</span>
+            </a>
+            <a href="#" id="link-tpen-2.8">
                 <span class="icon">🔗</span>
                 <span>Import a TPEN 2.8 Project</span>
             </a>
