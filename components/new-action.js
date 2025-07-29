@@ -50,7 +50,7 @@ class NewAction extends HTMLElement {
                 <span class="icon">📄</span>
                 <span>Import Image</span>
             </a>
-            <a href="#" id="link-tpen-2.8" >
+            <a href="#" id="link-tpen-2.8">
                 <span class="icon">🔗</span>
                 <span>Import a TPEN 2.8 Project</span>
             </a>
