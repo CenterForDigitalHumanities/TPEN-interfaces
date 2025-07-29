@@ -319,7 +319,7 @@ class CopyExistingProjectWithCustomizations extends HTMLElement {
             const project = await new Project(projectSelect).fetch()
             const groupMembersList = Object.entries(project.collaborators).filter(([key]) => key !== userObj._id)
             .map(([key, member]) => ({ id: key, name: member.profile.displayName }))
-            const layersList = project.layers.map(layer => ({ label: layer.label, id: layer.id, hasAnnotations: layer.pages.some(page => page.items.length > 0) }))
+            const layersList = project.layers.map(layer => ({ label: layer.label, id: layer.id, hasAnnotations: layer.pages.some(page => page.items && page.items.length > 0) }))
 
             this.shadowRoot.querySelectorAll(".project-customization").forEach(customization => {
                 const index = customization.getAttribute("index")
