@@ -121,25 +121,6 @@ async function importAnnotations(projectTPEN3Data) {
             console.error("Error importing annotations:", error)
         }
     }
-
-    for (const page of projectTPEN3Data.layers[0].pages) {
-        try {
-            const response = await fetch(page, {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${TPEN.getAuthorization()}`,
-                },
-                body: JSON.stringify({ update: page }),
-            })
-
-            if (!response.ok) {
-                throw new Error(`Failed to update page and layer: ${response.statusText}`)
-            }
-        } catch (error) {
-            console.error("Error updating page and layer:", error)
-        }
-    }
 }
 
 async function importCollaborators(projectData, projectID) {
