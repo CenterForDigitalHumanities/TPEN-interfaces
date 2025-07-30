@@ -89,7 +89,11 @@ async function importAnnotations(projectTPEN3Data) {
             const annotations = item.annotations?.flatMap(
                 (annotation) =>
                     annotation.items?.flatMap((innerItems) => ({
-                    body: innerItems.body,
+                    body: {
+                        type: innerItems.body?.type,
+                        format: innerItems.body?.format,
+                        value: innerItems.body?.value,
+                    },
                     motivation: innerItems.motivation,
                     target: innerItems.target,
                     type: innerItems.type,
