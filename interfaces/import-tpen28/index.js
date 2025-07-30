@@ -89,7 +89,11 @@ async function importAnnotations(projectTPEN3Data) {
             const annotations = item.annotations?.flatMap(
                 (annotation) =>
                     annotation.items?.flatMap((innerItems) => ({
-                    body: innerItems.body,
+                    body: {
+                        type: innerItems.body?.type,
+                        format: innerItems.body?.format,
+                        value: innerItems.body?.value,
+                    },
                     motivation: innerItems.motivation,
                     target: innerItems.target,
                     type: innerItems.type,
@@ -115,6 +119,25 @@ async function importAnnotations(projectTPEN3Data) {
             }
         } catch (error) {
             console.error("Error importing annotations:", error)
+        }
+    }
+
+    for (const page of projectTPEN3Data.layers[0].pages) {
+        try {
+            const response = await fetch(page, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${TPEN.getAuthorization()}`,
+                },
+                body: JSON.stringify({ update: page }),
+            })
+
+            if (!response.ok) {
+                throw new Error(`Failed to update page and layer: ${response.statusText}`)
+            }
+        } catch (error) {
+            console.error("Error updating page and layer:", error)
         }
     }
 }
