@@ -1,4 +1,4 @@
-export class ExplanatoryGuide extends HTMLElement {
+export class RelativeExplanatoryGuide extends HTMLElement {
   constructor() {
     super()
     this.attachShadow({ mode: "open" })
@@ -33,7 +33,6 @@ export class ExplanatoryGuide extends HTMLElement {
           border-radius: 8px;
           box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
-
         .tpen-explanation-body.collapsed {
           max-height: 0;
           opacity: 0;
@@ -41,21 +40,18 @@ export class ExplanatoryGuide extends HTMLElement {
           border-radius: 16px;
           transition: max-height 0.4s ease-in-out;
         }
-
         ol.guide-list {
           padding: 10px 40px;
           margin: 0;
           font-size: 16px;
           color: #333;
         }
-
         ol.guide-list li {
           margin: 5px 0;
           font-size: 14px;
           color: #555;
           margin-left: 5px;
         }
-
         .tpen-explanation-top {
           display: flex;
           align-items: center;
@@ -64,13 +60,11 @@ export class ExplanatoryGuide extends HTMLElement {
           background-color: var(--primary-color);
           border-radius: 8px 8px 0 0;
         }
-
         .tpen-explanation-top h2 {
           font-size: 18px;
           color: white;
           margin: 5px;
         }
-
         .collapse-button {
           background: transparent;
           border: none;
@@ -80,7 +74,6 @@ export class ExplanatoryGuide extends HTMLElement {
           width: 35px;
           height: 35px;
         }
-
         .border-radius-include {
           border-radius: 8px;
         }
@@ -98,4 +91,4 @@ export class ExplanatoryGuide extends HTMLElement {
   }
 }
 
-customElements.define("tpen-explanatory-guide", ExplanatoryGuide)
+customElements.define("tpen-relative-explanatory-guide", RelativeExplanatoryGuide)
