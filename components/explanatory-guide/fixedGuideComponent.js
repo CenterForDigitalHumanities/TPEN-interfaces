@@ -13,14 +13,12 @@ export class FixedExplanatoryGuide extends HTMLElement {
 
     const slotItems = this.querySelectorAll("li")
     const list = this.shadowRoot.querySelector(".guide-list")
-
-    slotItems.forEach((li) => {
-      list.appendChild(li.cloneNode(true))
-    })
+    slotItems.forEach(li => list.appendChild(li.cloneNode(true)))
 
     const toggleSidebar = () => {
       const isOpen = sidebar.classList.toggle("open")
       overlay.classList.toggle("visible", isOpen)
+      toggleButton.classList.toggle("open", isOpen)
     }
 
     toggleButton.addEventListener("click", toggleSidebar)
@@ -31,46 +29,55 @@ export class FixedExplanatoryGuide extends HTMLElement {
     this.shadowRoot.innerHTML = `
       <style>
         :host {
-          position: relative;
-          z-index: 1000;
+          position: fixed;
+          top: 3.5rem;
+          right: 0;
+          z-index: 5;
         }
 
         .overlay {
           position: fixed;
-          top: 0; left: 0; right: 0; bottom: 0;
-          background: rgba(0,0,0,0.3);
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.3);
           opacity: 0;
           pointer-events: none;
           transition: opacity 0.3s ease;
-          z-index: 999;
+          z-index: 4;
         }
 
         .overlay.visible {
-          opacity: 0.3;
+          opacity: 0.4;
           pointer-events: auto;
         }
 
         .sidebar {
           position: fixed;
           top: 3.5rem;
-          left: 0;
+          right: 0;
           height: calc(100vh - 3.5rem);
-          max-width: 30vw; 
+          width: max(300px, 25vw);
           background: #f9f9f9;
-          transform: translateX(-100%);
-          transition: transform 0.3s ease;
+          transform: translateX(100%);
+          transition:
+            transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+            opacity 0.4s ease;
           display: flex;
           flex-direction: column;
-          z-index: 1000;
-          border-radius: 0 8px 8px 0;
+          z-index: 5;
+          border-radius: 8px 0 0 8px;
+          will-change: transform, opacity;
         }
 
         .sidebar.open {
           transform: translateX(0);
+          opacity: 1;
         }
 
         .sidebar-header {
-          background-color: var(--primary-color);
+          background-color: var(--primary-color, #e57373);
           color: white;
           padding: 0.75rem 1rem;
           font-size: 1.25rem;
@@ -82,22 +89,29 @@ export class FixedExplanatoryGuide extends HTMLElement {
 
         .toggle-button {
           position: absolute;
-          right: -70px;
-          top: auto;
-          background: var(--primary-color);
+          top: 0;
+          left: -80px;
+          background: var(--primary-color, #e57373);
           border: none;
           margin: 0;
           cursor: pointer;
-          padding: 15px;
+          padding: 15px 20px;
           height: 4.2em;
-          border-radius: 0 4px 4px 0;
+          border-radius: 4px 0 0 4px;
           display: flex;
           align-items: center;
           justify-content: center;
-          z-index: 1100;
+          z-index: 6;
+          box-sizing: border-box;
           transition: background-color 0.3s;
-          box-shadow: 0 0 10px rgba(0, 120, 215, 0.6), 0 0 20px rgba(0, 120, 215, 0.4);
+          box-shadow: 0 0 10px rgba(0, 120, 215, 0.6),
+                      0 0 20px rgba(0, 120, 215, 0.4);
           animation: glow-pulse 2s infinite;
+        }
+
+        .toggle-button.open {
+          box-shadow: none;
+          animation: none;
         }
 
         .toggle-button img {
@@ -108,21 +122,22 @@ export class FixedExplanatoryGuide extends HTMLElement {
           filter: drop-shadow(0 0 4px rgba(0, 120, 215, 0.6));
         }
 
+        .toggle-button.open img {
+          filter: none;
+        }
+
         @keyframes glow-pulse {
           0% {
-            box-shadow:
-              0 0 15px rgba(255, 140, 0, 0.8),
-              0 0 30px rgba(255, 140, 0, 0.6);
+            box-shadow: 0 0 15px rgba(255, 140, 0, 0.8),
+                        0 0 30px rgba(255, 140, 0, 0.6);
           }
           50% {
-            box-shadow:
-              0 0 30px rgba(255, 140, 0, 1),
-              0 0 50px rgba(255, 140, 0, 0.8);
+            box-shadow: 0 0 30px rgba(255, 140, 0, 1),
+                        0 0 50px rgba(255, 140, 0, 0.8);
           }
           100% {
-            box-shadow:
-              0 0 15px rgba(255, 140, 0, 0.8),
-              0 0 30px rgba(255, 140, 0, 0.6);
+            box-shadow: 0 0 15px rgba(255, 140, 0, 0.8),
+                        0 0 30px rgba(255, 140, 0, 0.6);
           }
         }
 

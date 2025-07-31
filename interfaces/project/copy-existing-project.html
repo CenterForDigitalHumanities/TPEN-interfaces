@@ -13,10 +13,16 @@ permalink: /project/copy-project
     <script src="/components/copy-existing-project/index.js" type="module"></script>
     <script src="/api/TPEN.js" type="module"></script>
     <script src="/components/gui/site/index.js" type="module"></script>
+    <script src="/components/explanatory-guide/fixedGuideComponent.js" type="module"></script>
 </head>
 
 <body>
     <tpen-page>
+        <tpen-fixed-explanatory-guide heading="Steps to Update Metadata">
+            <li>Select the metadata you want to update.</li>
+            <li>Make your changes in the form.</li>
+            <li>Click Save to apply your changes.</li>
+        </tpen-fixed-explanatory-guide>
         <p> 
             This will copy <i>everything</i> from the selected project.  If you want to specify exactly what to copy <a href="copy-project-options">use the more detailed version here</a>.
         </p>
