@@ -58,7 +58,7 @@ export class FixedExplanatoryGuide extends HTMLElement {
           top: 3.5rem;
           right: 0;
           height: calc(100vh - 3.5rem);
-          width: max(300px, 25vw);
+          width: max(300px, 30vw);
           background: #f9f9f9;
           transform: translateX(100%);
           transition:
@@ -143,7 +143,7 @@ export class FixedExplanatoryGuide extends HTMLElement {
 
         .guide-list {
           padding: 1rem 3rem;
-          margin: 0;
+          margin: 0 auto;
           font-size: 16px;
           color: #333;
           overflow-y: auto;
