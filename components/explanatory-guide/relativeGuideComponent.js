@@ -20,6 +20,8 @@ export class RelativeExplanatoryGuide extends HTMLElement {
     button.addEventListener("click", () => {
       const isCollapsed = panel.classList.toggle("collapsed")
       panelTop.classList.toggle("border-radius-include", isCollapsed)
+      /* Icon source: https://www.flaticon.com/free-icons/arrow-down by Freepik 
+      Icon source: https://www.flaticon.com/free-icons/arrow-up by Freepik */
       button.src = isCollapsed ? "../../assets/icons/arrow-down.png" : "../../assets/icons/arrow-up.png"
       button.alt = isCollapsed ? "Expand section" : "Collapse section"
     })

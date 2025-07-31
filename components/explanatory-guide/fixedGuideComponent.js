@@ -25,6 +25,7 @@ export class FixedExplanatoryGuide extends HTMLElement {
     overlay.addEventListener("click", toggleSidebar)
   }
 
+  /* Icon source: https://www.flaticon.com/free-icons/info by Freepik */
   render() {
     this.shadowRoot.innerHTML = `
       <style>
