@@ -101,7 +101,7 @@ class CopyExistingProject extends HTMLElement {
                     background: #0056b3;
                 }
             </style>
-            <h3>Copy Existing Project</h3>
+            <h3>Copy a Project</h3>
             <label for="project-select">Select a Project :</label>
             <select class="project-select" id="project-select">
                 <option value="none">Select a Project to Copy</option>

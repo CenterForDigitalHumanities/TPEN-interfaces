@@ -5,11 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="index.js" type="module"></script>
     <script src="/components/gui/site/index.js" type="module"></script>
+    <script src="/components/explanatory-guide/fixedGuideComponent.js" type="module"></script>
     <link rel="stylesheet" href="index.css">
     <title>Manage Project Metadata</title>
 </head>
 <body>
   <tpen-page>
+    <tpen-fixed-explanatory-guide heading="Steps to Update Metadata">
+      <li>Click <strong>"Add Field"</strong> to add a new metadata field by adding Label and Value.</li>
+      <li>Select the metadata you want to update.</li>
+      <li>Optionally, delete any unwanted field using the <strong>trash icon.</strong></li>
+      <li>Make your changes in the form.</li>
+      <li>Click <strong>"Save"</strong> to apply your changes.</li>
+    </tpen-fixed-explanatory-guide>
     <div class="tpen-metadata" tpen-scope="metadata">
       <update-metadata></update-metadata>
       <div id="container" class="metadata-modal-container">
