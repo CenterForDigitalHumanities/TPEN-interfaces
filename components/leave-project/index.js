@@ -75,7 +75,7 @@ class LeaveProject extends HTMLElement {
             </style>
             <h2>Leave ${TPEN.activeProject.label}</h2>
             <p>
-                When you leave a project you lose any access to it you have and may no 
+                When you leave a project you lose all access to it and may no 
                 longer be able to see some content, even content you created. You will no 
                 longer appear as a collaborator and the project will not appear in your projects 
                 list.  To restore access you will have to be invited into the project again.
