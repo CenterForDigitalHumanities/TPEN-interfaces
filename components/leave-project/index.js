@@ -13,6 +13,12 @@ class LeaveProject extends HTMLElement {
         this.shadowRoot.innerHTML = `
             <h3>Loading...</h3>
         `
+        if (!TPEN.screen.projectInQuery) {
+            this.shadowRoot.innerHTML = `
+                <h3>The URL Parameter '?projectID' must be present and have a value in order to use this page.</h3>
+            `
+            return
+        }
         if (TPEN.activeProject?._id) this.render.bind(this)
         TPEN.eventDispatcher.on('tpen-project-loaded', this.render.bind(this))
         TPEN.eventDispatcher.on('tpen-project-load-failed', (err) => {
