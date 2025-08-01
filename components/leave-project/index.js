@@ -34,7 +34,7 @@ class LeaveProject extends HTMLElement {
         if (!agent || !collaboratorIdList.includes(agent.split("/").pop())) {
             this.shadowRoot.innerHTML = `
                 <h3>User Error</h3>
-                <p>The user agent could not be detected or does not have access to this page.</p>
+                <p>Your user agent could not be detected or you are not a member of the project.</p>
             `
             return
         }
