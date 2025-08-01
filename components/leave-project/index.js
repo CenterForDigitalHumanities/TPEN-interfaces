@@ -15,7 +15,7 @@ class LeaveProject extends HTMLElement {
         `
         if (!TPEN.screen.projectInQuery) {
             this.shadowRoot.innerHTML = `
-                <h3>The URL Parameter '?projectID' must be present and have a value in order to use this page.</h3>
+                <h3>The URL Parameter '?projectID' must be present and have a value.</h3>
             `
             return
         }
