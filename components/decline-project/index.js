@@ -91,10 +91,11 @@ class DeclineInvite extends HTMLElement {
                 return
             }
             this.shadowRoot.innerHTML = `
-                <h3> 
-                    There was an error declining the invitation.  The message below has more details.
+                <h3>There was an error declining the invitation.</h3>
+                <p>
+                    The message below has more details.
                     Refresh the page to try again or contact the TPEN3 Administrators.  
-                </h3>
+                </p>
                 <code> ${userMessage} <code>
             `
         })
