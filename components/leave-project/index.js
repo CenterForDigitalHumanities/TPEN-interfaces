@@ -98,7 +98,7 @@ class LeaveProject extends HTMLElement {
         leaveBtn.setAttribute("value", "leaving...")
 
         fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/leave`, {
-            method: 'GET',
+            method: 'POST',
             headers: {
                 'Authorization': `Bearer ${TPEN.getAuthorization()}`
             }
@@ -116,7 +116,7 @@ class LeaveProject extends HTMLElement {
                 `
                 setTimeout(() => {
                   document.location.href = TPEN.BASEURL
-                }, 2500)
+                }, 3000)
                 return
             }
             this.shadowRoot.innerHTML = `
