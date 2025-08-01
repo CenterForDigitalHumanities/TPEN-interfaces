@@ -24,23 +24,28 @@ class ProjectTools extends HTMLElement {
                     align-items: flex-start;
                     background: #fff;
                     border-radius: 8px;
-                    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+                    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
                     gap: 10px;
-                    padding: 15px;
+                    padding: 5px;
+                    margin: 5px auto;
                     font-size: 14px;
+                    width: 90%;
                 }
                 .tool-card {
                     display: flex;
+                    justify-content: space-between;
                     align-items: center;
                     gap: 10px;
                     font-size: 14px;
+                    padding: 2px 0px;
+                    width: 100%;
                 }
                 .project-tools-title {
                     font-weight: bold;
                     font-size: 20px;
                     padding: 20px;
                     text-align: center;
-                    color: var(--accent);
+                    color: var(--primary-color);
                 }
                 .tool-button {
                     background-color: #f0f0f0;
@@ -102,7 +107,7 @@ class ProjectTools extends HTMLElement {
                     border: none;
                     border-radius: 4px;
                     cursor: pointer;
-                    background: #007bff;
+                    background: var(--primary-color);
                     color: #fff;
                 }
                 .secondary {
@@ -114,7 +119,7 @@ class ProjectTools extends HTMLElement {
                     right: -12px;
                     width: 32px;
                     height: 32px;
-                    background: #ef4444;
+                    background: #ff4d4d;
                     color: #fff;
                     border: none;
                     border-radius: 50%;
@@ -129,29 +134,55 @@ class ProjectTools extends HTMLElement {
                 }
 
                 .close-btn:hover {
-                    background-color: #dc2626;
+                    background-color: #ff1a1a;
                 }
                 #open-modal-btn {
                     margin-left: 20px;
-                    background: var(--accent);
+                }
+
+                .remove-field-btn {
+                    background-color: #ff4d4d;
+                    color: white;
+                    border: none;
+                    cursor: pointer;
+                    border-radius: 4px;
+                    display: flex !important;
+                    align-items: center;
+                    justify-content: center;
+                    margin: 0;
+                    padding: 2px 4px;
+                }
+
+                .remove-field-btn:hover {
+                    background-color: #ff1a1a;
+                }
+
+                .icon {
+                    width: 16px;
+                    height: 16px;
                 }
             </style>
-
-            <div class="container">
-                ${tools.map(tool => `
+            ${tools.map(tool => `
+                <div class="container">
                     <div class="tool-card">
-                        ${isToolsEditAccess ? `<input type="checkbox" name="tools" value="${tool.value}" ${tool.state ? "checked" : ""}>` : ""}
-                        <label>${tool.name}</label>
+                        <div>
+                            ${isToolsEditAccess ? `<input type="checkbox" name="tools" value="${tool.value}" ${tool.state ? "checked" : ""}>` : ""}
+                            <label>${tool.name}</label>
+                        </div>
+                        <button type="button" class="remove-field-btn">
+                            <!-- Icon source: https://www.flaticon.com/free-icons/delete by Freepik -->
+                            <img class="icon" src="../../assets/icons/delete.png" alt="Remove" />
+                        </button>
                     </div>
-                `).join("")}
-            </div>
+                </div>
+            `).join("")}
             
-            ${isToolsAddAccess ? `<div class="project-tools-title"><button class="tools-btn" id="open-modal-btn">Add iFrame Tool</button></div>` : ""}
+            ${isToolsAddAccess ? `<div class="project-tools-title"><button class="tools-btn" id="open-modal-btn">ADD IFRAME TOOL</button></div>` : ""}
 
             <div class="modal" id="tool-modal">
                 <div class="modal-content">
                     <button class="tools-btn close-btn" id="close-modal-btn">&times;</button>
-                    <div class="project-tools-title">Add iFrame Tool</div>
+                    <div class="project-tools-title">ADD IFRAME TOOL</div>
                     <div class="modal-inputs">
                         <input type="text" id="modal-tool-name" placeholder="Tool Name" />
                         <input type="url" id="modal-tool-url" placeholder="Tool URL" />
@@ -174,6 +205,7 @@ class ProjectTools extends HTMLElement {
         const nameInput = this.shadowRoot.querySelector("#modal-tool-name")
         const urlInput = this.shadowRoot.querySelector("#modal-tool-url")
         const iframe = this.shadowRoot.querySelector("#tool-preview")
+        const deleteButtons = this.shadowRoot.querySelectorAll(".remove-field-btn")
 
         function isValidURL(str) {
             try {
@@ -256,10 +288,10 @@ class ProjectTools extends HTMLElement {
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify([{
-                        name, 
-                        value: name.toLowerCase().split(" ").join("-"), 
-                        url: url, 
-                        state: true
+                    name, 
+                    value: name.toLowerCase().split(" ").join("-"), 
+                    url: url, 
+                    state: true
                 }])
             })
 
@@ -267,6 +299,16 @@ class ProjectTools extends HTMLElement {
             iframe.style.display = "none"
             nameInput.value = ""
             urlInput.value = ""
+
+            if (response.ok) {
+                this.render()
+                TPEN.activeProject.tools.push({
+                    name: name,
+                    value: name.toLowerCase().split(" ").join("-"),
+                    url: url,
+                    state: true
+                })
+            }
     
             return TPEN.eventDispatcher.dispatch("tpen-toast", 
                 response.ok ? 
@@ -301,6 +343,37 @@ class ProjectTools extends HTMLElement {
                 { status: "info", message: 'Successfully Updated Tools' } : 
                 { status: "error", message: 'Error Updating Tools' }
             )
+        })
+
+        deleteButtons.forEach(button => {
+            button.addEventListener("click", async (e) => {
+                const toolName = e.target.closest(".tool-card").querySelector("label").textContent.trim()
+                const toolValue = e.target.closest(".tool-card").querySelector("input[type='checkbox']").value
+                const container = e.target.closest(".container")
+
+                if (!toolValue) {
+                    TPEN.eventDispatcher.dispatch("tpen-toast", { status: "error", message: `Tool value not found for ${toolName}` })
+                    return
+                }
+
+                const response = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/tools`, {
+                    method: "DELETE",
+                    headers: {
+                        Authorization: `Bearer ${TPEN.getAuthorization()}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ tool: toolValue })
+                })
+
+                if (response.ok) {
+                    container.remove()
+                    TPEN.activeProject.tools = TPEN.activeProject.tools.filter(tool => tool.value !== toolValue)
+                    TPEN.eventDispatcher.dispatch("tpen-toast", { status: "info", message: `Successfully removed ${toolName}` })
+                    this.render()
+                } else {
+                    TPEN.eventDispatcher.dispatch("tpen-toast", { status: "error", message: `Error removing ${toolName}` })
+                }
+            })
         })
     }    
 }
