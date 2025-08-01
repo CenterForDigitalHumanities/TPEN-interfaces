@@ -150,7 +150,7 @@ class ProjectTools extends HTMLElement {
                     align-items: center;
                     justify-content: center;
                     margin: 0;
-                    padding: 8px 10px;
+                    padding: 2px 4px;
                 }
 
                 .remove-field-btn:hover {
