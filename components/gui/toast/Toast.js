@@ -9,6 +9,9 @@ class Toast extends HTMLElement {
         `
     }
 
+    /**
+     * Make a typical notification toast visible with a timer to disappear automatically.
+     */
     show() {
         this.classList.add('show')
         setTimeout(() => {
@@ -19,51 +22,48 @@ class Toast extends HTMLElement {
         }, 3000)
     }
 
+    /**
+     * Call forth a toast without making it disappear automatically.
+     */
+    call() {
+        this.classList.add('show')
+    }
+
+    /**
+     * Cause a dismissible toast to dissapear upon clicking it
+     */
+    dismiss() {
+        this.classList.remove('show')
+        setTimeout(() => {
+            this.remove()
+        }, 300)
+    }
+
+    /**
+     * Make the backdrop for screen takeover as well as the dialogue toast visible with a drop down effect.
+     * Used with confirm and alert toasts.
+     */
     drop() {
         this.closest(".toast-screen-lock").style.display = "grid"
         setTimeout(() => {
-            this.closest(".toast-screen-lock").style.height = "100vh"
+            this.closest(".toast-screen-lock").classList.add("show")
             this.classList.add('show')
             document.querySelector("body").style.overflow = "hidden"
         }, 1)
         
     }
 
+    /**
+     * Make the backdrop for screen takeover as well as the dialogue toast disappear with a lift up effect.
+     * Used after a user clicks an option on a confirm or alert toast
+     */
     lift() {
         this.classList.remove('show')
-        this.closest(".toast-screen-lock").style.height = "0vh"
+        this.closest(".toast-screen-lock").classList.remove("show")
         document.querySelector("body").style.overflow = "auto"
         setTimeout(() => {
-            this.closest(".toast-screen-lock").style.display = "none"
             this.remove()
         }, 500)   
-    }
-
-    /**
-     * Make this act like the javascript confirm().
-     * Needs a backdrop to take over the screen until a choice is made.
-     */
-    showConfirm() {
-        this.classList.add('show')
-        return true
-    }
-
-    /**
-     * Make this act like the javascript alert().
-     * Needs a backdrop to take over the screen until a user clicks ok.
-     */
-    showAlert() {
-        this.classList.add('show')
-        return true
-    }
-
-    /**
-     * Make this act like the standard show() without disappearing.  Only disappear when clicked.
-     * Only disappear when clicked.  Keep in toast stack.
-     */
-    showDismissible() {
-        this.classList.add('show')
-        return true
     }
 
 }

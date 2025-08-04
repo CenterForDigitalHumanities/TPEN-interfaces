@@ -12,14 +12,24 @@ class ToastContainer extends HTMLElement {
     }
 
     connectedCallback() {
-        eventDispatcher.on('tpen-toast', ({ detail }) => this.addToast(detail.message, detail.status, detail.type))
+        eventDispatcher.on('tpen-toast', ({ detail }) => this.addToast(detail?.message, detail?.status, detail?.type))
     }
 
+    /**
+     * Discern what kind of toast to build and put on screen.
+     *
+     * @params message {String} A message to show in the toast.
+     * @params status {String} A status to use as a class.
+     * @params type {String} The type of toast for varied functionality.
+     */
     addToast(message, status = 'info', type = 'notice') {
+        // Guard against the lack of a valid message
+        if (!message || typeof message !== 'string') return
         const { matches: motionOK } = window.matchMedia('(prefers-reduced-motion: no-preference)')
         const toast = document.createElement('tpen-toast')
         switch (type) {
             case 'confirm':
+                // A mock of the javascript confirm() that returns a boolean based on what the user clicks.
                 return new Promise((resolve) => {
                     const yesButton = document.createElement('button')
                     yesButton.textContent = "yes"
@@ -45,6 +55,7 @@ class ToastContainer extends HTMLElement {
                 })
             break
             case 'alert':
+                // A mock of the javascript alert() which locks up the screen until the user clicks out of it.
                 const okButton = document.createElement('button')
                 okButton.textContent = "OK"
                 toast.textContent = message
@@ -56,16 +67,20 @@ class ToastContainer extends HTMLElement {
                 this.#lockingSection.appendChild(toast)
                 toast.drop()
             break
-            case 'dismiss':
-                // Does not lock up the interface.  Only disappears when clicked
-            break
-            case 'notice':
+            case 'dismissible':
+                // A regular looking toast that stays until dismissed with a click
                 toast.textContent = message
                 toast.classList.add(status)
+                toast.classList.add('dismissible')
                 this.flipToast(toast)
-                toast.show()
+                toast.addEventListener("click", (e) => {
+                    toast.dismiss()
+                })
+                toast.call()
             break
+            case 'notice':
             default:
+                 // The standard toast that appears then disappears automatically
                 toast.textContent = message
                 toast.classList.add(status)
                 this.flipToast(toast)
@@ -73,7 +88,11 @@ class ToastContainer extends HTMLElement {
         }
     }
 
-    flipToast(toast) { // FIRST LAST INVERT PLAY https://aerotwist.com/blog/flip-your-animations/
+    /**
+     * FIRST LAST INVERT PLAY
+     * @see https://aerotwist.com/blog/flip-your-animations/
+     */
+    flipToast(toast) {
         const first = this.offsetHeight
         this.#containerSection.appendChild(toast)
         const last = this.offsetHeight
@@ -102,21 +121,24 @@ class ToastContainer extends HTMLElement {
                 justify-items: center;
                 justify-content: center;
                 gap: 1vh;
-                pointer-events: none;
+                user-select: none;
             }
             .toast-screen-lock {
                 position: fixed;
-                display: none;
+                display: grid;
                 z-index: 16;
                 inset-block-start: 0;
                 inset-inline: 0;
-                padding-block-start: 5vh;
                 justify-items: center;
                 justify-content: center;
-                gap: 1vh;
                 height: 0vh;
                 background-color: rgba(0,0,0,0.5);
-                transition: height 0.5s ease-in-out;   
+                opacity: 0;
+                transition: all 0.5s ease-in-out;   
+            }
+            .toast-screen-lock.show {
+                opacity: 1;
+                height: 100vh;
             }
             tpen-toast {
                 z-index: 16;
@@ -139,7 +161,6 @@ class ToastContainer extends HTMLElement {
                 top: 0px;
                 right: 20px;
             }
-
             @media (prefers-reduced-motion) {
                 .toast-group tpen-toast {
                     opacity: 1.0;
@@ -149,7 +170,7 @@ class ToastContainer extends HTMLElement {
                 .toast-screen-lock tpen-toast { 
                     opacity: 1.0;
                     height: 18px;
-                    top: 20px;
+                    top: 5vh;
                 }
             }
             .toast-group tpen-toast.show {
@@ -160,12 +181,14 @@ class ToastContainer extends HTMLElement {
             .toast-screen-lock tpen-toast.show {
                 opacity: 1.0;
                 height: 18px;
-                top: 20px;
+                top: 5vh;
             }
         `
+        // This section will take over the screen and lock down screen interaction.  It lives at the top of the viewport.
         const lockingSection = document.createElement('section')
         lockingSection.classList.add('toast-screen-lock')
 
+        // This is for notification and dismissible toasts.  It does not lock down the screen.  It lives at the bottom of the viewport. 
         const section = document.createElement('section')
         section.classList.add('toast-group')
 
