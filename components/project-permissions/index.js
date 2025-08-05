@@ -15,27 +15,26 @@ class ProjectPermissions extends HTMLElement {
         this.shadowRoot.innerHTML = `
             <style>
                 .roles-list {
-                    max-height: 180px;
-                    overflow-y: auto;
                     margin: 0 auto;
-                    padding: 20px 10px;
+                    padding: 0px 2px;
+                    margin-bottom: 10px;
                 }
                 .roles-list li {
                     font-size: 0.875rem;
                     display: flex;
                     justify-content: flex-start;
                     align-items: start;
-                    padding: 5px 0px;
-                    border-bottom: 1px solid #ccc;
-                }
-                .roles-list li:last-child {
-                    border-bottom: none;
-                }  
+                    padding: 5px 0px 5px 20px;
+                    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+                    border-radius: 4px;
+                    margin-bottom: 10px;
+                } 
                 .roles-list li #roleID {
                     text-align: left;
                     width: 30%;
                     font-weight: bold;
                     padding: 5px 0px;
+                    color: var(--primary-color);
                 }
                 .roles-list li span .name-ol {
                     gap: 5px;
@@ -47,6 +46,8 @@ class ProjectPermissions extends HTMLElement {
                     font-size: 0.875rem;
                     display: list-item;
                     border-bottom: none;
+                    box-shadow: none;
+                    margin-bottom: 0px;
                 }
             </style>
             <ol class="roles-list"></ol>
@@ -59,12 +60,11 @@ class ProjectPermissions extends HTMLElement {
         Object.entries(project.roles || {}).map(([key, value]) => ({
             id: key,
             name: value
-        })).filter(role => project.collaborators[this.getAttribute("tpen-user-id")]
-        .roles.includes(role.id))
+        }))
         .forEach(role => {
             rolesList.innerHTML += `
                 <li>
-                    <span id="roleID">${role.id}</span>
+                    <span id="roleID">${role.id.charAt(0).toUpperCase() + role.id.slice(1).toLowerCase()}</span>
                     <span>
                         <ol class="name-ol">
                             ${role.name.map(name => 
