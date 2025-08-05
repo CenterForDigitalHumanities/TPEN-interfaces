@@ -14,11 +14,11 @@
 <script>
     confirmer.onclick = async () => {
         import('../../../api/events.js').then(module => {
-            const message = `Is this the confirm you want?`
+            const message = `Is this the confirm dialogue you want?`
             const confirm = {
                 message,
                 positiveButtonText: 'It is!',
-                negativeButtonText: 'It is not'
+                negativeButtonText: 'Ew, no.'
             }
             module.eventDispatcher.dispatch('tpen-confirm', confirm)
             module.eventDispatcher.on('tpen-confirm-positive', () => {

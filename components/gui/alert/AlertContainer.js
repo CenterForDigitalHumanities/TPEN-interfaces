@@ -70,7 +70,7 @@ class AlertContainer extends HTMLElement {
                 border-radius: 5px;
                 box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
                 opacity: 0.0;
-                height: 0px;
+                height: fit-content;
                 transition: all 0.3s ease-in-out;   
             }
             .alert-area tpen-alert {
