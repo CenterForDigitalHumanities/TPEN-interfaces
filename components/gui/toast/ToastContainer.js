@@ -85,6 +85,8 @@ class ToastContainer extends HTMLElement {
                 opacity: 0.0;
                 height: 0px;
                 transition: all 0.3s ease-in-out;
+                background-color: #333;
+                color: #fff;
             }
             @media (prefers-reduced-motion) {
                 tpen-toast {
