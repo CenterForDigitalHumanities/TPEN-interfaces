@@ -17,12 +17,13 @@ class ToastContainer extends HTMLElement {
 
     /**
      * Discern what kind of toast to build and put on screen.
+     * A confirm toast is asyncronous.  It waits on a user choice.
      *
      * @params message {String} A message to show in the toast.
      * @params status {String} A status to use as a class.
      * @params type {String} The type of toast for varied functionality.
      */
-    addToast(message, status = 'info', type = 'notice') {
+    async addToast(message, status = 'info', type = 'notice') {
         // Guard against the lack of a valid message
         if (!message || typeof message !== 'string') return
         const { matches: motionOK } = window.matchMedia('(prefers-reduced-motion: no-preference)')
@@ -30,7 +31,7 @@ class ToastContainer extends HTMLElement {
         switch (type) {
             case 'confirm':
                 // A mock of the javascript confirm() that returns a boolean based on what the user clicks.
-                return new Promise((resolve) => {
+                const choice = await new Promise((resolve) => {
                     const yesButton = document.createElement('button')
                     yesButton.textContent = "yes"
                     const noButton = document.createElement('button')
@@ -53,6 +54,9 @@ class ToastContainer extends HTMLElement {
                     this.#lockingSection.appendChild(toast)
                     toast.drop()
                 })
+                .then(bool => bool)
+                .catch(err => false)
+                return choice
             break
             case 'alert':
                 // A mock of the javascript alert() which locks up the screen until the user clicks out of it.
@@ -86,6 +90,7 @@ class ToastContainer extends HTMLElement {
                 this.flipToast(toast)
                 toast.show()
         }
+        return
     }
 
     /**
