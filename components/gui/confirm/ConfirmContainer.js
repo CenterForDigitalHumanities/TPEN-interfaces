@@ -2,7 +2,7 @@ import './Confirm.js'
 import { eventDispatcher } from '../../../api/events.js'
 
 class ConfirmContainer extends HTMLElement {
-    #lockingSection
+    #screenLockingSection
     #confirmElem
 
     constructor() {
@@ -49,14 +49,14 @@ class ConfirmContainer extends HTMLElement {
         buttonContainer.appendChild(confirmButton)
         buttonContainer.appendChild(denyButton)
         confirmElem.appendChild(buttonContainer)
-        this.#lockingSection.appendChild(confirmElem)
+        this.#screenLockingSection.appendChild(confirmElem)
         this.#confirmElem = confirmElem
         confirmElem.drop()
     }
 
     render() {
         const style = document.createElement('style')
-        // FIXME we copied the :root rules from /components/gui/site/index.css.  Importing it was too much.
+        // We copied the :root rules from /components/gui/site/index.css.  Importing it was too much.
         style.textContent = `
             :host {
               --primary-color: hsl(186, 84%, 40%);
@@ -143,13 +143,13 @@ class ConfirmContainer extends HTMLElement {
             }
         `
         // This section will take over the screen and lock down screen interaction.  It lives at the top of the viewport.
-        const lockingSection = document.createElement('section')
-        lockingSection.classList.add('confirm-area')
+        const screenLockingSection = document.createElement('section')
+        screenLockingSection.classList.add('confirm-area')
 
         this.shadowRoot.innerHTML = ''
         this.shadowRoot.appendChild(style)
-        this.shadowRoot.appendChild(lockingSection)
-        this.#lockingSection = lockingSection
+        this.shadowRoot.appendChild(screenLockingSection)
+        this.#screenLockingSection = screenLockingSection
     }
 }
 
