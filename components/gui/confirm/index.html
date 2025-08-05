@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Confirm Component</title>
+        <script type="module" src="ConfirmContainer.js"></script>
+    </head>
+    <body>
+        <h2>Confirm Component</h2>
+        <button id="confirmer" type="button">Show Confirm</button>
+        <script>
+            confirmer.onclick = async () => {
+                import('../../../api/events.js').then(module => {
+                    const message = `Is this the confirm dialogue you want?`
+                    const confirm = {
+                        message,
+                        positiveButtonText: 'It is!',
+                        negativeButtonText: 'Ew, no.'
+                    }
+                    module.eventDispatcher.dispatch('tpen-confirm', confirm)
+                    module.eventDispatcher.on('tpen-confirm-positive', () => {
+                        console.log("We are glad that it is the confirm you want.")
+                    })
+                    module.eventDispatcher.on('tpen-confirm-negative', () => {
+                        console.log("We are sad that it is not the confirm you want.")
+                    })
+                })
+            }  
+        </script>
+    </body>
+</html>
