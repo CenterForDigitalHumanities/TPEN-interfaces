@@ -22,7 +22,7 @@ class Alert extends HTMLElement {
             this.classList.add('show')
             document.querySelector("body").style.overflow = "hidden"
         }, 1)
-        TPEN.eventDispatcher.dispatch("tpen-alert-activated")
+        eventDispatcher.dispatch("tpen-alert-activated")
     }
 
     /**
@@ -36,7 +36,7 @@ class Alert extends HTMLElement {
         setTimeout(() => {
             this.remove()
         }, 500)
-        TPEN.eventDispatcher.dispatch("tpen-alert-acknowledged")
+        eventDispatcher.dispatch("tpen-alert-acknowledged")
     }
 
 }
