@@ -31,13 +31,13 @@ class AlertContainer extends HTMLElement {
         okButton.textContent = buttonText
         alertElem.textContent = message
         const handleOk = (e) => {
-            alertElem.lift()
+            alertElem.dismiss()
         }
         okButton.addEventListener('click', handleOk)
         buttonContainer.appendChild(okButton)
         alertElem.appendChild(buttonContainer)
         this.#screenLockingSection.appendChild(alertElem)
-        alertElem.drop()
+        alertElem.show()
     }
 
     render() {

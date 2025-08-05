@@ -15,7 +15,7 @@ class Confirm extends HTMLElement {
      * Make the backdrop for screen takeover as well as the confirm dialogue visible.
      * Have them appear with a dropdown effect.
      */
-    drop() {
+    show() {
         this.closest(".confirm-area").style.display = "grid"
         setTimeout(() => {
             this.closest(".confirm-area").classList.add("show")
@@ -29,7 +29,7 @@ class Confirm extends HTMLElement {
      * Make the backdrop for screen takeover as well as the alert dialogue disappear with a lift up effect.
      * Used after a user clicks the button in the alert.
      */
-    lift() {
+    dismiss() {
         this.classList.remove('show')
         this.closest(".confirm-area").classList.remove("show")
         document.querySelector("body").style.overflow = "auto"

@@ -13,8 +13,8 @@ class ConfirmContainer extends HTMLElement {
 
     connectedCallback() {
         eventDispatcher.on('tpen-confirm', ({ detail }) => this.addConfirm(detail?.message, detail?.positiveButtonText, detail.negativeButtonText))
-        eventDispatcher.on('tpen-confirm-positive', () => this.#confirmElem.lift())
-        eventDispatcher.on('tpen-confirm-negative', () => this.#confirmElem.lift())
+        eventDispatcher.on('tpen-confirm-positive', () => this.#confirmElem.dismiss())
+        eventDispatcher.on('tpen-confirm-negative', () => this.#confirmElem.dismiss())
     }
 
     /**
@@ -51,7 +51,7 @@ class ConfirmContainer extends HTMLElement {
         confirmElem.appendChild(buttonContainer)
         this.#screenLockingSection.appendChild(confirmElem)
         this.#confirmElem = confirmElem
-        confirmElem.drop()
+        confirmElem.show()
     }
 
     render() {

@@ -1,32 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alert Component</title>
-    <script type="module" src="AlertContainer.js"></script>
-</head>
-<body>
-
-<h2>Alert Component</h2>
-<button id="alerter" type="button">Show Alert</button>
-
-<script>
-    alerter.onclick = async () => {
-        import('../../../api/events.js').then(module => {
-            const message = `This is the alert dialogue.`
-            const alert = {
-                message,
-                buttonText: 'Got it!'
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Alert Component</title>
+        <script type="module" src="AlertContainer.js"></script>
+    </head>
+    <body>
+        <h2>Alert Component</h2>
+        <button id="alerter" type="button">Show Alert</button>
+        <script>
+            alerter.onclick = async () => {
+                import('../../../api/events.js').then(module => {
+                    const message = `This is the alert dialogue.`
+                    const alert = {
+                        message,
+                        buttonText: 'Got it!'
+                    }
+                    module.eventDispatcher.dispatch('tpen-alert', alert)
+                    module.eventDispatcher.on('tpen-alert-acknowledged', () => {
+                        console.log("Thank you for acknowledging the alert.")
+                    })
+                })
             }
-            module.eventDispatcher.dispatch('tpen-alert', alert)
-            module.eventDispatcher.on('tpen-alert-acknowledged', () => {
-                console.log("Thank you for acknowledging the alert.")
-            })
-        })
-    }
-
-</script>
-   
-</body>
+        </script>
+    </body>
 </html>
