@@ -11,21 +11,28 @@ class TpenFeedback extends HTMLElement {
     this.setupEventListeners()
   }
 
+  // FIXME we copied the :root rules from /components/gui/site/index.css.  Importing it was too much.
   render() {
     this.shadowRoot.innerHTML = `
       <style>
+        :host {
+          --primary-color: hsl(186, 84%, 40%);
+          --primary-light: hsl(186, 84%, 60%);
+          --light-color  : hsl(186, 84%, 90%);
+          --dark         : #2d2d2d;
+          --white        : hsl(0, 0%, 100%);
+          --gray         : hsl(0, 0%, 60%);
+          --light-gray   : hsl(0, 0%, 90%);
+        }
         .feedback-container {
           font-family: Arial, sans-serif;
           padding: 20px;
-          border: 1px solid var(--gray);
-          border-radius: 8px;
-          max-width: 400px;
-          margin: 20px auto;
+          margin: 10px auto 0px;
           background-color: var(--light-color);
           color: var(--dark);
         }
         .feedback-container textarea {
-          width: 100%;
+          width: calc(100% - 18px);
           padding: 8px;
           margin-bottom: 10px;
           border: 1px solid var(--gray);
@@ -85,7 +92,7 @@ class TpenFeedback extends HTMLElement {
         const feedbackType = this.shadowRoot.getElementById("feedback-type").value
         await this.submitFeedback(feedbackData, feedbackType)
         TPEN.eventDispatcher.dispatch("tpen-toast", {
-          message: "Feedback submitted successfully!",
+          message: "Thank you for your feedback!",
           type: "success"
         })
         this.shadowRoot.getElementById("feedback-description").value = ""
@@ -109,10 +116,12 @@ class TpenFeedback extends HTMLElement {
 
     if (type === "bug") {
       data.bugDescription = data.description
+      data.page = window.location.pathname + window.location.search + window.location.hash
       delete data.description
     }
     if (type === "feedback") {
       data.feedback = data.description
+      data.page = window.location.pathname + window.location.search + window.location.hash
       delete data.description
     }
     const response = await fetch(endpoint, {
@@ -127,6 +136,15 @@ class TpenFeedback extends HTMLElement {
     if (!response.ok) {
       throw new Error(`Failed to submit ${type}: ${response.statusText}`)
     }
+
+    const feedbackModalButton = document.querySelector("tpen-page").shadowRoot.querySelector("tpen-footer").shadowRoot.querySelector("tpen-feedback-button")
+    const modal = feedbackModalButton.shadowRoot.querySelector("#feedback-modal")
+    const backdrop = feedbackModalButton.shadowRoot.querySelector("#feedback-backdrop")
+    const icon = feedbackModalButton.shadowRoot.querySelector(".feedback-icon-container")
+
+    modal.classList.remove("show")
+    backdrop.classList.remove("show")
+    icon.classList.remove("active", "shrunk")
   }
 }
 

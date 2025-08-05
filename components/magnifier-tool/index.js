@@ -1,3 +1,6 @@
+import TPEN from "../../api/TPEN.js"
+import CheckPermissions from "../check-permissions/checkPermissions.js"
+
 export default class MagnifierTool extends HTMLElement {
     #imageElem
     #magnifier
@@ -34,8 +37,14 @@ export default class MagnifierTool extends HTMLElement {
     }
 
     connectedCallback() {
-        this.render()
-        this.addEventListeners()
+        TPEN.eventDispatcher.on("tpen-project-loaded", () => {
+            if(!CheckPermissions.checkViewAccess("TOOL", "ANY")) {
+                this.remove()
+            return
+            }
+            this.render()
+            this.addEventListeners()
+        })
     }
 
     setMagnifierView(centerX, centerY, zoomLevel = this.zoomLevel) {

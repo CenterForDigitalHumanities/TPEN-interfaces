@@ -1,6 +1,7 @@
 import TPEN from "../../api/TPEN.js"
 const eventDispatcher = TPEN.eventDispatcher
 import "../layer-selector/index.js"
+import CheckPermissions from "../check-permissions/checkPermissions.js"
 export default class ProjectHeader extends HTMLElement {
     loadFailed = false
 
@@ -27,6 +28,10 @@ export default class ProjectHeader extends HTMLElement {
         this.shadowRoot.appendChild(this.content)
         eventDispatcher.on("tpen-user-loaded", (ev) => (this.currentUser = ev.detail))
         eventDispatcher.on("tpen-project-loaded", () => {
+            if (!CheckPermissions.checkViewAccess("PROJECT", "ANY")) {
+              this.remove()
+              return
+            }
             this.loadFailed = false
             const projectTitleElem = this.shadowRoot.querySelector('.project-title')
             if (projectTitleElem) {

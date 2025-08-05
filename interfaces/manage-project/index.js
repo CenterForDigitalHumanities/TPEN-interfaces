@@ -32,6 +32,14 @@ document.getElementById('export-project-btn').addEventListener('click', async ()
         headers: {
             'Authorization': `Bearer ${TPEN.getAuthorization()}`
         }
+    }).then(response => {
+        return TPEN.eventDispatcher.dispatch("tpen-toast", 
+        response.ok ? 
+            { status: "info", message: 'Successfully Exported Project Manifest' } : 
+            { status: "error", message: 'Error Exporting Project Manifest' }
+        )
+    }).catch(error => {
+        console.error('Error exporting project manifest:', error)
     })
 })
 

@@ -48,6 +48,7 @@ class ProjectDetails extends HTMLElement {
     .hidden {
         display: none;
     }
+
     `
 
     constructor() {
@@ -88,25 +89,21 @@ class ProjectDetails extends HTMLElement {
 
     async render() {
         const project = this.Project ?? TPEN.activeProject
-        TPEN.eventDispatcher.dispatch(new CustomEvent('tpen-gui-action-link', { detail:
-            { 
-                label: "Transcribe",
-                callback: () => location.href = `/transcribe?projectID=${project._id}`
-            }
-        }))
         const projectOwner = Object.entries(project.collaborators).find(([userID, u]) => u.roles.includes('OWNER'))?.[1].profile.displayName
         const collaboratorCount = Object.keys(project.collaborators).length
 
         TPEN.screen.title = project.label ?? project.title ?? project.name
         TPEN.eventDispatcher.dispatch('tpen-gui-title', TPEN.screen.title)
         const isReadAccess = await CheckPermissions.checkViewAccess('PROJECT')
-
+        const isProjectEditor = await CheckPermissions.checkEditAccess('PROJECT', 'METADATA')
+        const editTitle = isProjectEditor ? `<a id="edit-project-title" href="#">✏️</a>` : ``
+        
         isReadAccess ? 
         (this.shadowRoot.innerHTML = `
             <style>${this.style}</style>
             <div class="project-title-input-container">
                 <h3 class="project-title">${TPEN.screen.title}</h3>
-                <a id="edit-project-title" href="#">✏️</a>
+                ${editTitle}
             </div>
             <small>${TPEN.screen.projectInQuery}</small>
             <p>${projectOwner}, Owner</p>
@@ -117,7 +114,7 @@ class ProjectDetails extends HTMLElement {
         `) : (this.shadowRoot.innerHTML = `
             <p class="permission-msg">You don't have permission to view the Project Details</p>
         `)
-
+        if(!isProjectEditor) return
         this.shadowRoot.getElementById('edit-project-title').addEventListener('click', (e) => {
             const screenTitle = this.shadowRoot.querySelector('.project-title')
             const editButton = this.shadowRoot.getElementById('edit-project-title')
