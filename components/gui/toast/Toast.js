@@ -10,7 +10,7 @@ class Toast extends HTMLElement {
     }
 
     /**
-     * Make a typical notification toast visible with a timer to disappear automatically.
+     * Cause a toast to appear.  Non-dismissible toasts use a timer to disappear automatically.
      */
     show() {
         this.classList.add('show')

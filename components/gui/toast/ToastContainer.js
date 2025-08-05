@@ -20,7 +20,7 @@ class ToastContainer extends HTMLElement {
      *
      * @params message {String} A message to show in the toast.
      * @params status {String} A status to use as a class.
-     * @params type {String} The type of toast for varied functionality.
+     * @params dismissible {Boolean} Whether or not the user must click the toast to dismiss it.
      */
     addToast(message, status = 'info', dismissible = false) {
         // Guard against the lack of a valid message
