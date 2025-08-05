@@ -26,13 +26,16 @@ class AlertContainer extends HTMLElement {
         const { matches: motionOK } = window.matchMedia('(prefers-reduced-motion: no-preference)')
         const alertElem = document.createElement('tpen-alert')
         const okButton = document.createElement('button')
+        const buttonContainer = document.createElement('div')
+        buttonContainer.classList.add("button-container")
         okButton.textContent = buttonText
         alertElem.textContent = message
         const handleOk = (e) => {
             alertElem.lift()
         }
         okButton.addEventListener('click', handleOk)
-        alertElem.appendChild(okButton)
+        buttonContainer.appendChild(okButton)
+        alertElem.appendChild(buttonContainer)
         this.#lockingSection.appendChild(alertElem)
         alertElem.drop()
     }
@@ -77,14 +80,23 @@ class AlertContainer extends HTMLElement {
             @media (prefers-reduced-motion) {
                 .alert-area tpen-alert { 
                     opacity: 1.0;
-                    height: 18px;
+                    height: fit-content;
                     top: 5vh;
                 }
             }
             .alert-area tpen-alert.show {
                 opacity: 1.0;
-                height: 18px;
+                height: fit-content;
                 top: 5vh;
+            }
+            .alert-area button {
+                position: relative;
+                display: inline-block;
+            }
+            .alert-area .button-container {
+                position: relative;
+                display: block;
+                text-align: right;
             }
         `
         // This section will take over the screen and lock down screen interaction.  It lives at the top of the viewport.

@@ -29,6 +29,8 @@ class ConfirmContainer extends HTMLElement {
         if (!positiveButtonText || typeof positiveButtonText !== 'string') positiveButtonText = 'Yes'
         if (!negativeButtonText || typeof negativeButtonText !== 'string') negativeButtonText = 'No'
         const { matches: motionOK } = window.matchMedia('(prefers-reduced-motion: no-preference)')
+        const buttonContainer = document.createElement("div")
+        buttonContainer.classList.add("button-container")
         const confirmElem = document.createElement('tpen-confirm')
         const confirmButton = document.createElement('button')
         const denyButton = document.createElement('button')
@@ -43,8 +45,9 @@ class ConfirmContainer extends HTMLElement {
         }
         confirmButton.addEventListener('click', handlePositive)
         denyButton.addEventListener('click', handleNegative)
-        confirmElem.appendChild(confirmButton)
-        confirmElem.appendChild(denyButton)
+        buttonContainer.appendChild(confirmButton)
+        buttonContainer.appendChild(denyButton)
+        confirmElem.appendChild(buttonContainer)
         this.#lockingSection.appendChild(confirmElem)
         this.#confirmElem = confirmElem
         confirmElem.drop()
@@ -90,14 +93,23 @@ class ConfirmContainer extends HTMLElement {
             @media (prefers-reduced-motion) {
                 .confirm-area tpen-confirm { 
                     opacity: 1.0;
-                    height: 18px;
+                    height: fit-content;
                     top: 5vh;
                 }
             }
             .confirm-area tpen-confirm.show {
                 opacity: 1.0;
-                height: 18px;
+                height: fit-content;
                 top: 5vh;
+            }
+            .confirm-area button {
+                position: relative;
+                display: inline-block;
+            }
+            .confirm-area .button-container {
+                position: relative;
+                display: block;
+                text-align: right;
             }
         `
         // This section will take over the screen and lock down screen interaction.  It lives at the top of the viewport.
