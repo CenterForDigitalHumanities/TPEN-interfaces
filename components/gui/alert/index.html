@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alert Component</title>
+    <script type="module" src="AlertContainer.js"></script>
+</head>
+<body>
+
+<h2>Alert Component</h2>
+<button id="alerter" type="button">Show Alert</button>
+
+<script>
+    const verbs = [
+        "scale", "attack", "consist", "scowl", "stink", "swing", "grade", "sleep", "burst", 
+        "inculcate", "endorse", "string", "contrive", "subscribe", "stop", "agree", "imagine", 
+        "wear", "collapse", "cease", "introduce", "introduce", "resist", "separate", "maintain", 
+        "foretell", "guard", "cook", "roar", "betray", "scowl", "mislead", "enter", "complete", 
+        "tee", "clothe", "celebrate", "chip", "propose", "guide", "tell", "slip", "diminish", 
+        "slip", "crave", "mean", "broadcast", "canvass", "eye", "beautify", "savor", "hug", "hug"
+    ]
+    const nouns = [
+        "father", "tin", "copper", "minister", "wealth", "lizards", "jail", "test", "roof", 
+        "sack", "tomatoes", "stop", "shirt", "trucks", "trucks", "protest", "cobweb", "summer", 
+        "yam", "quarter", "sneeze", "men", "theory", "can", "spiders", "basketball", "print", 
+        "wrist", "locket", "tail", "kettle", "underwear", "skirt", "process", "birth", "game", 
+        "wave", "boy", "current", "scale", "front", "donkey", "box", "pull", "trip", "church", 
+        "toes", "toes", "farm", "celery", "guide", "swing", "butter"
+    ]
+    const sample = (arr) => arr[Math.floor(Math.random() * arr.length)]
+    alerter.onclick = async () => {
+        import('../../../api/events.js').then(module => {
+            const message = `${sample(verbs)} ${sample(nouns)}`
+            const alert = {
+                message,
+                buttonText: 'Got it!'
+            }
+            module.eventDispatcher.dispatch('tpen-alert', alert)
+            module.eventDispatcher.on('tpen-alert-acknowledged', () => {
+                console.log("Thank you for acknowledging the alert.")
+            })
+        })
+    }
+
+</script>
+   
+</body>
+</html>
