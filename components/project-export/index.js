@@ -36,7 +36,7 @@ customElements.define('tpen-project-export', class extends HTMLElement {
                     border-radius: 6px;
                     font-size: 14px;
                     transition: background-color 0.3s ease, transform 0.2s ease;
-                    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+                    box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1);
                     margin: 0;
                 }
 
@@ -49,7 +49,7 @@ customElements.define('tpen-project-export', class extends HTMLElement {
                     border-radius: 6px;
                     font-size: 14px;
                     transition: background-color 0.3s ease, transform 0.2s ease;
-                    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+                    box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1);
                     color: red;
                     margin: 0;
                 }

@@ -1,12 +1,5 @@
-tpen-card[tpen-scope="metadata"]::part(card-body), tpen-card[tpen-entity="layer"]::part(card-body), 
-tpen-card[tpen-entity="role"]::part(card-body), tpen-card[tpen-entity="tools"]::part(card-body),
-tpen-card[tpen-entity="member"]::part(card-body), tpen-card[tpen-scope="options"]::part(card-body),
-tpen-card[tpen-entity="export"]::part(card-body) {
+tpen-card[tpen-scope="metadata"]::part(card-body) {
   margin-bottom: 3.5em;
-  height: 278px;
-}
-tpen-card[tpen-entity="project"]::part(card-body) {
-    margin-bottom: 0;
 }
 a.left {
     cursor: pointer;
@@ -41,8 +34,4 @@ a.left img {
 .action-links {
     height: 50px;
     border-top: 1px solid black;
-}
-tpen-card[tpen-entity="member"] project-collaborators::part(group-title),
-tpen-card[tpen-entity="member"] project-collaborators::part(group-members-title) {
-    display: none;
 }

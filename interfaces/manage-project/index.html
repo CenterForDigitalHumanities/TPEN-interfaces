@@ -54,7 +54,7 @@ permalink: /project/manage
         <tpen-card tpen-entity="role">
             <h2 slot="header">Project Roles</h2>
             <tpen-project-permissions slot="body"></tpen-project-permissions>
-            <button id="manage-custom-role-btn" slot="footer" type="button">MANAGE ROLE</button>
+            <button id="add-custom-role-btn" slot="footer" type="button">ADD ROLE</button>
         </tpen-card>
         <tpen-card tpen-scope="options">
             <h2 slot="header">Project Options</h2>
@@ -69,9 +69,8 @@ permalink: /project/manage
             <h2 slot="header">Tools</h2>
             <tpen-project-tools slot="body"></tpen-project-tools>
             <button id="manage-tools-btn" slot="footer" type="button">SAVE TOOLS</button>
-            <button id="add-iframe-tools" slot="footer" type="button">ADD IFRAME TOOL</button>
         </tpen-card>
-        <tpen-card tpen-entity="export">
+        <tpen-card tpen-entity="project">
             <h2 slot="header">Export & Links</h2>
             <tpen-project-export slot="body"></tpen-project-export>
             <button id="export-project-btn" slot="footer" type="button">EXPORT PROJECT</button>

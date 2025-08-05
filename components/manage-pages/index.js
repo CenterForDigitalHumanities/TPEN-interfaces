@@ -30,7 +30,7 @@ class ManagePages extends HTMLElement {
                 .layer-card, .layer-card-outer {
                     background: #fff;
                     border-radius: 8px;
-                    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+                    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
                     padding: 15px;
                     border-left: 5px solid #007bff;
                     cursor: move;

@@ -54,7 +54,7 @@ async function render() {
         document.location.href = `/project?projectID=${TPEN.screen.projectInQuery}`
     }
     document.querySelector('tpen-project-details').setAttribute('tpen-project-id', TPEN.screen.projectInQuery)
-    document.getElementById("manage-custom-role-btn").addEventListener('click', async () => {
+    document.getElementById("add-custom-role-btn").addEventListener('click', async () => {
         window.location.href = `/components/manage-role/index.html?projectID=${TPEN.screen.projectInQuery}`  
     })
 }

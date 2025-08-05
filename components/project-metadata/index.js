@@ -22,6 +22,7 @@ class ProjectMetadata extends HTMLElement {
                 .metadata {
                     display: flex;
                     flex-direction: column;
+                    height: 10em;
                     list-style: none;
                     padding: 0 10px;
                 }
