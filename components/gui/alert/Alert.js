@@ -5,7 +5,7 @@ class Alert extends HTMLElement {
         super()
         this.attachShadow({ mode: 'open' })
         this.shadowRoot.innerHTML = `
-            <output role="status">
+            <output role="alert">
             <slot></slot>
             </output>
         `
