@@ -160,7 +160,7 @@ export default class TranscriptionInterface extends HTMLElement {
               />
             </div>
           </section>
-          <tpen-line-image id="bottomImage"></tpen-line-image>
+          <tpen-image-fragment id="bottomImage"></tpen-image-fragment>
         </div>
         <div class="splitter"></div>
         <div class="right-pane">
@@ -295,16 +295,7 @@ export default class TranscriptionInterface extends HTMLElement {
     if (!region) return
     const [x, y, width, height] = region.split(',').map(Number)
     topImage.moveTo(x, y, width, height)
-    this.slideBottomImage(region)
-  }
-
-  slideBottomImage(region) {
-    const bottomImage = this.shadowRoot.querySelector('#bottomImage')
-    if (!bottomImage || !this.#canvas || !region) return
-    const [x, y, width, height] = region.split(',').map(Number)
-    const vscale = (this.#canvas.height ?? 1) / bottomImage.clientHeight || 1
-    const hscale = (this.#canvas.width ?? 1) / bottomImage.clientWidth || 1
-    bottomImage.style.transform = `translate(-${x / hscale}px, -${(y+height) / vscale}px)`
+    this.shadowRoot.querySelector('#bottomImage').moveUnder(x, y, width, height, topImage)
   }
 
   getImage(project) {
@@ -370,11 +361,11 @@ export default class TranscriptionInterface extends HTMLElement {
     const { canvasID, region } = this.setCanvasAndSelector(thisLine, page)
     const canvas = this.#canvas = await vault.get(canvasID, 'canvas')
     const regionValue = region ?? `0,0,${canvas.width ?? 'full'},${(canvas.height && canvas.height / 10) ?? 120}`
-    topImage.canvas = bottomImage.canvas = canvasID
+    topImage.canvas = canvasID
+    bottomImage.canvas = canvas
     if (regionValue) {
       topImage.setAttribute('region', regionValue)
     }
-    this.slideBottomImage(regionValue)
   }
 }
 
