@@ -183,9 +183,6 @@ class UserProfile extends HTMLElement {
         })
     
         cancelBtn.addEventListener('click', () => {
-            return TPEN.eventDispatcher.dispatch('tpen-toast', 
-                { message: 'Clicked Cancel Button', status: "error", type: "alert" }
-            )
             nameInput.style.display = 'none'
             nameText.style.display = 'inline'
             emailText.style.display = 'inline'
@@ -195,17 +192,6 @@ class UserProfile extends HTMLElement {
         })
     
         saveBtn.addEventListener('click', async () => {
-
-            return TPEN.eventDispatcher.dispatch('tpen-toast', 
-                { message: 'Clicked Save Button', status: "info", type: "confirm" }
-            )
-
-            // const b = await TPEN.eventDispatcher.dispatch('tpen-toast', 
-            //     { message: 'Clicked Save Button Clicked Save Button Clicked Save Button', status: "info", type: "confirm" }
-            // )
-            // .then(bool => bool)
-            // console.log(b)
-
             const newName = nameInput.value.trim()
     
             if (!/^[a-zA-Z0-9\s._'-@#]+$/.test(newName)) {
