@@ -15,7 +15,6 @@ class ProjectTools extends HTMLElement {
     async render() {
         const tools = TPEN.activeProject.tools
         const isToolsEditAccess = await CheckPermissions.checkEditAccess("TOOL")
-        const isToolsAddAccess = await CheckPermissions.checkCreateAccess("TOOL")
         this.shadowRoot.innerHTML = `
             <style>
                 .container {
@@ -24,12 +23,13 @@ class ProjectTools extends HTMLElement {
                     align-items: flex-start;
                     background: #fff;
                     border-radius: 8px;
-                    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+                    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
                     gap: 10px;
                     padding: 5px;
-                    margin: 5px auto;
+                    margin: 10px auto;
                     font-size: 14px;
                     width: 90%;
+                    margin-top: 0px;
                 }
                 .tool-card {
                     display: flex;
@@ -136,7 +136,7 @@ class ProjectTools extends HTMLElement {
                 .close-btn:hover {
                     background-color: #ff1a1a;
                 }
-                #open-modal-btn {
+                #add-iframe-tools {
                     margin-left: 20px;
                 }
 
@@ -150,7 +150,7 @@ class ProjectTools extends HTMLElement {
                     align-items: center;
                     justify-content: center;
                     margin: 0;
-                    padding: 2px 4px;
+                    padding: 4px;
                 }
 
                 .remove-field-btn:hover {
@@ -158,47 +158,47 @@ class ProjectTools extends HTMLElement {
                 }
 
                 .icon {
-                    width: 16px;
-                    height: 16px;
+                    width: 14px;
+                    height: 14px;
                 }
             </style>
-            ${tools.map(tool => `
-                <div class="container">
-                    <div class="tool-card">
-                        <div>
-                            ${isToolsEditAccess ? `<input type="checkbox" name="tools" value="${tool.value}" ${tool.state ? "checked" : ""}>` : ""}
-                            <label>${tool.name}</label>
+            <div class="tools-body">
+                ${tools.map(tool => `
+                    <div class="container">
+                        <div class="tool-card">
+                            <div>
+                                ${isToolsEditAccess ? `<input type="checkbox" name="tools" value="${tool.value}" ${tool.state ? "checked" : ""}>` : ""}
+                                <label>${tool.name}</label>
+                            </div>
+                            <button type="button" class="remove-field-btn">
+                                <!-- Icon source: https://www.flaticon.com/free-icons/delete by Freepik -->
+                                <img class="icon" src="../../assets/icons/delete.png" alt="Remove" />
+                            </button>
                         </div>
-                        <button type="button" class="remove-field-btn">
-                            <!-- Icon source: https://www.flaticon.com/free-icons/delete by Freepik -->
-                            <img class="icon" src="../../assets/icons/delete.png" alt="Remove" />
-                        </button>
                     </div>
-                </div>
-            `).join("")}
-            
-            ${isToolsAddAccess ? `<div class="project-tools-title"><button class="tools-btn" id="open-modal-btn">ADD IFRAME TOOL</button></div>` : ""}
+                `).join("")}
 
-            <div class="modal" id="tool-modal">
-                <div class="modal-content">
-                    <button class="tools-btn close-btn" id="close-modal-btn">&times;</button>
-                    <div class="project-tools-title">ADD IFRAME TOOL</div>
-                    <div class="modal-inputs">
-                        <input type="text" id="modal-tool-name" placeholder="Tool Name" />
-                        <input type="url" id="modal-tool-url" placeholder="Tool URL" />
+                <div class="modal" id="tool-modal">
+                    <div class="modal-content">
+                        <button class="tools-btn close-btn" id="close-modal-btn">&times;</button>
+                        <div class="project-tools-title">ADD IFRAME TOOL</div>
+                        <div class="modal-inputs">
+                            <input type="text" id="modal-tool-name" placeholder="Tool Name" />
+                            <input type="url" id="modal-tool-url" placeholder="Tool URL" />
+                        </div>
+                        <div class="modal-buttons">
+                            <button id="test-tool-btn" class="tools-btn secondary">Test</button>
+                            <button class="tools-btn" id="add-tool-confirm-btn">Add</button>
+                        </div>
+                        <iframe id="tool-preview" style="display: none;"></iframe>
                     </div>
-                    <div class="modal-buttons">
-                        <button id="test-tool-btn" class="tools-btn secondary">Test</button>
-                        <button class="tools-btn" id="add-tool-confirm-btn">Add</button>
-                    </div>
-                    <iframe id="tool-preview" style="display: none;"></iframe>
                 </div>
             </div>
         `
     
         const modal = this.shadowRoot.querySelector("#tool-modal")
         const manageTools = document.getElementById("manage-tools-btn")
-        const openModalBtn = this.shadowRoot.querySelector("#open-modal-btn")
+        const openModalBtn = document.querySelector("tpen-page").querySelector('tpen-card[tpen-entity="tools"] #add-iframe-tools')
         const closeModalBtn = this.shadowRoot.querySelector("#close-modal-btn")
         const testBtn = this.shadowRoot.querySelector("#test-tool-btn")
         const addBtn = this.shadowRoot.querySelector("#add-tool-confirm-btn")
