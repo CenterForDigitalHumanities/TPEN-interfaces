@@ -53,11 +53,21 @@ class ProjectPermissions extends HTMLElement {
             <ol class="roles-list"></ol>
         `
         const rolesList = this.shadowRoot.querySelector(".roles-list")
-        if (!TPEN.activeProject) {
-            return this.shadowRoot.innerHTML = "No project"
+        const group = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/customRoles`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${TPEN.getAuthorization()}`
+            }
+        }).then(response => response.json())
+        const defaultRoles = {
+            OWNER: ["*_*_*"],
+            LEADER: ["UPDATE_*_PROJECT", "READ_*_PROJECT", "*_*_MEMBER", "*_*_ROLE", "*_*_PERMISSION", "*_*_LAYER", "*_*_PAGE"],
+            CONTRIBUTOR: ["READ_*_*", "UPDATE_TEXT_*", "UPDATE_ORDER_*", "UPDATE_SELECTOR_*", "CREATE_SELECTOR_*", "DELETE_*_LINE", "UPDATE_DESCRIPTION_LAYER", "CREATE_*_LAYER"],
+            VIEWER: ["READ_*_PROJECT", "READ_*_MEMBER", "READ_*_LAYER", "READ_*_PAGE", "READ_*_LINE"]
         }
-        const project = this.Project ?? TPEN.activeProject
-        Object.entries(project.roles || {}).map(([key, value]) => ({
+        const roles = { ...defaultRoles, ...group }
+        Object.entries(roles || {}).map(([key, value]) => ({
             id: key,
             name: value
         }))
