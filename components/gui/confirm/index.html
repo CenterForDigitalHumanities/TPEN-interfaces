@@ -24,7 +24,7 @@
                     }
                     const negativeCallback = () => {
                         console.log("We are sad that it is not the confirm you want.")
-                        module.eventDispatcher.ooff('tpen-confirm-negative', negativeCallback)
+                        module.eventDispatcher.off('tpen-confirm-negative', negativeCallback)
                     }
                     module.eventDispatcher.on('tpen-confirm-positive', positiveCallback)
                     module.eventDispatcher.on('tpen-confirm-negative', negativeCallback)
