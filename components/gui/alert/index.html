@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Alert Component</title>
+        <script type="module" src="AlertContainer.js"></script>
+    </head>
+    <body>
+        <h2>Alert Component</h2>
+        <button id="alerter" type="button">Show Alert</button>
+        <script>
+            alerter.onclick = async () => {
+                import('../../../api/events.js').then(module => {
+                    const message = `This is the alert dialogue.`
+                    const alert = {
+                        message,
+                        buttonText: 'Got it!'
+                    }
+                    const callback = () => {
+                        console.log("Thank you for acknowledging the alert.")
+                        module.eventDispatcher.off('tpen-alert-acknowledged', callback)
+                    }
+                    module.eventDispatcher.on('tpen-alert-acknowledged', callback)
+                    module.eventDispatcher.dispatch('tpen-alert', alert)
+                })
+            }
+        </script>
+    </body>
+</html>

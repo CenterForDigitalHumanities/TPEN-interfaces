@@ -47,6 +47,10 @@ document.getElementById('manage-project-options-btn').addEventListener('click', 
     window.location.href = `/project/options?projectID=${TPEN.screen.projectInQuery}`
 })
 
+document.getElementById('leave-project-btn').addEventListener('click', (e) => {
+    window.location.href = `/project/leave?projectID=${TPEN.screen.projectInQuery}`
+})
+
 async function render() {
     const isManageProjectPermission = await CheckPermissions.checkEditAccess('PROJECT')
     if(!isManageProjectPermission) {

@@ -72,6 +72,7 @@ permalink: /project
                         </tpen-can>
                     </div>
                 </div>
+                <button id="leaveProject" slot="footer" type="button">LEAVE PROJECT</button>
             </tpen-card>
         </div>
     </tpen-page>
@@ -81,6 +82,10 @@ permalink: /project
     TPEN.eventDispatcher.on('tpen-project-loaded', ev => {
         const goParse = document.getElementById("goParse")
         const goTranscribe = document.getElementById("goTranscribe")
+        const leaveProject = document.getElementById("leaveProject")
+        leaveProject.addEventListener('click', (e) => {
+            window.location.href = `/project/leave?projectID=${ev.detail._id}`
+        })
         if(goParse) goParse.setAttribute("href", `/annotator/?projectID=${ev.detail._id}`)
         if(goTranscribe) goTranscribe.setAttribute("href", `/transcribe/?projectID=${ev.detail._id}`)
     })
