@@ -18,13 +18,19 @@
                         positiveButtonText: 'It is!',
                         negativeButtonText: 'Ew, no.'
                     }
-                    module.eventDispatcher.dispatch('tpen-confirm', confirm)
-                    module.eventDispatcher.on('tpen-confirm-positive', () => {
+                    const positiveCallback = () => {
                         console.log("We are glad that it is the confirm you want.")
-                    })
-                    module.eventDispatcher.on('tpen-confirm-negative', () => {
+                        module.eventDispatcher.off('tpen-confirm-positive', positiveCallback)
+                        module.eventDispatcher.off('tpen-confirm-negative', negativeCallback)
+                    }
+                    const negativeCallback = () => {
                         console.log("We are sad that it is not the confirm you want.")
-                    })
+                        module.eventDispatcher.off('tpen-confirm-negative', negativeCallback)
+                        module.eventDispatcher.off('tpen-confirm-positive', positiveCallback)
+                    }
+                    module.eventDispatcher.on('tpen-confirm-positive', positiveCallback)
+                    module.eventDispatcher.on('tpen-confirm-negative', negativeCallback)
+                    module.eventDispatcher.dispatch('tpen-confirm', confirm)
                 })
             }  
         </script>

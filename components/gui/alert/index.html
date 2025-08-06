@@ -17,10 +17,12 @@
                         message,
                         buttonText: 'Got it!'
                     }
-                    module.eventDispatcher.dispatch('tpen-alert', alert)
-                    module.eventDispatcher.on('tpen-alert-acknowledged', () => {
+                    const callback = () => {
                         console.log("Thank you for acknowledging the alert.")
-                    })
+                        module.eventDispatcher.off('tpen-alert-acknowledged', callback)
+                    }
+                    module.eventDispatcher.on('tpen-alert-acknowledged', callback)
+                    module.eventDispatcher.dispatch('tpen-alert', alert)
                 })
             }
         </script>
