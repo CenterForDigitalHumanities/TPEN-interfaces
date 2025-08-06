@@ -3,7 +3,7 @@ tpen-card[tpen-entity="role"]::part(card-body), tpen-card[tpen-entity="tools"]::
 tpen-card[tpen-entity="member"]::part(card-body), tpen-card[tpen-scope="options"]::part(card-body),
 tpen-card[tpen-entity="export"]::part(card-body) {
   margin-bottom: 3.5em;
-  height: 278px;
+  height: 310px;
 }
 tpen-card[tpen-entity="project"]::part(card-body) {
     margin-bottom: 0;
