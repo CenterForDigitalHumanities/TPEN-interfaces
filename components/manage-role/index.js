@@ -520,8 +520,7 @@ class ManageRole extends HTMLElement {
     }
 
     editRoleName() {
-        const role = this.shadowRoot.getElementById('role-name')
-        role.disabled = false
+        this.shadowRoot.getElementById('role-name').disabled = false
     }
 
     checkedValues() {
@@ -642,8 +641,7 @@ class ManageRole extends HTMLElement {
             scope.checked = false
             entity.checked = false
             const permissionsOl = this.shadowRoot.getElementById('permissions').querySelector('.name-ol')
-            if (permissionsOl.innerHTML.length > 0) {
-                permissionsOl.innerHTML +=
+            const newPermissionLi = 
                 `<li class="name-li" style="justify-content: space-between; width: 100%; display: flex; align-items: center; padding: 5px 0; list-style-type: disc;">
                     <span>${action.value}_${scope.value}_${entity.value}</span>
                     <button type="button" class="remove-field-btn" style="display: inline !important; margin: 0;">
@@ -651,16 +649,11 @@ class ManageRole extends HTMLElement {
                         <img class="icon" src="../../assets/icons/delete.png" alt="Remove" />
                     </button>
                 </li>`
+            if (permissionsOl.innerHTML.length > 0) {
+                permissionsOl.innerHTML += newPermissionLi
             }
             else {
-                permissionsOl.innerHTML = 
-                `<li class="name-li" style="justify-content: space-between; width: 100%; display: flex; align-items: center; padding: 5px 0; list-style-type: disc;">
-                    <span>${action.value}_${scope.value}_${entity.value}</span>
-                    <button type="button" class="remove-field-btn" style="display: inline !important; margin: 0;">
-                        <!-- Icon source: https://www.flaticon.com/free-icons/delete by Freepik -->
-                        <img class="icon" src="../../assets/icons/delete.png" alt="Remove" />
-                    </button>
-                </li>`
+                permissionsOl.innerHTML = newPermissionLi
             }
 
             this.shadowRoot.querySelectorAll(".remove-field-btn").forEach(btn => {
