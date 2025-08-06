@@ -48,20 +48,29 @@ export default class TranscriptionBlock extends HTMLElement {
     }
 
     connectedCallback() {
-        TPEN.eventDispatcher.on('tpen-project-loaded', async () => {
-            this.render()
-            this.addEventListeners()
-            const pageID = TPEN.screen?.pageInQuery
-            this.#page = await vault.get(pageID, 'annotationpage', true)
-            this.#transcriptions = await this.processTranscriptions(this.#page.items)
-            this.moveToTopLine()
-        })
+        if (TPEN.activeProject?._createdAt) {
+            this.authgate()
+        }
+        TPEN.eventDispatcher.on('tpen-project-loaded', this.authgate.bind(this))
         TPEN.eventDispatcher.on('tpen-transcription-previous-line', _ev => {
             this.updateTranscriptionUI()
         })
         TPEN.eventDispatcher.on('tpen-transcription-next-line', _ev => {
             this.updateTranscriptionUI()
         })
+    }
+
+    async authgate() {
+        if (!CheckPermissions.checkViewAccess("ANY", "CONTENT")) {
+            this.remove()
+            return
+        }
+        this.render()
+        this.addEventListeners()
+        const pageID = TPEN.screen?.pageInQuery
+        this.#page = await vault.get(pageID, 'annotationpage', true)
+        this.#transcriptions = await this.processTranscriptions(this.#page.items)
+        this.moveToTopLine()
     }
 
     addEventListeners() {

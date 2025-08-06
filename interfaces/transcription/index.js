@@ -21,19 +21,24 @@ export default class TranscriptionInterface extends HTMLElement {
 
   connectedCallback() {
     TPEN.attachAuthentication(this)
-    TPEN.eventDispatcher.on('tpen-project-loaded', async () => {
-      if(!CheckPermissions.checkViewAccess("ANY", "CONTENT")) {
-        this.remove()
-        return
-      }
-      this.render()
-      this.addEventListeners()
-      this.setupResizableSplit()
-      const pageID = TPEN.screen?.pageInQuery
-      await this.updateTranscriptionImages(pageID)
-    })
+    if (TPEN.activeProject?._createdAt) {
+      this.authgate()
+    }
+    TPEN.eventDispatcher.on('tpen-project-loaded', this.authgate.bind(this))
     TPEN.eventDispatcher.on('tpen-transcription-previous-line', this.updateLines.bind(this))
     TPEN.eventDispatcher.on('tpen-transcription-next-line', this.updateLines.bind(this))
+  }
+
+  async authgate() {
+    if (!CheckPermissions.checkViewAccess("ANY", "CONTENT")) {
+      this.remove()
+      return
+    }
+    this.render()
+    this.addEventListeners()
+    this.setupResizableSplit()
+    const pageID = TPEN.screen?.pageInQuery
+    await this.updateTranscriptionImages(pageID)
   }
 
   render() {
