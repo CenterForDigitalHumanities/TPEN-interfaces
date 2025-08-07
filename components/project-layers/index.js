@@ -20,33 +20,96 @@ class ProjectLayers extends HTMLElement {
                     flex-direction: column;
                     gap: 10px;
                 }
+
                 .layer-card {
                     background: #fff;
                     border-radius: 8px;
-                    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-                    padding: 15px;
-                    cursor: move;
-                    user-select: none;
+                    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+                    user-select: text;
+                    overflow: hidden;
+                    display: flex;
+                    flex-direction: column;
                 }
-                p {
-                    margin: 5px 0;
-                    font-size: 14px;
+
+                .info-list {
+                    display: flex;
+                    flex-direction: column;
+                    list-style: none;
+                    padding: 0;
+                    margin: 0;
+                    flex: 1;
                 }
-                button {
-                    margin-top: 10px;
-                    padding: 5px 10px;
-                    border: none;
+
+                .info-item {
+                    display: flex;
+                    padding: 8px 20px;
                     border-radius: 4px;
-                    cursor: pointer;
+                }
+
+                .info-item span {
+                    display: inline-block;
+                    overflow-wrap: break-word;
+                    word-break: break-word;
+                    line-height: 1.5;
+                }
+
+                .info-label {
+                    font-weight: bold;
+                    width: 20%;
+                    font-size: 0.9em;
+                    vertical-align: top;
+                    color: var(--primary-color, #007bff);
+                    user-select: text;
+                }
+
+                .info-value {
+                    width: 80%;
+                    font-size: 0.9em;
+                    margin-left: auto;
+                    user-select: text;
+                }
+
+                .footer {
+                    display: flex;
+                    justify-content: flex-end;
+                    align-items: center;
+                    padding: 4px 16px 4px 8px;
+                    border-bottom-left-radius: 8px;
+                    border-bottom-right-radius: 8px;
+                    font-size: 13px;
+                    font-weight: 500;
+                    background-color: var(--light-color);
+                    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+                }
+
+                .footer-label {
+                    border-radius: 4px;
+                    color: var(--primary-color);
+                    user-select: text;
+                    letter-spacing: 0.5px;
+                }
+
+                @media (max-width: 1080px) {
+                    .info-list {
+                    height: 18em;
+                    }
                 }
             </style>
+
             <div class="container">
-                ${layers.map(layer => `
-                    <div class="layer-card">
-                        <p>Layer ID: ${layer["@id"] ?? layer.id}</p>
-                        <p>Pages Count: ${layer.pages.flat().length}</p>
-                    </div>
-                `).join("")}
+            ${layers.map((layer, index) => `
+                <div class="layer-card">
+                <ul class="info-list">
+                    <li class="info-item">
+                    <span class="info-label">Layer ${index + 1}</span>
+                    <span class="info-value">${layer["@id"] ?? layer.id}</span>
+                    </li>
+                </ul>
+                <div class="footer">
+                    <span class="footer-label">Pages Count: ${layer.pages.flat().length}</span>
+                </div>
+                </div>
+            `).join("")}
             </div>
         `
     }
