@@ -1,4 +1,5 @@
 import TPEN from "../../api/TPEN.js"
+import CheckPermissions from '../../components/check-permissions/checkPermissions.js'
 
 class ManageRole extends HTMLElement {
     permissions = []
@@ -13,6 +14,11 @@ class ManageRole extends HTMLElement {
     }
 
     render() {
+        const permitted = CheckPermissions.checkAllAccess("role", "*")
+        if(!permitted) {
+            this.shadowRoot.innerHTML = `<div>You don't have permission to create or edit roles</div>`
+            return
+        }
         this.shadowRoot.innerHTML = `
             <style>
                 .tpen-project-manage-permissions {
@@ -224,8 +230,8 @@ class ManageRole extends HTMLElement {
                     <input class="radio-permission" type="radio" id="entity-permission" name="entity-permissions" value="PERMISSION">
                     <label for="entity-permission" class="radio-btn permissions-label">PERMISSION</label>
 
-                    <input class="radio-permission" type="radio" id="entity-tools" name="entity-permissions" value="TOOLS">
-                    <label for="entity-tools" class="radio-btn permissions-label">TOOLS</label>
+                    <input class="radio-permission" type="radio" id="entity-tools" name="entity-permissions" value="TOOL">
+                    <label for="entity-tools" class="radio-btn permissions-label">TOOL</label>
 
                     <input class="radio-permission" type="radio" id="entity-all" name="entity-permissions" value="*">
                     <label for="entity-all" class="radio-btn permissions-label">ALL</label>

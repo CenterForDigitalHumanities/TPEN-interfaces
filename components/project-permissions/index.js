@@ -106,7 +106,7 @@ class ProjectPermissions extends HTMLElement {
             PAGE: 'Page',
             LINE: 'Line',
             ROLE: 'Role',
-            TOOLS: 'Tools',
+            TOOL: 'Tools',
             PERMISSION: 'Permission',
             ALL: 'All Entities'
         }

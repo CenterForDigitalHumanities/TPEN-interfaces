@@ -12,6 +12,8 @@ import { decodeUserToken, getUserFromToken, checkExpired } from '../components/i
 import { eventDispatcher } from './events.js'
 
 import "../components/gui/toast/ToastContainer.js"
+import "../components/gui/alert/AlertContainer.js"
+import "../components/gui/confirm/ConfirmContainer.js"
 
 class Tpen {
     #actionQueue = []

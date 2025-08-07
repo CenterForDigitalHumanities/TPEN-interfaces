@@ -248,6 +248,7 @@ export default class Project {
 
         if (!response.ok) throw new Error("Failed to update metadata")
         this.setMetadata(metadata)
+        return response
     }
 
     addLayer(layer) {

@@ -42,11 +42,15 @@ class NewAction extends HTMLElement {
                 <span class="icon">📁</span>
                 <span>Create a New Project</span>
             </a>
-            <a href="project/import" id="import-resource">
+            <a href="project/import" id="import-manifest">
                 <span class="icon">📤</span>
                 <span>Import IIIF Manifest</span>
             </a>
-            <a id="link-tpen-2.8" href="#">
+            <a href="project/import-image" id="import-image">
+                <span class="icon">📄</span>
+                <span>Import Image</span>
+            </a>
+            <a href="#" id="link-tpen-2.8">
                 <span class="icon">🔗</span>
                 <span>Import a TPEN 2.8 Project</span>
             </a>
@@ -63,7 +67,7 @@ class NewAction extends HTMLElement {
     TPEN2ImportHandler = (event) => {
         event.preventDefault()
         const userToken = localStorage.getItem("userToken")
-        let tokenDomain;
+        let tokenDomain
 
         if (TPEN.TPEN28URL.includes("t-pen.org")) {
             tokenDomain = "t-pen.org"
@@ -76,7 +80,6 @@ class NewAction extends HTMLElement {
         document.cookie = `userToken=${userToken}; path=/; domain=${tokenDomain}; secure; samesite=strict;`;    
         const redirectUri = encodeURIComponent(`${window.location.origin}/project/import28`)
         window.location.href = `${TPEN.TPEN28URL}/TPEN/login.jsp?redirect_uri=${redirectUri}`
-        // window.location.href = `${TPEN.TPEN28URL}/TPEN/login.jsp?redirect_uri=${redirectUri}&userToken=${userToken}`
     }
 }
 

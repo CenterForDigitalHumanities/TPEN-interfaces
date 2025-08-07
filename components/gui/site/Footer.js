@@ -1,4 +1,5 @@
 import TPEN from '../../../api/TPEN.js'
+import '../../../components/feedback-button/index.js'
 
 class TpenFooter extends HTMLElement {
 
@@ -97,6 +98,7 @@ class TpenFooter extends HTMLElement {
             }
         `
         shadow.appendChild(style)
+        shadow.appendChild(document.createElement('tpen-feedback-button'))
     }
 }
 

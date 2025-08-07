@@ -1,5 +1,7 @@
 import TPEN from "../../api/TPEN.js"
+import CheckPermissions from "../check-permissions/checkPermissions.js"
 const eventDispatcher = TPEN.eventDispatcher
+import "../check-permissions/permission-match.js"
 export default class LayerSelector extends HTMLElement {
     constructor() {
         super()
@@ -19,6 +21,11 @@ export default class LayerSelector extends HTMLElement {
         }
         // Listen for project loaded events to update layers.
         eventDispatcher.on("tpen-project-loaded", () => {
+            if (!CheckPermissions.checkViewAccess("LAYER", "ANY")) {
+                // No reason to get this far, but let's not risk it.
+                this.remove()
+                return
+            }
             this.layers = TPEN.activeProject.layers
             this.render()
         })

@@ -7,23 +7,6 @@
     <title>Manage Roles</title>
 </head>
 <body>
-    <tpen-manage-role tpen-entity="role"></tpen-manage-role>
-    <p class="permission-msg" style="display: none;">You don't have permission to create or edit roles</p>
-    <script type="module">
-        import CheckPermissions from '../../utilities/checkPermissions.js'
-
-        (async () => {
-            const manageRole = document.querySelector('tpen-manage-role')
-            const permissionMsg = document.querySelector('.permission-msg')
-            const entity = manageRole.getAttribute('tpen-entity')
-            if (!entity) {
-                return
-            }
-
-            const hasCreateAccess = await CheckPermissions.checkCreateAccess(entity.toUpperCase())
-            manageRole.style.display = hasCreateAccess ? 'block' : manageRole.remove()
-            permissionMsg.style.display = hasCreateAccess ? 'none' : 'inline-block'
-        })()
-    </script>
+    <tpen-manage-role></tpen-manage-role>
 </body>
 </html>
