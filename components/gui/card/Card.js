@@ -33,13 +33,14 @@ class TPENCard extends HTMLElement {
             }
             .card-footer {
                 display: flex;
-                justify-content: space-between;
+                justify-content: flex-start;
                 flex-direction: row-reverse;
                 background-color: var(--gray);
                 text-align: right;
                 position: absolute;
                 bottom: 0;
                 width: 100%;
+                gap: 5px;
             }
             .card-icon {
                 display: flex;
