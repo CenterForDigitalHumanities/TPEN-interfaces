@@ -83,6 +83,7 @@ export default class TranscriptionBlock extends HTMLElement {
 
     addEventListeners() {
         const prevButton = this.shadowRoot.querySelector('.prev-button')
+        const prevPageButton = this.shadowRoot.querySelector('.prev-page-button')
         const nextButton = this.shadowRoot.querySelector('.next-button')
         const inputField = this.shadowRoot.querySelector('.transcription-input')
         const saveButton = this.shadowRoot.querySelector('.save-all-lines')
@@ -478,18 +479,18 @@ export default class TranscriptionBlock extends HTMLElement {
             inputElem.focus?.()
             inputElem.setSelectionRange?.(inputElem.value.length, inputElem.value.length)
         }
+        // Swap Prev/Prev Page button if on first line
+        let prevAction = TPEN.activeLineIndex === 0 ? ['add','remove'] : ['remove','add']
+        let prevBtn = this.shadowRoot?.querySelector('.prev-button')
+        let prevPageBtn = this.shadowRoot?.querySelector('.prev-page-button')
+        prevBtn.classList[prevAction[0]]('hidden')
+        prevPageBtn.classList[prevAction[1]]('hidden')
         // Swap Next/Next Page button if on last line
-        const isLast = TPEN.activeLineIndex === this.#transcriptions.length - 1
+        let nextAction = TPEN.activeLineIndex === this.#transcriptions.length - 1 ? ['add','remove'] : ['remove','add']
         let nextBtn = this.shadowRoot?.querySelector('.next-button')
         let nextPageBtn = this.shadowRoot?.querySelector('.next-page-button')
-        if (isLast) {
-            nextBtn.classList.add('hidden')
-            nextPageBtn.classList.remove('hidden')
-            return
-        }
-        // restore Next button if not last line
-        nextBtn.classList.remove('hidden')
-        nextPageBtn.classList.add('hidden')
+        nextBtn.classList[nextAction[0]]('hidden')
+        nextPageBtn.classList[nextAction[1]]('hidden')
     }
 
     render() {
@@ -558,7 +559,8 @@ export default class TranscriptionBlock extends HTMLElement {
 
         .prev-button,
         .next-button,
-        .next-page-button {
+        .next-page-button,
+        .prev-page-button {
             padding: 8px 16px;
             font-size: 14px;
             background-color: rgb(0, 90, 140);
@@ -569,20 +571,23 @@ export default class TranscriptionBlock extends HTMLElement {
             transition: background-color 0.2s ease, border-color 0.2s ease;
         }
 
-        .next-page-button {
+        .next-page-button,
+        .prev-page-button {
             background-color: rgb(166, 65, 41);
             border: 1px solid rgb(206, 105, 81);
         }
 
         .prev-button:hover,
         .next-button:hover,
-        .next-page-button:hover {
+        .next-page-button:hover,
+        .prev-page-button:hover {
             background-color: #d0e2ff;
             border-color: #aaa;
             text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
         }
 
-        .next-page-button:hover {
+        .next-page-button:hover,
+        .prev-page-button:hover {
             background-color: rgba(218, 151, 135, 1);
         }
       </style>
@@ -590,6 +595,7 @@ export default class TranscriptionBlock extends HTMLElement {
         <lines-count class='debug'></lines-count>
         <center class="transcription-line"> - </center>
         <div class="flex-center">
+            <button class="prev-page-button hidden">Previous Page</button>
           <button class="prev-button">Prev</button>
           <input type="text" class="transcription-input" placeholder="Transcription input text" value="" ${CheckPermissions.checkEditAccess('LINE', 'TEXT') || CheckPermissions.checkEditAccess('LINE', 'CONTENT') ? '' : 'disabled'}>
           <button class="next-button">Next</button>
