@@ -75,6 +75,7 @@ export default class TpenSplitScreen extends HTMLElement {
             overflow: auto;
             border-left: 1px solid #ccc;
             padding: 10px;
+            z-index: 0;
           }
           .resizer {
             width: 5px;

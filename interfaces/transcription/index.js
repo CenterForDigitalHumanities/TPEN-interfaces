@@ -59,11 +59,13 @@ export default class TranscriptionInterface extends HTMLElement {
         .container.no-splitscreen .right-pane {
           height: 100%;
           overflow: auto;
+          z-index: 0;
         }
         .splitter {
           width: 6px;
           background-color: #ddd;
           cursor: ew-resize;
+          z-index: 1;
         }
         .container.no-splitscreen .left-pane {
           width: 100% !important;
@@ -79,6 +81,7 @@ export default class TranscriptionInterface extends HTMLElement {
           width: 40%;
           border-left: 1px solid #ddd;
           background-color: #ffffff;
+          z-index: 0;
         }
         .splitter:hover {
           background-color: #bbb;
