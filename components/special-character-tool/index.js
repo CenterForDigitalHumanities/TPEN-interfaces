@@ -1,6 +1,7 @@
 import TPEN from "../../api/TPEN.js"
 const eventDispatcher = TPEN.eventDispatcher
 import CheckPermissions from "../check-permissions/checkPermissions.js"
+import { onProjectReady } from "../../utilities/projectReady.js"
 
 class SpecialCharacterTool extends HTMLElement {
     constructor() {
@@ -9,10 +10,7 @@ class SpecialCharacterTool extends HTMLElement {
     }
 
     connectedCallback() {
-        if (TPEN.activeProject?._createdAt) {
-            this.authgate()
-        }
-        eventDispatcher.on("tpen-project-loaded", this.authgate.bind(this))
+        this._unsubProject = onProjectReady(this, this.authgate)
     }
 
     authgate() {
@@ -22,6 +20,10 @@ class SpecialCharacterTool extends HTMLElement {
         }
         this.render()
         this.addEventListeners()
+    }
+
+    disconnectedCallback() {
+        try { this._unsubProject?.() } catch {}
     }
 
     addEventListeners() {
@@ -139,10 +141,7 @@ class SpecialCharacterToolButton extends HTMLElement {
     }
 
     connectedCallback() {
-        if (TPEN.activeProject?._createdAt) {
-            this.authgate()
-        }
-        eventDispatcher.on("tpen-project-loaded", this.authgate.bind(this))
+        this._unsubProject = onProjectReady(this, this.authgate)
     }
 
     authgate() {
@@ -152,6 +151,10 @@ class SpecialCharacterToolButton extends HTMLElement {
         }
         this.render()
         this.addEventListeners()
+    }
+
+    disconnectedCallback() {
+        try { this._unsubProject?.() } catch {}
     }
 
     addEventListeners() {

@@ -1,5 +1,6 @@
 import TPEN from "../../api/TPEN.js"
 import CheckPermissions from "../check-permissions/checkPermissions.js"
+import { onProjectReady } from "../../utilities/projectReady.js"
 
 export default class MagnifierTool extends HTMLElement {
     #imageElem
@@ -37,10 +38,7 @@ export default class MagnifierTool extends HTMLElement {
     }
 
     connectedCallback() {
-        if (TPEN.activeProject?._createdAt) {
-            this.authgate()
-        }
-        TPEN.eventDispatcher.on("tpen-project-loaded", this.authgate.bind(this))
+    this._unsubProject = onProjectReady(this, this.authgate)
     }
 
     authgate() {
@@ -50,6 +48,10 @@ export default class MagnifierTool extends HTMLElement {
         }
         this.render()
         this.addEventListeners()
+    }
+
+    disconnectedCallback() {
+        try { this._unsubProject?.() } catch { }
     }
 
     setMagnifierView(centerX, centerY, zoomLevel = this.zoomLevel) {

@@ -1,4 +1,5 @@
 import TPEN from "../../api/TPEN.js"
+import { onProjectReady } from "../../utilities/projectReady.js"
 import CheckPermissions from "../../utilities/checkPermissions.js"
 
 class ProjectTools extends HTMLElement {
@@ -9,11 +10,12 @@ class ProjectTools extends HTMLElement {
 
     connectedCallback() {
         TPEN.attachAuthentication(this)
-            if (TPEN.activeProject?._createdAt) {
-                this.render()
-            }
-            TPEN.eventDispatcher.on('tpen-project-loaded', () => this.render())
+            this._unsubProject = onProjectReady(this, this.render)
     }
+
+        disconnectedCallback() {
+            try { this._unsubProject?.() } catch {}
+        }
 
     async render() {
         const tools = TPEN.activeProject.tools
