@@ -220,7 +220,7 @@ export default class TranscriptionBlock extends HTMLElement {
             if (had) eventDispatcher.dispatch('tpen-transcription-line-clean', { index })
         }
         const linesCount = this.shadowRoot?.querySelector('lines-count')
-        if (linesCount) linesCount.textContent = this.$dirtyLines.size > 0 ? `(${this.$dirtyLines.size} unsaved)` : ''
+        if (linesCount) linesCount.textContent = this.$dirtyLines.size > 0 ? `(debug: ${this.$dirtyLines.size} unsaved)` : ''
     }
 
     scheduleLineSave(index) {
@@ -559,7 +559,7 @@ export default class TranscriptionBlock extends HTMLElement {
         }
       </style>
       <div class="transcription-block">
-        <button class="save-all-lines">Save All Lines <lines-count></lines-count></button>
+        <lines-count class='debug'></lines-count>
         <center class="transcription-line"> - </center>
         <div class="flex-center">
           <button class="prev-button">Prev</button>
