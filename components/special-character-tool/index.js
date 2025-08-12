@@ -25,7 +25,9 @@ class SpecialCharacterTool extends HTMLElement {
         const editCharBtn = this.shadowRoot.querySelector('.edit-char-btn')
 
         closeCharBtn.addEventListener('click', () => {
-            charPanel.style.display = 'none'
+            if (charPanel) {
+                charPanel.style.display = 'none'
+            }
         })
 
         editCharBtn.addEventListener('click', () => {

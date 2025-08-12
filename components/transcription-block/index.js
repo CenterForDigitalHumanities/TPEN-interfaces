@@ -557,7 +557,8 @@ export default class TranscriptionBlock extends HTMLElement {
         }
 
         .prev-button,
-        .next-button {
+        .next-button,
+        .next-page-button {
             padding: 8px 16px;
             font-size: 14px;
             background-color: rgb(0, 90, 140);
@@ -568,10 +569,21 @@ export default class TranscriptionBlock extends HTMLElement {
             transition: background-color 0.2s ease, border-color 0.2s ease;
         }
 
+        .next-page-button {
+            background-color: rgb(166, 65, 41);
+            border: 1px solid rgb(206, 105, 81);
+        }
+
         .prev-button:hover,
-        .next-button:hover {
+        .next-button:hover,
+        .next-page-button:hover {
             background-color: #d0e2ff;
             border-color: #aaa;
+            text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
+        }
+
+        .next-page-button:hover {
+            background-color: rgba(218, 151, 135, 1);
         }
       </style>
       <div class="transcription-block">
