@@ -85,10 +85,8 @@ export default class TranscriptionBlock extends HTMLElement {
         const prevButton = this.shadowRoot.querySelector('.prev-button')
         const prevPageButton = this.shadowRoot.querySelector('.prev-page-button')
         const nextButton = this.shadowRoot.querySelector('.next-button')
+        const nextPageButton = this.shadowRoot.querySelector('.next-page-button')
         const inputField = this.shadowRoot.querySelector('.transcription-input')
-        const saveButton = this.shadowRoot.querySelector('.save-all-lines')
-
-        // Move to the previous line
         if (prevButton) {
             prevButton.addEventListener('click', this.moveToPreviousLine.bind(this))
         }
@@ -97,20 +95,14 @@ export default class TranscriptionBlock extends HTMLElement {
                 eventDispatcher.dispatch('tpen-transcription-previous-line')
             })
         }
-
-        // Move to the next line
         if (nextButton) {
             nextButton.addEventListener('click', this.moveToNextLine.bind(this))
         }
-        // Next Page button
-        const nextPageButton = this.shadowRoot.querySelector('.next-page-button')
         if (nextPageButton) {
             nextPageButton.addEventListener('click', () => {
                 eventDispatcher.dispatch('tpen-transcription-next-line')
             })
         }
-
-        // Input field
         if (inputField) {
             inputField.addEventListener('blur', (e) => this.saveTranscription(e.target.value))
             inputField.addEventListener('blur', () => this.checkDirtyLines())
@@ -123,70 +115,6 @@ export default class TranscriptionBlock extends HTMLElement {
             })
         }
 
-        // Save all lines button
-        if (saveButton) {
-            saveButton.addEventListener('click', async () => {
-                const pageID = TPEN.screen?.pageInQuery
-                const projectID = TPEN.activeProject?.id ?? TPEN.activeProject?._id
-                if (!pageID || !projectID) {
-                    console.warn('No page or project ID found, cannot save transcriptions.')
-                    TPEN.eventDispatcher.dispatch('tpen-toast', {
-                        message: 'No page or project ID found, cannot save transcriptions.',
-                        status: 'error'
-                    })
-                    return
-                }
-                if (!this.$dirtyLines || this.$dirtyLines.size === 0) {
-                    TPEN.eventDispatcher.dispatch('tpen-toast', {
-                        message: 'No unsaved changes.',
-                        status: 'info'
-                    })
-                    return
-                }
-                const saveLines = Array.from(this.$dirtyLines).map(async index => {
-                    const line = this.#page.items[index]
-                    const newText = this.#transcriptions[index]
-                    const lineID = line.id?.split?.('/').pop()
-                    if (!lineID) {
-                        console.warn('No line ID found, cannot save transcription.')
-                        TPEN.eventDispatcher.dispatch('tpen-toast', {
-                            message: 'No line ID found, cannot save transcription.',
-                            status: 'error'
-                        })
-                        return
-                    }
-                    return fetch(`${TPEN.servicesURL}/project/${projectID}/page/${pageID}/line/${lineID}/text`, {
-                        method: 'PATCH',
-                        headers: {
-                            'Content-Type': 'text/plain',
-                            'Authorization': `Bearer ${TPEN.getAuthorization()}`
-                        },
-                        body: typeof newText === 'string' ? newText : (newText?.toString?.() ?? '')
-                    })
-                })
-                    ; (async () => {
-                        try {
-                            for (const saveLine of saveLines) {
-                                await saveLine
-                            }
-                            TPEN.eventDispatcher.dispatch('tpen-toast', {
-                                message: `Saved ${saveLines.length} lines.`,
-                                status: 'success'
-                            })
-                            this.$dirtyLines.clear()
-                            this.#page = await vault.get(pageID, 'annotationpage', true)
-                            const linesCount = this.shadowRoot.querySelector('lines-count')
-                            if (linesCount) linesCount.textContent = ''
-                        } catch (err) {
-                            console.error('Error saving transcriptions:', err)
-                            TPEN.eventDispatcher.dispatch('tpen-toast', {
-                                message: 'Error saving transcriptions.',
-                                status: 'error'
-                            })
-                        }
-                    })()
-            })
-        }
         // Track dirty lines
         this.$dirtyLines = new Set()
         this.#unloadHandlerBound = this.beforeUnloadHandler.bind(this)
@@ -340,20 +268,30 @@ export default class TranscriptionBlock extends HTMLElement {
         return `tpen-drafts:${projectID}:${pageID}`
     }
 
-    loadDraftsFromStorage() {
-        if (!this.#storageKey) return
+    async loadDraftsFromStorage() {
+        // Wait until project and page are loaded
+        if (!this.#storageKey || !TPEN.activeProject || !this.#page?.items) return
         let stored
         try { stored = JSON.parse(localStorage.getItem(this.#storageKey) || '{}') } catch { stored = {} }
         if (!stored || typeof stored !== 'object') return
         let applied = 0
+        let changed = false
         Object.entries(stored).forEach(([idx, draft]) => {
             const i = parseInt(idx, 10)
             if (Number.isNaN(i)) return
-            if (typeof draft?.text === 'string') {
+            // Only apply drafts to lines that exist in the DB
+            if (typeof draft?.text === 'string' && this.#page.items[i]) {
                 this.#transcriptions[i] = draft.text
                 applied++
+            } else {
+                // Remove orphaned draft
+                delete stored[idx]
+                changed = true
             }
         })
+        if (changed) {
+            try { localStorage.setItem(this.#storageKey, JSON.stringify(stored)) } catch {}
+        }
         if (applied > 0) {
             this.checkDirtyLines()
             TPEN.eventDispatcher.dispatch('tpen-toast', {

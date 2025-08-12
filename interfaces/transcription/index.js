@@ -39,6 +39,7 @@ export default class TranscriptionInterface extends HTMLElement {
     this.setupResizableSplit()
     const pageID = TPEN.screen?.pageInQuery
     await this.updateTranscriptionImages(pageID)
+    this.updateLines()
   }
 
   render() {
