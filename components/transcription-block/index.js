@@ -92,10 +92,22 @@ export default class TranscriptionBlock extends HTMLElement {
         if (prevButton) {
             prevButton.addEventListener('click', this.moveToPreviousLine.bind(this))
         }
+        if (prevPageButton) {
+            prevPageButton.addEventListener('click', () => {
+                eventDispatcher.dispatch('tpen-transcription-previous-line')
+            })
+        }
 
         // Move to the next line
         if (nextButton) {
             nextButton.addEventListener('click', this.moveToNextLine.bind(this))
+        }
+        // Next Page button
+        const nextPageButton = this.shadowRoot.querySelector('.next-page-button')
+        if (nextPageButton) {
+            nextPageButton.addEventListener('click', () => {
+                eventDispatcher.dispatch('tpen-transcription-next-line')
+            })
         }
 
         // Input field
@@ -186,6 +198,13 @@ export default class TranscriptionBlock extends HTMLElement {
         })
         eventDispatcher.on('tpen-transcription-next-line', () => {
             this.checkDirtyLines()
+        })
+        // Listen for prev/next page navigation events
+        eventDispatcher.on('tpen-transcription-prev-page', () => {
+            this.navigateToPage('prev')
+        })
+        eventDispatcher.on('tpen-transcription-next-page', () => {
+            this.navigateToPage('next')
         })
 
         // External control events
@@ -491,6 +510,24 @@ export default class TranscriptionBlock extends HTMLElement {
         let nextPageBtn = this.shadowRoot?.querySelector('.next-page-button')
         nextBtn.classList[nextAction[0]]('hidden')
         nextPageBtn.classList[nextAction[1]]('hidden')
+    }
+
+    navigateToPage(direction) {
+        // Find the current page index in the active layer
+        const project = TPEN.activeProject
+        const pageID = TPEN.screen?.pageInQuery
+        if (!project?.layers?.length || !pageID) return
+        const allPages = project.layers.flatMap(layer => layer.pages)
+        const idx = allPages.findIndex(p => p.id?.split?.("/").pop() === pageID)
+        if (idx === -1) return
+        let newIdx = direction === 'next' ? idx + 1 : idx - 1
+        if (newIdx < 0 || newIdx >= allPages.length) return
+        const newPage = allPages[newIdx]
+        if (!newPage?.id) return
+        // Update the URL and trigger a reload
+        const url = new URL(window.location.href)
+        url.searchParams.set('pageID', newPage.id.split('/').pop())
+        window.location.href = url.toString()
     }
 
     render() {
