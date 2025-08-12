@@ -478,6 +478,18 @@ export default class TranscriptionBlock extends HTMLElement {
             inputElem.focus?.()
             inputElem.setSelectionRange?.(inputElem.value.length, inputElem.value.length)
         }
+        // Swap Next/Next Page button if on last line
+        const isLast = TPEN.activeLineIndex === this.#transcriptions.length - 1
+        let nextBtn = this.shadowRoot?.querySelector('.next-button')
+        let nextPageBtn = this.shadowRoot?.querySelector('.next-page-button')
+        if (isLast) {
+            nextBtn.classList.add('hidden')
+            nextPageBtn.classList.remove('hidden')
+            return
+        }
+        // restore Next button if not last line
+        nextBtn.classList.remove('hidden')
+        nextPageBtn.classList.add('hidden')
     }
 
     render() {
@@ -518,6 +530,10 @@ export default class TranscriptionBlock extends HTMLElement {
             justify-content: space-between;
             gap: 12px;
             flex-wrap: wrap;
+        }
+
+        .hidden {
+            display: none;
         }
 
         .transcription-input {
@@ -565,6 +581,7 @@ export default class TranscriptionBlock extends HTMLElement {
           <button class="prev-button">Prev</button>
           <input type="text" class="transcription-input" placeholder="Transcription input text" value="" ${CheckPermissions.checkEditAccess('LINE', 'TEXT') || CheckPermissions.checkEditAccess('LINE', 'CONTENT') ? '' : 'disabled'}>
           <button class="next-button">Next</button>
+          <button class="next-page-button hidden">Next Page</button>
         </div>
       </div>
     `
