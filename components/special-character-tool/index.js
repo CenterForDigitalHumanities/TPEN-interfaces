@@ -1,6 +1,7 @@
 import TPEN from "../../api/TPEN.js"
 const eventDispatcher = TPEN.eventDispatcher
 import CheckPermissions from "../check-permissions/checkPermissions.js"
+import { onProjectReady } from "../../utilities/projectReady.js"
 
 class SpecialCharacterTool extends HTMLElement {
     constructor() {
@@ -9,14 +10,20 @@ class SpecialCharacterTool extends HTMLElement {
     }
 
     connectedCallback() {
-        eventDispatcher.on("tpen-project-loaded", () => {
-            if (!CheckPermissions.checkViewAccess("TOOL", "ANY")) {
-                this.remove()
-                return
-            }
-            this.render()
-            this.addEventListeners()
-        })
+        this._unsubProject = onProjectReady(this, this.authgate)
+    }
+
+    authgate() {
+        if (!CheckPermissions.checkViewAccess("TOOL", "ANY")) {
+            this.remove()
+            return
+        }
+        this.render()
+        this.addEventListeners()
+    }
+
+    disconnectedCallback() {
+        try { this._unsubProject?.() } catch {}
     }
 
     addEventListeners() {
@@ -25,7 +32,9 @@ class SpecialCharacterTool extends HTMLElement {
         const editCharBtn = this.shadowRoot.querySelector('.edit-char-btn')
 
         closeCharBtn.addEventListener('click', () => {
-            charPanel.style.display = 'none'
+            if (charPanel) {
+                charPanel.style.display = 'none'
+            }
         })
 
         editCharBtn.addEventListener('click', () => {
@@ -132,14 +141,20 @@ class SpecialCharacterToolButton extends HTMLElement {
     }
 
     connectedCallback() {
-        eventDispatcher.on("tpen-project-loaded", () => {
-            if (!CheckPermissions.checkViewAccess("TOOL", "ANY")) {
-                this.remove()
-                return
-            }
-        })
+        this._unsubProject = onProjectReady(this, this.authgate)
+    }
+
+    authgate() {
+        if (!CheckPermissions.checkViewAccess("TOOL", "ANY")) {
+            this.remove()
+            return
+        }
         this.render()
         this.addEventListeners()
+    }
+
+    disconnectedCallback() {
+        try { this._unsubProject?.() } catch {}
     }
 
     addEventListeners() {

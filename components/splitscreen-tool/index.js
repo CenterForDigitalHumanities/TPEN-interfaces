@@ -1,6 +1,7 @@
 import CheckPermissions from "../check-permissions/checkPermissions.js"
 import TPEN from "../../api/TPEN.js"
 const eventDispatcher = TPEN.eventDispatcher
+import { onProjectReady } from "../../utilities/projectReady.js"
 
 export default class SplitscreenTool extends HTMLElement {
     constructor() {
@@ -9,15 +10,21 @@ export default class SplitscreenTool extends HTMLElement {
     }
 
     connectedCallback() {
-      eventDispatcher.on('tpen-project-loaded', () => {
-        // Only render if the user has view access to the project
-        if (!CheckPermissions.checkViewAccess('TOOL', 'ANY')) {
-          this.remove()
-          return
-        }
-        this.render()
-        this.addEventListeners()
-      })
+      this._unsubProject = onProjectReady(this, this.authgate)
+    }
+
+    authgate() {
+      // Only render if the user has view access to the project
+      if (!CheckPermissions.checkViewAccess('TOOL', 'ANY')) {
+        this.remove()
+        return
+      }
+      this.render()
+      this.addEventListeners()
+    }
+
+    disconnectedCallback() {
+      try { this._unsubProject?.() } catch {}
     }
 
     addEventListeners() {
