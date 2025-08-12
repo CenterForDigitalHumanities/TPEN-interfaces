@@ -37,14 +37,19 @@ export default class MagnifierTool extends HTMLElement {
     }
 
     connectedCallback() {
-        TPEN.eventDispatcher.on("tpen-project-loaded", () => {
-            if(!CheckPermissions.checkViewAccess("TOOL", "ANY")) {
-                this.remove()
+        if (TPEN.activeProject?._createdAt) {
+            this.authgate()
+        }
+        TPEN.eventDispatcher.on("tpen-project-loaded", this.authgate.bind(this))
+    }
+
+    authgate() {
+        if(!CheckPermissions.checkViewAccess("TOOL", "ANY")) {
+            this.remove()
             return
-            }
-            this.render()
-            this.addEventListeners()
-        })
+        }
+        this.render()
+        this.addEventListeners()
     }
 
     setMagnifierView(centerX, centerY, zoomLevel = this.zoomLevel) {

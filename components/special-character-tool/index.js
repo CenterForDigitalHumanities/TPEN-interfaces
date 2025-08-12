@@ -9,14 +9,19 @@ class SpecialCharacterTool extends HTMLElement {
     }
 
     connectedCallback() {
-        eventDispatcher.on("tpen-project-loaded", () => {
-            if (!CheckPermissions.checkViewAccess("TOOL", "ANY")) {
-                this.remove()
-                return
-            }
-            this.render()
-            this.addEventListeners()
-        })
+        if (TPEN.activeProject?._createdAt) {
+            this.authgate()
+        }
+        eventDispatcher.on("tpen-project-loaded", this.authgate.bind(this))
+    }
+
+    authgate() {
+        if (!CheckPermissions.checkViewAccess("TOOL", "ANY")) {
+            this.remove()
+            return
+        }
+        this.render()
+        this.addEventListeners()
     }
 
     addEventListeners() {
@@ -134,12 +139,17 @@ class SpecialCharacterToolButton extends HTMLElement {
     }
 
     connectedCallback() {
-        eventDispatcher.on("tpen-project-loaded", () => {
-            if (!CheckPermissions.checkViewAccess("TOOL", "ANY")) {
-                this.remove()
-                return
-            }
-        })
+        if (TPEN.activeProject?._createdAt) {
+            this.authgate()
+        }
+        eventDispatcher.on("tpen-project-loaded", this.authgate.bind(this))
+    }
+
+    authgate() {
+        if (!CheckPermissions.checkViewAccess("TOOL", "ANY")) {
+            this.remove()
+            return
+        }
         this.render()
         this.addEventListeners()
     }

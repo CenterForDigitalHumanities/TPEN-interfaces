@@ -9,15 +9,20 @@ export default class SplitscreenTool extends HTMLElement {
     }
 
     connectedCallback() {
-      eventDispatcher.on('tpen-project-loaded', () => {
-        // Only render if the user has view access to the project
-        if (!CheckPermissions.checkViewAccess('TOOL', 'ANY')) {
-          this.remove()
-          return
-        }
-        this.render()
-        this.addEventListeners()
-      })
+      if (TPEN.activeProject?._createdAt) {
+        this.authgate()
+      }
+      eventDispatcher.on('tpen-project-loaded', this.authgate.bind(this))
+    }
+
+    authgate() {
+      // Only render if the user has view access to the project
+      if (!CheckPermissions.checkViewAccess('TOOL', 'ANY')) {
+        this.remove()
+        return
+      }
+      this.render()
+      this.addEventListeners()
     }
 
     addEventListeners() {

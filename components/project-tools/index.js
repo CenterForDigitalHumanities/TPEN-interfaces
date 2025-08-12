@@ -9,7 +9,10 @@ class ProjectTools extends HTMLElement {
 
     connectedCallback() {
         TPEN.attachAuthentication(this)
-        TPEN.eventDispatcher.on('tpen-project-loaded', () => this.render())
+            if (TPEN.activeProject?._createdAt) {
+                this.render()
+            }
+            TPEN.eventDispatcher.on('tpen-project-loaded', () => this.render())
     }
 
     async render() {
