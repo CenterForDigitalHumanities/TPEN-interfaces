@@ -220,8 +220,7 @@ class UserStats extends HTMLElement {
                     flex-direction: column;
                     align-items: center;
                     margin-bottom: 20px;
-                    width: 20%;
-                    margin: 0 auto;
+                    margin: 0px;
                 }
                 
                 .public-profile-bio {
@@ -229,7 +228,6 @@ class UserStats extends HTMLElement {
                     font-size: 0.9rem;
                     color: var(--white);
                     border-radius: 5px;
-                    width: 80%;
                     display: flex;
                     flex-direction: column;
                     align-items: flex-start;
@@ -259,6 +257,13 @@ class UserStats extends HTMLElement {
                     font-weight: 600;
                     color: white;
                     font-size: 1rem;
+                    margin-right: 10px;
+                    width: 120px;
+                    text-align: right;
+                }
+
+                .bio-text em::after {
+                    content: ":"
                 }
 
                 .flip-card {
