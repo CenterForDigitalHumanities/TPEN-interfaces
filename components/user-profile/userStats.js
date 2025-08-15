@@ -466,6 +466,7 @@ class UserStats extends HTMLElement {
                     <h2 class="stats-title">Report...</h2>
                     <p>Number of Projects: ${projects.length}</p>
                     <p>Number of Collaborators: ${uniqueCollaborators.size}</p>
+                    <p>Number of Contributions: </p>
                 </div>
             </div>
         `
