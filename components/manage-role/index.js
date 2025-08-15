@@ -381,7 +381,8 @@ class ManageRole extends HTMLElement {
             `
 
             this.shadowRoot.querySelectorAll(".role-li .remove-field-btn").forEach(btn => {
-                btn.addEventListener('click', async () => {
+                btn.addEventListener('click', async (e) => {
+                    e.stopPropagation()
                     const roleLi = btn.closest("li")
                     this.shadowRoot.getElementById('role-name').value = ''
                     this.permissions = []
@@ -396,7 +397,6 @@ class ManageRole extends HTMLElement {
                     }).then(response => {
                         TPEN.eventDispatcher.dispatch("tpen-toast", response.ok ? { status: "info", message: 'Successfully Removed Role' } : { status: "error", message: 'Error Removing Role' })
                     })
-                    this.resetPermissions()
                     this.render()
                 })
             })
