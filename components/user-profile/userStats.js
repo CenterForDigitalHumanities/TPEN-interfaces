@@ -196,6 +196,9 @@ class UserStats extends HTMLElement {
                     text-align: center;
                     width: 100%;
                     height: 100%;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: space-between;
                 }
 
                 .public-profile-title {
@@ -284,7 +287,7 @@ class UserStats extends HTMLElement {
                 .flip-card {
                     background-color: transparent;
                     width: 60%;
-                    height: 310px;
+                    height: 345px;
                     perspective: 1000px;
                 }
 
