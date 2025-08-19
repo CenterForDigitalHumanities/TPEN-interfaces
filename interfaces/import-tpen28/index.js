@@ -27,6 +27,7 @@ async function fetchProjects() {
 async function importProject(url, selectedId) {
     const messageText = document.getElementById("message")
     messageText.textContent = "Importing Project... Please wait..."
+    TPEN.eventDispatcher.dispatch('tpen-toast', { message: 'Importing Project... Please wait...', status: 'info', dismissible: true})
 
     const projectData = await fetch(`${TPEN.servicesURL}/project/import28/${selectedId}`, {
         method: "POST",
@@ -36,6 +37,7 @@ async function importProject(url, selectedId) {
 
     if (!projectData.ok) {
         messageText.textContent = "Failed to import project"
+        TPEN.eventDispatcher.dispatch('tpen-toast', { message: 'Failed to import project', status: 'error', dismissible: true})
         return
     }
 
@@ -111,6 +113,7 @@ async function openProject() {
 
     message.textContent = "Project importing... Please wait..."
     const { projectTPEN28Data, projectTPEN3Data } = await importProject(url, selectedId)
+    TPEN.eventDispatcher.dispatch('tpen-toast', { message: 'Project imported successfully', status: 'success'})
     const projectID = projectTPEN3Data._id
     await importCollaborators(projectTPEN28Data, projectID)
 } 
