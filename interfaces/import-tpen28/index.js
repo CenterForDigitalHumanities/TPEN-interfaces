@@ -2,7 +2,10 @@ import TPEN from "../../api/TPEN.js"
 import Project from "../../api/Project.js"
  
 TPEN.attachAuthentication(document.body)
-document.getElementById("importProjectBtn").addEventListener("click", openProject)
+document.getElementById("importProjectBtn").addEventListener("click", () => {
+    openProject()
+    document.getElementById("importProjectBtn").remove()
+})
 
 async function fetchProjects() {
     const UID = new URLSearchParams(window.location.search).get("UID")
@@ -24,15 +27,14 @@ async function fetchProjects() {
     }
 }
 
-async function importProject(url, selectedId) {
+async function importProject(selectedId) {
     const messageText = document.getElementById("message")
     messageText.textContent = "Importing Project... Please wait..."
     TPEN.eventDispatcher.dispatch('tpen-toast', { message: 'Importing Project... Please wait...', status: 'info', dismissible: true})
 
-    const projectData = await fetch(`${TPEN.servicesURL}/project/import28/${selectedId}`, {
-        method: "POST",
-        credentials: "include",
-        body: JSON.stringify({ url })
+    const projectData = await fetch(`${TPEN.servicesURL}/project/import28/selectedproject/${selectedId}`, {
+        method: "GET",
+        credentials: "include"
     })
 
     if (!projectData.ok) {
@@ -49,7 +51,7 @@ async function importProject(url, selectedId) {
     const openBtn = document.getElementById("openProject")
     openBtn.classList.remove("hidden")
     openBtn.addEventListener("click", () => {
-        window.location.href = `/project/manage?projectID=${project._id}`
+        window.location.href = `/project/manage?projectID=${project.importData._id}`
     })
 
     return { projectTPEN28Data: project.parsedData, projectTPEN3Data: project.importData }
@@ -103,7 +105,6 @@ async function openProject() {
     const select = document.getElementById("projectSelect")
     const selectedId = select.value?.split("/")[2]
     const messageDiv = document.getElementById("message")
-    const url = `${TPEN.TPEN28URL}/TPEN/manifest/${selectedId}`
     messageDiv.textContent = ""
     
     if (!selectedId) {
@@ -112,7 +113,7 @@ async function openProject() {
     }
 
     message.textContent = "Project importing... Please wait..."
-    const { projectTPEN28Data, projectTPEN3Data } = await importProject(url, selectedId)
+    const { projectTPEN28Data, projectTPEN3Data } = await importProject(selectedId)
     TPEN.eventDispatcher.dispatch('tpen-toast', { message: 'Project imported successfully', status: 'success'})
     const projectID = projectTPEN3Data._id
     await importCollaborators(projectTPEN28Data, projectID)
