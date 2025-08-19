@@ -4,7 +4,7 @@ import Project from "../../api/Project.js"
 TPEN.attachAuthentication(document.body)
 document.getElementById("importProjectBtn").addEventListener("click", () => {
     openProject()
-    document.getElementById("importProjectBtn").remove()
+    document.getElementById("importProjectBtn").classList.add("hidden")
 })
 
 async function fetchProjects() {
@@ -30,7 +30,7 @@ async function fetchProjects() {
 async function importProject(selectedId) {
     const messageText = document.getElementById("message")
     messageText.textContent = "Importing Project... Please wait..."
-    TPEN.eventDispatcher.dispatch('tpen-toast', { message: 'Importing Project... Please wait...', status: 'info', dismissible: true})
+    TPEN.eventDispatcher.dispatch('tpen-toast', { message: 'Importing Project... Please wait...', status: 'info' })
 
     const projectData = await fetch(`${TPEN.servicesURL}/project/import28/selectedproject/${selectedId}`, {
         method: "GET",
@@ -39,7 +39,7 @@ async function importProject(selectedId) {
 
     if (!projectData.ok) {
         messageText.textContent = "Failed to import project"
-        TPEN.eventDispatcher.dispatch('tpen-toast', { message: 'Failed to import project', status: 'error', dismissible: true})
+        TPEN.eventDispatcher.dispatch('tpen-toast', { message: 'Failed to import project', status: 'error', dismissible: true })
         return
     }
 
