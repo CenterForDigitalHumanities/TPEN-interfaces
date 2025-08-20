@@ -2,7 +2,10 @@ import TPEN from "../../api/TPEN.js"
 import Project from "../../api/Project.js"
  
 TPEN.attachAuthentication(document.body)
-document.getElementById("importProjectBtn").addEventListener("click", openProject)
+document.getElementById("importProjectBtn").addEventListener("click", () => {
+    openProject()
+    document.getElementById("importProjectBtn").classList.add("hidden")
+})
 
 async function fetchProjects() {
     const UID = new URLSearchParams(window.location.search).get("UID")
@@ -24,103 +27,34 @@ async function fetchProjects() {
     }
 }
 
-async function fetchOneTPEN28Project(selectedId) {
-    const messageDiv = document.getElementById("message")
-    let projectResponse
-    try {
-        projectResponse = await fetch(`${TPEN.TPEN28URL}/TPEN/getProjectTPENServlet?projectID=${selectedId}`, { 
-            method: "GET",
-            credentials: "include" 
-        })
-    
-        if (!projectResponse.ok) {
-            messageDiv.textContent = "Unable to import Project"
-            return
-        }
-    } catch (error) {
-        console.error("Error during fetch:", error)
-        messageDiv.textContent = "Unable to import Project"
+async function importProject(selectedId) {
+    const messageText = document.getElementById("message")
+    messageText.textContent = "Importing Project... Please wait..."
+    TPEN.eventDispatcher.dispatch('tpen-toast', { message: 'Importing Project... Please wait...', status: 'info' })
+
+    const projectData = await fetch(`${TPEN.servicesURL}/project/import28/selectedproject/${selectedId}`, {
+        method: "GET",
+        credentials: "include"
+    })
+
+    if (!projectData.ok) {
+        messageText.textContent = "Failed to import project"
+        TPEN.eventDispatcher.dispatch('tpen-toast', { message: 'Failed to import project', status: 'error', dismissible: true })
         return
     }
-    return parseProjectResponse(await projectResponse.text())
-}
 
-function parseProjectResponse(text) {
-    const firstLevel = JSON.parse(text)
-    const parsed = {}
-    for (const [key, value] of Object.entries(firstLevel)) {
-        try {
-            parsed[key] = JSON.parse(value)
-        } catch {
-            parsed[key] = value
-        }
-    }
-    return parsed
-}
+    const { message, project } = await projectData.json()
+    messageText.textContent = message
+    document.getElementById("projectSelect").disabled = true
+    document.getElementById("importProjectBtn").remove()
 
-async function importAnnotations(projectTPEN3Data) {
-    const allPages = projectTPEN3Data.layers[0].pages.map((page) => page.target)
-    const allPagesIds = projectTPEN3Data.layers[0].pages.map((page) =>page.id.replace(/project\/([a-f0-9]+)/, `project/${projectTPEN3Data._id}`))
-    let manifestUrl = projectTPEN3Data.manifest[0]
-    
-    // We might add the Vault here to get the Manifest version 3
-    function transformManifestUrl(url) {
-        const parsedUrl = new URL(url)
-        parsedUrl.protocol = "https:"
-        if (parsedUrl.pathname.endsWith("/manifest.json")) {
-            parsedUrl.pathname = parsedUrl.pathname.replace(/\/manifest\.json$/, "")
-        }
-        parsedUrl.search = "?version=3"
-        return parsedUrl.toString()
-    }
-    
-    manifestUrl = transformManifestUrl(manifestUrl)
-    
-    const responseManifest = await fetch(manifestUrl)
-    if (!responseManifest.ok) {
-        throw new Error(`Failed to fetch: ${responseManifest.statusText}`)
-    }
-    
-    const manifestJson = await responseManifest.json()
-    const itemsByPage = {}
-    manifestJson.items.map((item, index) => {
-        const pageId = item.id
-        if (allPages.includes(pageId)) {
-            const annotations = item.annotations?.flatMap(
-                (annotation) =>
-                    annotation.items?.flatMap((innerItems) => ({
-                    body: {
-                        type: innerItems.body?.type,
-                        format: innerItems.body?.format,
-                        value: innerItems.body?.value,
-                    },
-                    motivation: innerItems.motivation,
-                    target: innerItems.target,
-                    type: innerItems.type,
-                    })) || []
-                ) || []
-            itemsByPage[allPagesIds[index]] = annotations
-        }
+    const openBtn = document.getElementById("openProject")
+    openBtn.classList.remove("hidden")
+    openBtn.addEventListener("click", () => {
+        window.location.href = `/project/manage?projectID=${project.importData._id}`
     })
-    
-    for (const [endpoint, annotations] of Object.entries(itemsByPage)) {
-        try {
-            const response = await fetch(`${endpoint}/line`, {
-                method: "POST",
-                headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${TPEN.getAuthorization()}`,
-                },
-                body: JSON.stringify(annotations),
-            })
 
-            if (!response.ok) {
-                throw new Error(`Failed to import annotations: ${response.statusText}`)
-            }
-        } catch (error) {
-            console.error("Error importing annotations:", error)
-        }
-    }
+    return { projectTPEN28Data: project.parsedData, projectTPEN3Data: project.importData }
 }
 
 async function importCollaborators(projectData, projectID) {
@@ -166,74 +100,11 @@ async function importCollaborators(projectData, projectID) {
         wrapper.appendChild(item)
     })
 }
-
-async function importHotKeys(projectData, projectID) {
-    const symbols = projectData.projectButtons.map(button => String.fromCharCode(button.key))
-    const response = await fetch(`${TPEN.servicesURL}/project/${projectID}/hotkeys`, {
-        method : "POST",
-        headers: {
-            Authorization: `Bearer ${TPEN.getAuthorization()}`,
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({symbols}),
-    })
-  
-    TPEN.eventDispatcher.dispatch(
-        "tpen-toast",
-        response.ok
-        ? { status: "info", message: "Successfully Added Hotkeys" }
-        : { status: "error", message: "Error Adding Hotkeys" }
-    )
-}
-
-async function importTools(projectTPEN28Data, projectTPEN3Data, projectID) {
-    const projectTools = projectTPEN28Data.userTool + projectTPEN28Data.projectTool
-    const toolList = projectTPEN3Data.tools.map((tool) => tool.value)
-    const selectedTools = toolList.map((tool) => ({
-        value: tool,
-        state: projectTools.includes(tool),
-    }))
-    
-    const responseTools = await fetch(`${TPEN.servicesURL}/project/${projectID}/tools`, {
-        method: "PUT",
-        headers: {
-            Authorization: `Bearer ${TPEN.getAuthorization()}`,
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify(selectedTools),
-    })
-    
-    TPEN.eventDispatcher.dispatch(
-        "tpen-toast",
-        responseTools.ok
-        ? { status: "info", message: "Successfully Added Tools" }
-        : { status: "error", message: "Error Adding Tools" }
-    )
-}
-
-async function importProject(url) {
-    const messageDiv = document.getElementById("message")
-    const importResponse = await fetch(`${TPEN.servicesURL}/project/import?createFrom=TPEN28URL`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${TPEN.getAuthorization()}`
-        },
-        body: JSON.stringify({ url })
-    })
-
-    if (!importResponse.ok) {
-        messageDiv.textContent = "Unable to import TPEN3 Project"
-        return
-    }
-    return importResponse.json()
-}
  
 async function openProject() {
     const select = document.getElementById("projectSelect")
     const selectedId = select.value?.split("/")[2]
     const messageDiv = document.getElementById("message")
-    const url = `${TPEN.TPEN28URL}/TPEN/manifest/${selectedId}`
     messageDiv.textContent = ""
     
     if (!selectedId) {
@@ -242,25 +113,10 @@ async function openProject() {
     }
 
     message.textContent = "Project importing... Please wait..."
-
-    const projectTPEN28Data = await fetchOneTPEN28Project(selectedId)
-    const projectTPEN3Data = await importProject(url)
+    const { projectTPEN28Data, projectTPEN3Data } = await importProject(selectedId)
+    TPEN.eventDispatcher.dispatch('tpen-toast', { message: 'Project imported successfully', status: 'success'})
     const projectID = projectTPEN3Data._id
-
-    await importAnnotations(projectTPEN3Data)
     await importCollaborators(projectTPEN28Data, projectID)
-    await importHotKeys(projectTPEN28Data, projectID)
-    await importTools(projectTPEN28Data, projectTPEN3Data, projectID)
-
-    messageDiv.textContent = "Project Imported"
-    document.getElementById("projectSelect").disabled = true
-    document.getElementById("importProjectBtn").remove()
-
-    const openBtn = document.getElementById("openProject")
-    openBtn.classList.remove("hidden")
-    openBtn.addEventListener("click", () => {
-        window.location.href = `/project/manage?projectID=${projectID}`
-    })
 } 
  
 fetchProjects()
