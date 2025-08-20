@@ -15,7 +15,9 @@ class ProjectTools extends HTMLElement {
 
         disconnectedCallback() {
             try { this._unsubProject?.() } catch {}
-        }
+    disconnectedCallback() {
+        try { this._unsubProject?.() } catch {}
+    }
 
     async render() {
         const tools = TPEN.activeProject.tools
