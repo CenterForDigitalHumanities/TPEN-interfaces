@@ -272,7 +272,10 @@ export default class TranscriptionBlock extends HTMLElement {
         // Wait until project and page are loaded
         if (!this.#storageKey || !TPEN.activeProject || !this.#page?.items) return
         let stored
-        try { stored = JSON.parse(localStorage.getItem(this.#storageKey) || '{}') } catch { stored = {} }
+        try { stored = JSON.parse(localStorage.getItem(this.#storageKey) || '{}') } catch (err) { 
+            console.error(`Failed to parse drafts from localStorage key "${this.#storageKey}":`, err); 
+            stored = {}; 
+        }
         if (!stored || typeof stored !== 'object') return
         let applied = 0
         let changed = false
