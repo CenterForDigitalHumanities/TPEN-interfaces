@@ -293,7 +293,7 @@ export default class TranscriptionBlock extends HTMLElement {
             }
         })
         if (changed) {
-            try { localStorage.setItem(this.#storageKey, JSON.stringify(stored)) } catch {}
+            try { localStorage.setItem(this.#storageKey, JSON.stringify(stored)) } catch (err) { console.warn('Could not update localStorage with cleaned drafts', err) }
         }
         if (applied > 0) {
             this.checkDirtyLines()
