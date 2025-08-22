@@ -499,7 +499,7 @@ class AnnotoriousAnnotator extends HTMLElement {
         srcHover: "../interfaces/annotator/images/transcribe.png",
         srcDown: "../interfaces/annotator/images/transcribe.png",
         onClick: (e) => {
-          if (confirm("Stop line parsing and go transcribe?  Unsaved changes will be lost."))
+            if (!this.#resolvedAnnotationPage?.$isDirty || confirm("Stop line parsing and go transcribe?  Unsaved changes will be lost."))
             location.href = `/transcribe?projectID=${TPEN.activeProject._id}`
         }
       })

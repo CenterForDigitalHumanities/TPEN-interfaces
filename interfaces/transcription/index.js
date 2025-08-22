@@ -157,7 +157,7 @@ export default class TranscriptionInterface extends HTMLElement {
         iframe {
           display: block;
           width: 100%;
-          height: auto;
+          height: 100%;
           border: none;
           z-index: 0;
         }
