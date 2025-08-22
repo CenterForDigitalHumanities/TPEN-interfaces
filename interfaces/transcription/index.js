@@ -246,24 +246,41 @@ export default class TranscriptionInterface extends HTMLElement {
     this.checkMagnifierVisibility()
   }
 
-  getToolHTML(tool) {
-    switch (tool) {
-      case 'transcription':
-        return `<p>Transcription Progress</p>`
-      case 'dictionary':
-        return `<p>Greek Dictionary</p>`
+  getToolHTML(toolValue) {
+    const tools = TPEN.activeProject?.tools || []
+    const selectedTool = tools.find(tool => tool.value === toolValue)
+    
+    if (!selectedTool) {
+      return `<p>No tool selected</p>`
+    }
+    
+    // If the tool has a URL, render it in an iframe
+    if (selectedTool.url) {
+      return `<iframe src='${selectedTool.url}'></iframe>`
+    }
+    
+    // For tools without URLs, show placeholder content based on their value
+    switch (selectedTool.value) {
+      case 'page':
+        return `<p>Page Tools functionality coming soon...</p>`
+      case 'inspector':
+        return `<p>Inspector functionality coming soon...</p>`
+      case 'characters':
+        return `<p>Special Characters functionality coming soon...</p>`
+      case 'xml':
+        return `<p>XML Tags functionality coming soon...</p>`
+      case 'fullpage':
+        return `<p>Full Page View functionality coming soon...</p>`
+      case 'history':
+        return `<p>History Tool functionality coming soon...</p>`
       case 'preview':
-        return `<p>Next Page Preview</p>`
-      case 'cappelli':
-        return `<iframe src='https://centerfordigitalhumanities.github.io/cappelli/'></iframe>`
-      case 'enigma':
-        return `<iframe src='http://enigma.huma-num.fr/'></iframe>`
-      case 'latin-dictionary':
-        return `<iframe src='https://www.perseus.tufts.edu/hopper/resolveform?lang=latin'></iframe>`
-      case 'latin-vulgate':
-        return `<iframe src='https://vulsearch.sourceforge.net/cgi-bin/vulsearch'></iframe>`
+        return `<p>Preview Tool functionality coming soon...</p>`
+      case 'parsing':
+        return `<p>Parsing Adjustment functionality coming soon...</p>`
+      case 'compare':
+        return `<p>Compare Pages functionality coming soon...</p>`
       default:
-        return `<p>No tool selected</p>`
+        return `<p>${selectedTool.name} - functionality coming soon...</p>`
     }
   }
 
