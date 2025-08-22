@@ -154,6 +154,13 @@ export default class TranscriptionInterface extends HTMLElement {
           z-index: 0;
           transform: translateY(0px);
         }
+        iframe {
+          display: block;
+          width: 100%;
+          height: auto;
+          border: none;
+          z-index: 0;
+        }
       </style>
       <tpen-project-header></tpen-project-header>
       <div class="container no-splitscreen">
@@ -179,7 +186,12 @@ export default class TranscriptionInterface extends HTMLElement {
           <div class="header">
             <button class="close-button">Close ×</button>
           </div>
-          <div class="tools"></div>
+          <div class="tools">
+            <p>
+              You do not have any tools loaded. To add a tool, please 
+              <a href="/project/manage?projectId=${TPEN.screen.projectInQuery}">manage your project</a>.
+            </p>
+          </div>
         </div>
       </div>
     `
@@ -243,13 +255,13 @@ export default class TranscriptionInterface extends HTMLElement {
       case 'preview':
         return `<p>Next Page Preview</p>`
       case 'cappelli':
-        return `<iframe src='https://centerfordigitalhumanities.github.io/cappelli/' style='width:100%;height:100%;border:none;'></iframe>`
+        return `<iframe src='https://centerfordigitalhumanities.github.io/cappelli/'></iframe>`
       case 'enigma':
-        return `<iframe src='http://enigma.huma-num.fr/' style='width:100%;height:100%;border:none;'></iframe>`
+        return `<iframe src='http://enigma.huma-num.fr/'></iframe>`
       case 'latin-dictionary':
-        return `<iframe src='https://www.perseus.tufts.edu/hopper/resolveform?lang=latin' style='width:100%;height:100%;border:none;'></iframe>`
+        return `<iframe src='https://www.perseus.tufts.edu/hopper/resolveform?lang=latin'></iframe>`
       case 'latin-vulgate':
-        return `<iframe src='https://vulsearch.sourceforge.net/cgi-bin/vulsearch' style='width:100%;height:100%;border:none;'></iframe>`
+        return `<iframe src='https://vulsearch.sourceforge.net/cgi-bin/vulsearch'></iframe>`
       default:
         return `<p>No tool selected</p>`
     }
@@ -369,10 +381,10 @@ export default class TranscriptionInterface extends HTMLElement {
     const page = this.#page = await vault.get(pageID, 'annotationpage', true)
     let thisLine = page.items?.[0]
     thisLine = await vault.get(thisLine, 'annotation')
-    if (!thisLine.body) thisLine = await vault.get(thisLine, 'annotation', true)
+    if (!(thisLine?.body)) thisLine = await vault.get(thisLine, 'annotation', true)
     const { canvasID, region } = this.setCanvasAndSelector(thisLine, page)
     const canvas = this.#canvas = await vault.get(canvasID, 'canvas')
-    const regionValue = region ?? `0,0,${canvas.width ?? 'full'},${(canvas.height && canvas.height / 10) ?? 120}`
+    const regionValue = region ?? `0,0,${canvas?.width ?? 'full'},${(canvas?.height && canvas?.height / 10) ?? 120}`
     topImage.canvas = canvasID
     bottomImage.canvas = canvas
     if (regionValue) {
