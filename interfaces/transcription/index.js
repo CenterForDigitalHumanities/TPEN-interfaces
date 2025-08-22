@@ -21,19 +21,25 @@ export default class TranscriptionInterface extends HTMLElement {
 
   connectedCallback() {
     TPEN.attachAuthentication(this)
-    TPEN.eventDispatcher.on('tpen-project-loaded', async () => {
-      if(!CheckPermissions.checkViewAccess("ANY", "CONTENT")) {
-        this.remove()
-        return
-      }
-      this.render()
-      this.addEventListeners()
-      this.setupResizableSplit()
-      const pageID = TPEN.screen?.pageInQuery
-      await this.updateTranscriptionImages(pageID)
-    })
+    if (TPEN.activeProject?._createdAt) {
+      this.authgate()
+    }
+    TPEN.eventDispatcher.on('tpen-project-loaded', this.authgate.bind(this))
     TPEN.eventDispatcher.on('tpen-transcription-previous-line', this.updateLines.bind(this))
     TPEN.eventDispatcher.on('tpen-transcription-next-line', this.updateLines.bind(this))
+  }
+
+  async authgate() {
+    if (!CheckPermissions.checkViewAccess("ANY", "CONTENT")) {
+      this.remove()
+      return
+    }
+    this.render()
+    this.addEventListeners()
+    this.setupResizableSplit()
+    const pageID = TPEN.screen?.pageInQuery
+    await this.updateTranscriptionImages(pageID)
+    this.updateLines()
   }
 
   render() {
@@ -54,11 +60,13 @@ export default class TranscriptionInterface extends HTMLElement {
         .container.no-splitscreen .right-pane {
           height: 100%;
           overflow: auto;
+          z-index: 0;
         }
         .splitter {
           width: 6px;
           background-color: #ddd;
           cursor: ew-resize;
+          z-index: 1;
         }
         .container.no-splitscreen .left-pane {
           width: 100% !important;
@@ -74,6 +82,7 @@ export default class TranscriptionInterface extends HTMLElement {
           width: 40%;
           border-left: 1px solid #ddd;
           background-color: #ffffff;
+          z-index: 0;
         }
         .splitter:hover {
           background-color: #bbb;
@@ -145,6 +154,13 @@ export default class TranscriptionInterface extends HTMLElement {
           z-index: 0;
           transform: translateY(0px);
         }
+        iframe {
+          display: block;
+          width: 100%;
+          height: 100%;
+          border: none;
+          z-index: 0;
+        }
       </style>
       <tpen-project-header></tpen-project-header>
       <div class="container no-splitscreen">
@@ -170,7 +186,12 @@ export default class TranscriptionInterface extends HTMLElement {
           <div class="header">
             <button class="close-button">Close ×</button>
           </div>
-          <div class="tools"></div>
+          <div class="tools">
+            <p>
+              You do not have any tools loaded. To add a tool, please 
+              <a href="/project/manage?projectId=${TPEN.screen.projectInQuery}">manage your project</a>.
+            </p>
+          </div>
         </div>
       </div>
     `
@@ -225,24 +246,41 @@ export default class TranscriptionInterface extends HTMLElement {
     this.checkMagnifierVisibility()
   }
 
-  getToolHTML(tool) {
-    switch (tool) {
-      case 'transcription':
-        return `<p>Transcription Progress</p>`
-      case 'dictionary':
-        return `<p>Greek Dictionary</p>`
+  getToolHTML(toolValue) {
+    const tools = TPEN.activeProject?.tools || []
+    const selectedTool = tools.find(tool => tool.value === toolValue)
+    
+    if (!selectedTool) {
+      return `<p>No tool selected</p>`
+    }
+    
+    // If the tool has a URL, render it in an iframe
+    if (selectedTool.url) {
+      return `<iframe src='${selectedTool.url}'></iframe>`
+    }
+    
+    // For tools without URLs, show placeholder content based on their value
+    switch (selectedTool.value) {
+      case 'page':
+        return `<p>Page Tools functionality coming soon...</p>`
+      case 'inspector':
+        return `<p>Inspector functionality coming soon...</p>`
+      case 'characters':
+        return `<p>Special Characters functionality coming soon...</p>`
+      case 'xml':
+        return `<p>XML Tags functionality coming soon...</p>`
+      case 'fullpage':
+        return `<p>Full Page View functionality coming soon...</p>`
+      case 'history':
+        return `<p>History Tool functionality coming soon...</p>`
       case 'preview':
-        return `<p>Next Page Preview</p>`
-      case 'cappelli':
-        return `<iframe src='https://centerfordigitalhumanities.github.io/cappelli/' style='width:100%;height:100%;border:none;'></iframe>`
-      case 'enigma':
-        return `<iframe src='http://enigma.huma-num.fr/' style='width:100%;height:100%;border:none;'></iframe>`
-      case 'latin-dictionary':
-        return `<iframe src='https://www.perseus.tufts.edu/hopper/resolveform?lang=latin' style='width:100%;height:100%;border:none;'></iframe>`
-      case 'latin-vulgate':
-        return `<iframe src='https://vulsearch.sourceforge.net/cgi-bin/vulsearch' style='width:100%;height:100%;border:none;'></iframe>`
+        return `<p>Preview Tool functionality coming soon...</p>`
+      case 'parsing':
+        return `<p>Parsing Adjustment functionality coming soon...</p>`
+      case 'compare':
+        return `<p>Compare Pages functionality coming soon...</p>`
       default:
-        return `<p>No tool selected</p>`
+        return `<p>${selectedTool.name} - functionality coming soon...</p>`
     }
   }
 
@@ -360,10 +398,10 @@ export default class TranscriptionInterface extends HTMLElement {
     const page = this.#page = await vault.get(pageID, 'annotationpage', true)
     let thisLine = page.items?.[0]
     thisLine = await vault.get(thisLine, 'annotation')
-    if (!thisLine.body) thisLine = await vault.get(thisLine, 'annotation', true)
+    if (!(thisLine?.body)) thisLine = await vault.get(thisLine, 'annotation', true)
     const { canvasID, region } = this.setCanvasAndSelector(thisLine, page)
     const canvas = this.#canvas = await vault.get(canvasID, 'canvas')
-    const regionValue = region ?? `0,0,${canvas.width ?? 'full'},${(canvas.height && canvas.height / 10) ?? 120}`
+    const regionValue = region ?? `0,0,${canvas?.width ?? 'full'},${(canvas?.height && canvas?.height / 10) ?? 120}`
     topImage.canvas = canvasID
     bottomImage.canvas = canvas
     if (regionValue) {

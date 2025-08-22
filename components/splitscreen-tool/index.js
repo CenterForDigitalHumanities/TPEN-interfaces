@@ -1,6 +1,7 @@
 import CheckPermissions from "../check-permissions/checkPermissions.js"
 import TPEN from "../../api/TPEN.js"
 const eventDispatcher = TPEN.eventDispatcher
+import { onProjectReady } from "../../utilities/projectReady.js"
 
 export default class SplitscreenTool extends HTMLElement {
     constructor() {
@@ -9,15 +10,21 @@ export default class SplitscreenTool extends HTMLElement {
     }
 
     connectedCallback() {
-      eventDispatcher.on('tpen-project-loaded', () => {
-        // Only render if the user has view access to the project
-        if (!CheckPermissions.checkViewAccess('TOOL', 'ANY')) {
-          this.remove()
-          return
-        }
-        this.render()
-        this.addEventListeners()
-      })
+      this._unsubProject = onProjectReady(this, this.authgate)
+    }
+
+    authgate() {
+      // Only render if the user has view access to the project
+      if (!CheckPermissions.checkViewAccess('TOOL', 'ANY')) {
+        this.remove()
+        return
+      }
+      this.render()
+      this.addEventListeners()
+    }
+
+    disconnectedCallback() {
+      try { this._unsubProject?.() } catch {}
     }
 
     addEventListeners() {
@@ -40,6 +47,11 @@ export default class SplitscreenTool extends HTMLElement {
     }
 
     render() {
+      const tools = TPEN.activeProject?.tools || []
+      const toolOptions = tools.map(tool => 
+        `<option value="${tool.value}">${tool.name}</option>`
+      ).join('')
+      
       this.shadowRoot.innerHTML = `
         <style>
             select.dropdown-select {
@@ -61,13 +73,7 @@ export default class SplitscreenTool extends HTMLElement {
         </style>
         <select class="dropdown-select" aria-label="Select split screen tool">
             <option value="" selected disabled>Splitscreen Tools</option>
-            <option value="transcription">Transcription Progress</option>
-            <option value="dictionary">Greek Dictionary</option>
-            <option value="preview">Next Page Preview</option>
-            <option value="cappelli">Cappelli</option>
-            <option value="enigma">Enigma</option>
-            <option value="latin-dictionary">Latin Dictionary</option>
-            <option value="latin-vulgate">Latin Vulgate</option>
+            ${toolOptions}
         </select>
         `
     }
