@@ -358,7 +358,7 @@ class ManageRole extends HTMLElement {
         this.shadowRoot.getElementById("resetPermissions").addEventListener('click', () => this.resetPermissions())
         this.shadowRoot.getElementById("edit-role-name").addEventListener('click', () => this.editRoleName())
         this.shadowRoot.getElementById("save-role").addEventListener('click', () => this.addRole(group))
-        this.shadowRoot.getElementById("update-role").addEventListener('click', () => this.updateRole())
+        this.shadowRoot.getElementById("update-role").addEventListener('click', () => this.updateRole(group))
 
         const rolesList = this.shadowRoot.querySelector(".roles-list")
         Object.entries(group || {}).map(([key, value]) => ({ id: key, name: value }))
@@ -381,9 +381,9 @@ class ManageRole extends HTMLElement {
             `
 
             this.shadowRoot.querySelectorAll(".role-li .remove-field-btn").forEach(btn => {
-                btn.addEventListener('click', async () => {
+                btn.addEventListener('click', async (e) => {
+                    e.stopPropagation()
                     const roleLi = btn.closest("li")
-                    this.resetPermissions()
                     this.shadowRoot.getElementById('role-name').value = ''
                     this.permissions = []
                     const roleId = roleLi.querySelector("#roleID").textContent.toUpperCase()
@@ -395,12 +395,9 @@ class ManageRole extends HTMLElement {
                         },
                         body: JSON.stringify({ roles: [roleId] })
                     }).then(response => {
-                        if (response.ok) {
-                            roleLi.remove()
-                            this.render()
-                        }
                         TPEN.eventDispatcher.dispatch("tpen-toast", response.ok ? { status: "info", message: 'Successfully Removed Role' } : { status: "error", message: 'Error Removing Role' })
                     })
+                    this.render()
                 })
             })
 
@@ -441,9 +438,15 @@ class ManageRole extends HTMLElement {
         })
     }
 
-    async updateRole() {
+    async updateRole(group) {
         const role = this.shadowRoot.getElementById('role-name')
         if (!role.value) return TPEN.eventDispatcher.dispatch("tpen-toast", { status: "error", message: 'No role selected for update' })
+
+        Object.keys(group || {}).forEach(key => {
+            if (key.toUpperCase() === role.value.toUpperCase()) {
+                group[key] = this.permissions
+            }
+        })
 
         await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/updateCustomRoles`, {
             method: 'PUT',
@@ -451,7 +454,7 @@ class ManageRole extends HTMLElement {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${TPEN.getAuthorization()}`
             },
-            body: JSON.stringify({ [role.value.toUpperCase()]: this.permissions })
+            body: JSON.stringify({ roles: group })
         }).then(response => {
             if (response.ok) {
                 TPEN.eventDispatcher.dispatch("tpen-toast", { status: "info", message: 'Successfully Updated Role' })

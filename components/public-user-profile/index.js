@@ -1,5 +1,4 @@
 import TPEN from '../../api/TPEN.js'
-import User from '../../api/User.js'
 
 class PublicUserProfile extends HTMLElement {
     constructor() {
