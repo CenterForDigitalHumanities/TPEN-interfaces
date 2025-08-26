@@ -16,7 +16,7 @@ class PublicUserProfile extends HTMLElement {
     async getProfile() {
         const urlParams = new URLSearchParams(window.location.search)
         const userId = urlParams.get('userId')
-        return fetch(`${TPEN.servicesURL}/my/${userId}/public-profile`, {
+        return fetch(`${TPEN.servicesURL}/user/${userId}`, {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' }
         }).then(response => response.json())
@@ -24,8 +24,9 @@ class PublicUserProfile extends HTMLElement {
 
     async updateProfile() {
         const publicProfile = await this.getProfile()
-        this.shadowRoot.querySelector('.public-profile-image').src =
-            publicProfile.imageURL ?? '../../assets/icons/user.png'
+        if(publicProfile.imageURL) {
+            this.shadowRoot.querySelector('.public-profile-image').src = publicProfile.imageURL === '' ? '../../assets/icons/user.png' : publicProfile.imageURL
+        }
 
         const profileMap = {
             nameText: publicProfile.displayName?.toUpperCase(),
@@ -102,8 +103,8 @@ class PublicUserProfile extends HTMLElement {
                     align-items: center;
                 }
                 .public-profile-image {
-                    width: 100px;
-                    height: 100px;
+                    width: 120px;
+                    height: 120px;
                     border-radius: 50%;
                     object-fit: cover;
                     border: 2px solid orange;
@@ -243,8 +244,8 @@ class PublicUserProfile extends HTMLElement {
                                 </header>
                                 <div class="public-profile-body">
                                     <div class="public-profile-image-container">
-                                        <img src="" alt="User Image" class="public-profile-image">
-                                        <h1 class="public-profile-title nameText">PRIYAL</h1>
+                                        <img src="../../assets/icons/user.png" alt="User Image" class="public-profile-image">
+                                        <h1 class="public-profile-title nameText"></h1>
                                     </div>
                                     <div class="public-profile-bio">
                                         <p class="bio-text"><em>Orchid ID</em> <span class="orchidIdText"></span></p>

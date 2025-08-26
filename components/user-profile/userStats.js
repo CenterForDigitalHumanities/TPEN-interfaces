@@ -33,7 +33,9 @@ class UserStats extends HTMLElement {
 
     updateProfile(profile) {
         const publicProfile = this.getPublicProfile(profile)
-        this.shadowRoot.querySelector('.public-profile-image').src = publicProfile.imageURL ?? '../../assets/icons/user.png'
+        if(publicProfile.imageURL) {
+            this.shadowRoot.querySelector('.public-profile-image').src = publicProfile.imageURL === '' ? '../../assets/icons/user.png' : publicProfile.imageURL
+        }
 
         const profileMap = {
             nameText: publicProfile.displayName.toUpperCase(),
@@ -77,7 +79,7 @@ class UserStats extends HTMLElement {
         const collaborators = await Promise.all(
             Array.from(uniqueCollaborators).map(async collaborator => {
                 const response = await fetch(
-                    `${TPEN.servicesURL}/my/${collaborator}/public-profile`,
+                    `${TPEN.servicesURL}/user/${collaborator}`,
                     {
                         method: 'GET',
                         headers: {
@@ -107,10 +109,11 @@ class UserStats extends HTMLElement {
                     display: flex;
                     flex-direction: column;
                     align-items: center;
-                    justify-content: center;
+                    justify-content: space-evenly;
                     width: 100%;
                     gap: 20px;
                     margin: 0 auto;
+                    height: 100%;
                 }
                 
                 .stats {
@@ -166,27 +169,6 @@ class UserStats extends HTMLElement {
                     font-size: 16px;
                     font-weight: 500;
                     color: #333;
-                }
-
-                .report {
-                    width: 100%;
-                    padding: 20px;
-                    box-sizing: border-box;
-                    border: 1px solid var(--gray);
-                    background-color: var(--white);
-                    border-radius: 5px;
-                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-                }
-
-                .report h2 {
-                    margin: 0 0 10px;
-                    font-size: 1.2rem;
-                }
-
-                .report p {
-                    margin: 5px 0;
-                    font-size: 1rem;
-                    color: #555;
                 }
 
                 .public-profile-card {
@@ -417,8 +399,8 @@ class UserStats extends HTMLElement {
                                 </header>
                                 <div class="public-profile-body">
                                     <div class="public-profile-image-container">
-                                        <img src="" alt="User Image" class="public-profile-image" id="publicProfileImage">
-                                        <h1 class="public-profile-title nameText">PRIYAL</h1>
+                                        <img src="../../assets/icons/user.png" alt="User Image" class="public-profile-image" id="publicProfileImage">
+                                        <h1 class="public-profile-title nameText"></h1>
                                     </div>
                                     <div class="public-profile-bio">
                                         <p class="bio-text"><em>Orchid ID</em> <span class="orchidIdText"></span></p>
@@ -479,11 +461,6 @@ class UserStats extends HTMLElement {
                             </div>
                         `).join('')}
                     </div>
-                </div>
-                <div class="report">
-                    <h2 class="stats-title">Report...</h2>
-                    <p>Number of Projects: ${projects.length}</p>
-                    <p>Number of Collaborators: ${uniqueCollaborators.size}</p>
                 </div>
             </div>
         `
