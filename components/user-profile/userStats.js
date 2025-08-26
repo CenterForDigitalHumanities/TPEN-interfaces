@@ -109,7 +109,7 @@ class UserStats extends HTMLElement {
                     display: flex;
                     flex-direction: column;
                     align-items: center;
-                    justify-content: space-evenly;
+                    justify-content: space-between;
                     width: 100%;
                     gap: 20px;
                     margin: 0 auto;
@@ -271,6 +271,7 @@ class UserStats extends HTMLElement {
                     width: 60%;
                     height: 345px;
                     perspective: 1000px;
+                    margin: auto;
                 }
 
                 .flip-card-inner {
