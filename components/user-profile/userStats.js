@@ -1,5 +1,6 @@
 import TPEN from '../../api/TPEN.js'
 import User from '../../api/User.js'
+import Project from '../../api/Project.js'
 
 class UserStats extends HTMLElement {
     static get observedAttributes() {
@@ -76,6 +77,19 @@ class UserStats extends HTMLElement {
             }
         })
 
+        let totalContributions = 0
+
+        for (const project of projects) {
+            const projectData = await new Project(project._id).fetch()
+            totalContributions += projectData.layers?.length || 0
+            projectData.layers?.forEach(layer => {
+                totalContributions += layer.pages?.length || 0
+                layer.pages?.forEach(page => {
+                    totalContributions += page.items?.length || 0
+                })
+            })
+        }
+
         const collaborators = await Promise.all(
             Array.from(uniqueCollaborators).map(async collaborator => {
                 const response = await fetch(
@@ -127,9 +141,11 @@ class UserStats extends HTMLElement {
                 }
 
                 .stats-title {
-                    padding: 0;
-                    margin: 0;
+                    margin-top: 0;
                     font-size: 1.2rem;
+                    border-bottom: 1px solid #e1e4e8;
+                    padding-bottom: 8px;
+                    color: var(--accent);
                 }
 
                 .collaborators {
@@ -410,7 +426,7 @@ class UserStats extends HTMLElement {
                                     </div>
                                 </div>
                                 <div class="public-profile-footer">
-                                    <p class="public-profile-footer-text">XYZ contributions</p>
+                                    <p class="public-profile-footer-text">${totalContributions} contributions</p>
                                 </div>
                             </div>
                         </div>
@@ -453,7 +469,7 @@ class UserStats extends HTMLElement {
                     </div>
                 </div>
                 <div class="stats">
-                    <h2 class="stats-title">Collaborators you have worked with...</h2>
+                    <h2 class="stats-title">Collaborators you have worked with</h2>
                     <div class="collaborators">
                         ${collaborators.map(c => `
                             <div class="collaborator">

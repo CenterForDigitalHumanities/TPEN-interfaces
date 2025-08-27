@@ -15,6 +15,7 @@ class SocialMediaPost extends HTMLElement {
         TPEN.eventDispatcher.on('tpen-user-loaded', ev => {
             this.render()
             this.updateProfile(ev.detail)
+            this.attachEvents()
         })
         TPEN.attachAuthentication(this)
     }
@@ -42,6 +43,38 @@ class SocialMediaPost extends HTMLElement {
 
     getPublicProfile(profile) {
         return profile.profile
+    }
+
+    attachEvents() {
+        const btn = this.shadowRoot.querySelector('.post-btn')
+        const textarea = this.shadowRoot.getElementById('content')
+        const statusEl = this.shadowRoot.getElementById('status')
+
+        btn.addEventListener('click', async () => {
+            const prompt = textarea.value.trim()
+            if (!prompt) return alert('Please enter a prompt.')
+
+            statusEl.textContent = 'Generating...'
+
+            try {
+                const response = await fetch(`${TPEN.servicesURL}/project/api/generate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt })
+                })
+
+                const data = await response.json()
+                if (data.text) {
+                    textarea.value = data.text
+                    statusEl.textContent = '✅ Generated successfully!'
+                } else {
+                    statusEl.textContent = '⚠️ No output returned.'
+                }
+            } catch (err) {
+                console.error(err)
+                statusEl.textContent = '❌ Error generating text.'
+            }
+        })
     }
 
     render() {
@@ -157,28 +190,15 @@ class SocialMediaPost extends HTMLElement {
                     color: #28a745;
                 }
             </style>
-             <div class="post-card">
+            <div class="post-card">
                 <div class="post-header">
-                <div class="avatar">
-                    <img src="../../assets/icons/user.png" alt="User Avatar">
+                    <div class="avatar"><img src="../../assets/icons/user.png" alt="User Avatar"></div>
+                    <span class="username" id="username"></span>
                 </div>
-                <span class="username" id="username"></span>
-                </div>
-                <textarea id="content" rows="3" placeholder="Share your Accomplishments..."></textarea>
+                <textarea id="content" rows="3" placeholder="Write a prompt..."></textarea>
                 <div class="post-options">
-                <div class="left-options">
-                    <label for="file">📎 Add File</label>
-                    <input type="file" id="file">
-                    <select id="platform" class="platform-select">
-                    <option value="twitter">Twitter/X</option>
-                    <option value="linkedin">LinkedIn</option>
-                    <option value="facebook">Facebook</option>
-                    <option value="instagram">Instagram</option>
-                    </select>
+                    <button class="post-btn">Generate</button>
                 </div>
-                <button class="post-btn" onclick="submitPost()">Post</button>
-                </div>
-
                 <div class="status" id="status"></div>
             </div>
         `

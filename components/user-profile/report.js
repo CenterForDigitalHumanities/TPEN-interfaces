@@ -1,5 +1,6 @@
 import TPEN from '../../api/TPEN.js'
 import User from '../../api/User.js'
+import Project from '../../api/Project.js'
 
 class ReportStats extends HTMLElement {
     static get observedAttributes() {
@@ -40,19 +41,25 @@ class ReportStats extends HTMLElement {
             }
         })
 
+        let totalContributions = 0
+
+        for (const project of projects) {
+            const projectData = await new Project(project._id).fetch()
+            totalContributions += projectData.layers?.length || 0
+            projectData.layers?.forEach(layer => {
+                totalContributions += layer.pages?.length || 0
+                layer.pages?.forEach(page => {
+                    totalContributions += page.items?.length || 0
+                })
+            })
+        }
+
         this.shadowRoot.innerHTML = `
             <style>
                 :host {
                     margin: 0;
                     padding: 0;
-                    color: var(--accent);
                     font-family: 'Inter', sans-serif;
-                }
-
-                .stats-title {
-                    padding: 0;
-                    margin: 0;
-                    font-size: 1.2rem;
                 }
 
                 .report {
@@ -62,25 +69,33 @@ class ReportStats extends HTMLElement {
                     border: 1px solid var(--gray);
                     background-color: var(--white);
                     border-radius: 5px;
-                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
                     margin-bottom: 20px;
                 }
 
-                .report h2 {
-                    margin: 0 0 10px;
+                .stats-title {
+                    margin-top: 0;
                     font-size: 1.2rem;
+                    border-bottom: 1px solid #e1e4e8;
+                    padding-bottom: 8px;
+                    color: var(--accent);
                 }
 
                 .report p {
                     margin: 5px 0;
-                    font-size: 1rem;
                     color: #555;
+                    font-size: 15px;
+                }
+
+                .report span {
+                    font-weight: bold;
                 }
             </style>
             <div class="report">
-                <h2 class="stats-title">Report...</h2>
-                <p>Number of Projects: ${projects.length}</p>
-                <p>Number of Collaborators: ${uniqueCollaborators.size}</p>
+                <h2 class="stats-title">Report</h2>
+                <p>Number of Projects: <span>${projects.length}</span></p>
+                <p>Number of Collaborators: <span>${uniqueCollaborators.size}</span></p>
+                <p>Total Contributions: <span>${totalContributions}</span></p>
             </div>
         `
     }
