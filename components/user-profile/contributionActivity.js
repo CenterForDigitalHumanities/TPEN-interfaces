@@ -42,6 +42,7 @@ class ContributionActivity extends HTMLElement {
                     contributionsMap.set(layer.id, {
                         projectId: projectData._id,
                         id: layer.id,
+                        page: layer.pages?.[0]?.id.split('/').pop(),
                         projectName: projectData.label,
                         type: layer.label,
                         modifiedTime: projectData._modifiedAt
@@ -53,6 +54,7 @@ class ContributionActivity extends HTMLElement {
                         contributionsMap.set(page.id, {
                             projectId: projectData._id,
                             id: page.id,
+                            page: page.id.split('/').pop(),
                             projectName: projectData.label,
                             type: page.label,
                             modifiedTime: projectData._modifiedAt
@@ -64,6 +66,7 @@ class ContributionActivity extends HTMLElement {
                             contributionsMap.set(item.id, {
                                 projectId: projectData._id,
                                 id: item.id,
+                                page: page.id.split('/').pop(),
                                 projectName: projectData.label,
                                 type: `${page.label} - Annotation ${index + 1}`,
                                 modifiedTime: projectData._modifiedAt
@@ -168,7 +171,7 @@ class ContributionActivity extends HTMLElement {
                     color: #333;
                 }
 
-                .project-contributions a {
+                .project-contributions p {
                     text-decoration: none;
                     color: var(--primary-color);
                     font-weight: 500;
@@ -193,8 +196,28 @@ class ContributionActivity extends HTMLElement {
                 .show-more-btn:hover {
                     color: #024c9b;
                 }
-            </style>
 
+                .logo-container {
+                    border-radius: 20px;
+                    background-color: var(--light-color);
+                    padding: 4px;
+                    margin: auto;
+                    display: inline-block;
+                    width: 20px;
+                    height: 20px;
+                    margin-right: 8px;
+                }
+
+                .logo {
+                    width: 20px;
+                    height: 20px;
+                }
+
+                .contribution-details {
+                    display: flex;
+                    align-items: center;
+                }
+            </style>
             <div class="activity-report">
                 <div class="activity-header">
                     <h3>Contribution Activity</h3>
@@ -206,7 +229,16 @@ class ContributionActivity extends HTMLElement {
                         <ul class="project-contributions" id="project-${projIndex}">
                             ${projectGroup.contributions.slice(0, 5).map(c => `
                                 <li>
-                                    <a href="${c.id}" target="_blank">${c.type}</a>
+                                    <div class="contribution-details">
+                                        <div class="logo-container">
+                                            <img class="logo" src="https://rerum.io/logo.png" alt="Rerum Logo" onclick="window.open('${c.id}', '_blank')" />
+                                        </div>
+                                        ${c.page ? `
+                                        <div class="logo-container">
+                                            <img class="logo" src="../../assets/icons/transcribe.png" alt="Transcribe Icon" onclick="window.open('${TPEN.BASEURL}/transcribe?projectID=${c.projectId}&pageID=${c.page}', '_blank')" />
+                                        </div>` : ''}
+                                        <p>${c.type}</p>
+                                    </div>
                                     <span class="timestamp">${new Date(c.modifiedTime).toLocaleString('en-US', {
                                         year: 'numeric',
                                         month: 'short',
@@ -236,7 +268,16 @@ class ContributionActivity extends HTMLElement {
                 remaining.forEach(c => {
                     const li = document.createElement('li')
                     li.innerHTML = `
-                        <a href="${c.id}" target="_blank">${c.type}</a>
+                        <div class="contribution-details">
+                            <div class="logo-container">
+                                <img class="logo" src="https://rerum.io/logo.png" alt="Rerum Logo" onclick="window.open('${c.id}', '_blank')" />
+                            </div>
+                            ${c.page ? `
+                            <div class="logo-container">
+                                <img class="logo" src="../../assets/icons/transcribe.png" alt="Transcribe Icon" onclick="window.open('${TPEN.BASEURL}/transcribe?projectID=${c.projectId}&pageID=${c.page}', '_blank')" />
+                            </div>` : ''}
+                            <p>${c.type}</p>
+                        </div>
                         <span class="timestamp">${new Date(c.modifiedTime).toLocaleString('en-US', {
                             year: 'numeric',
                             month: 'short',
