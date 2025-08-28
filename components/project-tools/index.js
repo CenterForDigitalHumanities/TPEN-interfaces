@@ -13,8 +13,6 @@ class ProjectTools extends HTMLElement {
         this._unsubProject = onProjectReady(this, this.render)
     }
 
-        disconnectedCallback() {
-            try { this._unsubProject?.() } catch {}
     disconnectedCallback() {
         try { this._unsubProject?.() } catch {}
     }
