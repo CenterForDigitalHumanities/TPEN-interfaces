@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>View Transcription</title>
+    <meta property="og:title" content="View Transcription">
+    <meta property="og:description" content="Explore my transcription and annotation work using TPEN3.">
+    <meta property="og:image" content="https://app.t-pen.org/assets/logo/logo-350w.png">
+    <meta property="og:url" content="https://app.t-pen.org/components/read-only-transcribe/?projectID=">
+    <meta property="og:type" content="website">
+    <link rel="stylesheet" href="/components/gui/site/index.css">
+    <script type="module" src="/components/gui/site/ViewOnlyHeader.js"></script>
+    <script type="module" src="/components/gui/site/ViewOnlyFooter.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/openseadragon/4.1.1/openseadragon.min.js"></script>
+    <script type="module" src="/components/read-only-transcribe/index.js"></script>
+</head>
+<body>
+    <tpen-view-only-header></tpen-view-only-header>
+    <div class="page-content" style="padding: 1em; margin: 0 auto; min-height: 40vh; margin-top: 2.5em !important; display: block;">
+        <tpen-read-only-view-transcribe></tpen-read-only-view-transcribe>
+    </div>
+    <tpen-view-only-footer></tpen-view-only-footer>
+</body>
+</html>
