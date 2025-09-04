@@ -236,6 +236,10 @@ class ReadOnlyViewTranscribe extends HTMLElement {
 
             this.shadowRoot.querySelector(".transcribe-title").textContent = `Transcription for ${manifest.label.none?.[0]}`
 
+            // Assuming the format of canvas based on TPEN3 manifest.json, but this may need adjustments for other formats
+            // Have to use openSeadragon to load selectors on the canvas and let it handle all the annotation selectors
+            // Using html divs to create selectors which allows for easy hover and click events, which is harder with openSeadragon overlays
+            // This needs code change once different selector types are used in annotations
             for (const canvas of manifest.items) {
                 const imageUrl = canvas.items[0].items.find(i => i.motivation === "painting").body.id
                 const canvasLabel = canvas.annotations?.[0]?.label?.none?.[0] || `Default Canvas ${manifest.items.indexOf(canvas) + 1}`
@@ -264,6 +268,8 @@ class ReadOnlyViewTranscribe extends HTMLElement {
                         }
                     }
 
+                    //These xywh values are relative to the rectangular annotation selector.
+                    //There can be multiple different types of selectors, but we are only using the xywh ones for now.
                     const lines = await Promise.all(
                         annoPage.items.map(async (anno) => {
                             let selectorValue = anno?.target?.selector?.value || anno?.target?.id || anno?.target
