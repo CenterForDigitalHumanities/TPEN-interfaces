@@ -1,4 +1,3 @@
-import TPEN from '../../../api/TPEN.js'
 import '../../../components/feedback-button/index.js'
 
 class TpenFooter extends HTMLElement {
@@ -10,7 +9,7 @@ class TpenFooter extends HTMLElement {
         { href: '/about', text: 'About Us' },
     ]
 
-    version =  TPEN?.version ?? '3.0.1a'
+    version = '3.0.1a'
     
     constructor() {
         super()
