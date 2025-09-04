@@ -210,21 +210,78 @@ class ReadOnlyViewTranscribe extends HTMLElement {
     }
 
     async loadAnnotations() {
+        const staticUrl = "https://dev.static.t-pen.org"
+        const output = {}
+        const canvasMap = {}
+        const projectID = new URLSearchParams(window.location.search).get('projectID')
+        const manifestUrl = `${staticUrl}/${projectID}/manifest.json`
+
         try {
-            const serviceURL = "http://localhost:3012"
-            const projectID = new URLSearchParams(window.location.search).get('projectID')
-            const projectName = await fetch(`${serviceURL}/project/${projectID}/getLabel`, {
-                method: "GET",
-                headers: { "Content-Type": "application/json" }
-            }).then(res => res.json())
-            this.shadowRoot.querySelector(".transcribe-title").textContent = `Transcription for ${projectName.label}`
+            const response = await fetch(manifestUrl)
+            if (!response.ok) {
+                const errText = await response.text()
+                throw new Error(`GitHub read failed: ${response.status} - ${errText}`)
+            }
+            const manifest = await response.json()
 
-            const res = await fetch(`${serviceURL}/project/${projectID}/lines`, {
-                method: "GET",
-                headers: { "Content-Type": "application/json" }
-            })
-            this.layers = await res.json()
+            this.shadowRoot.querySelector(".transcribe-title").textContent = `Transcription for ${manifest.label.none?.[0]}`
 
+            for (const canvas of manifest.items) {
+                const imageUrl = canvas.items[0].items.find(i => i.motivation === "painting").body.id
+                const canvasLabel = canvas.annotations?.[0]?.label?.none?.[0] || `Default Canvas ${manifest.items.indexOf(canvas) + 1}`
+                canvasMap[imageUrl] = canvasLabel
+            }
+
+            for (const canvas of manifest.items) {
+                const imgUrl = canvas.items[0].items.find(i => i.motivation === "painting").body.id
+                const annotations = canvas.annotations
+
+                if (!annotations || annotations.length === 0) {
+                    const defaultLayer = 'Default Layer'
+                if (!output[defaultLayer]) output[defaultLayer] = {}
+                    output[defaultLayer][imgUrl] = { label: canvasMap[imgUrl], lines: [] }
+                    continue
+                }
+
+                for (const annoPage of annotations) {
+                    const partOfId = await fetch(annoPage.partOf[0].id).then(res => res.json())
+                    const layerLabel = partOfId.label.none[0]
+
+                    if (!output[layerLabel]) {
+                        output[layerLabel] = {}
+                        for (const [imgUrl, canvasLabel] of Object.entries(canvasMap)) {
+                            output[layerLabel][imgUrl] = { label: canvasLabel, lines: [] }
+                        }
+                    }
+
+                    const lines = await Promise.all(
+                        annoPage.items.map(async (anno) => {
+                            let selectorValue = anno?.target?.selector?.value || anno?.target?.id || anno?.target
+                            const [x, y, w, h] = selectorValue.split(':')[1].split(',').map(Number)
+                            return { x, y, w, h, text: anno.body?.value ?? '' }
+                        })
+                    )
+                    output[layerLabel][imgUrl].lines = lines
+                }
+            }
+
+            for (const layerLabel of Object.keys(output)) {
+                const canvases = Object.values(output[layerLabel])
+                const maxLen = Math.max(...canvases.map(c => c.lines.length))
+
+                const connectPages = []
+                for (let i = 0; i < maxLen; i++) {
+                    for (const canvas of canvases) {
+                        if (canvas.lines[i]) connectPages.push({ ...canvas.lines[i], fromCanvas: canvas.label })
+                    }
+                }
+
+                for (const canvas of canvases) {
+                    canvas.lines = connectPages.filter(line => line.fromCanvas === canvas.label).map(({ fromCanvas, ...line }) => line)
+                }
+            }
+
+            this.layers = output
             const layerSelect = this.shadowRoot.getElementById("layerSelect")
             Object.keys(this.layers).forEach(layerName => {
                 const option = document.createElement("option")
@@ -240,7 +297,9 @@ class ReadOnlyViewTranscribe extends HTMLElement {
                 if (this.pages.length > 0) this.openPage(0)
             }
         } catch (err) {
-            console.error("Failed to load annotations:", err)
+            console.error("Failed to load or parse manifest:", err)
+            this.shadowRoot.querySelector(".transcribe-title").textContent = "Error loading manifest"
+            return
         }
     }
 
