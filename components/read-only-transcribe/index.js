@@ -1,3 +1,5 @@
+import { checkIfUrlExists } from '../../utilities/checkIfUrlExists.js'
+
 class ReadOnlyViewTranscribe extends HTMLElement {
     constructor() {
         super()
@@ -217,6 +219,14 @@ class ReadOnlyViewTranscribe extends HTMLElement {
         const manifestUrl = `${staticUrl}/${projectID}/manifest.json`
 
         try {
+            if (! await checkIfUrlExists(manifestUrl)) {
+                this.shadowRoot.querySelector(".transcribe-title").textContent = "Transcription not available yet. Please check back later."
+                this.shadowRoot.querySelector(".transcription-container").style.display = "none"
+                this.shadowRoot.querySelector(".page-controls").style.display = "none"
+                this.shadowRoot.querySelector(".layer-container").style.display = "none"
+                return
+            }
+            
             const response = await fetch(manifestUrl)
             if (!response.ok) {
                 const errText = await response.text()
@@ -299,6 +309,9 @@ class ReadOnlyViewTranscribe extends HTMLElement {
         } catch (err) {
             console.error("Failed to load or parse manifest:", err)
             this.shadowRoot.querySelector(".transcribe-title").textContent = "Error loading manifest"
+            this.shadowRoot.querySelector(".transcription-container").style.display = "none"
+            this.shadowRoot.querySelector(".page-controls").style.display = "none"
+            this.shadowRoot.querySelector(".layer-container").style.display = "none"
             return
         }
     }
