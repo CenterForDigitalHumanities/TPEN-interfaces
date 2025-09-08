@@ -275,7 +275,14 @@ class AnnotoriousAnnotator extends HTMLElement {
       // Timeout required in order to allow the unfocus native functionality to complete for $isDirty.
       setTimeout(() => { this.saveAnnotations() }, 500)
     })
-
+    window.addEventListener('beforeunload', () => {
+      if (this.#resolvedAnnotationPage?.$isDirty) {
+        if (!confirm("If you leave unsaved changes will be lost.")){
+          event.preventDefault()
+          return
+        }
+      }
+    })
     // OSD and AnnotoriousOSD need some cycles to load, they are big files.
     this.shadowRoot.appendChild(osdScript)
     setTimeout(() => { 
@@ -499,7 +506,7 @@ class AnnotoriousAnnotator extends HTMLElement {
         srcHover: "../interfaces/annotator/images/transcribe.png",
         srcDown: "../interfaces/annotator/images/transcribe.png",
         onClick: (e) => {
-            if (!this.#resolvedAnnotationPage?.$isDirty || confirm("Stop line parsing and go transcribe?  Unsaved changes will be lost."))
+            if (this.#resolvedAnnotationPage?.$isDirty || confirm("Stop line parsing and go transcribe?  Unsaved changes will be lost."))
             location.href = `/transcribe?projectID=${TPEN.activeProject._id}`
         }
       })
