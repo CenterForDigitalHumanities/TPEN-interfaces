@@ -35,8 +35,10 @@ class UserProfile extends HTMLElement {
 
     updateProfile(profile) {
         const publicProfile = this.getPublicProfile(profile)
-        this.shadowRoot.querySelector('.user-image').src = publicProfile.imageURL ?? '../../assets/icons/user.png'
-        this.shadowRoot.querySelector('#userImageInput').value = publicProfile.imageURL ?? ''
+        if (publicProfile.imageURL) {
+            this.shadowRoot.querySelector('.user-image').src = publicProfile.imageURL === '' ? '../../assets/icons/user.png' : publicProfile.imageURL
+            this.shadowRoot.querySelector('#userImageInput').value = publicProfile.imageURL ?? ''
+        }
 
         const profileMap = {
             nameText: publicProfile.displayName.toUpperCase(),
@@ -259,7 +261,7 @@ class UserProfile extends HTMLElement {
             <div class="user-profile-div">
                 <div class="user-profile-image">
                     <div class="user-profile-image-div">
-                        <img src="" alt="User Profile Image" class="user-image">
+                        <img src="../../assets/icons/user.png" alt="User Profile Image" class="user-image">
                     </div>
                     <p class="user-profile-name" style="display: none;">
                         <em class="user-em">Profile Image URL</em>
