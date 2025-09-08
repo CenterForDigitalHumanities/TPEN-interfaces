@@ -904,6 +904,7 @@ class AnnotoriousAnnotator extends HTMLElement {
     })
     saveButton.removeAttribute("disabled")
     saveButton.value = "Save Annotations"
+    this.#resolvedAnnotationPage.$isDirty = false
     return this.#modifiedAnnotationPage
   }
 
