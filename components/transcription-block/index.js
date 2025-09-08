@@ -104,7 +104,8 @@ export default class TranscriptionBlock extends HTMLElement {
             })
         }
         if (inputField) {
-            inputField.addEventListener('blur', (e) => this.saveTranscription(e.target.value))
+            // This blur happens and saves a transcription event if I have not typed any text.  Causes strange draft line behavior.
+            // inputField.addEventListener('blur', (e) => this.saveTranscription(e.target.value))
             inputField.addEventListener('blur', () => this.checkDirtyLines())
             inputField.addEventListener('keydown', (e) => this.handleKeydown(e))
             inputField.addEventListener('input', e => {
