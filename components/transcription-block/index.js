@@ -308,8 +308,8 @@ export default class TranscriptionBlock extends HTMLElement {
     persistDraft(index) {
         if (!this.#storageKey) return
         const key = this.#storageKey
-        let stored
-        try { stored = JSON.parse(localStorage.getItem(key) || '{}') } catch { stored = {} }
+        let stored = localStorage.getItem(this.#storageKey) ?? '{}'
+        try { stored = JSON.parse(stored) } catch { stored = {} }
         stored[index] = { text: this.#transcriptions[index], ts: Date.now() }
         try { localStorage.setItem(key, JSON.stringify(stored)) } catch (err) { console.warn('Could not persist draft', err) }
     }
