@@ -68,11 +68,11 @@ class NewAction extends HTMLElement {
         event.preventDefault()
         const userToken = localStorage.getItem("userToken")
         let tokenDomain
-        let isProd
+        let isProdTPEN
     
         if (TPEN.TPEN28URL.includes("t-pen.org")) {
             tokenDomain = "t-pen.org"
-            isProd = true
+            isProdTPEN = true
         }
 
         if (TPEN.TPEN28URL.includes("localhost")) {
@@ -81,7 +81,7 @@ class NewAction extends HTMLElement {
     
         let cookieString = `userToken=${userToken}; domain=${tokenDomain}; path=/; SameSite=Strict;`
     
-        if (isProd) {
+        if (isProdTPEN) {
             cookieString += " Secure;"
         }
     
