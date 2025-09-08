@@ -16,17 +16,56 @@ redirect_from:
     <script type="module" src="/components/gui/site/index.js"></script>
     <script type="module" src="/components/gui/card/Card.js"></script>
     <script type="module" src="/components/user-profile/userStats.js"></script>
+    <script type="module" src="/components/user-profile/report.js"></script>
+    <script type="module" src="/components/user-profile/contributionActivity.js"></script>
     <link href="/components/gui/site/index.css" rel="stylesheet" type="text/css" />
-    </head>
+    <style>
+        .profile-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        tpen-card {
+            width: 30%;
+            height: fit-content;
+        }
+
+        user-stats {
+            width: 70%;
+        }
+
+        .icon {
+            width: 20px;
+            height: 20px;
+            vertical-align: middle;
+            margin-left: 5px;
+            background-color: var(--accent);
+            border-radius: 3px;
+            padding: 2px;
+            margin-right: 5px;
+        }
+
+        tpen-card h2 {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+    </style>
+</head>
 <body>
     <tpen-page>
-            <div style="display: flex; justify-content: center; gap: 20px; width: 100%;">
-                <tpen-card style="width: 30%;">
+            <div class="profile-container">
+                <tpen-card>
                     <h2 slot="header">User Profile</h2>
                     <tpen-user-profile slot="body" class="card"></tpen-user-profile>
                 </tpen-card>
-                <user-stats style="width: 70%;"></user-stats>
+                <user-stats></user-stats>
             </div>
+            <report-stats></report-stats>
+            <contribution-activity></contribution-activity>
     </tpen-page>
     </body>
 </html>

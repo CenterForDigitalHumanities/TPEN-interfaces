@@ -1,5 +1,6 @@
 import TPEN from '../../api/TPEN.js'
 import User from '../../api/User.js'
+import Project from '../../api/Project.js'
 
 class UserStats extends HTMLElement {
     static get observedAttributes() {
@@ -33,7 +34,9 @@ class UserStats extends HTMLElement {
 
     updateProfile(profile) {
         const publicProfile = this.getPublicProfile(profile)
-        this.shadowRoot.querySelector('.public-profile-image').src = publicProfile.imageURL ?? '../../assets/icons/user.png'
+        if(publicProfile.imageURL) {
+            this.shadowRoot.querySelector('.public-profile-image').src = publicProfile.imageURL === '' ? '../../assets/icons/user.png' : publicProfile.imageURL
+        }
 
         const profileMap = {
             nameText: publicProfile.displayName.toUpperCase(),
@@ -74,10 +77,23 @@ class UserStats extends HTMLElement {
             }
         })
 
+        let totalContributions = 0
+
+        for (const project of projects) {
+            const projectData = await new Project(project._id).fetch()
+            totalContributions += projectData.layers?.length || 0
+            projectData.layers?.forEach(layer => {
+                totalContributions += layer.pages?.length || 0
+                layer.pages?.forEach(page => {
+                    totalContributions += page.items?.length || 0
+                })
+            })
+        }
+
         const collaborators = await Promise.all(
             Array.from(uniqueCollaborators).map(async collaborator => {
                 const response = await fetch(
-                    `${TPEN.servicesURL}/my/${collaborator}/public-profile`,
+                    `${TPEN.servicesURL}/user/${collaborator}`,
                     {
                         method: 'GET',
                         headers: {
@@ -107,10 +123,11 @@ class UserStats extends HTMLElement {
                     display: flex;
                     flex-direction: column;
                     align-items: center;
-                    justify-content: center;
+                    justify-content: space-between;
                     width: 100%;
                     gap: 20px;
                     margin: 0 auto;
+                    height: 100%;
                 }
                 
                 .stats {
@@ -124,9 +141,11 @@ class UserStats extends HTMLElement {
                 }
 
                 .stats-title {
-                    padding: 0;
-                    margin: 0;
+                    margin-top: 0;
                     font-size: 1.2rem;
+                    border-bottom: 1px solid #e1e4e8;
+                    padding-bottom: 8px;
+                    color: var(--accent);
                 }
 
                 .collaborators {
@@ -166,27 +185,6 @@ class UserStats extends HTMLElement {
                     font-size: 16px;
                     font-weight: 500;
                     color: #333;
-                }
-
-                .report {
-                    width: 100%;
-                    padding: 20px;
-                    box-sizing: border-box;
-                    border: 1px solid var(--gray);
-                    background-color: var(--white);
-                    border-radius: 5px;
-                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-                }
-
-                .report h2 {
-                    margin: 0 0 10px;
-                    font-size: 1.2rem;
-                }
-
-                .report p {
-                    margin: 5px 0;
-                    font-size: 1rem;
-                    color: #555;
                 }
 
                 .public-profile-card {
@@ -289,6 +287,7 @@ class UserStats extends HTMLElement {
                     width: 60%;
                     height: 345px;
                     perspective: 1000px;
+                    margin: auto;
                 }
 
                 .flip-card-inner {
@@ -417,8 +416,8 @@ class UserStats extends HTMLElement {
                                 </header>
                                 <div class="public-profile-body">
                                     <div class="public-profile-image-container">
-                                        <img src="" alt="User Image" class="public-profile-image" id="publicProfileImage">
-                                        <h1 class="public-profile-title nameText">PRIYAL</h1>
+                                        <img src="../../assets/icons/user.png" alt="User Image" class="public-profile-image" id="publicProfileImage">
+                                        <h1 class="public-profile-title nameText"></h1>
                                     </div>
                                     <div class="public-profile-bio">
                                         <p class="bio-text"><em>Orchid ID</em> <span class="orchidIdText"></span></p>
@@ -427,7 +426,7 @@ class UserStats extends HTMLElement {
                                     </div>
                                 </div>
                                 <div class="public-profile-footer">
-                                    <p class="public-profile-footer-text">XYZ contributions</p>
+                                    <p class="public-profile-footer-text">${totalContributions} contributions</p>
                                 </div>
                             </div>
                         </div>
@@ -470,7 +469,7 @@ class UserStats extends HTMLElement {
                     </div>
                 </div>
                 <div class="stats">
-                    <h2 class="stats-title">Collaborators you have worked with...</h2>
+                    <h2 class="stats-title">Collaborators you have worked with</h2>
                     <div class="collaborators">
                         ${collaborators.map(c => `
                             <div class="collaborator">
@@ -479,11 +478,6 @@ class UserStats extends HTMLElement {
                             </div>
                         `).join('')}
                     </div>
-                </div>
-                <div class="report">
-                    <h2 class="stats-title">Report...</h2>
-                    <p>Number of Projects: ${projects.length}</p>
-                    <p>Number of Collaborators: ${uniqueCollaborators.size}</p>
                 </div>
             </div>
         `
