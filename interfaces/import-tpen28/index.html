@@ -11,9 +11,17 @@ permalink: /project/import28
         <link rel="stylesheet" href="/interfaces/import-tpen28/index.css" />
         <script type="module" src="/interfaces/import-tpen28/index.js"></script>
         <script type="module" src="/components/gui/site/index.js"></script>
+        <script type="module" src="/components/explanatory-guide/fixedGuideComponent.js"></script>
     </head>
     <body>
         <tpen-page>
+            <tpen-fixed-explanatory-guide heading="Importing a T-PEN 2.8 Project">
+                <li>Select a TPEN 2.8 project from the dropdown.</li>
+                <li>Click <strong>"Import"</strong> to load the project.</li>
+                <li>Invite collaborators if needed.</li>
+                <li>By default, all project elements and configurations will be imported.</li>
+                <li>Click <strong>"Open the Project"</strong> to start working on it.</li>
+            </tpen-fixed-explanatory-guide>
             <div class="container">
             <h1 class="header">Select a Project :</h1>
             <div id="message" class="message">Loading projects...</div>

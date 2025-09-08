@@ -43,7 +43,7 @@ class ProjectLayers extends HTMLElement {
                 .layer-card, .layer-card-outer {
                     background: #fff;
                     border-radius: 8px;
-                    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+                    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
                     padding: 15px;
                     border-left: 5px solid #007bff;
                     cursor: move;
@@ -164,13 +164,6 @@ class ProjectLayers extends HTMLElement {
                 <button class="layer-btn add-layer">Add Layer</button>
             </div>
             <h1 class="layer-title">Manage Layers</h1>
-            <div class="layer-div"> 
-                <p> 
-                    TODO: Re-order layers by dragging and dropping to swap positions <br> 
-                    CANDO: Re-order the Pages of a Layer by dragging and dropping to swap positions <br>
-                    You can also change the label of any page or layer.  Click 'manage pages' on a layer to start.
-                </p>
-            </div>
             <div class="layer-container-outer">
             ${layers
                 .map(
