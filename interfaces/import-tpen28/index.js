@@ -21,7 +21,7 @@ async function fetchProjects() {
     const select = document.getElementById("projectSelect")
     for (const key in data) {
         const option = document.createElement("option")
-        option.value = `${data[key].name}/${data[key].id}`
+        option.value = `${data[key].id}`
         option.textContent = data[key].name
         select.appendChild(option)
     }
@@ -108,7 +108,7 @@ async function importCollaborators(projectData, projectID) {
  
 async function openProject() {
     const select = document.getElementById("projectSelect")
-    const selectedId = select.value?.split("/")[2]
+    const selectedId = select.value?.split("/")[1]
     const messageDiv = document.getElementById("message")
     messageDiv.textContent = ""
     
