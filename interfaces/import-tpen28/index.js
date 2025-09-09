@@ -48,6 +48,11 @@ async function importProject(selectedId) {
     document.getElementById("projectSelect").disabled = true
     document.getElementById("importProjectBtn").remove()
 
+    await fetch(`${TPEN.servicesURL}/project/deletecookie`, {
+        method: "GET",
+        credentials: "include",
+    })
+
     const openBtn = document.getElementById("openProject")
     openBtn.classList.remove("hidden")
     openBtn.addEventListener("click", () => {

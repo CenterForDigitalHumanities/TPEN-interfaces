@@ -64,20 +64,34 @@ class NewAction extends HTMLElement {
         this.shadowRoot.getElementById("link-tpen-2.8").addEventListener("click", this.TPEN2ImportHandler.bind(this))
     }
 
-    TPEN2ImportHandler = (event) => {
+    TPEN2ImportHandler = async (event) => {
         event.preventDefault()
         const userToken = localStorage.getItem("userToken")
         let tokenDomain
-
+        let isProdTPEN
+    
         if (TPEN.TPEN28URL.includes("t-pen.org")) {
             tokenDomain = "t-pen.org"
+            isProdTPEN = true
         }
 
         if (TPEN.TPEN28URL.includes("localhost")) {
             tokenDomain = "localhost"
         }
-        
-        document.cookie = `userToken=${userToken}; path=/; domain=${tokenDomain}; secure; samesite=strict;`;    
+    
+        let cookieString = `userToken=${userToken}; domain=${tokenDomain}; path=/; SameSite=Strict;`
+    
+        if (isProdTPEN) {
+            cookieString += " Secure;"
+        }
+    
+        document.cookie = cookieString
+        await fetch(`${TPEN.servicesURL}/project/deletecookie`, {
+            method: "GET",
+            credentials: "include",
+        })
+
+        document.cookie = cookieString
         const redirectUri = encodeURIComponent(`${window.location.origin}/project/import28`)
         window.location.href = `${TPEN.TPEN28URL}/TPEN/login.jsp?redirect_uri=${redirectUri}`
     }
