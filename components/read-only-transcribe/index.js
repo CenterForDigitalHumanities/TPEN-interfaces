@@ -223,7 +223,7 @@ class ReadOnlyViewTranscribe extends HTMLElement {
         const projectID = new URLSearchParams(window.location.search).get('projectID')
         const manifestUrl = `${staticUrl}/${projectID}/manifest.json`
 
-        if (! await checkIfUrlExists(manifestUrl)) {
+        if (!await checkIfUrlExists(manifestUrl)) {
             this.shadowRoot.querySelector(".transcribe-title").textContent = "Transcription not available yet. Please check back later."
             this.shadowRoot.getElementById("annotator-container").style.display = "none"
             this.shadowRoot.querySelector(".transcribed-text").style.display = "none"
@@ -329,7 +329,6 @@ class ReadOnlyViewTranscribe extends HTMLElement {
             return
         }
 
-        this.#resolvedAnnotationPage.$isDirty = false
         const type = this.#resolvedAnnotationPage["@type"] ?? this.#resolvedAnnotationPage.type
         if (type !== "AnnotationPage") {
             console.warn("Resolved object is not an AnnotationPage:", type)
@@ -341,65 +340,19 @@ class ReadOnlyViewTranscribe extends HTMLElement {
             return
         }
 
-        if (this.#resolvedAnnotationPage?.items && this.#resolvedAnnotationPage.items.length) {
-            for (let i = 0; i < this.#resolvedAnnotationPage.items.length; i++) {
-                const anno_ref = this.#resolvedAnnotationPage.items[i]
-                if (!anno_ref || anno_ref.hasOwnProperty('body')) continue
-                try {
-                    const anno_res = await fetch(anno_ref.id).then(r => r.json())
-                    this.#resolvedAnnotationPage.items[i] = anno_res
-                } catch (err) {
-                    console.warn('Failed to resolve referenced annotation', anno_ref, err)
-                }
-            }
-        }
-
         const canvasURI = this.processPageTarget(targetCanvas)
         await this.processCanvas(canvasURI)
     }
 
     async processCanvas(uri) {
         if (!uri) return
-        let resolvedCanvas
-        try {
-            resolvedCanvas = await fetch(uri).then(r => {
-                if (!r.ok) throw r
-                return r.json()
-            })
-            this.shadowRoot.getElementById('annotator-container').style.backgroundImage = 'none'
-        } catch (e) {
-            this.shadowRoot.getElementById('annotator-container').innerHTML = `
-                <h3>Canvas Error</h3>
-                <p>The Canvas within this Page could not be loaded.</p>
-            `
-            console.error(e)
-            return
-        }
-
-        const id = resolvedCanvas["@id"] ?? resolvedCanvas.id
-        if (!id) {
-            throw new Error("Cannot Resolve Canvas or Image")
-        }
-        const type = resolvedCanvas["@type"] ?? resolvedCanvas.type
-        if (!(type === "Canvas" || type === "sc:Canvas")) {
-            console.warn(`Provided URI did not resolve a 'Canvas'.  It resolved a '${type}'`)
-        }
-
-        let fullImage = resolvedCanvas?.items?.[0]?.items?.[0]?.body?.id
-        if (!fullImage) fullImage = resolvedCanvas?.images?.[0]?.resource?.["@id"]
-        let imageService = resolvedCanvas?.items?.[0]?.items?.[0]?.body?.service?.id
-        if (!imageService) imageService = resolvedCanvas?.images?.[0]?.resource?.service?.["@id"]
-
-        if (!fullImage) {
-            throw new Error("Cannot Resolve Canvas Image")
-        }
-
-        let imgx = resolvedCanvas?.items?.[0]?.items?.[0]?.body?.width
-        if (!imgx) imgx = resolvedCanvas?.images?.[0]?.resource?.width
-        let imgy = resolvedCanvas?.items?.[0]?.items?.[0]?.body?.height
-        if (!imgy) imgy = resolvedCanvas?.images?.[0]?.resource?.height
+        let embeddedCanvas = this.#staticManifest?.items.find(c => (c.id ?? c['@id']) === uri)
+        let fullImage = embeddedCanvas?.items?.[0]?.items?.[0]?.body?.id
+        let imageService = embeddedCanvas?.items?.[0]?.items?.[0]?.body?.service?.id
+        let imgx = embeddedCanvas?.items?.[0]?.items?.[0]?.body?.width
+        let imgy = embeddedCanvas?.items?.[0]?.items?.[0]?.body?.height
         this.#imageDims = [imgx || 0, imgy || 0]
-        this.#canvasDims = [resolvedCanvas?.width || 0, resolvedCanvas?.height || 0]
+        this.#canvasDims = [embeddedCanvas?.width || 0, embeddedCanvas?.height || 0]
 
         let imageInfo = { type: "image", url: fullImage }
         if (imageService) {
@@ -415,7 +368,7 @@ class ReadOnlyViewTranscribe extends HTMLElement {
             }
         }
 
-        this._currentCanvas = resolvedCanvas
+        this._currentCanvas = embeddedCanvas
 
         if (!this.#osd) {
             this.#osd = OpenSeadragon({
@@ -428,7 +381,7 @@ class ReadOnlyViewTranscribe extends HTMLElement {
             this.#osd.open(imageInfo)
         }
 
-        const canvasID = resolvedCanvas["@id"] ?? resolvedCanvas.id
+        const canvasID = embeddedCanvas["@id"] ?? embeddedCanvas.id
         this.#osd.addOnceHandler('open', async () => {
             try {
                 await this.loadExternalScripts()
@@ -436,8 +389,9 @@ class ReadOnlyViewTranscribe extends HTMLElement {
                     this.#annotoriousInstance = AnnotoriousOSD.createOSDAnnotator(this.#osd, {
                         adapter: AnnotoriousOSD.W3CImageFormat(canvasID),
                         style: { fill: "#ff0000", fillOpacity: 0.25 },
+                        userSelectAction: "NONE"
                     })
-                    this.#annotoriousInstance.setDrawingTool("rectangle")
+                    this.#annotoriousInstance.setDrawingEnabled(false)
                 } else {
                     try {
                         this.#annotoriousInstance.destroy()
@@ -445,8 +399,9 @@ class ReadOnlyViewTranscribe extends HTMLElement {
                     this.#annotoriousInstance = AnnotoriousOSD.createOSDAnnotator(this.#osd, {
                         adapter: AnnotoriousOSD.W3CImageFormat(canvasID),
                         style: { fill: "#ff0000", fillOpacity: 0.25 },
+                        userSelectAction: "NONE"
                     })
-                    this.#annotoriousInstance.setDrawingTool("rectangle")
+                    this.#annotoriousInstance.setDrawingEnabled(false)
                 }
                 this.setInitialAnnotations()
             } catch (err) {
@@ -460,12 +415,9 @@ class ReadOnlyViewTranscribe extends HTMLElement {
             this.shadowRoot.getElementById('annotator-container').style.backgroundImage = "none"
             return
         }
-
         let allAnnotations = JSON.parse(JSON.stringify(this.#resolvedAnnotationPage.items || []))
         allAnnotations = this.formatAnnotations(allAnnotations)
         allAnnotations = this.convertSelectors(allAnnotations, true)
-        allAnnotations = this.roundSelectors(allAnnotations)
-        allAnnotations = this.sortAnnotations(allAnnotations)
         this.#annotoriousInstance.setAnnotations(allAnnotations, false)
         this.renderRightPanel()
     }
@@ -587,31 +539,6 @@ class ReadOnlyViewTranscribe extends HTMLElement {
             }
             annotation.target.selector.value = "xywh=pixel:" + converted.map(v => Number.isFinite(v) ? v : 0).join(",")
             return annotation
-        })
-    }
-
-    roundSelectors(annotations) {
-        if (!annotations) return annotations
-        return annotations.map(annotation => {
-            if (!annotation.target || !annotation.target.selector || !annotation.target.selector.value) return annotation
-            const orig = annotation.target.selector.value.replace("xywh=pixel:", "").split(",").map(parseFloat)
-            const rounded = orig.map(n => Math.round(n||0))
-            annotation.target.selector.value = "xywh=pixel:" + rounded.join(",")
-            return annotation
-        })
-    }
-
-    sortAnnotations(annotations) {
-        return annotations.sort((a, b) => {
-            const a_sel = (a.target?.selector?.value ?? "").replace("xywh=pixel:", "").split(",")
-            const b_sel = (b.target?.selector?.value ?? "").replace("xywh=pixel:", "").split(",")
-            const ax = parseFloat(a_sel[0]||0), ay = parseFloat(a_sel[1]||0)
-            const bx = parseFloat(b_sel[0]||0), by = parseFloat(b_sel[1]||0)
-            if (ax < bx) return -1
-            if (ax > bx) return 1
-            if (ay < by) return -1
-            if (ay > by) return 1
-            return 0
         })
     }
 
