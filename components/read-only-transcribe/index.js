@@ -1,198 +1,173 @@
 import { checkIfUrlExists } from '../../utilities/checkIfUrlExists.js'
 
 class ReadOnlyViewTranscribe extends HTMLElement {
+    #osd 
+    #annotoriousInstance
+    #annotationPageID
+    #resolvedAnnotationPage
+    #imageDims
+    #canvasDims
+    _currentCanvas
+
     constructor() {
         super()
-        this.attachShadow({ mode: "open" })
+        this.attachShadow({ mode: 'open' })
         this.layers = {}
         this.pages = []
         this.currentLayer = null
-        this.viewer = null
         this.currentPage = 0
     }
 
-    connectedCallback() {
-        this.render()
-        this.loadAnnotations()
-    }
-
-    render() {
+    async connectedCallback() {
         this.shadowRoot.innerHTML = `
             <style>
-                #openseadragon {
+                @import "../../components/annotorious-annotator/AnnotoriousOSD.min.css";
+                :host {
+                    display: block;
+                    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+                    color: #222;
+                }
+
+                .transcribe-container {
+                    display: flex;
+                    align-items: center;
+                    gap: 20px;
+                    padding: 12px 18px;
+                    border-bottom: 1px solid #eee;
+                    background: #fafafa;
+                }
+
+                .transcribe-title {
+                    font-size: 20px;
+                    font-weight: 700;
+                    margin: 0;
+                    color: #111;
+                }
+
+                .layer-container {
+                    display: flex;
+                    gap: 8px;
+                    align-items: center;
+                    margin-left: auto;
+                }
+
+                select {
+                    padding: 6px 10px;
+                    border-radius: 6px;
+                    border: 1px solid #ccc;
+                    font-size: 14px;
+                    background: #fff;
+                    cursor: pointer;
+                    transition: border-color 0.2s, box-shadow 0.2s;
+                }
+                select:hover {
+                    border-color: #aaa;
+                }
+                
+                select:focus {
+                    outline: none;
+                    border-color: var(--primary-color, #ff6f3d);
+                    box-shadow: 0 0 0 2px rgba(255, 111, 61, 0.25);
+                }
+
+                .main {
+                    display: flex;
+                    gap: 18px;
+                    padding: 10px 18px;
+                }
+
+                #annotator-container {
                     width: 70%;
                     height: 80vh;
                     background-image: url(https://t-pen.org/TPEN/images/loading2.gif);
                     background-repeat: no-repeat;
                     background-position: center;
-                    padding: 20px;
-                }
-
-                .annotation-box {
-                    position: absolute;
-                    border: 1px solid #ff6f3d;
-                    pointer-events: auto;
-                    box-sizing: border-box;
-                    border-radius: 2px;
-                    transition: transform 0.2s ease, box-shadow 0.2s ease;
-                }
-
-                .annotation-box:hover {
-                    transform: scale(1.02);
-                    box-shadow: 0 4px 10px rgba(255, 111, 61, 0.3);
-                }
-
-                .annotation-label {
-                    display: none;
-                    position: absolute;
-                    bottom: 100%;
-                    left: 50%;
-                    transform: translateX(-50%);
-                    background: #ff6f3d;
-                    color: white;
-                    font-size: 13px;
-                    font-weight: 500;
-                    padding: 4px 8px;
-                    border-radius: 4px;
-                    white-space: nowrap;
-                    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-                    opacity: 0;
-                    transition: opacity 0.2s ease, transform 0.2s ease;
-                    pointer-events: none;
-                }
-
-                .annotation-box:hover .annotation-label {
-                    display: block;
-                    opacity: 1;
-                    transform: translateX(-50%) translateY(-4px);
-                }
-
-                .page-controls {
-                    margin: 10px;
-                    text-align: center;
-                }
-
-                .page-controls button {
-                    padding: 6px 12px;
-                    margin: 0 5px;
-                    font-size: 14px;
-                    background-color: var(--primary-color);
-                    color: white;
-                    border: none;
-                    border-radius: 4px;
-                    cursor: pointer;
-                }
-
-                .page-controls button:disabled {
-                    background-color: #ccc;
-                    cursor: default;
-                }
-
-                .layer-container {
-                    margin: auto 10px;
-                }
-
-                select {
-                    padding: 6px 12px;
-                    font-size: 14px;
-                    border-radius: 4px;
-                    border: 1px solid #ccc;
-                }
-
-                .transcribe-message {
-                    position: absolute;
-                    top: 10px;
-                    left: 50%;
-                    transform: translateX(-50%);
-                    background: rgba(0,0,0,0.7);
-                    color: white;
-                    padding: 4px 10px;
-                    border-radius: 4px;
-                    font-size: 14px;
-                    z-index: 1000;
-                }
-
-                .transcribe-title {
-                    font-size: 25px;
-                    font-weight: bold;
-                    display: inline-block;
-                    margin: 0;
-                }
-
-                .transcribe-container {
-                    display: flex;
-                    justify-content: center;
-                    margin: auto;
-                    gap: 30px;
-                    padding-bottom: 10px;
-                }
-
-                .transcription-container {
                     position: relative;
-                    width: 100%;
-                    height: 100%;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
+                    border: 1px solid #ddd;
+                    border-radius: 6px;
+                    overflow: hidden;
                 }
 
                 .transcribed-text {
-                   width: 30%;
-                   height: 80vh;
-                   overflow: auto;
-                   padding: 10px;
-                   box-sizing: border-box;
-                   background: rgba(255, 255, 255, 0.8);
-                   border: 1px solid #ccc;
-                   border-radius: 4px;
-                   margin: 10px;
-               }
-                
-                .transcribed-text p {
-                    margin: 6px 0;
-                    padding: 4px 6px;
-                    font-size: 20px;
-                    line-height: 1.5;
-                    cursor: pointer;
-                    border-bottom: 1px solid black;
-                    transition: background 0.2s ease, border-color 0.2s ease;
-                    color: black;
+                    width: 30%;
+                    height: 80vh;
+                    overflow: auto;
+                    padding: 12px;
+                    box-sizing: border-box;
+                    background: rgba(255, 255, 255, 0.95);
+                    border: 1px solid #ddd;
+                    border-radius: 6px;
                 }
 
-                .transcribed-text p:hover {
-                    background: rgba(255, 111, 61, 0.1);
-                    border-bottom: 1px solid rgba(255, 111, 61, 0.4);
+                .annotation-box {
+                    position: relative;
+                    margin: 6px 0;
+                    padding: 10px;
+                    border-radius: 6px;
+                    border: 1px solid #ff6f3d;
+                    cursor: pointer;
+                    transition: box-shadow 0.2s, transform 0.2s;
+                }
+                .annotation-box:hover {
+                    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+                    transform: translateY(-1px);
+                }
+
+                .annotation-label {
+                    font-weight: 600;
+                    font-size: 14px;
+                    color: #111;
+                }
+
+                .page-controls {
+                    text-align: center;
+                    padding: 10px 18px;
+                }
+
+                .page-controls button {
+                    padding: 8px 14px;
+                    margin: 0 6px;
+                    border-radius: 6px;
+                    border: none;
+                    background: var(--primary-color, #ff6f3d);
+                    color: white;
+                    cursor: pointer;
+                    font-size: 14px;
+                    font-weight: 500;
+                    transition: background 0.2s, transform 0.2s;
+                }
+                .page-controls button:hover:not(:disabled) {
+                    background: #e85d2d;
+                    transform: translateY(-1px);
+                }
+                .page-controls button:disabled {
+                    background: #ccc;
+                    cursor: default;
+                    transform: none;
                 }
             </style>
             <div class="transcribe-container">
-                <h2 class="transcribe-title"></h2>
+                <h2 class="transcribe-title">Transcription Viewer</h2>
                 <div class="layer-container">
-                    <select id="layerSelect">
-                        <option value="">Select a Layer</option>
-                    </select>
-                    <select id="canvasSelect">
-                        <option value="">Select a Canvas</option>
-                    </select>
+                <label for="layerSelect">Layer</label>
+                <select id="layerSelect"><option value="">Loading layers</option></select>
+                <label for="canvasSelect">Canvas</label>
+                <select id="canvasSelect"><option value="">Loading canvases</option></select>
                 </div>
             </div>
-            <div class="transcription-container">
-                <div id="openseadragon"></div>
+            <div class="main">
+                <div id="annotator-container"></div>
                 <div class="transcribed-text"></div>
             </div>
             <div class="page-controls">
                 <button id="prevPage">Previous Page</button>
-                <button id="nextPage">Next Page</button>
                 <span id="pageNumber"></span>
+                <button id="nextPage">Next Page</button>
             </div>
         `
 
-        this.shadowRoot.getElementById("nextPage").addEventListener("click", () => {
-            if (this.currentPage < this.pages.length - 1) this.openPage(this.currentPage + 1)
-        })
-
-        this.shadowRoot.getElementById("prevPage").addEventListener("click", () => {
-            if (this.currentPage > 0) this.openPage(this.currentPage - 1)
-        })
+        this.shadowRoot.getElementById("nextPage").addEventListener("click", () => this.openPage(this.currentPage + 1))
+        this.shadowRoot.getElementById("prevPage").addEventListener("click", () => this.openPage(this.currentPage - 1))
 
         this.shadowRoot.getElementById("layerSelect").addEventListener("change", (e) => {
             this.currentLayer = e.target.value
@@ -205,10 +180,46 @@ class ReadOnlyViewTranscribe extends HTMLElement {
             if (canvasIndex !== -1) this.openPage(canvasIndex)
         })
 
-        this.viewer = OpenSeadragon({
-            element: this.shadowRoot.getElementById("openseadragon"),
-            prefixUrl: "https://cdnjs.cloudflare.com/ajax/libs/openseadragon/4.1.1/images/"
-        })
+        await this.loadAnnotations()
+        await this.loadExternalScripts()
+
+        setTimeout(() => {
+            if (this.pages.length > 0) {
+                const currentCanvasUrl = this.layers[this.currentLayer][this.pages[this.currentPage]]?.id
+                this.#annotationPageID = currentCanvasUrl.split('/').pop()
+            }
+            const osdScript = document.createElement("script")
+            osdScript.src = "../../components/annotorious-annotator/OSD.min.js"
+            const annotoriousScript = document.createElement("script")
+            annotoriousScript.src = "../../components/annotorious-annotator/AnnotoriousOSD.min.js"
+            this.shadowRoot.appendChild(osdScript)
+            setTimeout(() => {
+                this.shadowRoot.appendChild(annotoriousScript)
+                setTimeout(() => { this.processPage(this.#annotationPageID) }, 200)
+            }, 200)
+        }, 50)
+    }
+
+    async loadExternalScripts() {
+        if (!window.OpenSeadragon) {
+            await new Promise((resolve, reject) => {
+                const s = document.createElement("script")
+                s.src = "../../components/annotorious-annotator/OSD.min.js"
+                s.onload = resolve
+                s.onerror = reject
+                document.head.appendChild(s)
+            })
+        }
+
+        if (!window.AnnotoriousOSD) {
+            await new Promise((resolve, reject) => {
+                const s = document.createElement("script")
+                s.src = "../../components/annotorious-annotator/AnnotoriousOSD.min.js"
+                s.onload = resolve
+                s.onerror = reject
+                document.head.appendChild(s)
+            })
+        }
     }
 
     async loadAnnotations() {
@@ -236,10 +247,6 @@ class ReadOnlyViewTranscribe extends HTMLElement {
 
             this.shadowRoot.querySelector(".transcribe-title").textContent = `Transcription for ${manifest.label.none?.[0]}`
 
-            // Assuming the format of canvas based on TPEN3 manifest.json, but this may need adjustments for other formats
-            // Have to use openSeadragon to load selectors on the canvas and let it handle all the annotation selectors
-            // Using html divs to create selectors which allows for easy hover and click events, which is harder with openSeadragon overlays
-            // This needs code change once different selector types are used in annotations
             for (const canvas of manifest.items) {
                 const imageUrl = canvas.items[0].items.find(i => i.motivation === "painting").body.id
                 const canvasLabel = canvas.annotations?.[0]?.label?.none?.[0] || `Default Canvas ${manifest.items.indexOf(canvas) + 1}`
@@ -264,17 +271,15 @@ class ReadOnlyViewTranscribe extends HTMLElement {
                     if (!output[layerLabel]) {
                         output[layerLabel] = {}
                         for (const [imgUrl, canvasLabel] of Object.entries(canvasMap)) {
-                            output[layerLabel][imgUrl] = { label: canvasLabel, lines: [] }
+                            output[layerLabel][imgUrl] = { id: '', label: canvasLabel, lines: [] }
                         }
                     }
 
-                    //These xywh values are relative to the rectangular annotation selector.
-                    //There can be multiple different types of selectors, but we are only using the xywh ones for now.
+                    output[layerLabel][imgUrl] = { id: annoPage.id, label: canvasMap[imgUrl], lines: [] }
+
                     const lines = await Promise.all(
                         annoPage.items.map(async (anno) => {
-                            let selectorValue = anno?.target?.selector?.value || anno?.target?.id || anno?.target
-                            const [x, y, w, h] = selectorValue.split(':')[1].split(',').map(Number)
-                            return { x, y, w, h, text: anno.body?.value ?? '' }
+                            return { text: anno.body?.value ?? '' }
                         })
                     )
                     output[layerLabel][imgUrl].lines = lines
@@ -298,6 +303,7 @@ class ReadOnlyViewTranscribe extends HTMLElement {
             }
 
             this.layers = output
+            console.log("Loaded layers:", this.layers)
             const layerSelect = this.shadowRoot.getElementById("layerSelect")
             Object.keys(this.layers).forEach(layerName => {
                 const option = document.createElement("option")
@@ -322,6 +328,233 @@ class ReadOnlyViewTranscribe extends HTMLElement {
         }
     }
 
+    async processPage(pageID) {
+        if (!pageID) return
+        const devstoreURL = "https://devstore.rerum.io/v1/id/"
+        try {
+            this.#resolvedAnnotationPage = await fetch(`${devstoreURL}${pageID}`)
+            .then(r => {
+                if (!r.ok) throw r
+                return r.json()
+            })
+        } catch (e) {
+            this.shadowRoot.getElementById('annotator-container').innerHTML = `
+                <h3>Page Error</h3>
+                <p>The Page you are looking for does not exist or you do not have access to it.</p>
+            `
+            console.error(e)
+            return
+        }
+
+        this.#resolvedAnnotationPage.$isDirty = false
+        const type = this.#resolvedAnnotationPage["@type"] ?? this.#resolvedAnnotationPage.type
+        if (type !== "AnnotationPage") {
+            console.warn("Resolved object is not an AnnotationPage:", type)
+        }
+
+        const targetCanvas = this.#resolvedAnnotationPage.target
+        if (!targetCanvas) {
+            this.shadowRoot.getElementById('annotator-container').innerHTML = `<h3>No target Canvas on AnnotationPage</h3>`
+            return
+        }
+
+        if (this.#resolvedAnnotationPage?.items && this.#resolvedAnnotationPage.items.length) {
+            for (let i = 0; i < this.#resolvedAnnotationPage.items.length; i++) {
+                const anno_ref = this.#resolvedAnnotationPage.items[i]
+                if (!anno_ref || anno_ref.hasOwnProperty('body')) continue
+                try {
+                    const anno_res = await fetch(anno_ref.id).then(r => r.json())
+                    this.#resolvedAnnotationPage.items[i] = anno_res
+                } catch (err) {
+                    console.warn('Failed to resolve referenced annotation', anno_ref, err)
+                }
+            }
+        }
+
+        const canvasURI = this.processPageTarget(targetCanvas)
+        await this.processCanvas(canvasURI)
+    }
+
+    async processCanvas(uri) {
+        if (!uri) return
+        let resolvedCanvas
+        try {
+            resolvedCanvas = await fetch(uri).then(r => {
+                if (!r.ok) throw r
+                return r.json()
+            })
+            this.shadowRoot.getElementById('annotator-container').style.backgroundImage = 'none'
+        } catch (e) {
+            this.shadowRoot.getElementById('annotator-container').innerHTML = `
+                <h3>Canvas Error</h3>
+                <p>The Canvas within this Page could not be loaded.</p>
+            `
+            console.error(e)
+            return
+        }
+
+        const id = resolvedCanvas["@id"] ?? resolvedCanvas.id
+        if (!id) {
+            throw new Error("Cannot Resolve Canvas or Image")
+        }
+        const type = resolvedCanvas["@type"] ?? resolvedCanvas.type
+        if (!(type === "Canvas" || type === "sc:Canvas")) {
+            console.warn(`Provided URI did not resolve a 'Canvas'.  It resolved a '${type}'`)
+        }
+
+        let fullImage = resolvedCanvas?.items?.[0]?.items?.[0]?.body?.id
+        if (!fullImage) fullImage = resolvedCanvas?.images?.[0]?.resource?.["@id"]
+        let imageService = resolvedCanvas?.items?.[0]?.items?.[0]?.body?.service?.id
+        if (!imageService) imageService = resolvedCanvas?.images?.[0]?.resource?.service?.["@id"]
+
+        if (!fullImage) {
+            throw new Error("Cannot Resolve Canvas Image")
+        }
+
+        let imgx = resolvedCanvas?.items?.[0]?.items?.[0]?.body?.width
+        if (!imgx) imgx = resolvedCanvas?.images?.[0]?.resource?.width
+        let imgy = resolvedCanvas?.items?.[0]?.items?.[0]?.body?.height
+        if (!imgy) imgy = resolvedCanvas?.images?.[0]?.resource?.height
+        this.#imageDims = [imgx || 0, imgy || 0]
+        this.#canvasDims = [resolvedCanvas?.width || 0, resolvedCanvas?.height || 0]
+
+        let imageInfo = { type: "image", url: fullImage }
+        if (imageService) {
+            try {
+                if (!imageService.endsWith('/')) imageService += '/'
+                const info = await fetch(imageService + "info.json").then(resp => {
+                    if (!resp.ok) throw new Error('info.json not available')
+                    return resp.json()
+                })
+                if (info) imageInfo = info
+            } catch (_) {
+                imageInfo = { type: "image", url: fullImage }
+            }
+        }
+
+        this._currentCanvas = resolvedCanvas
+
+        if (!this.#osd) {
+            this.#osd = OpenSeadragon({
+                element: this.shadowRoot.getElementById('annotator-container'),
+                tileSources: imageInfo,
+                prefixUrl: "../../interfaces/annotator/images/",
+                showFullPageControl: false,
+                gestureSettingsMouse: { clickToZoom: false, dblClickToZoom: true },
+                gestureSettingsTouch: { clickToZoom: false, dblClickToZoom: true },
+                gestureSettingsPen: { clickToZoom: false, dblClickToZoom: true },
+                gestureSettingsUnknown: { clickToZoom: false, dblClickToZoom: true }
+            })
+        } else {
+            this.#osd.open(imageInfo)
+        }
+
+        const canvasID = resolvedCanvas["@id"] ?? resolvedCanvas.id
+        this.#osd.addOnceHandler('open', () => {
+            try {
+                if (!this.#annotoriousInstance) {
+                    this.#annotoriousInstance = AnnotoriousOSD.createOSDAnnotator(this.#osd, {
+                        adapter: AnnotoriousOSD.W3CImageFormat(canvasID),
+                        drawingEnabled: false,
+                        drawingMode: "drag",
+                        style: { fill: "#ff0000", fillOpacity: 0.25 },
+                        userSelectAction: "EDIT"
+                    })
+                    this.#annotoriousInstance.setDrawingTool("rectangle")
+                } else {
+                    try {
+                        this.#annotoriousInstance.destroy()
+                    } catch (_) {}
+                    this.#annotoriousInstance = AnnotoriousOSD.createOSDAnnotator(this.#osd, {
+                        adapter: AnnotoriousOSD.W3CImageFormat(canvasID),
+                        drawingEnabled: false,
+                        drawingMode: "drag",
+                        style: { fill: "#ff0000", fillOpacity: 0.25 },
+                        userSelectAction: "EDIT"
+                    })
+                    this.#annotoriousInstance.setDrawingTool("rectangle")
+                }
+                this.setInitialAnnotations()
+            } catch (err) {
+                console.error("Annotorious init error:", err)
+            }
+        })
+    }
+
+    setInitialAnnotations() {
+        if (!this.#resolvedAnnotationPage || !this.#annotoriousInstance) {
+            this.shadowRoot.getElementById('annotator-container').style.backgroundImage = "none"
+            return
+        }
+
+        let allAnnotations = JSON.parse(JSON.stringify(this.#resolvedAnnotationPage.items || []))
+        allAnnotations = this.formatAnnotations(allAnnotations)
+        allAnnotations = this.convertSelectors(allAnnotations, true)
+        allAnnotations = this.roundSelectors(allAnnotations)
+        allAnnotations = this.sortAnnotations(allAnnotations)
+        this.#annotoriousInstance.setAnnotations(allAnnotations, false)
+        this.renderRightPanel()
+    }
+
+    renderRightPanel() {
+        const container = this.shadowRoot.querySelector(".transcribed-text")
+        container.innerHTML = ""
+
+        if (!this.layers || !this.currentLayer) {
+            container.textContent = "No transcription available."
+            return
+        }
+
+        const pages = Object.keys(this.layers[this.currentLayer] || {})
+        if (pages.length === 0) {
+            container.textContent = "No transcription available."
+            return
+        }
+
+        const canvasUri = pages[this.currentPage] || pages[0]
+        const pageObj = this.layers[this.currentLayer][canvasUri]
+        const annotations = (pageObj?.lines ?? [])
+
+        if (annotations.length === 0) {
+            container.textContent = "No transcription available for this page."
+            return
+        }
+
+        annotations.sort((a, b) => a.y - b.y)
+
+        annotations.forEach((line, index) => {
+            const box = document.createElement("div")
+            box.className = "annotation-box"
+            box.dataset.selector = [line.x, line.y, line.w, line.h].join(",")
+            box.innerHTML = `
+                <div class="annotation-label">${index + 1}. ${line.text || "No Text Available"}</div>
+            `
+            box.addEventListener("click", () => {
+                this.zoomToAnnotation(line)
+            })
+            container.appendChild(box)
+        })
+    }
+
+    zoomToAnnotation({ x, y, w, h }) {
+        if (!this.#osd || !this.#osd.world || !this.#osd.world.getItemAt(0)) return
+        const item = this.#osd.world.getItemAt(0)
+        try {
+            const rect = item.imageToViewportRectangle(x, y, w, h)
+            this.#osd.viewport.fitBounds(rect, true)
+            const annos = this.#annotoriousInstance.getAnnotations()
+            const match = annos.find(a => {
+                const sv = a.target?.selector?.value?.replace("xywh=pixel:", "")
+                return sv === [x, y, w, h].join(",")
+            })
+            if (match) {
+                try { this.#annotoriousInstance.selectAnnotation(match) } catch (_) {}
+            }
+        } catch (e) {
+            console.warn("zoomToAnnotation failed:", e)
+        }
+    }
+
     populateCanvasDropdown() {
         const canvasSelect = this.shadowRoot.getElementById("canvasSelect")
         canvasSelect.innerHTML = ""
@@ -332,88 +565,122 @@ class ReadOnlyViewTranscribe extends HTMLElement {
             option.textContent = this.layers[this.currentLayer][url].label
             canvasSelect.appendChild(option)
         })
-        if (this.pages.length > 0) canvasSelect.value = this.pages[0]
-    }
-
-    updateTranscribedTextXYWH(transcriptionLines = []) {
-        const container = this.shadowRoot.querySelector(".transcribed-text")
-        if (!container || !this.viewer) return
-
-        container.innerHTML = ""
-
-        if (transcriptionLines.length === 0) {
-            container.textContent = "No transcription available for this page."
-            return
-        }
-
-        transcriptionLines.sort((a, b) => a.y - b.y)
-        transcriptionLines.forEach((line, index) => {
-            const p = document.createElement("p")
-            p.textContent = `${index + 1}. ${line.text || "No Text Available"}`
-            p.addEventListener("click", () => {
-                this.shadowRoot.querySelectorAll(".annotation-box").forEach(el => {
-                    const label = el.querySelector(".annotation-label")
-                    if (label && label.textContent === line.text) {
-                        label.style.display = "block"
-                        label.style.opacity = "1"
-                        el.style.boxShadow = "0 0 15px rgba(255,111,61,0.6)"
-                        el.style.transform = "scale(1.05)"
-                        setTimeout(() => {
-                            label.style.display = "none"
-                            label.style.opacity = "0"
-                            el.style.boxShadow = ""
-                            el.style.transform = ""
-                        }, 1500)
-                    }
-                })
-            })
-
-            container.appendChild(p)
-        })
+        if (this.pages.length > 0) canvasSelect.value = this.pages[this.currentPage] ?? this.pages[0]
     }
 
     openPage(index) {
         if (!this.pages[index]) return console.error("Invalid page index", index)
-
         this.currentPage = index
-        const url = this.pages[index]
-        const annotations = this.layers[this.currentLayer][url].lines || []
-        this.updateTranscribedTextXYWH(annotations)
+        const canvasSelect = this.shadowRoot.getElementById("canvasSelect")
+        canvasSelect.value = this.pages[this.currentPage]
+        const currentCanvasUrl = this.layers[this.currentLayer][this.pages[this.currentPage]]?.id
+        this.#annotationPageID = currentCanvasUrl.split('/').pop()
+        this.processPage(this.#annotationPageID)
+        this.renderRightPanel()
+        const pageNumberEl = this.shadowRoot.getElementById("pageNumber")
+        if (pageNumberEl) pageNumberEl.textContent = `Page ${this.currentPage + 1} of ${this.pages.length}`
+        const prevBtn = this.shadowRoot.getElementById("prevPage")
+        const nextBtn = this.shadowRoot.getElementById("nextPage")
+        if (prevBtn) prevBtn.disabled = this.currentPage === 0
+        if (nextBtn) nextBtn.disabled = this.currentPage === this.pages.length - 1
+    }
 
-        if (!this.viewer) return console.error("OpenSeadragon viewer not initialized")
-
-        const viewerDiv = this.shadowRoot.getElementById("openseadragon")
-        this.viewer.open({ type: 'image', url })
-        this.viewer.addOnceHandler("open", () => {
-            viewerDiv.style.backgroundImage = "none"
-            this.viewer.clearOverlays()
-            const item = this.viewer.world.getItemAt(0)
-
-            if (annotations.length === 0) {
-                const messageEl = document.createElement("div")
-                messageEl.className = "transcribe-message"
-                messageEl.textContent = "This Page is not transcribed"
-                this.viewer.canvas.appendChild(messageEl)
-            } else {
-                const existingMessage = this.viewer.canvas.querySelector(".transcribe-message")
-                if (existingMessage) existingMessage.remove()
-                annotations.forEach(a => {
-                    const elt = document.createElement("div")
-                    elt.className = "annotation-box"
-                    elt.innerHTML = `<div class="annotation-label">${a.text}</div>`
-                    const rect = item.imageToViewportRectangle(a.x, a.y, a.w, a.h)
-                    this.viewer.addOverlay({ element: elt, location: rect })
-                })
+    formatAnnotations(annotations) {
+        if (!annotations || annotations.length === 0) return annotations
+        return annotations.map(annotation => {
+            if (!annotation.hasOwnProperty("target") || !annotation.hasOwnProperty("body")) return annotation
+            if (typeof annotation.target === "string") {
+                const tarsel = annotation.target.split("#")
+                if (tarsel && tarsel.length === 2) {
+                    if (!tarsel[1].includes("pixel:")) tarsel[1] = tarsel[1].replace("xywh=", "xywh=pixel:")
+                        annotation.target = {
+                            source: tarsel[0],
+                            selector: {
+                            conformsTo: "http://www.w3.org/TR/media-frags/",
+                            type: "FragmentSelector",
+                            value: tarsel[1]
+                        }
+                    }
+                }
             }
-
-            const pageNumberEl = this.shadowRoot.getElementById("pageNumber")
-            if (pageNumberEl) pageNumberEl.textContent = `Page ${this.currentPage + 1} of ${this.pages.length}`
-
-            const prevBtn = this.shadowRoot.getElementById("prevPage")
-            const nextBtn = this.shadowRoot.getElementById("nextPage")
-            if (prevBtn) prevBtn.disabled = this.currentPage === 0
-            if (nextBtn) nextBtn.disabled = this.currentPage === this.pages.length - 1
+            if (!Array.isArray(annotation.body)) {
+                if (typeof annotation.body === "object") {
+                    annotation.body = (Object.keys(annotation.body).length > 0) ? [annotation.body] : []
+                } else {
+                    annotation.body = [annotation.body]
+                }
+            }
+            annotation.motivation ??= "transcribing"
+            return annotation
         })
+    }
+
+    convertSelectors(annotations, bool = false) {
+        if (this.#imageDims[0] === this.#canvasDims[0] && this.#imageDims[1] === this.#canvasDims[1]) return annotations
+        if (!annotations || annotations.length === 0) return annotations
+        return annotations.map(annotation => {
+            if (!annotation.target || !annotation.target.selector || !annotation.target.selector.value) return annotation
+            const orig = annotation.target.selector.value.replace("xywh=pixel:", "").split(",").map(parseFloat)
+            let converted = [0, 0, 0, 0]
+            if (bool) {
+                converted[0] = (this.#imageDims[0] / this.#canvasDims[0]) * orig[0]
+                converted[1] = (this.#imageDims[1] / this.#canvasDims[1]) * orig[1]
+                converted[2] = (this.#imageDims[0] / this.#canvasDims[0]) * orig[2]
+                converted[3] = (this.#imageDims[1] / this.#canvasDims[1]) * orig[3]
+            } else {
+                converted[0] = (this.#canvasDims[0] / this.#imageDims[0]) * orig[0]
+                converted[1] = (this.#canvasDims[1] / this.#imageDims[1]) * orig[1]
+                converted[2] = (this.#canvasDims[0] / this.#imageDims[0]) * orig[2]
+                converted[3] = (this.#canvasDims[1] / this.#imageDims[1]) * orig[3]
+            }
+            annotation.target.selector.value = "xywh=pixel:" + converted.map(v => Number.isFinite(v) ? v : 0).join(",")
+            return annotation
+        })
+    }
+
+    roundSelectors(annotations) {
+        if (!annotations) return annotations
+        return annotations.map(annotation => {
+            if (!annotation.target || !annotation.target.selector || !annotation.target.selector.value) return annotation
+            const orig = annotation.target.selector.value.replace("xywh=pixel:", "").split(",").map(parseFloat)
+            const rounded = orig.map(n => Math.round(n||0))
+            annotation.target.selector.value = "xywh=pixel:" + rounded.join(",")
+            return annotation
+        })
+    }
+
+    sortAnnotations(annotations) {
+        return annotations.sort((a, b) => {
+            const a_sel = (a.target?.selector?.value ?? "").replace("xywh=pixel:", "").split(",")
+            const b_sel = (b.target?.selector?.value ?? "").replace("xywh=pixel:", "").split(",")
+            const ax = parseFloat(a_sel[0]||0), ay = parseFloat(a_sel[1]||0)
+            const bx = parseFloat(b_sel[0]||0), by = parseFloat(b_sel[1]||0)
+            if (ax < bx) return -1
+            if (ax > bx) return 1
+            if (ay < by) return -1
+            if (ay > by) return 1
+            return 0
+        })
+    }
+
+    processPageTarget(pageTarget) {
+        let canvasURI
+        if (Array.isArray(pageTarget)) {
+            throw new Error(`The AnnotationPage object has multiple targets.  We cannot process this yet.`)
+        }
+        if (typeof pageTarget === "object") {
+            const tcid = pageTarget["@id"] ?? pageTarget.id ?? pageTarget.source
+            if (!tcid) throw new Error(`The target of the AnnotationPage does not contain an id.`)
+            canvasURI = tcid
+        } else if (typeof pageTarget === "string") {
+            canvasURI = pageTarget
+        }
+        let uricheck
+        try { uricheck = new URL(canvasURI) } catch (_) {}
+        if (!(uricheck?.protocol === "http:" || uricheck?.protocol === "https:")) {
+            throw new Error(`AnnotationPage.target string is not a URI`)
+        }
+        return canvasURI
     }
 }
 
