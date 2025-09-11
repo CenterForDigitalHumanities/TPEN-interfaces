@@ -187,8 +187,8 @@ class ReadOnlyViewTranscribe extends HTMLElement {
 
         setTimeout(() => {
             if (this.pages.length > 0) {
-                const currentCanvasUrl = this.layers[this.currentLayer][this.pages[this.currentPage]]?.id
-                this.#annotationPageID = currentCanvasUrl.split('/').pop()
+                const currentCanvasUrl = this.layers[this.currentLayer][this.pages[this.currentPage]]?.id ?? ''
+                this.#annotationPageID = currentCanvasUrl.split('/').pop() ?? ''
             }
             const osdScript = document.createElement("script")
             osdScript.src = "../../components/annotorious-annotator/OSD.min.js"
@@ -231,102 +231,94 @@ class ReadOnlyViewTranscribe extends HTMLElement {
         const projectID = new URLSearchParams(window.location.search).get('projectID')
         const manifestUrl = `${staticUrl}/${projectID}/manifest.json`
 
-        try {
-            if (! await checkIfUrlExists(manifestUrl)) {
-                this.shadowRoot.querySelector(".transcribe-title").textContent = "Transcription not available yet. Please check back later."
-                this.shadowRoot.querySelector(".transcription-container").style.display = "none"
-                this.shadowRoot.querySelector(".page-controls").style.display = "none"
-                this.shadowRoot.querySelector(".layer-container").style.display = "none"
-                return
-            }
-            
-            const response = await fetch(manifestUrl)
-            if (!response.ok) {
-                const errText = await response.text()
-                throw new Error(`GitHub read failed: ${response.status} - ${errText}`)
-            }
-            const manifest = await response.json()
-            this.#staticManifest = manifest
-
-            this.shadowRoot.querySelector(".transcribe-title").textContent = `Transcription for ${manifest.label.none?.[0]}`
-
-            for (const canvas of manifest.items) {
-                const imageUrl = canvas.items[0].items.find(i => i.motivation === "painting").body.id
-                const canvasLabel = canvas.annotations?.[0]?.label?.none?.[0] || `Default Canvas ${manifest.items.indexOf(canvas) + 1}`
-                canvasMap[imageUrl] = canvasLabel
-            }
-
-            for (const canvas of manifest.items) {
-                const imgUrl = canvas.items[0].items.find(i => i.motivation === "painting").body.id
-                const annotations = canvas.annotations
-
-                if (!annotations || annotations.length === 0) {
-                    const defaultLayer = 'Default Layer'
-                if (!output[defaultLayer]) output[defaultLayer] = {}
-                    output[defaultLayer][imgUrl] = { label: canvasMap[imgUrl], lines: [] }
-                    continue
-                }
-
-                for (const annoPage of annotations) {
-                    const partOfId = await fetch(annoPage.partOf[0].id).then(res => res.json())
-                    const layerLabel = partOfId.label.none[0]
-
-                    if (!output[layerLabel]) {
-                        output[layerLabel] = {}
-                        for (const [imgUrl, canvasLabel] of Object.entries(canvasMap)) {
-                            output[layerLabel][imgUrl] = { id: '', label: canvasLabel, lines: [] }
-                        }
-                    }
-
-                    output[layerLabel][imgUrl] = { id: annoPage.id, label: canvasMap[imgUrl], lines: [] }
-
-                    const lines = await Promise.all(
-                        annoPage.items.map(async (anno) => {
-                            return { text: anno.body?.value ?? '' }
-                        })
-                    )
-                    output[layerLabel][imgUrl].lines = lines
-                }
-            }
-
-            for (const layerLabel of Object.keys(output)) {
-                const canvases = Object.values(output[layerLabel])
-                const maxLen = Math.max(...canvases.map(c => c.lines.length))
-
-                const connectPages = []
-                for (let i = 0; i < maxLen; i++) {
-                    for (const canvas of canvases) {
-                        if (canvas.lines[i]) connectPages.push({ ...canvas.lines[i], fromCanvas: canvas.label })
-                    }
-                }
-
-                for (const canvas of canvases) {
-                    canvas.lines = connectPages.filter(line => line.fromCanvas === canvas.label).map(({ fromCanvas, ...line }) => line)
-                }
-            }
-
-            this.layers = output
-            const layerSelect = this.shadowRoot.getElementById("layerSelect")
-            Object.keys(this.layers).forEach(layerName => {
-                const option = document.createElement("option")
-                option.value = layerName
-                option.textContent = layerName
-                layerSelect.appendChild(option)
-            })
-
-            if (Object.keys(this.layers).length > 0) {
-                this.currentLayer = Object.keys(this.layers)[0]
-                layerSelect.value = this.currentLayer
-                this.populateCanvasDropdown()
-                if (this.pages.length > 0) this.openPage(0)
-            }
-        } catch (err) {
-            console.error("Failed to load or parse manifest:", err)
-            this.shadowRoot.querySelector(".transcribe-title").textContent = "Error loading manifest"
-            this.shadowRoot.querySelector(".transcription-container").style.display = "none"
+        if (! await checkIfUrlExists(manifestUrl)) {
+            this.shadowRoot.querySelector(".transcribe-title").textContent = "Transcription not available yet. Please check back later."
+            this.shadowRoot.getElementById("annotator-container").style.display = "none"
+            this.shadowRoot.querySelector(".transcribed-text").style.display = "none"
             this.shadowRoot.querySelector(".page-controls").style.display = "none"
             this.shadowRoot.querySelector(".layer-container").style.display = "none"
             return
+        }
+        
+        const response = await fetch(manifestUrl)
+        if (!response.ok) {
+            const errText = await response.text()
+            throw new Error(`GitHub read failed: ${response.status} - ${errText}`)
+        }
+        const manifest = await response.json()
+        this.#staticManifest = manifest
+
+        this.shadowRoot.querySelector(".transcribe-title").textContent = `Transcription for ${manifest.label.none?.[0]}`
+
+        for (const canvas of manifest.items) {
+            const imageUrl = canvas.items[0].items.find(i => i.motivation === "painting").body.id
+            const canvasLabel = canvas.annotations?.[0]?.label?.none?.[0] || `Default Canvas ${manifest.items.indexOf(canvas) + 1}`
+            canvasMap[imageUrl] = canvasLabel
+        }
+
+        for (const canvas of manifest.items) {
+            const imgUrl = canvas.items[0].items.find(i => i.motivation === "painting").body.id
+            const annotations = canvas.annotations
+
+            if (!annotations || annotations.length === 0) {
+                const defaultLayer = 'Default Layer'
+            if (!output[defaultLayer]) output[defaultLayer] = {}
+                output[defaultLayer][imgUrl] = { label: canvasMap[imgUrl], lines: [] }
+                continue
+            }
+
+            for (const annoPage of annotations) {
+                const partOfId = await fetch(annoPage.partOf[0].id).then(res => res.json())
+                const layerLabel = partOfId.label.none[0]
+
+                if (!output[layerLabel]) {
+                    output[layerLabel] = {}
+                    for (const [imgUrl, canvasLabel] of Object.entries(canvasMap)) {
+                        output[layerLabel][imgUrl] = { id: '', label: canvasLabel, lines: [] }
+                    }
+                }
+
+                output[layerLabel][imgUrl] = { id: annoPage.id, label: canvasMap[imgUrl], lines: [] }
+
+                const lines = await Promise.all(
+                    annoPage.items.map(async (anno) => {
+                        return { text: anno.body?.value ?? '' }
+                    })
+                )
+                output[layerLabel][imgUrl].lines = lines
+            }
+        }
+
+        for (const layerLabel of Object.keys(output)) {
+            const canvases = Object.values(output[layerLabel])
+            const maxLen = Math.max(...canvases.map(c => c.lines.length))
+
+            const connectPages = []
+            for (let i = 0; i < maxLen; i++) {
+                for (const canvas of canvases) {
+                    if (canvas.lines[i]) connectPages.push({ ...canvas.lines[i], fromCanvas: canvas.label })
+                }
+            }
+
+            for (const canvas of canvases) {
+                canvas.lines = connectPages.filter(line => line.fromCanvas === canvas.label).map(({ fromCanvas, ...line }) => line)
+            }
+        }
+
+        this.layers = output
+        const layerSelect = this.shadowRoot.getElementById("layerSelect")
+        Object.keys(this.layers).forEach(layerName => {
+            const option = document.createElement("option")
+            option.value = layerName
+            option.textContent = layerName
+            layerSelect.appendChild(option)
+        })
+
+        if (Object.keys(this.layers).length > 0) {
+            this.currentLayer = Object.keys(this.layers)[0]
+            layerSelect.value = this.currentLayer
+            this.populateCanvasDropdown()
+            if (this.pages.length > 0) this.openPage(0)
         }
     }
 
