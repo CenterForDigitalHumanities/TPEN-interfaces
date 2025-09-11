@@ -8,6 +8,7 @@ class ReadOnlyViewTranscribe extends HTMLElement {
     #staticManifest
     #imageDims
     #canvasDims
+    #currentPage
     _currentCanvas
 
     constructor() {
@@ -16,8 +17,18 @@ class ReadOnlyViewTranscribe extends HTMLElement {
         this.layers = {}
         this.pages = []
         this.currentLayer = null
-        this.currentPage = 0
+        this.#currentPage = 0
         this.currentCanvas = 0
+    }
+
+    get currentPage() { 
+        return this.#currentPage
+    }
+
+    set currentPage(index) { 
+        if (index < 0) index = 0
+        if (index >= this.pages.length) index = this.pages.length - 1
+        this.#currentPage = index
     }
 
     async connectedCallback() {
@@ -147,6 +158,10 @@ class ReadOnlyViewTranscribe extends HTMLElement {
                     cursor: default;
                     transform: none;
                 }
+
+                .hidden {
+                    display: none;
+                }
             </style>
             <div class="transcribe-container">
                 <h2 class="transcribe-title"></h2>
@@ -225,10 +240,10 @@ class ReadOnlyViewTranscribe extends HTMLElement {
 
         if (!await checkIfUrlExists(manifestUrl)) {
             this.shadowRoot.querySelector(".transcribe-title").textContent = "Transcription not available yet. Please check back later."
-            this.shadowRoot.getElementById("annotator-container").style.display = "none"
-            this.shadowRoot.querySelector(".transcribed-text").style.display = "none"
-            this.shadowRoot.querySelector(".page-controls").style.display = "none"
-            this.shadowRoot.querySelector(".layer-container").style.display = "none"
+            this.shadowRoot.getElementById("annotator-container").classList.add("hidden")
+            this.shadowRoot.querySelector(".transcribed-text").classList.add("hidden")
+            this.shadowRoot.querySelector(".page-controls").classList.add("hidden")
+            this.shadowRoot.querySelector(".layer-container").classList.add("hidden")
             return
         }
         
@@ -339,6 +354,8 @@ class ReadOnlyViewTranscribe extends HTMLElement {
             this.shadowRoot.getElementById('annotator-container').innerHTML = `<h3>No target Canvas on AnnotationPage</h3>`
             return
         }
+
+        this.shadowRoot.getElementById("annotator-container").style.backgroundImage = "none"
 
         const canvasURI = this.processPageTarget(targetCanvas)
         await this.processCanvas(canvasURI)
@@ -474,7 +491,7 @@ class ReadOnlyViewTranscribe extends HTMLElement {
 
     openPage(index) {
         if (!this.pages[index]) return console.error("Invalid page index", index)
-        this.currentPage = index
+        this.#currentPage = index
         const canvasSelect = this.shadowRoot.getElementById("canvasSelect")
         canvasSelect.value = this.pages[this.currentPage]
         const currentCanvasUrl = this.layers[this.currentLayer][this.pages[this.currentPage]]?.id ?? ''

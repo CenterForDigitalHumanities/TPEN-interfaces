@@ -39,11 +39,11 @@ class Tpen {
 
     constructor(tinyThingsURL = "https://dev.tiny.t-pen.org") {
         this.tinyThingsURL = tinyThingsURL
-        this.servicesURL = "https://dev.api.t-pen.org"
+        this.servicesURL = "http://localhost:3012"
         this.TPEN28URL = "https://t-pen.org"
         this.TPEN3URL = "https://three.t-pen.org"
         this.RERUMURL = "https://devstore.rerum.io/v1"
-        this.BASEURL = "https://app.t-pen.org"
+        this.BASEURL = "http://localhost:4000"
         this.currentUser
         this.activeProject
 
