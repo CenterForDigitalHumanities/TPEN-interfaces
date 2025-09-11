@@ -11,7 +11,7 @@ class ReadOnlyViewTranscribe extends HTMLElement {
 
     constructor() {
         super()
-        this.attachShadow({ mode: 'open' })
+        this.attachShadow({ mode: "open" })
         this.layers = {}
         this.pages = []
         this.currentLayer = null
@@ -147,7 +147,7 @@ class ReadOnlyViewTranscribe extends HTMLElement {
                 }
             </style>
             <div class="transcribe-container">
-                <h2 class="transcribe-title">Transcription Viewer</h2>
+                <h2 class="transcribe-title"></h2>
                 <div class="layer-container">
                 <label for="layerSelect">Layer</label>
                 <select id="layerSelect"><option value="">Loading layers</option></select>
@@ -303,7 +303,6 @@ class ReadOnlyViewTranscribe extends HTMLElement {
             }
 
             this.layers = output
-            console.log("Loaded layers:", this.layers)
             const layerSelect = this.shadowRoot.getElementById("layerSelect")
             Object.keys(this.layers).forEach(layerName => {
                 const option = document.createElement("option")
@@ -529,30 +528,8 @@ class ReadOnlyViewTranscribe extends HTMLElement {
             box.innerHTML = `
                 <div class="annotation-label">${index + 1}. ${line.text || "No Text Available"}</div>
             `
-            box.addEventListener("click", () => {
-                this.zoomToAnnotation(line)
-            })
             container.appendChild(box)
         })
-    }
-
-    zoomToAnnotation({ x, y, w, h }) {
-        if (!this.#osd || !this.#osd.world || !this.#osd.world.getItemAt(0)) return
-        const item = this.#osd.world.getItemAt(0)
-        try {
-            const rect = item.imageToViewportRectangle(x, y, w, h)
-            this.#osd.viewport.fitBounds(rect, true)
-            const annos = this.#annotoriousInstance.getAnnotations()
-            const match = annos.find(a => {
-                const sv = a.target?.selector?.value?.replace("xywh=pixel:", "")
-                return sv === [x, y, w, h].join(",")
-            })
-            if (match) {
-                try { this.#annotoriousInstance.selectAnnotation(match) } catch (_) {}
-            }
-        } catch (e) {
-            console.warn("zoomToAnnotation failed:", e)
-        }
     }
 
     populateCanvasDropdown() {
