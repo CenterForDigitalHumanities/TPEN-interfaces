@@ -17,6 +17,7 @@ class ReadOnlyViewTranscribe extends HTMLElement {
         this.pages = []
         this.currentLayer = null
         this.currentPage = 0
+        this.currentCanvas = 0
     }
 
     async connectedCallback() {
@@ -330,7 +331,14 @@ class ReadOnlyViewTranscribe extends HTMLElement {
     }
 
     async processPage(pageID) {
-        if (!pageID) return
+        this.currentCanvas = this.shadowRoot.getElementById("canvasSelect").selectedIndex
+        
+        if (pageID === '') {
+            this.#resolvedAnnotationPage = null
+            await this.processCanvas(this.#staticManifest?.items?.[this.currentCanvas]?.id)
+            return
+        }
+        
         this.#resolvedAnnotationPage = this.#staticManifest?.items.flatMap(c => c.annotations || []).find(ap => (ap.id ?? ap['@id'] ?? '').endsWith(pageID))
         if (!this.#resolvedAnnotationPage) {
             this.shadowRoot.getElementById('annotator-container').innerHTML = `<h3>Could not find AnnotationPage with ID: ${pageID}</h3>`
@@ -441,8 +449,9 @@ class ReadOnlyViewTranscribe extends HTMLElement {
         }
 
         const canvasID = resolvedCanvas["@id"] ?? resolvedCanvas.id
-        this.#osd.addOnceHandler('open', () => {
+        this.#osd.addOnceHandler('open', async () => {
             try {
+                await this.loadExternalScripts()
                 if (!this.#annotoriousInstance) {
                     this.#annotoriousInstance = AnnotoriousOSD.createOSDAnnotator(this.#osd, {
                         adapter: AnnotoriousOSD.W3CImageFormat(canvasID),
@@ -542,8 +551,8 @@ class ReadOnlyViewTranscribe extends HTMLElement {
         this.currentPage = index
         const canvasSelect = this.shadowRoot.getElementById("canvasSelect")
         canvasSelect.value = this.pages[this.currentPage]
-        const currentCanvasUrl = this.layers[this.currentLayer][this.pages[this.currentPage]]?.id
-        this.#annotationPageID = currentCanvasUrl.split('/').pop()
+        const currentCanvasUrl = this.layers[this.currentLayer][this.pages[this.currentPage]]?.id ?? ''
+        this.#annotationPageID = currentCanvasUrl.split('/').pop() ?? ''
         this.processPage(this.#annotationPageID)
         this.renderRightPanel()
         const pageNumberEl = this.shadowRoot.getElementById("pageNumber")
