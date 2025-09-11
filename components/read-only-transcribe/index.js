@@ -423,10 +423,6 @@ class ReadOnlyViewTranscribe extends HTMLElement {
                 tileSources: imageInfo,
                 prefixUrl: "../../interfaces/annotator/images/",
                 showFullPageControl: false,
-                gestureSettingsMouse: { clickToZoom: false, dblClickToZoom: true },
-                gestureSettingsTouch: { clickToZoom: false, dblClickToZoom: true },
-                gestureSettingsPen: { clickToZoom: false, dblClickToZoom: true },
-                gestureSettingsUnknown: { clickToZoom: false, dblClickToZoom: true }
             })
         } else {
             this.#osd.open(imageInfo)
@@ -439,10 +435,7 @@ class ReadOnlyViewTranscribe extends HTMLElement {
                 if (!this.#annotoriousInstance) {
                     this.#annotoriousInstance = AnnotoriousOSD.createOSDAnnotator(this.#osd, {
                         adapter: AnnotoriousOSD.W3CImageFormat(canvasID),
-                        drawingEnabled: false,
-                        drawingMode: "drag",
                         style: { fill: "#ff0000", fillOpacity: 0.25 },
-                        userSelectAction: "EDIT"
                     })
                     this.#annotoriousInstance.setDrawingTool("rectangle")
                 } else {
@@ -451,10 +444,7 @@ class ReadOnlyViewTranscribe extends HTMLElement {
                     } catch (_) {}
                     this.#annotoriousInstance = AnnotoriousOSD.createOSDAnnotator(this.#osd, {
                         adapter: AnnotoriousOSD.W3CImageFormat(canvasID),
-                        drawingEnabled: false,
-                        drawingMode: "drag",
                         style: { fill: "#ff0000", fillOpacity: 0.25 },
-                        userSelectAction: "EDIT"
                     })
                     this.#annotoriousInstance.setDrawingTool("rectangle")
                 }
