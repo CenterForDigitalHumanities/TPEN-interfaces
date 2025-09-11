@@ -190,16 +190,8 @@ class ReadOnlyViewTranscribe extends HTMLElement {
                 const currentCanvasUrl = this.layers[this.currentLayer][this.pages[this.currentPage]]?.id ?? ''
                 this.#annotationPageID = currentCanvasUrl.split('/').pop() ?? ''
             }
-            const osdScript = document.createElement("script")
-            osdScript.src = "../../components/annotorious-annotator/OSD.min.js"
-            const annotoriousScript = document.createElement("script")
-            annotoriousScript.src = "../../components/annotorious-annotator/AnnotoriousOSD.min.js"
-            this.shadowRoot.appendChild(osdScript)
-            setTimeout(() => {
-                this.shadowRoot.appendChild(annotoriousScript)
-                setTimeout(() => { this.processPage(this.#annotationPageID) }, 200)
-            }, 200)
-        }, 50)
+            setTimeout(() => { this.processPage(this.#annotationPageID) }, 200)
+        }, 200)
     }
 
     async loadExternalScripts() {
