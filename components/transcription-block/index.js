@@ -7,6 +7,11 @@ export default class TranscriptionBlock extends HTMLElement {
 
     #page = null
     #transcriptions
+    #baseline // tracks last saved text per line
+    #saveTimers = new Map() // lineIndex -> timeout id
+    #pendingSaves = new Map() // lineIndex -> Promise
+    #unloadHandlerBound
+    #storageKey // localStorage key for drafts
 
     constructor() {
         super()
@@ -48,14 +53,10 @@ export default class TranscriptionBlock extends HTMLElement {
     }
 
     connectedCallback() {
-        TPEN.eventDispatcher.on('tpen-project-loaded', async () => {
-            this.render()
-            this.addEventListeners()
-            const pageID = TPEN.screen?.pageInQuery
-            this.#page = await vault.get(pageID, 'annotationpage', true)
-            this.#transcriptions = await this.processTranscriptions(this.#page.items)
-            this.moveToTopLine()
-        })
+        if (TPEN.activeProject?._createdAt) {
+            this.authgate()
+        }
+        TPEN.eventDispatcher.on('tpen-project-loaded', this.authgate.bind(this))
         TPEN.eventDispatcher.on('tpen-transcription-previous-line', _ev => {
             this.updateTranscriptionUI()
         })
@@ -64,124 +65,280 @@ export default class TranscriptionBlock extends HTMLElement {
         })
     }
 
+    async authgate() {
+        if (!CheckPermissions.checkViewAccess("ANY", "CONTENT")) {
+            this.remove()
+            return
+        }
+        this.render()
+        this.addEventListeners()
+        const pageID = TPEN.screen?.pageInQuery
+        this.#page = await vault.get(pageID, 'annotationpage', true)
+        this.#transcriptions = await this.processTranscriptions(this.#page.items)
+        this.#baseline = [...this.#transcriptions]
+        this.#storageKey = this.buildStorageKey()
+        this.loadDraftsFromStorage()
+        this.moveToTopLine()
+    }
+
     addEventListeners() {
         const prevButton = this.shadowRoot.querySelector('.prev-button')
+        const prevPageButton = this.shadowRoot.querySelector('.prev-page-button')
         const nextButton = this.shadowRoot.querySelector('.next-button')
+        const nextPageButton = this.shadowRoot.querySelector('.next-page-button')
         const inputField = this.shadowRoot.querySelector('.transcription-input')
-        const saveButton = this.shadowRoot.querySelector('.save-all-lines')
-
-        // Move to the previous line
         if (prevButton) {
             prevButton.addEventListener('click', this.moveToPreviousLine.bind(this))
         }
-
-        // Move to the next line
+        if (prevPageButton) {
+            prevPageButton.addEventListener('click', () => {
+                eventDispatcher.dispatch('tpen-transcription-previous-line')
+            })
+        }
         if (nextButton) {
             nextButton.addEventListener('click', this.moveToNextLine.bind(this))
         }
-
-        // Input field
+        if (nextPageButton) {
+            nextPageButton.addEventListener('click', () => {
+                eventDispatcher.dispatch('tpen-transcription-next-line')
+            })
+        }
         if (inputField) {
             inputField.addEventListener('blur', (e) => this.saveTranscription(e.target.value))
             inputField.addEventListener('blur', () => this.checkDirtyLines())
             inputField.addEventListener('keydown', (e) => this.handleKeydown(e))
             inputField.addEventListener('input', e => {
                 this.#transcriptions[TPEN.activeLineIndex] = inputField.value ?? ''
+                this.markLineDirty(TPEN.activeLineIndex)
+                this.persistDraft(TPEN.activeLineIndex)
+                this.scheduleLineSave(TPEN.activeLineIndex)
             })
         }
 
-        // Save all lines button
-        if (saveButton) {
-            saveButton.addEventListener('click', async () => {
-                const pageID = TPEN.screen?.pageInQuery
-                const projectID = TPEN.activeProject?.id ?? TPEN.activeProject?._id
-                if (!pageID || !projectID) {
-                    console.warn('No page or project ID found, cannot save transcriptions.')
-                    TPEN.eventDispatcher.dispatch('tpen-toast', {
-                        message: 'No page or project ID found, cannot save transcriptions.',
-                        status: 'error'
-                    })
-                    return
-                }
-                if (!this.$dirtyLines || this.$dirtyLines.size === 0) {
-                    TPEN.eventDispatcher.dispatch('tpen-toast', {
-                        message: 'No unsaved changes.',
-                        status: 'info'
-                    })
-                    return
-                }
-                const saveLines = Array.from(this.$dirtyLines).map(async index => {
-                    const line = this.#page.items[index]
-                    const newText = this.#transcriptions[index]
-                    const lineID = line.id?.split?.('/').pop()
-                    if (!lineID) {
-                        console.warn('No line ID found, cannot save transcription.')
-                        TPEN.eventDispatcher.dispatch('tpen-toast', {
-                            message: 'No line ID found, cannot save transcription.',
-                            status: 'error'
-                        })
-                        return
-                    }
-                    return fetch(`${TPEN.servicesURL}/project/${projectID}/page/${pageID}/line/${lineID}/text`, {
-                        method: 'PATCH',
-                        headers: {
-                            'Content-Type': 'text/plain',
-                            'Authorization': `Bearer ${TPEN.getAuthorization()}`
-                        },
-                        body: typeof newText === 'string' ? newText : (newText?.toString?.() ?? '')
-                    })
-                })
-                ;(async () => {
-                    try {
-                        for (const saveLine of saveLines) {
-                            await saveLine
-                        }
-                        TPEN.eventDispatcher.dispatch('tpen-toast', {
-                            message: `Saved ${saveLines.length} lines.`,
-                            status: 'success'
-                        })
-                        this.$dirtyLines.clear()
-                        this.#page = await vault.get(pageID, 'annotationpage', true)
-                        const linesCount = this.shadowRoot.querySelector('lines-count')
-                        if (linesCount) linesCount.textContent = ''
-                    } catch (err) {
-                        console.error('Error saving transcriptions:', err)
-                        TPEN.eventDispatcher.dispatch('tpen-toast', {
-                            message: 'Error saving transcriptions.',
-                            status: 'error'
-                        })
-                    }
-                })()
-            })
-        }
         // Track dirty lines
         this.$dirtyLines = new Set()
+        this.#unloadHandlerBound = this.beforeUnloadHandler.bind(this)
+        window.addEventListener('beforeunload', this.#unloadHandlerBound)
 
         // Listen for line navigation events
-        TPEN.eventDispatcher.on('tpen-transcription-previous-line', () => {
+        eventDispatcher.on('tpen-transcription-previous-line', () => {
             this.checkDirtyLines()
         })
-        TPEN.eventDispatcher.on('tpen-transcription-next-line', () => {
+        eventDispatcher.on('tpen-transcription-next-line', () => {
             this.checkDirtyLines()
+        })
+        // Listen for prev/next page navigation events
+        eventDispatcher.on('tpen-transcription-prev-page', () => {
+            this.navigateToPage('prev')
+        })
+        eventDispatcher.on('tpen-transcription-next-page', () => {
+            this.navigateToPage('next')
+        })
+
+        // External control events
+        eventDispatcher.on('tpen-transcription-flush-all', this.flushAllSaves.bind(this))
+        eventDispatcher.on('tpen-transcription-save-line', (index) => {
+            if (typeof index === 'number') this.scheduleLineSave(index)
         })
     }
 
     // Helper to compare and queue dirty lines
     checkDirtyLines = async () => {
-        if (!this.#page?.items || !this.#transcriptions) return
-        // Get all old texts in one go
-        const oldTexts = await this.processTranscriptions(this.#page.items)
-        oldTexts.forEach((oldText, index) => {
-            const newText = this.#transcriptions?.[index]
-            if (newText === oldText) {
-                this.$dirtyLines.delete(index)
-                return
-            }
-            this.$dirtyLines.add(index)
+        if (!this.#transcriptions || !this.#baseline) return
+        this.#transcriptions.forEach((txt, i) => {
+            if (txt === this.#baseline[i]) this.$dirtyLines.delete(i)
+            else this.$dirtyLines.add(i)
         })
         const linesCount = this.shadowRoot.querySelector('lines-count')
         if (!linesCount) return
         linesCount.textContent = this.$dirtyLines.size > 0 ? `(${this.$dirtyLines.size} unsaved)` : ''
+    }
+
+    markLineDirty(index) {
+        if (typeof index !== 'number') return
+        if (this.#transcriptions?.[index] !== this.#baseline?.[index]) {
+            const beforeSize = this.$dirtyLines.size
+            this.$dirtyLines.add(index)
+            if (!beforeSize || !this.$dirtyLines.has(index)) {
+                // no-op (kept for clarity)
+            }
+            eventDispatcher.dispatch('tpen-transcription-line-dirty', { index })
+        } else {
+            const had = this.$dirtyLines.delete(index)
+            if (had) eventDispatcher.dispatch('tpen-transcription-line-clean', { index })
+        }
+        const linesCount = this.shadowRoot?.querySelector('lines-count')
+        if (linesCount) linesCount.textContent = this.$dirtyLines.size > 0 ? `(debug: ${this.$dirtyLines.size} unsaved)` : ''
+    }
+
+    scheduleLineSave(index) {
+        if (!CheckPermissions.checkEditAccess('LINE', 'TEXT') && !CheckPermissions.checkEditAccess('LINE', 'CONTENT')) return
+        // debounce per line
+        const existing = this.#saveTimers.get(index)
+        if (existing) clearTimeout(existing)
+        const timer = setTimeout(() => {
+            this.saveLineRemote(index)
+        }, 2000)
+        this.#saveTimers.set(index, timer)
+        eventDispatcher.dispatch('tpen-transcription-line-save-scheduled', { index })
+    }
+
+    async saveLineRemote(index) {
+        if (index == null) return
+        if (!this.$dirtyLines?.has(index)) return
+        const pageID = TPEN.screen?.pageInQuery
+        const projectID = TPEN.activeProject?.id ?? TPEN.activeProject?._id
+        const line = this.#page?.items?.[index]
+        const newText = this.#transcriptions?.[index] ?? ''
+        const lineID = line?.id?.split?.('/').pop()
+        if (!pageID || !projectID || !lineID) return
+        // avoid duplicate in-flight for same line
+        if (this.#pendingSaves.has(index)) return
+        const p = fetch(`${TPEN.servicesURL}/project/${projectID}/page/${pageID}/line/${lineID}/text`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'text/plain',
+                'Authorization': `Bearer ${TPEN.getAuthorization()}`
+            },
+            body: typeof newText === 'string' ? newText : (newText?.toString?.() ?? '')
+        }).then(async res => {
+            if (!res.ok) throw new Error('Failed to save line ' + index)
+            // Attempt to extract a new line id if provided
+            let newReturnedId
+            try {
+                const data = await res.json()
+                newReturnedId = data?.id
+            } catch (e) {
+                console.warn('Could not parse save response for new line id', e)
+            }
+            if (newReturnedId) this.updateLineId(index, newReturnedId)
+            // Update baseline and dirty tracking
+            this.#baseline[index] = newText
+            this.$dirtyLines.delete(index)
+            this.removeDraft(index)
+            this.checkDirtyLines()
+            eventDispatcher.dispatch('tpen-transcription-line-save-success', { index, text: newText })
+        }).catch(err => {
+            console.error(err)
+            // leave dirty so user can retry
+            eventDispatcher.dispatch('tpen-transcription-line-save-fail', { index, error: err?.message || 'error' })
+        }).finally(() => {
+            this.#pendingSaves.delete(index)
+            if (!this.hasPendingSaves()) eventDispatcher.dispatch('tpen-transcription-all-saves-complete')
+        })
+        eventDispatcher.dispatch('tpen-transcription-line-save-start', { index })
+        this.#pendingSaves.set(index, p)
+        return p
+    }
+
+    async flushAllSaves() {
+        // trigger immediate saves for all dirty lines
+        eventDispatcher.dispatch('tpen-transcription-flush-start')
+        const dirty = Array.from(this.$dirtyLines ?? [])
+        dirty.forEach(i => {
+            const existingTimer = this.#saveTimers.get(i)
+            if (existingTimer) clearTimeout(existingTimer)
+            this.saveLineRemote(i)
+        })
+        await Promise.allSettled(Array.from(this.#pendingSaves.values()))
+        if (!this.hasPendingSaves()) eventDispatcher.dispatch('tpen-transcription-flush-complete')
+    }
+
+    hasPendingSaves() {
+        return (this.$dirtyLines?.size ?? 0) > 0 || this.#pendingSaves.size > 0
+    }
+
+    beforeUnloadHandler(e) {
+        if (this.hasPendingSaves()) {
+            e.preventDefault()
+            e.returnValue = 'Some transcription lines are still saving. Are you sure you want to leave?'
+            eventDispatcher.dispatch('tpen-transcription-pending-saves-warning', { remaining: this.$dirtyLines.size, inFlight: this.#pendingSaves.size })
+            return e.returnValue
+        }
+    }
+
+    disconnectedCallback() {
+        window.removeEventListener('beforeunload', this.#unloadHandlerBound)
+        eventDispatcher.dispatch('tpen-transcription-block-disconnected')
+    }
+
+    buildStorageKey() {
+        const projectID = TPEN.activeProject?.id ?? TPEN.activeProject?._id ?? 'unknownProject'
+        const pageID = TPEN.screen?.pageInQuery ?? 'unknownPage'
+        return `tpen-drafts:${projectID}:${pageID}`
+    }
+
+    async loadDraftsFromStorage() {
+        // Wait until project and page are loaded
+        if (!this.#storageKey || !TPEN.activeProject || !this.#page?.items) return
+        let stored
+        try { stored = JSON.parse(localStorage.getItem(this.#storageKey) || '{}') } catch (err) { 
+            console.error(`Failed to parse drafts from localStorage key "${this.#storageKey}":`, err); 
+            stored = {}; 
+        }
+        if (!stored || typeof stored !== 'object') return
+        let applied = 0
+        let changed = false
+        Object.entries(stored).forEach(([idx, draft]) => {
+            const i = parseInt(idx, 10)
+            if (Number.isNaN(i)) return
+            // Only apply drafts to lines that exist in the DB
+            if (typeof draft?.text === 'string' && this.#page.items[i]) {
+                this.#transcriptions[i] = draft.text
+                applied++
+            } else {
+                // Remove orphaned draft
+                delete stored[idx]
+                changed = true
+            }
+        })
+        if (changed) {
+            try { localStorage.setItem(this.#storageKey, JSON.stringify(stored)) } catch (err) { console.warn('Could not update localStorage with cleaned drafts', err) }
+        }
+        if (applied > 0) {
+            this.checkDirtyLines()
+            TPEN.eventDispatcher.dispatch('tpen-toast', {
+                message: `Recovered ${applied} draft line${applied === 1 ? '' : 's'} from local storage.`,
+                status: 'info'
+            })
+            eventDispatcher.dispatch('tpen-transcription-drafts-recovered', { count: applied })
+        }
+    }
+
+    persistDraft(index) {
+        if (!this.#storageKey) return
+        const key = this.#storageKey
+        let stored
+        try { stored = JSON.parse(localStorage.getItem(key) || '{}') } catch { stored = {} }
+        stored[index] = { text: this.#transcriptions[index], ts: Date.now() }
+        try { localStorage.setItem(key, JSON.stringify(stored)) } catch (err) { console.warn('Could not persist draft', err) }
+    }
+
+    removeDraft(index) {
+        if (!this.#storageKey) return
+        let stored
+        try { stored = JSON.parse(localStorage.getItem(this.#storageKey) || '{}') } catch { stored = {} }
+        if (stored && stored[index]) {
+            delete stored[index]
+            try { localStorage.setItem(this.#storageKey, JSON.stringify(stored)) } catch { /* ignore */ }
+        }
+        // If no drafts remain, remove key to avoid growth
+        if (stored && Object.keys(stored).length === 0) {
+            try { localStorage.removeItem(this.#storageKey) } catch { /* ignore */ }
+        }
+    }
+
+    updateLineId(index, newId) {
+        const lineObj = this.#page?.items?.[index]
+        if (!lineObj || !newId) return
+        const oldId = lineObj.id
+        if (typeof oldId === 'string' && oldId.includes('/') && !newId.includes('/')) {
+            const prefix = oldId.slice(0, oldId.lastIndexOf('/') + 1)
+            lineObj.id = prefix + newId
+        } else {
+            lineObj.id = newId
+        }
+        eventDispatcher.dispatch('tpen-transcription-line-id-updated', { index, oldId, newId: lineObj.id })
     }
 
     handleKeydown(e) {
@@ -266,6 +423,9 @@ export default class TranscriptionBlock extends HTMLElement {
 
     saveTranscription(text) {
         this.#transcriptions[TPEN.activeLineIndex] = text
+        this.markLineDirty(TPEN.activeLineIndex)
+        this.persistDraft(TPEN.activeLineIndex)
+        this.scheduleLineSave(TPEN.activeLineIndex)
     }
 
     updateTranscriptionUI() {
@@ -279,10 +439,40 @@ export default class TranscriptionBlock extends HTMLElement {
             inputElem.focus?.()
             inputElem.setSelectionRange?.(inputElem.value.length, inputElem.value.length)
         }
+        // Swap Prev/Prev Page button if on first line
+        let prevAction = TPEN.activeLineIndex === 0 ? ['add','remove'] : ['remove','add']
+        let prevBtn = this.shadowRoot?.querySelector('.prev-button')
+        let prevPageBtn = this.shadowRoot?.querySelector('.prev-page-button')
+        prevBtn.classList[prevAction[0]]('hidden')
+        prevPageBtn.classList[prevAction[1]]('hidden')
+        // Swap Next/Next Page button if on last line
+        let nextAction = TPEN.activeLineIndex === this.#transcriptions.length - 1 ? ['add','remove'] : ['remove','add']
+        let nextBtn = this.shadowRoot?.querySelector('.next-button')
+        let nextPageBtn = this.shadowRoot?.querySelector('.next-page-button')
+        nextBtn.classList[nextAction[0]]('hidden')
+        nextPageBtn.classList[nextAction[1]]('hidden')
+    }
+
+    navigateToPage(direction) {
+        // Find the current page index in the active layer
+        const project = TPEN.activeProject
+        const pageID = TPEN.screen?.pageInQuery
+        if (!project?.layers?.length || !pageID) return
+        const allPages = project.layers.flatMap(layer => layer.pages)
+        const idx = allPages.findIndex(p => p.id?.split?.("/").pop() === pageID)
+        if (idx === -1) return
+        let newIdx = direction === 'next' ? idx + 1 : idx - 1
+        if (newIdx < 0 || newIdx >= allPages.length) return
+        const newPage = allPages[newIdx]
+        if (!newPage?.id) return
+        // Update the URL and trigger a reload
+        const url = new URL(window.location.href)
+        url.searchParams.set('pageID', newPage.id.split('/').pop())
+        window.location.href = url.toString()
     }
 
     render() {
-        if(!CheckPermissions.checkViewAccess('LINE', 'TEXT') && !CheckPermissions.checkViewAccess('LINE', 'CONTENT')) {
+        if (!CheckPermissions.checkViewAccess('LINE', 'TEXT') && !CheckPermissions.checkViewAccess('LINE', 'CONTENT')) {
             import('/components/project-permissions/index.js')
             this.shadowRoot.innerHTML = `
             <div class="no-access" style="color: red;background: rgba(255, 0, 0, 0.1);text-align: center;">No access to view transcription
@@ -321,6 +511,10 @@ export default class TranscriptionBlock extends HTMLElement {
             flex-wrap: wrap;
         }
 
+        .hidden {
+            display: none;
+        }
+
         .transcription-input {
             padding: 10px 14px;
             font-size: 14px;
@@ -342,7 +536,9 @@ export default class TranscriptionBlock extends HTMLElement {
         }
 
         .prev-button,
-        .next-button {
+        .next-button,
+        .next-page-button,
+        .prev-page-button {
             padding: 8px 16px;
             font-size: 14px;
             background-color: rgb(0, 90, 140);
@@ -353,19 +549,35 @@ export default class TranscriptionBlock extends HTMLElement {
             transition: background-color 0.2s ease, border-color 0.2s ease;
         }
 
+        .next-page-button,
+        .prev-page-button {
+            background-color: rgb(166, 65, 41);
+            border: 1px solid rgb(206, 105, 81);
+        }
+
         .prev-button:hover,
-        .next-button:hover {
+        .next-button:hover,
+        .next-page-button:hover,
+        .prev-page-button:hover {
             background-color: #d0e2ff;
             border-color: #aaa;
+            text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
+        }
+
+        .next-page-button:hover,
+        .prev-page-button:hover {
+            background-color: rgba(218, 151, 135, 1);
         }
       </style>
       <div class="transcription-block">
-        <button class="save-all-lines">Save All Lines <lines-count></lines-count></button>
+        <lines-count class='debug'></lines-count>
         <center class="transcription-line"> - </center>
         <div class="flex-center">
+            <button class="prev-page-button hidden">Previous Page</button>
           <button class="prev-button">Prev</button>
           <input type="text" class="transcription-input" placeholder="Transcription input text" value="" ${CheckPermissions.checkEditAccess('LINE', 'TEXT') || CheckPermissions.checkEditAccess('LINE', 'CONTENT') ? '' : 'disabled'}>
           <button class="next-button">Next</button>
+          <button class="next-page-button hidden">Next Page</button>
         </div>
       </div>
     `
