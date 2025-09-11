@@ -13,14 +13,19 @@ export default class WorkspaceTools extends HTMLElement {
   }
 
   connectedCallback() {
-    eventDispatcher.on("tpen-project-loaded", () => {
-      // Check if the user has permission to view workspace tools
-      if (!CheckPermissions.checkViewAccess("TOOLS", "ANY")) {
-        this.remove()
-        return
-      }
-      this.render()
-    })
+    // If project is already loaded, run authgate immediately
+    if (TPEN.activeProject?._createdAt) {
+      this.authgate()
+    }
+    eventDispatcher.on("tpen-project-loaded", this.authgate.bind(this))
+  }
+
+  authgate() {
+    if (!CheckPermissions.checkViewAccess("TOOLS", "ANY")) {
+      this.remove()
+      return
+    }
+    this.render()
   }
 
   render() {
