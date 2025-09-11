@@ -5,6 +5,7 @@ class ReadOnlyViewTranscribe extends HTMLElement {
     #annotoriousInstance
     #annotationPageID
     #resolvedAnnotationPage
+    #staticManifest
     #imageDims
     #canvasDims
     _currentCanvas
@@ -244,6 +245,7 @@ class ReadOnlyViewTranscribe extends HTMLElement {
                 throw new Error(`GitHub read failed: ${response.status} - ${errText}`)
             }
             const manifest = await response.json()
+            this.#staticManifest = manifest
 
             this.shadowRoot.querySelector(".transcribe-title").textContent = `Transcription for ${manifest.label.none?.[0]}`
 
@@ -329,19 +331,9 @@ class ReadOnlyViewTranscribe extends HTMLElement {
 
     async processPage(pageID) {
         if (!pageID) return
-        const devstoreURL = "https://devstore.rerum.io/v1/id/"
-        try {
-            this.#resolvedAnnotationPage = await fetch(`${devstoreURL}${pageID}`)
-            .then(r => {
-                if (!r.ok) throw r
-                return r.json()
-            })
-        } catch (e) {
-            this.shadowRoot.getElementById('annotator-container').innerHTML = `
-                <h3>Page Error</h3>
-                <p>The Page you are looking for does not exist or you do not have access to it.</p>
-            `
-            console.error(e)
+        this.#resolvedAnnotationPage = this.#staticManifest?.items.flatMap(c => c.annotations || []).find(ap => (ap.id ?? ap['@id'] ?? '').endsWith(pageID))
+        if (!this.#resolvedAnnotationPage) {
+            this.shadowRoot.getElementById('annotator-container').innerHTML = `<h3>Could not find AnnotationPage with ID: ${pageID}</h3>`
             return
         }
 
