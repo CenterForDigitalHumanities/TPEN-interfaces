@@ -258,19 +258,10 @@ class ReadOnlyViewTranscribe extends HTMLElement {
         this.shadowRoot.querySelector(".transcribe-title").textContent = `Transcription for ${manifest.label.none?.[0]}`
 
         for (const canvas of manifest.items) {
-            const imageUrl = canvas.items[0].items.find(i => i.motivation === "painting").body.id
-            const canvasLabel = canvas.annotations?.[0]?.label?.none?.[0] || `Default Canvas ${manifest.items.indexOf(canvas) + 1}`
-            canvasMap[imageUrl] = canvasLabel
-        }
-
-        for (const canvas of manifest.items) {
             const imgUrl = canvas.items[0].items.find(i => i.motivation === "painting").body.id
             const annotations = canvas.annotations
 
             if (!annotations || annotations.length === 0) {
-                const defaultLayer = 'Default Layer'
-            if (!output[defaultLayer]) output[defaultLayer] = {}
-                output[defaultLayer][imgUrl] = { label: canvasMap[imgUrl], lines: [] }
                 continue
             }
 
@@ -280,19 +271,14 @@ class ReadOnlyViewTranscribe extends HTMLElement {
 
                 if (!output[layerLabel]) {
                     output[layerLabel] = {}
-                    for (const [imgUrl, canvasLabel] of Object.entries(canvasMap)) {
-                        output[layerLabel][imgUrl] = { id: '', label: canvasLabel, lines: [] }
-                    }
                 }
+                output[layerLabel][imgUrl] = { id: annoPage.id, label: annoPage.label.none[0], lines: [] }
 
-                output[layerLabel][imgUrl] = { id: annoPage.id, label: canvasMap[imgUrl], lines: [] }
-
-                const lines = await Promise.all(
-                    annoPage.items.map(async (anno) => {
+                output[layerLabel][imgUrl].lines = await Promise.all(
+                    annoPage?.items.map(async (anno) => {
                         return { text: anno.body?.value ?? '' }
                     })
                 )
-                output[layerLabel][imgUrl].lines = lines
             }
         }
 
