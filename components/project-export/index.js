@@ -14,6 +14,7 @@ customElements.define('tpen-project-export', class extends HTMLElement {
     
     async render() {
         const url = `https://dev.static.t-pen.org/${TPEN.activeProject._id}/manifest.json`
+        const viewTranscriptionUrl = `${TPEN.BASEURL}/project/view-transcription/?projectID=${TPEN.activeProject._id}`
         const response = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/deploymentStatus`, {
             method: 'GET',
             headers: {
@@ -82,14 +83,14 @@ customElements.define('tpen-project-export', class extends HTMLElement {
             case 7:
                 // This case indicates that the deployment is failed
                 if (await checkIfUrlExists(url) && response.status !== 2) {
-                    html += `<a href="${url}" target="_blank">${url}</a>`
+                    html += `<a href="${viewTranscriptionUrl}" target="_blank">${url}</a>`
                 } else {
                     html += `<p class="error">Manifest Not Found</p>`
                 }
                 break
             case 4:
                 // This case indicates that the manifest is being generated successfully
-                html += `<a href="${url}" target="_blank">${url}</a>`
+                html += `<a href="${viewTranscriptionUrl}" target="_blank">${url}</a>`
                 break
             default:
                 html += `<p class="error">Unknown Status</p>`

@@ -1,8 +1,7 @@
-import TPEN from "../../../api/TPEN.js"
-class TpenHeader extends HTMLElement {
+class NoAuthHeader extends HTMLElement {
 
     constructor() {
-        super();
+        super()
         this.attachShadow({ mode: 'open' });
         this.shadowRoot.innerHTML = `
             <link rel="stylesheet" href="../../components/gui/site/header.css">
@@ -38,40 +37,9 @@ class TpenHeader extends HTMLElement {
                 <tpen-action-link data-description="Whatever the TPEN.actionLink is will be a button-looking link here.">
                     <button type="button" class="action-button hidden">Action</button>
                 </tpen-action-link>
-                <nav>
-                    <ul>
-                        <li><a href="/index">Home</a></li>
-                        <li><a href="/about">About</a></li>
-                        <li class="logout-btn"><a href="#">Logout</a></li>
-                    </ul>
-                </nav>
             </header>
-        `;
-    }
-    connectedCallback() {
-        TPEN.eventDispatcher.on('tpen-gui-title', ev => {
-            if(!ev.detail) {
-                title.classList.add('hidden')
-                return
-            }
-            const title = this.shadowRoot.querySelector('.banner')
-            title.classList.remove('hidden')
-            title.textContent = ev.detail
-            title.setAttribute('title', ev.detail)
-        })
-        TPEN.eventDispatcher.on('tpen-gui-action-link', ev => {
-            const btn = this.shadowRoot.querySelector('.action-button')
-            btn.classList.remove('hidden')
-            btn.textContent = ev.detail.label
-            btn.addEventListener('click', ev.detail.callback)
-        })
-        TPEN.eventDispatcher.on('tpen-gui-action-link-remove', ev => {
-            const btn = this.shadowRoot.querySelector('.action-button')
-            btn.classList.add('hidden')
-            btn.removeEventListener('click', ev.detail.callback)
-        })
-        this.shadowRoot.querySelector('.logout-btn').addEventListener('click', ()=>TPEN.logout())
+        `
     }
 }
 
-customElements.define('tpen-header', TpenHeader);
+customElements.define('tpen-no-auth-header', NoAuthHeader)
