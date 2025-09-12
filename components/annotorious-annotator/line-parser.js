@@ -508,10 +508,10 @@ class AnnotoriousAnnotator extends HTMLElement {
         onClick: (e) => {
             if (this.#resolvedAnnotationPage?.$isDirty) {
               if (confirm("Stop line parsing and go transcribe?  Unsaved changes will be lost.")) 
-                location.href = `/transcribe?projectID=${TPEN.activeProject._id}`  
+                location.href = `/transcribe?projectID=${TPEN.activeProject._id}&pageID=${this.#annotationPageID}`  
             }
             else {
-              location.href = `/transcribe?projectID=${TPEN.activeProject._id}`  
+              location.href = `/transcribe?projectID=${TPEN.activeProject._id}&pageID=${this.#annotationPageID}`  
             }
         }
       })
