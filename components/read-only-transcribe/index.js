@@ -282,22 +282,6 @@ class ReadOnlyViewTranscribe extends HTMLElement {
             }
         }
 
-        for (const layerLabel of Object.keys(output)) {
-            const canvases = Object.values(output[layerLabel])
-            const maxLen = Math.max(...canvases.map(c => c.lines.length))
-
-            const connectPages = []
-            for (let i = 0; i < maxLen; i++) {
-                for (const canvas of canvases) {
-                    if (canvas.lines[i]) connectPages.push({ ...canvas.lines[i], fromCanvas: canvas.label })
-                }
-            }
-
-            for (const canvas of canvases) {
-                canvas.lines = connectPages.filter(line => line.fromCanvas === canvas.label).map(({ fromCanvas, ...line }) => line)
-            }
-        }
-
         this.layers = output
         const layerSelect = this.shadowRoot.getElementById("layerSelect")
         layerSelect.innerHTML = ""
