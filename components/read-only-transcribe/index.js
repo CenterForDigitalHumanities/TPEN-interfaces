@@ -168,7 +168,7 @@ class ReadOnlyViewTranscribe extends HTMLElement {
                 <div class="layer-container">
                 <label for="layerSelect">Layer</label>
                 <select id="layerSelect"><option value="">Loading layers</option></select>
-                <label for="canvasSelect">Canvas</label>
+                <label for="canvasSelect">Page</label>
                 <select id="canvasSelect"><option value="">Loading canvases</option></select>
                 </div>
             </div>
@@ -314,6 +314,7 @@ class ReadOnlyViewTranscribe extends HTMLElement {
 
         this.layers = output
         const layerSelect = this.shadowRoot.getElementById("layerSelect")
+        layerSelect.innerHTML = ""
         Object.keys(this.layers).forEach(layerName => {
             const option = document.createElement("option")
             option.value = layerName
