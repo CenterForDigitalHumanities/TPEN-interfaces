@@ -104,7 +104,8 @@ export default class TranscriptionBlock extends HTMLElement {
             })
         }
         if (inputField) {
-            inputField.addEventListener('blur', (e) => this.saveTranscription(e.target.value))
+            // This blur happens and saves a transcription event if I have not typed any text.  Causes strange draft line behavior.
+            // inputField.addEventListener('blur', (e) => this.saveTranscription(e.target.value))
             inputField.addEventListener('blur', () => this.checkDirtyLines())
             inputField.addEventListener('keydown', (e) => this.handleKeydown(e))
             inputField.addEventListener('input', e => {
@@ -271,12 +272,12 @@ export default class TranscriptionBlock extends HTMLElement {
     async loadDraftsFromStorage() {
         // Wait until project and page are loaded
         if (!this.#storageKey || !TPEN.activeProject || !this.#page?.items) return
-        let stored
-        try { stored = JSON.parse(localStorage.getItem(this.#storageKey) || '{}') } catch (err) { 
+        let stored = localStorage.getItem(this.#storageKey) ?? '{}'
+        try { stored = JSON.parse(stored) } catch (err) { 
             console.error(`Failed to parse drafts from localStorage key "${this.#storageKey}":`, err); 
-            stored = {}; 
+            stored = {}
         }
-        if (!stored || typeof stored !== 'object') return
+        if (typeof stored !== 'object' || Object.keys(stored).length === 0) return
         let applied = 0
         let changed = false
         Object.entries(stored).forEach(([idx, draft]) => {
@@ -308,16 +309,16 @@ export default class TranscriptionBlock extends HTMLElement {
     persistDraft(index) {
         if (!this.#storageKey) return
         const key = this.#storageKey
-        let stored
-        try { stored = JSON.parse(localStorage.getItem(key) || '{}') } catch { stored = {} }
+        let stored = localStorage.getItem(this.#storageKey) ?? '{}'
+        try { stored = JSON.parse(stored) } catch { stored = {} }
         stored[index] = { text: this.#transcriptions[index], ts: Date.now() }
         try { localStorage.setItem(key, JSON.stringify(stored)) } catch (err) { console.warn('Could not persist draft', err) }
     }
 
     removeDraft(index) {
         if (!this.#storageKey) return
-        let stored
-        try { stored = JSON.parse(localStorage.getItem(this.#storageKey) || '{}') } catch { stored = {} }
+        let stored = localStorage.getItem(this.#storageKey) ?? '{}'
+        try { stored = JSON.parse(stored)} catch { stored = {} }
         if (stored && stored[index]) {
             delete stored[index]
             try { localStorage.setItem(this.#storageKey, JSON.stringify(stored)) } catch { /* ignore */ }

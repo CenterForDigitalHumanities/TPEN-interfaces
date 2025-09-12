@@ -22,7 +22,7 @@ class Vault {
         const type = this._normalizeType(itemType ?? item?.type ?? item?.['@type'])
         const id = this._getId(item)
         const typeStore = this.store.get(type)
-        let result = typeStore?.get(id) ?? null
+        let result = typeStore?.get(id)
         if (result) return result
 
         const cacheKey = this._cacheKey(type, id)
@@ -79,7 +79,7 @@ class Vault {
             } catch {}
             return data
         } catch {
-            return null
+            return
         }
     }
 
