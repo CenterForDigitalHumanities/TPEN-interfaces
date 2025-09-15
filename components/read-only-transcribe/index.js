@@ -418,6 +418,15 @@ class ReadOnlyViewTranscribe extends HTMLElement {
                 this.#annotoriousInstance.on('selectionChanged', (selected) => {
                     const elem = this.#annotoriousInstance.viewer.element.querySelector(".a9s-annotation.selected")
                     if (!elem) return
+                    const allBoxes = this.shadowRoot.querySelectorAll(".annotation-box")
+                    allBoxes.forEach(box => box.classList.remove("highlight"))
+                    const annoBody = selected[0].body?.[0].value ?? ''
+                    const targetBox = Array.from(allBoxes).find(box => box.textContent.includes(annoBody))
+                    if (targetBox) {
+                        targetBox.classList.add("highlight")
+                        targetBox.scrollIntoView({ behavior: "smooth", block: "center" })
+                    }
+                    
                     elem.style.pointerEvents = "none"
                     elem.style.touchAction = "none"
                     elem.scrollIntoView({ behavior: "smooth", block: "center" })
