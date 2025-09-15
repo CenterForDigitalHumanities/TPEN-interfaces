@@ -81,17 +81,17 @@ export default class ProjectHeader extends HTMLElement {
             <section class="labels">
               <div class="project-title">${projectTitle}</div>
               <div class="canvas-label">
-                <select>
-                  <option value="" disabled selected>-- Select Canvas --</option>
-                </select>
+          <select>
+            <option value="" disabled selected>-- Select Canvas --</option>
+          </select>
               </div>
             </section>
             <tpen-layer-selector></tpen-layer-selector>
             <div class="line-indicator">Line indicator</div>
             <div class="control-buttons">
-              <div class="nav-icon"><img draggable="false" src="../../assets/icons/home.png" alt=""></div>
-              <div class="nav-icon"><img draggable="false" src="../../assets/icons/contact.png" alt=""></div>
-              <div class="nav-icon"><img draggable="false" src="../../assets/icons/profile.png" alt=""></div>
+              <a class="nav-icon" href="/index"><img draggable="false" src="../../assets/icons/home.png" alt="Home"></a>
+              <a class="nav-icon" href="/project/manage?projectID=${TPEN.screen.projectInQuery}"><img draggable="false" src="../../assets/icons/contact.png" alt="Manage Project"></a>
+              <a class="nav-icon" href="/profile"><img draggable="false" src="../../assets/icons/profile.png" alt="Profile"></a>
             </div>
           </nav>
         `
