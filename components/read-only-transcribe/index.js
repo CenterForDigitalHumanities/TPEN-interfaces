@@ -126,6 +126,12 @@ class ReadOnlyViewTranscribe extends HTMLElement {
                     transform: translateY(-1px);
                 }
 
+               .annotation-box.highlight {
+                    background: rgba(255, 127, 80, 0.3);
+                    border: 1px solid #FF7F50;
+                    color: #000;
+                }
+
                 .annotation-label {
                     font-weight: 600;
                     font-size: 14px;
@@ -149,10 +155,12 @@ class ReadOnlyViewTranscribe extends HTMLElement {
                     font-weight: 500;
                     transition: background 0.2s, transform 0.2s;
                 }
+                
                 .page-controls button:hover:not(:disabled) {
                     background: #e85d2d;
                     transform: translateY(-1px);
                 }
+                
                 .page-controls button:disabled {
                     background: #ccc;
                     cursor: default;
@@ -161,6 +169,22 @@ class ReadOnlyViewTranscribe extends HTMLElement {
 
                 .hidden {
                     display: none;
+                }
+
+                .a9s-annotation.selected rect {
+                    stroke: #FF6B6B;
+                    stroke-width: 2px;
+                    fill: none;
+                    animation: glowPulse 1.5s infinite alternate;
+                }
+
+                @keyframes glowPulse {
+                    0% {
+                        filter: drop-shadow(0 0 2px rgba(255, 107, 107, 0.6));
+                    }
+                    100% {
+                        filter: drop-shadow(0 0 8px rgba(255, 107, 107, 1));
+                    }
                 }
             </style>
             <div class="transcribe-container">
@@ -234,7 +258,6 @@ class ReadOnlyViewTranscribe extends HTMLElement {
     async loadAnnotations() {
         const staticUrl = "https://dev.static.t-pen.org"
         const output = {}
-        const canvasMap = {}
         const projectID = new URLSearchParams(window.location.search).get('projectID')
         const manifestUrl = `${staticUrl}/${projectID}/manifest.json`
 
@@ -377,7 +400,7 @@ class ReadOnlyViewTranscribe extends HTMLElement {
                     this.#annotoriousInstance = AnnotoriousOSD.createOSDAnnotator(this.#osd, {
                         adapter: AnnotoriousOSD.W3CImageFormat(canvasID),
                         style: { fill: "#ff0000", fillOpacity: 0.25 },
-                        userSelectAction: "NONE"
+                        userSelectAction: "EDIT"
                     })
                     this.#annotoriousInstance.setDrawingEnabled(false)
                 } else {
@@ -387,11 +410,20 @@ class ReadOnlyViewTranscribe extends HTMLElement {
                     this.#annotoriousInstance = AnnotoriousOSD.createOSDAnnotator(this.#osd, {
                         adapter: AnnotoriousOSD.W3CImageFormat(canvasID),
                         style: { fill: "#ff0000", fillOpacity: 0.25 },
-                        userSelectAction: "NONE"
+                        userSelectAction: "EDIT"
                     })
                     this.#annotoriousInstance.setDrawingEnabled(false)
                 }
                 this.setInitialAnnotations()
+                this.#annotoriousInstance.on('selectionChanged', (selected) => {
+                    const elem = this.#annotoriousInstance.viewer.element.querySelector(".a9s-annotation.selected")
+                    if (!elem) return
+                    elem.style.pointerEvents = "none"
+                    elem.style.touchAction = "none"
+                    elem.scrollIntoView({ behavior: "smooth", block: "center" })
+                    const gElems = elem.querySelectorAll("g")
+                    gElems.forEach(gElem => gElem.remove())
+                })
             } catch (err) {
                 console.error("Annotorious init error:", err)
             }
@@ -443,6 +475,13 @@ class ReadOnlyViewTranscribe extends HTMLElement {
             box.innerHTML = `
                 <div class="annotation-label">${index + 1}. ${line.text || "No Text Available"}</div>
             `
+            box.addEventListener("click", () => {
+                const allAnnotations = this.#annotoriousInstance.getAnnotations()
+                const targetAnno = allAnnotations.find(a => a.body[0]?.value === line.text)
+                if (targetAnno) {
+                    this.#annotoriousInstance.setSelected([targetAnno.id])
+                }
+            })
             container.appendChild(box)
         })
     }
