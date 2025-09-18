@@ -172,8 +172,8 @@ class ProjectTools extends HTMLElement {
                     <div class="container">
                         <div class="tool-card">
                             <div>
-                                ${isToolsEditAccess ? `<input type="checkbox" name="tools" value="${tool.value}" ${tool.state ? "checked" : ""}>` : ""}
-                                <label>${tool.name}</label>
+                                ${isToolsEditAccess ? `<input type="checkbox" name="tools" value="${tool.toolName}" ${tool.custom?.enabled ? "checked" : ""}>` : ""}
+                                <label>${tool.label}</label>
                             </div>
                             <button type="button" class="remove-field-btn">
                                 <!-- Icon source: https://www.flaticon.com/free-icons/delete by Freepik -->
@@ -225,7 +225,7 @@ class ProjectTools extends HTMLElement {
 
         function checkTools(name, url) {
             for (let tool of tools) {
-                if (tool.name === name || tool.url === url) {
+                if (tool.label === name || tool.url === url) {
                     return true
                 }
             }
@@ -293,10 +293,14 @@ class ProjectTools extends HTMLElement {
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify([{
-                    name, 
-                    value: name.toLowerCase().split(" ").join("-"), 
-                    url: url, 
-                    state: true
+                    label: name,
+                    toolName: name.toLowerCase().split(" ").join("-"),
+                    url: url,
+                    location: "drawer",
+                    custom: {
+                        enabled: true,
+                        tagName: null
+                    }
                 }])
             })
 
@@ -308,10 +312,14 @@ class ProjectTools extends HTMLElement {
             if (response.ok) {
                 this.render()
                 TPEN.activeProject.tools.push({
-                    name: name,
-                    value: name.toLowerCase().split(" ").join("-"),
+                    label: name,
+                    toolName: name.toLowerCase().split(" ").join("-"),
                     url: url,
-                    state: true
+                    location: "drawer",
+                    custom: {
+                        enabled: true,
+                        tagName: null
+                    }
                 })
             }
     
@@ -324,10 +332,16 @@ class ProjectTools extends HTMLElement {
     
         manageTools.addEventListener("click", async() => {
             const allInputs = this.shadowRoot.querySelectorAll('input[type="checkbox"][name="tools"]');
-            const selectedTools = Array.from(allInputs).map(input => ({
-                value: input.value,
-                state: input.checked
-            }))
+            const updatedTools = Array.from(allInputs).map(input => {
+                const tool = tools.find(t => t.toolName === input.value)
+                return {
+                    ...tool,
+                    custom: {
+                        ...tool.custom,
+                        enabled: input.checked
+                    }
+                }
+            })
 
             const response = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/tools`, {
                 method: "PUT",
@@ -335,7 +349,7 @@ class ProjectTools extends HTMLElement {
                     Authorization: `Bearer ${TPEN.getAuthorization()}`,
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify(selectedTools)
+                body: JSON.stringify(updatedTools)
             })
                 
             modal.style.display = "none"
@@ -372,7 +386,7 @@ class ProjectTools extends HTMLElement {
 
                 if (response.ok) {
                     container.remove()
-                    TPEN.activeProject.tools = TPEN.activeProject.tools.filter(tool => tool.value !== toolValue)
+                    TPEN.activeProject.tools = TPEN.activeProject.tools.filter(tool => tool.toolName !== toolValue)
                     TPEN.eventDispatcher.dispatch("tpen-toast", { status: "info", message: `Successfully removed ${toolName}` })
                     this.render()
                 } else {
