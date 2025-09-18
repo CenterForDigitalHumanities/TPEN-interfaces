@@ -49,7 +49,7 @@ export default class SplitscreenTool extends HTMLElement {
     render() {
       const tools = TPEN.activeProject?.tools || []
       const toolOptions = tools.map(tool => 
-        `<option value="${tool.value}">${tool.name}</option>`
+        `<option value="${tool.toolName}">${tool.label}</option>`
       ).join('')
       
       this.shadowRoot.innerHTML = `

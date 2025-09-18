@@ -56,7 +56,7 @@ class ProjectOptions extends HTMLElement {
                 <li><b>Owner:</b> ${project.getOwner()?.displayName ?? ''}</li>
             </ul>
             <h3>Project Tools</h3>
-            <project-tools></project-tools>
+            <tpen-project-tools></tpen-project-tools>
             <h3>Define Lines</h3>
             ${project.layers?.map(layer => `
                 <details>
