@@ -10,7 +10,7 @@ class ProjectTools extends HTMLElement {
 
     connectedCallback() {
         TPEN.attachAuthentication(this)
-        this._unsubProject = onProjectReady(this, this.render)
+        onProjectReady(this, this.render)
     }
 
     disconnectedCallback() {
