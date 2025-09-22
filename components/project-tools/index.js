@@ -202,7 +202,7 @@ class ProjectTools extends HTMLElement {
         `
     
         const modal = this.shadowRoot.querySelector("#tool-modal")
-        const manageTools = document.getElementById("manage-tools-btn")
+        const toggleTools = this.shadowRoot.querySelectorAll('input[type="checkbox"][name="tools"]')
         const openModalBtn = document.querySelector("tpen-page").querySelector('tpen-card[tpen-entity="tools"] #add-iframe-tools')
         const closeModalBtn = this.shadowRoot.querySelector("#close-modal-btn")
         const testBtn = this.shadowRoot.querySelector("#test-tool-btn")
@@ -286,22 +286,22 @@ class ProjectTools extends HTMLElement {
                 return TPEN.eventDispatcher.dispatch("tpen-toast", { status: "info", message: 'This tool already exists' })
             }
     
-            const response = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/tools`, {
+            const response = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/tool`, {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${TPEN.getAuthorization()}`,
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify([{
+                body: JSON.stringify({
                     label: name,
                     toolName: name.toLowerCase().split(" ").join("-"),
                     url: url,
                     location: "drawer",
                     custom: {
                         enabled: true,
-                        tagName: null
+                        tagName: ''
                     }
-                }])
+                })
             })
 
             modal.style.display = "none"
@@ -329,39 +329,30 @@ class ProjectTools extends HTMLElement {
                     { status: "error", message: 'Error Adding Tool' }
             )
         })
-    
-        manageTools.addEventListener("click", async() => {
-            const allInputs = this.shadowRoot.querySelectorAll('input[type="checkbox"][name="tools"]');
-            const updatedTools = Array.from(allInputs).map(input => {
-                const tool = tools.find(t => t.toolName === input.value)
-                return {
-                    ...tool,
-                    custom: {
-                        ...tool.custom,
-                        enabled: input.checked
-                    }
-                }
-            })
 
-            const response = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/tools`, {
-                method: "PUT",
-                headers: {
-                    Authorization: `Bearer ${TPEN.getAuthorization()}`,
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(updatedTools)
+        toggleTools.forEach(toggle => {
+            toggle.addEventListener("click", async() => {
+                const toolName = toggle.value
+                const response = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/toggleTool`, {
+                    method: "PUT",
+                    headers: {
+                        Authorization: `Bearer ${TPEN.getAuthorization()}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ toolName })
+                })
+                    
+                modal.style.display = "none"
+                iframe.style.display = "none"
+                nameInput.value = ""
+                urlInput.value = ""
+        
+                return TPEN.eventDispatcher.dispatch("tpen-toast", 
+                response.ok ? 
+                    { status: "info", message: 'Successfully Updated Tools' } : 
+                    { status: "error", message: 'Error Updating Tools' }
+                )
             })
-                
-            modal.style.display = "none"
-            iframe.style.display = "none"
-            nameInput.value = ""
-            urlInput.value = ""
-    
-            return TPEN.eventDispatcher.dispatch("tpen-toast", 
-            response.ok ? 
-                { status: "info", message: 'Successfully Updated Tools' } : 
-                { status: "error", message: 'Error Updating Tools' }
-            )
         })
 
         deleteButtons.forEach(button => {
@@ -375,13 +366,13 @@ class ProjectTools extends HTMLElement {
                     return
                 }
 
-                const response = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/tools`, {
+                const response = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/tool`, {
                     method: "DELETE",
                     headers: {
                         Authorization: `Bearer ${TPEN.getAuthorization()}`,
                         "Content-Type": "application/json",
                     },
-                    body: JSON.stringify({ tool: toolValue })
+                    body: JSON.stringify({ toolName: toolValue })
                 })
 
                 if (response.ok) {
