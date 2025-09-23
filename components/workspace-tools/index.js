@@ -69,7 +69,7 @@ export default class WorkspaceTools extends HTMLElement {
           TPEN.activeProject.config?.specialCharacters?.enabled ? `<tpen-special-character-tool></tpen-special-character-tool>` : ""
         }
         ${
-          TPEN.tools.find(t => t.toolName === "inspect")?.custom?.enabled ? `<tpen-magnifier-tool></tpen-magnifier-tool>` : ""
+          TPEN.activeProject.tools.find(t => t.toolName === "inspect")?.custom?.enabled ? `<tpen-magnifier-tool></tpen-magnifier-tool>` : ""
         }
       </div>
       ${
