@@ -198,22 +198,31 @@ export default class TranscriptionInterface extends HTMLElement {
   }
 
   addEventListeners() {
-    // Listen for any splitscreen-toggle events from children (if any)
-    this.shadowRoot.addEventListener('splitscreen-toggle', (e) => {
-      this.state.activeTool = e.detail?.selectedTool || ''
+    const closeSplitscreen = () => {
+      if (!this.state.isSplitscreenActive) return
+      this.state.isSplitscreenActive = false
+      this.toggleSplitscreen()
+      this.checkMagnifierVisibility()
+    }
+
+    const openSplitscreen = (selectedTool = '') => {
+      this.state.activeTool = selectedTool
       this.state.isSplitscreenActive = true
       this.toggleSplitscreen()
       this.loadRightPaneContent()
+    }
+
+    this.shadowRoot.addEventListener('splitscreen-toggle', e => openSplitscreen(e.detail?.selectedTool))
+
+    this.shadowRoot.addEventListener('click', e => {
+      if (e.target?.classList.contains('close-button')) closeSplitscreen()
     })
 
-    // Listen for clicks on the close button within the placeholder pane.
-    this.shadowRoot.addEventListener("click", (e) => {
-      if (e.target && e.target.classList.contains("close-button")) {
-        this.state.isSplitscreenActive = false
-        this.toggleSplitscreen()
-        this.checkMagnifierVisibility()
-      }
+    window.addEventListener('keydown', e => {
+      if (e.key === 'Escape') closeSplitscreen()
     })
+
+    TPEN.eventDispatcher.on('tools-dismiss', closeSplitscreen)
   }
 
   checkMagnifierVisibility() {

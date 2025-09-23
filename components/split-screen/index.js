@@ -11,15 +11,21 @@ export default class TpenSplitScreen extends HTMLElement {
     }
 
     connectedCallback() {
-      eventDispatcher.on("tpen-project-loaded", () => {
-        if(!CheckPermissions.checkViewAccess("TOOLS", "ANY")) {
-          // No reason to get this far, but let's not risk it.
-          this.remove()
-          return
-        }
-        this.render()
-        this.addEventListeners()
-      })
+      // If project is already loaded, run authgate immediately
+      if (TPEN.activeProject?._createdAt) {
+        this.authgate()
+      }
+      eventDispatcher.on("tpen-project-loaded", this.authgate.bind(this))
+    }
+
+    authgate() {
+      if(!CheckPermissions.checkViewAccess("TOOLS", "ANY")) {
+        // No reason to get this far, but let's not risk it.
+        this.remove()
+        return
+      }
+      this.render()
+      this.addEventListeners()
     }
 
     addEventListeners() {
