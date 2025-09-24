@@ -287,6 +287,18 @@ export default class TranscriptionInterface extends HTMLElement {
 
     rightPane.innerHTML = `<p>${tool.name ?? 'Tool'} - functionality coming soon...</p>`
     this.checkMagnifierVisibility()
+
+    if (tool === 'view-fullpage') {
+      const iframe = this.shadowRoot.querySelector('#fullPageFrame')
+      if (iframe) {
+        iframe.onload = () => {
+          iframe.contentWindow.postMessage({
+            type: "CANVAS_URL",
+            canvasUrl: iframe.getAttribute('canvasurl')
+          }, "*")
+        }
+      }
+    }
   }
 
   getToolByName(toolName) {
@@ -296,7 +308,7 @@ export default class TranscriptionInterface extends HTMLElement {
 
   getToolHTML(toolValue) {
     const tools = TPEN.activeProject?.tools || []
-    const selectedTool = tools.find(tool => tool.value === toolValue)
+    const selectedTool = tools.find(tool => tool.toolName === toolValue)
     
     if (!selectedTool) {
       return `<p>No tool selected</p>`
@@ -308,7 +320,7 @@ export default class TranscriptionInterface extends HTMLElement {
     }
     
     // For tools without URLs, show placeholder content based on their value
-    switch (selectedTool.value) {
+    switch (selectedTool.toolName) {
       case 'page':
         return `<p>Page Tools functionality coming soon...</p>`
       case 'inspector':
@@ -317,8 +329,12 @@ export default class TranscriptionInterface extends HTMLElement {
         return `<p>Special Characters functionality coming soon...</p>`
       case 'xml':
         return `<p>XML Tags functionality coming soon...</p>`
-      case 'fullpage':
-        return `<p>Full Page View functionality coming soon...</p>`
+      case 'view-fullpage':
+        return `<iframe 
+                  id="fullPageFrame"
+                  src="Add full page viewer URL here" 
+                  canvasurl="${TPEN.RERUMURL}/id/${TPEN?.screen?.pageInQuery}">
+                </iframe>`
       case 'history':
         return `<p>History Tool functionality coming soon...</p>`
       case 'preview':
