@@ -23,6 +23,10 @@ class ContinueWorking extends HTMLElement {
                     width: 100%;
                     height: auto;
                     border-radius: 4px;
+                    transition: opacity 0.3s ease;
+                }
+                .section img.loading {
+                    opacity: 0.6;
                 }
             </style>
             <div class="tpen-continue-working"></div>
@@ -38,7 +42,7 @@ class ContinueWorking extends HTMLElement {
         TPEN.eventDispatcher.off('tpen-user-projects-loaded', this.handleProjectsLoaded)
     }
 
-    handleProjectsLoaded = (event) => {
+    handleProjectsLoaded = async (event) => {
         const projects = TPEN.userProjects
         const metrics = TPEN.userMetrics
         const container = this.shadowRoot.querySelector('.tpen-continue-working')
@@ -66,6 +70,8 @@ class ContinueWorking extends HTMLElement {
                 return project ? { project, label, pageId } : null
             })
             .filter(Boolean)
+        
+        // First render with placeholder images
         container.innerHTML = recentProjects.map(a => {
             let lastEdited = stringFromDate(a.project._modifiedAt)
             return `
@@ -73,12 +79,60 @@ class ContinueWorking extends HTMLElement {
                 <h3>${a.label}</h3>
                 <span style="font-size:0.9em;color:#888;">${a.project.label}</span>
                 <a href="${TPEN.BASEURL}/transcribe?projectID=${a.project._id}&pageID=${a.pageId}">
-                <img src="../assets/images/manuscript_img.webp" alt="${a.project.label ?? 'Project'}">
+                <img src="../assets/images/manuscript_img.webp" alt="${a.project.label ?? 'Project'}" data-project-id="${a.project._id}">
                 </a>
                 <p>${lastEdited ? `Last edited: ${lastEdited}` : ''}</p>
             </div>
             `
         }).join('')
+        
+        // Then asynchronously load actual project images
+        for (const { project } of recentProjects) {
+            this.loadProjectImage(project._id)
+        }
+    }
+
+    async loadProjectImage(projectId) {
+        const imgElement = this.shadowRoot.querySelector(`img[data-project-id="${projectId}"]`)
+        if (!imgElement) return
+        
+        try {
+            // Add loading state
+            imgElement.classList.add('loading')
+            
+            // Get the first page of the project
+            const firstPage = await TPEN.getFirstPageOfProject(projectId)
+            if (!firstPage?.target) {
+                console.warn(`No target found for project ${projectId}`)
+                return
+            }
+
+            // Fetch the canvas to get the image
+            const canvasResponse = await fetch(firstPage.target)
+            if (!canvasResponse.ok) {
+                throw new Error(`Canvas fetch failed: ${canvasResponse.status}`)
+            }
+            
+            const canvas = await canvasResponse.json()
+            let imageId = canvas.items?.[0]?.items?.[0]?.body?.id
+            
+            if (imageId) {
+                // Handle IIIF Image API URLs - ensure they have proper parameters for thumbnails
+                if (!imageId.includes('default.jpg')) {
+                    const lastChar = imageId[imageId.length - 1]
+                    if (lastChar !== '/') imageId += '/'
+                    imageId += 'full/300,/0/default.jpg' // Request a 300px wide thumbnail
+                }
+                
+                // Update the image source
+                imgElement.src = imageId
+                imgElement.classList.remove('loading')
+            }
+        } catch (error) {
+            console.warn(`Failed to load image for project ${projectId}:`, error)
+            // Keep the placeholder image on error and remove loading state
+            imgElement.classList.remove('loading')
+        }
     }
 }
 
