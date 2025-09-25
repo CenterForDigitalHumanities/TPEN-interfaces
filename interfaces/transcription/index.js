@@ -247,6 +247,59 @@ export default class TranscriptionInterface extends HTMLElement {
       if (page) return page.id
     }
   }
+  
+  loadRightPaneContent() {
+    const rightPane = this.shadowRoot.querySelector('.tools')
+    const tool = this.getToolByName(this.state.activeTool)
+    if (!tool) {
+      rightPane.innerHTML = `
+      <p>
+        You do not have any tools loaded. To add a tool, please 
+        <a href="/project/manage?projectId=${TPEN.screen?.projectInQuery ?? ''}">manage your project</a>.
+      </p>
+      `
+      return
+    }
+
+    if (tool.custom.tagName && tool.url) {
+      // Dynamically load the script if not already loaded
+      if (customElements.get(tool.tagName)) {
+              rightPane.innerHTML = `<${tool.tagName}></${tool.tagName}>`
+      return
+            }
+      const script = document.createElement('script')
+      script.type = 'module'
+      script.src = tool.url
+      script.onload = () => {
+        rightPane.innerHTML = `<${tool.tagName}></${tool.tagName}>`
+      }
+      script.onerror = () => {
+        rightPane.innerHTML = `<p>Failed to load tool: ${tool.tagName}</p>`
+      }
+      document.head.appendChild(script)
+      return
+    }
+
+    if (tool.url) {
+      rightPane.innerHTML = `<iframe src="${tool.url}"></iframe>`
+      const iframe = this.shadowRoot.querySelector('iframe')
+      if (iframe) {
+        // build message for url like "https://example.com/manifest/1#https://example.com/canvas/1"
+        const message = `${TPEN.activeProject?.manifest[0]}#${this.#canvas?.id ?? ''}`
+        iframe.onload = () => {
+          iframe.contentWindow.postMessage({
+            type: "MANIFEST_CANVAS",
+            manifest: TPEN.activeProject?.manifest[0] ?? '',
+            canvas: this.#canvas?.id ?? ''
+          }, "*")
+        }
+      }
+      return
+    }
+
+    rightPane.innerHTML = `<p>${tool.name ?? 'Tool'} - functionality coming soon...</p>`
+    this.checkMagnifierVisibility()
+  }
 
   loadRightPaneContent() {
     const rightPane = this.shadowRoot.querySelector('.tools')
