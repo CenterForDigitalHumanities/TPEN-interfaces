@@ -250,9 +250,48 @@ export default class TranscriptionInterface extends HTMLElement {
 
   loadRightPaneContent() {
     const rightPane = this.shadowRoot.querySelector('.tools')
-    const tool = this.state.activeTool
-    rightPane.innerHTML = this.getToolHTML(tool)
+    const tool = this.getToolByName(this.state.activeTool)
+    if (!tool) {
+      rightPane.innerHTML = `
+      <p>
+        You do not have any tools loaded. To add a tool, please 
+        <a href="/project/manage?projectId=${TPEN.screen?.projectInQuery ?? ''}">manage your project</a>.
+      </p>
+      `
+      return
+    }
+
+    if (tool.custom.tagName && tool.url) {
+      // Dynamically load the script if not already loaded
+      if (customElements.get(tool.tagName)) {
+              rightPane.innerHTML = `<${tool.tagName}></${tool.tagName}>`
+      return
+            }
+      const script = document.createElement('script')
+      script.type = 'module'
+      script.src = tool.url
+      script.onload = () => {
+        rightPane.innerHTML = `<${tool.tagName}></${tool.tagName}>`
+      }
+      script.onerror = () => {
+        rightPane.innerHTML = `<p>Failed to load tool: ${tool.tagName}</p>`
+      }
+      document.head.appendChild(script)
+      return
+    }
+
+    if (tool.url) {
+      rightPane.innerHTML = `<iframe src="${tool.url}"></iframe>`
+      return
+    }
+
+    rightPane.innerHTML = `<p>${tool.name ?? 'Tool'} - functionality coming soon...</p>`
     this.checkMagnifierVisibility()
+  }
+
+  getToolByName(toolName) {
+    const tools = TPEN.activeProject?.tools || []
+    return tools.find(tool => tool.toolName === toolName)
   }
 
   getToolHTML(toolValue) {
