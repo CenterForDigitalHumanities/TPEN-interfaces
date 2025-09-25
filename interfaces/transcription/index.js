@@ -282,23 +282,23 @@ export default class TranscriptionInterface extends HTMLElement {
 
     if (tool.url) {
       rightPane.innerHTML = `<iframe src="${tool.url}"></iframe>`
+      const iframe = this.shadowRoot.querySelector('iframe')
+      if (iframe) {
+        // build message for url like "https://example.com/manifest/1#https://example.com/canvas/1"
+        const message = `${TPEN.activeProject?.manifest[0]}#${this.#canvas?.id ?? ''}`
+        iframe.onload = () => {
+          iframe.contentWindow.postMessage({
+            type: "MANIFEST_CANVAS",
+            manifest: TPEN.activeProject?.manifest[0] ?? '',
+            canvas: this.#canvas?.id ?? ''
+          }, "*")
+        }
+      }
       return
     }
 
     rightPane.innerHTML = `<p>${tool.name ?? 'Tool'} - functionality coming soon...</p>`
     this.checkMagnifierVisibility()
-
-    if (tool === 'view-fullpage') {
-      const iframe = this.shadowRoot.querySelector('#fullPageFrame')
-      if (iframe) {
-        iframe.onload = () => {
-          iframe.contentWindow.postMessage({
-            type: "CANVAS_URL",
-            canvasUrl: iframe.getAttribute('canvasurl')
-          }, "*")
-        }
-      }
-    }
   }
 
   getToolByName(toolName) {

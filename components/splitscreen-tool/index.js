@@ -43,7 +43,6 @@ export default class SplitscreenTool extends HTMLElement {
             }))
             if (dropdown.dataset.prev) eventDispatcher.dispatch(`tpen-${dropdown.dataset.prev}-hide`)
             eventDispatcher.dispatch(`tpen-${value}-show`)
-            e.target.value = ''
         })
       }
     }
