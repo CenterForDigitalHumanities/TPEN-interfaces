@@ -9,8 +9,10 @@ class ContinueWorking extends HTMLElement {
             <style>
                 .tpen-continue-working {
                     display: flex;
+                    flex-wrap: wrap;
                 }
                 .section {
+                    flex: 1 1 200px;
                     margin-bottom: 15px;
                     cursor:pointer;
                     transition:all 0.3s linear;
@@ -23,6 +25,9 @@ class ContinueWorking extends HTMLElement {
                     width: 100%;
                     height: auto;
                     border-radius: 4px;
+                    aspect-ratio: 1;
+                    object-fit: cover;
+                    object-position: top left;
                 }
             </style>
             <div class="tpen-continue-working"></div>
@@ -67,18 +72,21 @@ class ContinueWorking extends HTMLElement {
             })
             .filter(Boolean)
         
-        container.innerHTML = recentProjects.map(a => {
+        const recentProjectsWithThumbnails = await Promise.all(recentProjects.map(async (a) => {
             let lastEdited = stringFromDate(a.project._modifiedAt)
-            // Generate a unique placeholder based on project properties to provide visual variety
-            const placeholderImage = this.generateProjectPlaceholder(a.project)
+            const thumbnail = await this.getProjectThumbnail(a.project, a.pageId)
+            return { ...a, lastEdited, thumbnail }
+        }))
+        
+        container.innerHTML = recentProjectsWithThumbnails.map(a => {
             return `
             <div class="section" data-id="${a.project._id}">
                 <h3>${a.label}</h3>
                 <span style="font-size:0.9em;color:#888;">${a.project.label}</span>
                 <a href="${TPEN.BASEURL}/transcribe?projectID=${a.project._id}&pageID=${a.pageId}">
-                <img src="${placeholderImage}" alt="${a.project.label ?? 'Project'}" data-project-id="${a.project._id}">
+                <img src="${a.thumbnail}" alt="${a.project.label ?? 'Project'}" data-project-id="${a.project._id}">
                 </a>
-                <p>${lastEdited ? `Last edited: ${lastEdited}` : ''}</p>
+                <p>${a.lastEdited ? `Last edited: ${a.lastEdited}` : ''}</p>
             </div>
             `
         }).join('')
@@ -117,6 +125,63 @@ class ContinueWorking extends HTMLElement {
         `
         
         return `data:image/svg+xml;base64,${btoa(svg)}`
+    }
+
+    async getProjectThumbnail(project, annotationPageId) {
+        try {
+            if (!annotationPageId) return this.generateProjectPlaceholder(project)
+
+            const annotationPage = await fetch(`${TPEN.RERUMURL}/id/${annotationPageId}`).then(r => r.json())
+            const canvasId = annotationPage.target ?? annotationPage.on
+            if (!canvasId) return this.generateProjectPlaceholder(project)
+            
+            let canvas, isV3
+            try {
+                canvas = await fetch(canvasId).then(r => r.json())
+                const context = canvas['@context']
+                isV3 = Array.isArray(context)
+                    ? context.some(ctx => typeof ctx === 'string' && ctx.includes('iiif.io/api/presentation/3'))
+                    : typeof context === 'string' && context.includes('iiif.io/api/presentation/3')
+            } catch {
+                // Fetch manifest
+                const manifestUrl = project.manifest?.[0]
+                if (!manifestUrl) return this.generateProjectPlaceholder(project)
+                
+                const manifest = await fetch(manifestUrl).then(r => r.json())
+                isV3 = Array.isArray(context)
+                    ? context.some(ctx => typeof ctx === 'string' && ctx.includes('iiif.io/api/presentation/3'))
+                    : typeof context === 'string' && context.includes('iiif.io/api/presentation/3')
+                canvas = canvases?.find(c => (isV3 ? c.id : c['@id']) === canvasId)
+                if (!canvas) return this.generateProjectPlaceholder(project)
+            }
+            
+            // Get thumbnail from canvas
+            let thumbnailUrl = canvas.thumbnail?.id ?? canvas.thumbnail?.['@id'] ?? canvas.thumbnail
+            if (!canvas.thumbnail) {
+                // Get image
+                let imageUrl
+                if (isV3) {
+                    const annotation = canvas.items?.[0]?.items?.[0]
+                    imageUrl = annotation?.body?.id || annotation?.body?.['@id']
+                    if (annotation?.body?.service) {
+                        const service = Array.isArray(annotation.body.service) ? annotation.body.service[0] : annotation.body.service
+                        imageUrl = service.id || service['@id']
+                    }
+                } else {
+                    const image = canvas.images?.[0]?.resource
+                    imageUrl = image?.['@id'] || image?.service?.['@id']
+                }
+                
+                if (imageUrl) {
+                    thumbnailUrl = imageUrl.replace('/info.json', '/full/200,/0/default.jpg')
+                }
+            }
+            
+            return thumbnailUrl || this.generateProjectPlaceholder(project)
+        } catch (error) {
+            console.error('Error getting thumbnail:', error)
+            return this.generateProjectPlaceholder(project)
+        }
     }
 
 }
