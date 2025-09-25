@@ -23,10 +23,6 @@ class ContinueWorking extends HTMLElement {
                     width: 100%;
                     height: auto;
                     border-radius: 4px;
-                    transition: opacity 0.3s ease;
-                }
-                .section img.loading {
-                    opacity: 0.6;
                 }
             </style>
             <div class="tpen-continue-working"></div>
@@ -71,69 +67,58 @@ class ContinueWorking extends HTMLElement {
             })
             .filter(Boolean)
         
-        // First render with placeholder images
         container.innerHTML = recentProjects.map(a => {
             let lastEdited = stringFromDate(a.project._modifiedAt)
+            // Generate a unique placeholder based on project properties to provide visual variety
+            const placeholderImage = this.generateProjectPlaceholder(a.project)
             return `
             <div class="section" data-id="${a.project._id}">
                 <h3>${a.label}</h3>
                 <span style="font-size:0.9em;color:#888;">${a.project.label}</span>
                 <a href="${TPEN.BASEURL}/transcribe?projectID=${a.project._id}&pageID=${a.pageId}">
-                <img src="../assets/images/manuscript_img.webp" alt="${a.project.label ?? 'Project'}" data-project-id="${a.project._id}">
+                <img src="${placeholderImage}" alt="${a.project.label ?? 'Project'}" data-project-id="${a.project._id}">
                 </a>
                 <p>${lastEdited ? `Last edited: ${lastEdited}` : ''}</p>
             </div>
             `
         }).join('')
-        
-        // Then asynchronously load actual project images
-        for (const { project } of recentProjects) {
-            this.loadProjectImage(project._id)
-        }
     }
 
-    async loadProjectImage(projectId) {
-        const imgElement = this.shadowRoot.querySelector(`img[data-project-id="${projectId}"]`)
-        if (!imgElement) return
+    generateProjectPlaceholder(project) {
+        // Generate a simple SVG placeholder with project-specific colors and initials
+        // This provides visual variety without network requests that cause CORS issues
+        const projectName = project.label || project.title || 'Project'
+        const initials = projectName.split(' ').map(word => word[0]).join('').substring(0, 2).toUpperCase()
         
-        try {
-            // Add loading state
-            imgElement.classList.add('loading')
-            
-            // Get the first page of the project
-            const firstPage = await TPEN.getFirstPageOfProject(projectId)
-            if (!firstPage?.target) {
-                console.warn(`No target found for project ${projectId}`)
-                return
-            }
-
-            // Fetch the canvas to get the image
-            const canvasResponse = await fetch(firstPage.target)
-            if (!canvasResponse.ok) {
-                throw new Error(`Canvas fetch failed: ${canvasResponse.status}`)
-            }
-            
-            const canvas = await canvasResponse.json()
-            let imageId = canvas.items?.[0]?.items?.[0]?.body?.id
-            
-            if (imageId) {
-                // Handle IIIF Image API URLs - ensure they have proper parameters for thumbnails
-                if (!imageId.includes('default.jpg')) {
-                    const lastChar = imageId[imageId.length - 1]
-                    if (lastChar !== '/') imageId += '/'
-                    imageId += 'full/300,/0/default.jpg' // Request a 300px wide thumbnail
-                }
-                
-                // Update the image source
-                imgElement.src = imageId
-                imgElement.classList.remove('loading')
-            }
-        } catch (error) {
-            console.warn(`Failed to load image for project ${projectId}:`, error)
-            // Keep the placeholder image on error and remove loading state
-            imgElement.classList.remove('loading')
-        }
+        // Generate a color based on project ID for consistency
+        const colors = [
+            '#667eea', '#764ba2', '#f093fb', '#f5576c', 
+            '#4facfe', '#00f2fe', '#43e97b', '#38f9d7',
+            '#ffecd2', '#fcb69f', '#a8edea', '#fed6e3'
+        ]
+        const colorIndex = project._id ? Array.from(project._id).reduce((sum, char) => sum + char.charCodeAt(0), 0) % colors.length : 0
+        const backgroundColor = colors[colorIndex]
+        
+        // Create a simple SVG as data URL
+        const svg = `
+            <svg width="200" height="150" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <linearGradient id="grad${colorIndex}" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:${backgroundColor};stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:${backgroundColor}dd;stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#grad${colorIndex})" rx="8"/>
+                <text x="50%" y="45%" font-family="Arial, sans-serif" font-size="36" font-weight="bold" 
+                      text-anchor="middle" fill="white" opacity="0.9">${initials}</text>
+                <text x="50%" y="75%" font-family="Arial, sans-serif" font-size="12" 
+                      text-anchor="middle" fill="white" opacity="0.7">PROJECT</text>
+            </svg>
+        `
+        
+        return `data:image/svg+xml;base64,${btoa(svg)}`
     }
+
 }
 
 customElements.define('tpen-continue-working', ContinueWorking)
