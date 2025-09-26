@@ -1,8 +1,8 @@
 ---
-title: Project Management Workflows - TPEN Cookbook
-description: Comprehensive guide to managing TPEN projects through their lifecycle
+title: Project Management Workflows
+description: Comprehensive guide to managing TPEN projects through their lifecycle, from creation to collaboration and progress tracking.
 author: <cubap@slu.edu>
-layout: default
+layout: recipe
 tags: [tpen, project, management, workflow, api, collaboration]
 ---
 

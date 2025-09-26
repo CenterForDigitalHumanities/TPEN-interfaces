@@ -1,8 +1,8 @@
 ---
-title: User Authentication and Permissions - TPEN Cookbook
-description: Implementing secure authentication and permission-based access control
+title: User Authentication and Permissions
+description: Implementing secure authentication and permission-based access control with user profiles and role management.
 author: <cubap@slu.edu>
-layout: default
+layout: recipe
 tags: [tpen, authentication, permissions, security, users]
 ---
 

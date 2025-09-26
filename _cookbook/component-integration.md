@@ -1,8 +1,8 @@
 ---
-title: Component Integration - TPEN Cookbook
-description: Effectively using and combining TPEN's Web Components in your interfaces
+title: Component Integration
+description: Effectively using and combining TPEN's Web Components in your interfaces for maximum reusability and functionality.
 author: <cubap@slu.edu>
-layout: default
+layout: recipe
 tags: [tpen, components, web-components, integration, reusable]
 ---
 

@@ -1,8 +1,8 @@
 ---
-title: API Best Practices - TPEN Cookbook
-description: Optimal patterns for working with TPEN's API classes effectively
+title: API Best Practices
+description: Optimal patterns for working with TPEN's API classes effectively, including error handling, caching, and performance optimization.
 author: <cubap@slu.edu>
-layout: default
+layout: recipe
 tags: [tpen, api, best-practices, performance, error-handling, patterns]
 ---
 

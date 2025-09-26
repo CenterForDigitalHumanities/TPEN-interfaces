@@ -1,8 +1,8 @@
 ---
-title: Transcription Interface Patterns - TPEN Cookbook
-description: Building specialized transcription interfaces with TPEN components
+title: Transcription Interface Patterns
+description: Building specialized transcription interfaces with TPEN components for various scholarly transcription needs.
 author: <cubap@slu.edu>
-layout: default
+layout: recipe
 tags: [tpen, transcription, interface, patterns, annotation, components]
 ---
 

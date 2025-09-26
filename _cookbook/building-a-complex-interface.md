@@ -1,8 +1,8 @@
 ---
-title: Building a Complex Interface - TPEN Cookbook
-description: Advanced patterns for building full-featured TPEN interfaces
+title: Building a Complex Interface
+description: Advanced patterns for building full-featured TPEN interfaces with state management, error handling, and multi-component coordination.
 author: <cubap@slu.edu>
-layout: default
+layout: recipe
 tags: [tpen, api, javascript, interface, advanced, project, transcription]
 ---
 
