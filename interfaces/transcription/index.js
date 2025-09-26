@@ -239,23 +239,20 @@ export default class TranscriptionInterface extends HTMLElement {
     container.classList.toggle('no-splitscreen', !this.state.isSplitscreenActive)
   }
 
+  fetchCurrentPageId() {
+    for (const layer of TPEN.activeProject?.layers) {
+      const page = layer.pages.find(
+        p => p.id.split('/').pop() === TPEN.screen.pageInQuery
+      )
+      if (page) return page.id
+    }
+  }
+
   loadRightPaneContent() {
     const rightPane = this.shadowRoot.querySelector('.tools')
     const tool = this.state.activeTool
     rightPane.innerHTML = this.getToolHTML(tool)
     this.checkMagnifierVisibility()
-
-    if (tool === 'view-fullpage') {
-      const iframe = this.shadowRoot.querySelector('#fullPageFrame')
-      if (iframe) {
-        iframe.onload = () => {
-          iframe.contentWindow.postMessage({
-            type: "CANVAS_URL",
-            canvasUrl: iframe.getAttribute('canvasurl')
-          }, "*")
-        }
-      }
-    }
   }
 
   getToolHTML(toolValue) {
@@ -284,8 +281,7 @@ export default class TranscriptionInterface extends HTMLElement {
       case 'view-fullpage':
         return `<iframe 
                   id="fullPageFrame"
-                  src="Add full page viewer URL here" 
-                  canvasurl="${TPEN.RERUMURL}/id/${TPEN?.screen?.pageInQuery}">
+                  src="http://172.20.25.61:3000/?canvas=${this.fetchCurrentPageId()}">
                 </iframe>`
       case 'history':
         return `<p>History Tool functionality coming soon...</p>`
@@ -348,7 +344,7 @@ export default class TranscriptionInterface extends HTMLElement {
     const topImage = this.shadowRoot.querySelector('#topImage')
     const thisLine = this.#page.items?.[TPEN.activeLineIndex]
     if (!thisLine) return
-    const { region } = this.setCanvasAndSelector(thisLine, this.#page)
+    const { region } = this.setCanvasAndSelector(thisLine, this.#page, TPEN.activeLineIndex)
     if (!region) return
     const [x, y, width, height] = region.split(',').map(Number)
     topImage.moveTo(x, y, width, height)
@@ -397,13 +393,20 @@ export default class TranscriptionInterface extends HTMLElement {
       })
   }
 
-  setCanvasAndSelector(thisLine, page) {
+  setCanvasAndSelector(thisLine, page, lineIndex) {
     let targetString, canvasID, region
     targetString = thisLine?.target?.id ?? thisLine?.target?.['@id']
     targetString ??= thisLine?.target?.selector?.value ? `${thisLine.target?.source}#${thisLine.target.selector.value}` : null
     targetString ??= thisLine?.target
     targetString ??= page?.target?.id ?? page?.target?.['@id'] ?? page?.target
     ;[canvasID, region] = targetString?.split?.('#xywh=')
+    const iframe = this.shadowRoot.querySelector('#fullPageFrame')
+    if (iframe) {
+        iframe.contentWindow.postMessage(
+          { type: "SELECT_ANNOTATION", lineId: lineIndex },
+          "*"
+        )
+    }
     return { canvasID, region : region?.split?.(':')?.pop() }
   }
 
@@ -415,7 +418,7 @@ export default class TranscriptionInterface extends HTMLElement {
     let thisLine = page.items?.[0]
     thisLine = await vault.get(thisLine, 'annotation')
     if (!(thisLine?.body)) thisLine = await vault.get(thisLine, 'annotation', true)
-    const { canvasID, region } = this.setCanvasAndSelector(thisLine, page)
+    const { canvasID, region } = this.setCanvasAndSelector(thisLine, page, 0)
     const canvas = this.#canvas = await vault.get(canvasID, 'canvas')
     const regionValue = region ?? `0,0,${canvas?.width ?? 'full'},${(canvas?.height && canvas?.height / 10) ?? 120}`
     topImage.canvas = canvasID
