@@ -28,6 +28,8 @@ class ContinueWorking extends HTMLElement {
                     aspect-ratio: 1;
                     object-fit: cover;
                     object-position: top left;
+                    transition: opacity 0.3s ease-in-out;
+                    opacity: 1;
                 }
             </style>
             <div class="tpen-continue-working"></div>
@@ -72,13 +74,14 @@ class ContinueWorking extends HTMLElement {
             })
             .filter(Boolean)
         
-        const recentProjectsWithThumbnails = await Promise.all(recentProjects.map(async (a) => {
+        const recentProjectsWithPlaceholders = recentProjects.map(a => {
             let lastEdited = stringFromDate(a.project._modifiedAt)
-            const thumbnail = await this.getProjectThumbnail(a.project, a.pageId)
+            const thumbnail = this.generateProjectPlaceholder(a.project)
             return { ...a, lastEdited, thumbnail }
-        }))
+        })
         
-        container.innerHTML = recentProjectsWithThumbnails.map(a => {
+        // Render immediately with placeholders
+        container.innerHTML = recentProjectsWithPlaceholders.map(a => {
             return `
             <div class="section" data-id="${a.project._id}">
                 <h3>${a.label}</h3>
@@ -90,6 +93,30 @@ class ContinueWorking extends HTMLElement {
             </div>
             `
         }).join('')
+        
+        // Load real thumbnails asynchronously and replace placeholders
+        recentProjects.forEach(async (projectData) => {
+            try {
+                const realThumbnail = await this.getProjectThumbnail(projectData.project, projectData.pageId)
+                const img = container.querySelector(`img[data-project-id="${projectData.project._id}"]`)
+                if (img && img.src !== realThumbnail) {
+                    // Create a temporary image to preload
+                    const tempImg = new Image()
+                    tempImg.onload = () => {
+                        // Fade out current image
+                        img.style.opacity = '0'
+                        // After fade out, change src and fade back in
+                        setTimeout(() => {
+                            img.src = realThumbnail
+                            img.style.opacity = '1'
+                        }, 150) // Half of transition time
+                    }
+                    tempImg.src = realThumbnail
+                }
+            } catch (error) {
+                console.error('Error loading thumbnail for project:', projectData.project._id, error)
+            }
+        })
     }
 
     generateProjectPlaceholder(project) {
@@ -130,9 +157,8 @@ class ContinueWorking extends HTMLElement {
     async getProjectThumbnail(project, annotationPageId) {
         try {
             if (!annotationPageId) return this.generateProjectPlaceholder(project)
-
-            const annotationPage = await fetch(`${TPEN.RERUMURL}/id/${annotationPageId}`).then(r => r.json())
-            const canvasId = annotationPage.target ?? annotationPage.on
+            const annotationPage = await fetch(`${TPEN.servicesURL}/project/${project._id}/page/${annotationPageId}`).then(r => r.json())
+            const canvasId = annotationPage.target
             if (!canvasId) return this.generateProjectPlaceholder(project)
             
             let canvas, isV3
