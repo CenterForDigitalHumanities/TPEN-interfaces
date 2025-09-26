@@ -148,40 +148,59 @@ class ContinueWorking extends HTMLElement {
                 if (!manifestUrl) return this.generateProjectPlaceholder(project)
                 
                 const manifest = await fetch(manifestUrl).then(r => r.json())
+                const context = manifest['@context']
                 isV3 = Array.isArray(context)
                     ? context.some(ctx => typeof ctx === 'string' && ctx.includes('iiif.io/api/presentation/3'))
                     : typeof context === 'string' && context.includes('iiif.io/api/presentation/3')
+                const canvases = isV3 ? manifest.items : manifest.sequences?.[0]?.canvases
                 canvas = canvases?.find(c => (isV3 ? c.id : c['@id']) === canvasId)
                 if (!canvas) return this.generateProjectPlaceholder(project)
             }
             
             // Get thumbnail from canvas
             let thumbnailUrl = canvas.thumbnail?.id ?? canvas.thumbnail?.['@id'] ?? canvas.thumbnail
-            if (!canvas.thumbnail) {
+            if (!thumbnailUrl) {
                 // Get image
-                let imageUrl
-                if (isV3) {
-                    const annotation = canvas.items?.[0]?.items?.[0]
-                    imageUrl = annotation?.body?.id || annotation?.body?.['@id']
-                    if (annotation?.body?.service) {
-                        const service = Array.isArray(annotation.body.service) ? annotation.body.service[0] : annotation.body.service
-                        imageUrl = service.id || service['@id']
+                const annotation = isV3
+                    ? canvas.items?.[0]?.items?.[0]
+                    : canvas.images?.[0]
+                const imageUrl = isV3
+                    ? annotation?.body?.id ?? annotation?.body?.['@id']
+                    : annotation?.resource?.['@id'] ?? annotation?.resource?.service?.['@id']
+                if (annotation?.body?.service || imageUrl?.includes('/full/')) {
+                    const service = Array.isArray(annotation.body.service) ? annotation.body.service[0] : annotation.body.service
+                    imageUrl = service.id ?? service['@id'] ?? imageUrl
+                    const baseUrl = this.getBaseUrl(imageUrl)
+                    try {
+                        const info = await fetch(baseUrl + '/info.json').then(r => r.json())
+                        thumbnailUrl = `${baseUrl}/full/${isV3 ? 'max' : 'full'}/200,/0/default.jpg`
+                        await fetch(`${baseUrl}/square/${isV3 ? 'max' : 'full'}/200,/0/default.jpg`)
+                            .then(() => thumbnailUrl = `${baseUrl}/square/${isV3 ? 'max' : 'full'}/200,/0/default.jpg`)
+                            .catch(async () => await fetch(`${baseUrl}/full/${isV3 ? 'max' : 'full'}/200,/0/default.jpg`)
+                                .then(() => thumbnailUrl = `${baseUrl}/full/${isV3 ? 'max' : 'full'}/200,/0/default.jpg`)
+                                .catch(() => thumbnailUrl = imageUrl)
+                            )
+                    } catch {
+                        thumbnailUrl = imageUrl
                     }
-                } else {
-                    const image = canvas.images?.[0]?.resource
-                    imageUrl = image?.['@id'] || image?.service?.['@id']
                 }
-                
-                if (imageUrl) {
-                    thumbnailUrl = imageUrl.replace('/info.json', '/full/200,/0/default.jpg')
-                }
+                thumbnailUrl ??= imageUrl
             }
-            
-            return thumbnailUrl || this.generateProjectPlaceholder(project)
+            return thumbnailUrl ?? this.generateProjectPlaceholder(project)
         } catch (error) {
             console.error('Error getting thumbnail:', error)
             return this.generateProjectPlaceholder(project)
         }
+    }
+
+    getBaseUrl(imageUrl) {
+        if (imageUrl.endsWith('/info.json')) {
+            return imageUrl.replace('/info.json', '')
+        }
+        if (imageUrl.includes('/full/')) {
+            return imageUrl.replace(/\/full\/.*$/, '')
+        }
+        return imageUrl
     }
 
 }
