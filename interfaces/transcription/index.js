@@ -281,7 +281,7 @@ export default class TranscriptionInterface extends HTMLElement {
       case 'view-fullpage':
         return `<iframe 
                   id="fullPageFrame"
-                  src="http://172.20.25.61:3000/?pageId=${this.fetchCurrentPageId()}">
+                  src="https://centerfordigitalhumanities.github.io/Page-Viewer/?pageId=${this.fetchCurrentPageId()}">
                 </iframe>`
       case 'history':
         return `<p>History Tool functionality coming soon...</p>`
