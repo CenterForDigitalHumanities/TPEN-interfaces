@@ -195,7 +195,7 @@ class ContinueWorking extends HTMLElement {
                     : annotation?.resource?.['@id'] ?? annotation?.resource?.service?.['@id']
                 if (annotation?.body?.service || imageUrl?.includes('/full/')) {
                     const service = Array.isArray(annotation.body.service) ? annotation.body.service[0] : annotation.body.service
-                    imageUrl = service.id ?? service['@id'] ?? imageUrl
+                    thumbnailUrl = service.id ?? service['@id'] ?? imageUrl
                     const baseUrl = this.getBaseUrl(imageUrl)
                     try {
                         const info = await fetch(baseUrl + '/info.json').then(r => r.json())
