@@ -288,9 +288,11 @@ export default class TranscriptionInterface extends HTMLElement {
         const message = `${TPEN.activeProject?.manifest[0]}#${this.#canvas?.id ?? ''}`
         iframe.onload = () => {
           iframe.contentWindow.postMessage({
-            type: "MANIFEST_CANVAS",
+            type: "MANIFEST_CANVAS_ANNOTATIONPAGE_ANNOTATION",
             manifest: TPEN.activeProject?.manifest[0] ?? '',
-            canvas: this.#canvas?.id ?? ''
+            canvas: this.#canvas ?? '',
+            annotationPage: this.#page ?? '',
+            annotation: TPEN.activeLineIndex >= 0 ? this.#page?.items?.[TPEN.activeLineIndex] : ''
           }, "*")
         }
       }
