@@ -257,10 +257,11 @@ export default class TranscriptionInterface extends HTMLElement {
       iframe.addEventListener("load", () => {
         iframe.contentWindow.postMessage(
           { 
-            type: "LOAD_MANIFEST_PAGE", 
-            manifestUrl: TPEN.activeProject.manifest[0], 
-            pageId: this.fetchCurrentPageId(),
-            annotationId: null
+            type: "MANIFEST_CANVAS_ANNOTATIONPAGE_ANNOTATION", 
+            manifest: TPEN.activeProject.manifest[0],
+            canvas: this.#canvas?.id || this.#canvas?.['@id'],
+            annotationPage: this.fetchCurrentPageId(),
+            annotation: TPEN.activeLineIndex >= 0 ? this.#page?.items?.[TPEN.activeLineIndex]?.id : null
           },
           "*"
         )
