@@ -252,6 +252,20 @@ export default class TranscriptionInterface extends HTMLElement {
     const rightPane = this.shadowRoot.querySelector('.tools')
     const tool = this.state.activeTool
     rightPane.innerHTML = this.getToolHTML(tool)
+    const iframe = this.shadowRoot.querySelector('#fullPageFrame')
+    if (iframe) {
+      iframe.addEventListener("load", () => {
+        iframe.contentWindow.postMessage(
+          { 
+            type: "LOAD_MANIFEST_PAGE", 
+            manifestUrl: TPEN.activeProject.manifest[0], 
+            pageId: this.fetchCurrentPageId(),
+            annotationId: null
+          },
+          "*"
+        )
+      })
+    }
     this.checkMagnifierVisibility()
   }
 
@@ -281,7 +295,7 @@ export default class TranscriptionInterface extends HTMLElement {
       case 'view-fullpage':
         return `<iframe 
                   id="fullPageFrame"
-                  src="https://centerfordigitalhumanities.github.io/Page-Viewer/?pageId=${this.fetchCurrentPageId()}">
+                  src="https://centerfordigitalhumanities.github.io/Page-Viewer/">
                 </iframe>`
       case 'history':
         return `<p>History Tool functionality coming soon...</p>`
@@ -400,13 +414,10 @@ export default class TranscriptionInterface extends HTMLElement {
     targetString ??= thisLine?.target
     targetString ??= page?.target?.id ?? page?.target?.['@id'] ?? page?.target
     ;[canvasID, region] = targetString?.split?.('#xywh=')
-    const iframe = this.shadowRoot.querySelector('#fullPageFrame')
-    if (iframe) {
-        iframe.contentWindow.postMessage(
-          { type: "SELECT_ANNOTATION", lineId: lineIndex },
-          "*"
-        )
-    }
+    this.shadowRoot.querySelector('#fullPageFrame')?.contentWindow.postMessage(
+      { type: "SELECT_ANNOTATION", lineId: lineIndex },
+      "*"
+    )
     return { canvasID, region : region?.split?.(':')?.pop() }
   }
 
