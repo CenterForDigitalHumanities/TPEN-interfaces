@@ -141,6 +141,15 @@ export default class TranscriptionBlock extends HTMLElement {
         eventDispatcher.on('tpen-transcription-save-line', (index) => {
             if (typeof index === 'number') this.scheduleLineSave(index)
         })
+
+        window.addEventListener("message", (event) => {
+            if (event.data?.type === "RETURN_LINE_ID") {
+                if (typeof event.data.lineIndex === 'number') {
+                    this.moveToLine(event.data.lineIndex)
+                    this.updateTranscriptionUI()
+                }
+            }
+        })
     }
 
     // Helper to compare and queue dirty lines
