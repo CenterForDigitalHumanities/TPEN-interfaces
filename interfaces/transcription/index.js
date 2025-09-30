@@ -256,7 +256,7 @@ export default class TranscriptionInterface extends HTMLElement {
       if (page) return page.id
     }
   }
-  
+
   loadRightPaneContent() {
     const rightPane = this.shadowRoot.querySelector('.tools')
     const tool = this.getToolByName(this.state.activeTool)
@@ -291,33 +291,33 @@ export default class TranscriptionInterface extends HTMLElement {
     }
 
     if (tool.url && !tagName && tool.location === 'pane') {
-      const iframe = `<iframe id="${tool.toolName}" src="${tool.url}"></iframe>`
-      if (iframe) {
-        iframe.addEventListener('load', () => {
-          iframe.contentWindow.postMessage(
-            {
-              type: "MANIFEST_CANVAS_ANNOTATIONPAGE_ANNOTATION",
-              manifest: TPEN.activeProject?.manifest?.[0] ?? '',
-              canvas: this.#canvas?.id ?? this.#canvas?.['@id'] ?? this.#canvas ?? '',
-              annotationPage: this.fetchCurrentPageId() ?? this.#page ?? '',
-              annotation: TPEN.activeLineIndex >= 0 ? this.#page?.items?.[TPEN.activeLineIndex]?.id ?? null : null
-            },
-            '*'
-          )
-        })
-        TPEN.eventDispatcher.on('tpen-transcription-previous-line', () => {
-          iframe.contentWindow.postMessage(
-            { type: "SELECT_ANNOTATION", line: TPEN.activeLine },
-            "*"
-          )
-        })
-        TPEN.eventDispatcher.on('tpen-transcription-next-line', () => {
-          iframe.contentWindow.postMessage(
-            { type: "SELECT_ANNOTATION", line: TPEN.activeLine },
-            "*"
-          )
-        })
-      }
+      const iframe = document.createElement('iframe')
+      iframe.id = tool.toolName
+      iframe.addEventListener('load', () => {
+        iframe.contentWindow.postMessage(
+          {
+            type: "MANIFEST_CANVAS_ANNOTATIONPAGE_ANNOTATION",
+            manifest: TPEN.activeProject?.manifest?.[0] ?? '',
+            canvas: this.#canvas?.id ?? this.#canvas?.['@id'] ?? this.#canvas ?? '',
+            annotationPage: this.fetchCurrentPageId() ?? this.#page ?? '',
+            annotation: TPEN.activeLineIndex >= 0 ? this.#page?.items?.[TPEN.activeLineIndex]?.id ?? null : null
+          },
+          '*'
+        )
+      })
+      TPEN.eventDispatcher.on('tpen-transcription-previous-line', () => {
+        iframe.contentWindow.postMessage(
+          { type: "SELECT_ANNOTATION", line: TPEN.activeLine },
+          "*"
+        )
+      })
+      TPEN.eventDispatcher.on('tpen-transcription-next-line', () => {
+        iframe.contentWindow.postMessage(
+          { type: "SELECT_ANNOTATION", line: TPEN.activeLine },
+          "*"
+        )
+      })
+      iframe.src = tool.url
       rightPane.innerHTML = iframe
       return
     }
@@ -434,8 +434,8 @@ export default class TranscriptionInterface extends HTMLElement {
     targetString ??= thisLine?.target?.selector?.value ? `${thisLine.target?.source}#${thisLine.target.selector.value}` : null
     targetString ??= thisLine?.target
     targetString ??= page?.target?.id ?? page?.target?.['@id'] ?? page?.target
-    ;[canvasID, region] = targetString?.split?.('#xywh=')
-    return { canvasID, region : region?.split?.(':')?.pop() }
+      ;[canvasID, region] = targetString?.split?.('#xywh=')
+    return { canvasID, region: region?.split?.(':')?.pop() }
   }
 
   async updateTranscriptionImages(pageID) {
