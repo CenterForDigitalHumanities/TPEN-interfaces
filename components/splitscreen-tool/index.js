@@ -41,7 +41,7 @@ export default class SplitscreenTool extends HTMLElement {
                 composed: true,
                 detail: { selectedTool: value },
             }))
-            if (dropdown.dataset.prev) eventDispatcher.dispatch(`tpen-${dropdown.dataset.prev}-hide`)
+            if (e.target.dataset.prev) eventDispatcher.dispatch(`tpen-${e.target.dataset.prev}-hide`)
             eventDispatcher.dispatch(`tpen-${value}-show`)
         })
       }
