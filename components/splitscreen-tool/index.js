@@ -30,8 +30,8 @@ export default class SplitscreenTool extends HTMLElement {
     addEventListeners() {
       const dropdown = this.shadowRoot.querySelector('.dropdown-select')
       if (dropdown) {
-        dropdown.addEventListener('click', () => {
-          dropdown.dataset.prev = dropdown.value
+        dropdown.addEventListener('click', (e) => {
+          e.target.dataset.prev = e.target.value
         })
 
         dropdown.addEventListener('change', (e) => {
