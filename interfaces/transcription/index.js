@@ -227,7 +227,7 @@ export default class TranscriptionInterface extends HTMLElement {
 
   checkMagnifierVisibility() {
     const magnifierTool = document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('tpen-workspace-tools').shadowRoot.querySelector('tpen-magnifier-tool')
-    if (magnifierTool.isMagnifierVisible) {
+    if (magnifierTool?.isMagnifierVisible) {
       magnifierTool.hideMagnifier()
       magnifierTool.showMagnifier()
     }
