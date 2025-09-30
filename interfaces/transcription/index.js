@@ -318,7 +318,7 @@ export default class TranscriptionInterface extends HTMLElement {
         )
       })
       iframe.src = tool.url
-      rightPane.innerHTML = iframe
+      rightPane.appendChild(iframe)
       return
     }
 
