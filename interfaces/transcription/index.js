@@ -290,11 +290,8 @@ export default class TranscriptionInterface extends HTMLElement {
       return
     }
 
-    if (tool.url) {
-      const isFullPage = tool.toolName === 'view-fullpage'
-      const iframeId = isFullPage ? 'fullPageFrame' : 'toolFrame'
-      rightPane.innerHTML = `<iframe id="${iframeId}" src="${tool.url}"></iframe>`
-      const iframe = this.shadowRoot.querySelector(`#${iframeId}`)
+    if (tool.url && !tagName && tool.location === 'pane') {
+      const iframe = `<iframe id="${tool.toolName}" src="${tool.url}"></iframe>`
       if (iframe) {
         iframe.addEventListener('load', () => {
           iframe.contentWindow.postMessage(
@@ -308,7 +305,20 @@ export default class TranscriptionInterface extends HTMLElement {
             '*'
           )
         })
+        TPEN.eventDispatcher.on('tpen-transcription-previous-line', () => {
+          iframe.contentWindow.postMessage(
+            { type: "SELECT_ANNOTATION", line: TPEN.activeLine },
+            "*"
+          )
+        })
+        TPEN.eventDispatcher.on('tpen-transcription-next-line', () => {
+          iframe.contentWindow.postMessage(
+            { type: "SELECT_ANNOTATION", line: TPEN.activeLine },
+            "*"
+          )
+        })
       }
+      rightPane.innerHTML = iframe
       return
     }
 
@@ -425,10 +435,6 @@ export default class TranscriptionInterface extends HTMLElement {
     targetString ??= thisLine?.target
     targetString ??= page?.target?.id ?? page?.target?.['@id'] ?? page?.target
     ;[canvasID, region] = targetString?.split?.('#xywh=')
-    this.shadowRoot.querySelector('#fullPageFrame')?.contentWindow.postMessage(
-      { type: "SELECT_ANNOTATION", lineId: lineIndex },
-      "*"
-    )
     return { canvasID, region : region?.split?.(':')?.pop() }
   }
 
