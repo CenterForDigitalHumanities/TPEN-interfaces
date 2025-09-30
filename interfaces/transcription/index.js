@@ -248,6 +248,15 @@ export default class TranscriptionInterface extends HTMLElement {
     container.classList.toggle('no-splitscreen', !this.state.isSplitscreenActive)
   }
 
+  fetchCurrentPageId() {
+    for (const layer of TPEN.activeProject?.layers) {
+      const page = layer.pages.find(
+        p => p.id.split('/').pop() === TPEN.screen.pageInQuery
+      )
+      if (page) return page.id
+    }
+  }
+  
   loadRightPaneContent() {
     const rightPane = this.shadowRoot.querySelector('.tools')
     const tool = this.getToolByName(this.state.activeTool)
@@ -261,45 +270,49 @@ export default class TranscriptionInterface extends HTMLElement {
       return
     }
 
-    if (tool.custom.tagName && tool.url) {
+    const tagName = tool.custom?.tagName
+    if (tagName && tool.url) {
       // Dynamically load the script if not already loaded
-      if (customElements.get(tool.tagName)) {
-              rightPane.innerHTML = `<${tool.tagName}></${tool.tagName}>`
-      return
-            }
+      if (customElements.get(tagName)) {
+        rightPane.innerHTML = `<${tagName}></${tagName}>`
+        return
+      }
       const script = document.createElement('script')
       script.type = 'module'
       script.src = tool.url
       script.onload = () => {
-        rightPane.innerHTML = `<${tool.tagName}></${tool.tagName}>`
+        rightPane.innerHTML = `<${tagName}></${tagName}>`
       }
       script.onerror = () => {
-        rightPane.innerHTML = `<p>Failed to load tool: ${tool.tagName}</p>`
+        rightPane.innerHTML = `<p>Failed to load tool: ${tagName}</p>`
       }
       document.head.appendChild(script)
       return
     }
 
     if (tool.url) {
-      rightPane.innerHTML = `<iframe src="${tool.url}"></iframe>`
-      const iframe = this.shadowRoot.querySelector('iframe')
+      const isFullPage = tool.toolName === 'view-fullpage'
+      const iframeId = isFullPage ? 'fullPageFrame' : 'toolFrame'
+      rightPane.innerHTML = `<iframe id="${iframeId}" src="${tool.url}"></iframe>`
+      const iframe = this.shadowRoot.querySelector(`#${iframeId}`)
       if (iframe) {
-        // build message for url like "https://example.com/manifest/1#https://example.com/canvas/1"
-        const message = `${TPEN.activeProject?.manifest[0]}#${this.#canvas?.id ?? ''}`
-        iframe.onload = () => {
-          iframe.contentWindow.postMessage({
-            type: "MANIFEST_CANVAS_ANNOTATIONPAGE_ANNOTATION",
-            manifest: TPEN.activeProject?.manifest[0] ?? '',
-            canvas: this.#canvas ?? '',
-            annotationPage: this.#page ?? '',
-            annotation: TPEN.activeLineIndex >= 0 ? this.#page?.items?.[TPEN.activeLineIndex] : ''
-          }, "*")
-        }
+        iframe.addEventListener('load', () => {
+          iframe.contentWindow.postMessage(
+            {
+              type: "MANIFEST_CANVAS_ANNOTATIONPAGE_ANNOTATION",
+              manifest: TPEN.activeProject?.manifest?.[0] ?? '',
+              canvas: this.#canvas?.id ?? this.#canvas?.['@id'] ?? this.#canvas ?? '',
+              annotationPage: this.fetchCurrentPageId() ?? this.#page ?? '',
+              annotation: TPEN.activeLineIndex >= 0 ? this.#page?.items?.[TPEN.activeLineIndex]?.id ?? null : null
+            },
+            '*'
+          )
+        })
       }
       return
     }
 
-    rightPane.innerHTML = `<p>${tool.name ?? 'Tool'} - functionality coming soon...</p>`
+    rightPane.innerHTML = `<p>${tool.label ?? tool.custom?.tagName ?? 'Tool'} - functionality coming soon...</p>`
     this.checkMagnifierVisibility()
   }
 
@@ -356,7 +369,7 @@ export default class TranscriptionInterface extends HTMLElement {
     const topImage = this.shadowRoot.querySelector('#topImage')
     const thisLine = this.#page.items?.[TPEN.activeLineIndex]
     if (!thisLine) return
-    const { region } = this.setCanvasAndSelector(thisLine, this.#page)
+    const { region } = this.setCanvasAndSelector(thisLine, this.#page, TPEN.activeLineIndex)
     if (!region) return
     const [x, y, width, height] = region.split(',').map(Number)
     topImage.moveTo(x, y, width, height)
@@ -405,13 +418,17 @@ export default class TranscriptionInterface extends HTMLElement {
       })
   }
 
-  setCanvasAndSelector(thisLine, page) {
+  setCanvasAndSelector(thisLine, page, lineIndex) {
     let targetString, canvasID, region
     targetString = thisLine?.target?.id ?? thisLine?.target?.['@id']
     targetString ??= thisLine?.target?.selector?.value ? `${thisLine.target?.source}#${thisLine.target.selector.value}` : null
     targetString ??= thisLine?.target
     targetString ??= page?.target?.id ?? page?.target?.['@id'] ?? page?.target
     ;[canvasID, region] = targetString?.split?.('#xywh=')
+    this.shadowRoot.querySelector('#fullPageFrame')?.contentWindow.postMessage(
+      { type: "SELECT_ANNOTATION", lineId: lineIndex },
+      "*"
+    )
     return { canvasID, region : region?.split?.(':')?.pop() }
   }
 
@@ -423,7 +440,7 @@ export default class TranscriptionInterface extends HTMLElement {
     let thisLine = page.items?.[0]
     thisLine = await vault.get(thisLine, 'annotation')
     if (!(thisLine?.body)) thisLine = await vault.get(thisLine, 'annotation', true)
-    const { canvasID, region } = this.setCanvasAndSelector(thisLine, page)
+    const { canvasID, region } = this.setCanvasAndSelector(thisLine, page, 0)
     const canvas = this.#canvas = await vault.get(canvasID, 'canvas')
     const regionValue = region ?? `0,0,${canvas?.width ?? 'full'},${(canvas?.height && canvas?.height / 10) ?? 120}`
     topImage.canvas = canvasID
