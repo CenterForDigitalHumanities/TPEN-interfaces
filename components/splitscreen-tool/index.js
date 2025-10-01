@@ -30,8 +30,8 @@ export default class SplitscreenTool extends HTMLElement {
     addEventListeners() {
       const dropdown = this.shadowRoot.querySelector('.dropdown-select')
       if (dropdown) {
-        dropdown.addEventListener('click', () => {
-          dropdown.dataset.prev = dropdown.value
+        dropdown.addEventListener('click', (e) => {
+          e.target.dataset.prev = e.target.value
         })
 
         dropdown.addEventListener('change', (e) => {
@@ -41,7 +41,8 @@ export default class SplitscreenTool extends HTMLElement {
                 composed: true,
                 detail: { selectedTool: value },
             }))
-            e.target.value = ''
+            if (e.target.dataset.prev) eventDispatcher.dispatch(`tpen-${e.target.dataset.prev}-hide`)
+            eventDispatcher.dispatch(`tpen-${value}-show`)
         })
       }
     }
@@ -50,10 +51,13 @@ export default class SplitscreenTool extends HTMLElement {
       const tools = TPEN.activeProject?.tools.filter(t=>{
         return t.custom?.enabled && (t.location === "sidebar" || t.location === "pane")
       }) || []
+
+      if(tools.length === 0) { this.remove() }
+      
       const toolOptions = tools.map(tool => 
         `<option value="${tool.toolName}">${tool.label}</option>`
       ).join('')
-      
+
       this.shadowRoot.innerHTML = `
         <style>
             select.dropdown-select {

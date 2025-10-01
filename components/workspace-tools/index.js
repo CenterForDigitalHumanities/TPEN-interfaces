@@ -65,10 +65,16 @@ export default class WorkspaceTools extends HTMLElement {
       <div class="top-bar">
         <tpen-splitscreen-tool></tpen-splitscreen-tool>
         <tpen-page-tool></tpen-page-tool>
-        <tpen-special-character-tool-button></tpen-special-character-tool-button>
-        <tpen-magnifier-tool></tpen-magnifier-tool>
+        ${
+          TPEN.activeProject.config?.specialCharacters?.enabled ? `<tpen-special-character-tool></tpen-special-character-tool>` : ""
+        }
+        ${
+          TPEN.activeProject.tools.find(t => t.toolName === "inspect")?.custom?.enabled ? `<tpen-magnifier-tool></tpen-magnifier-tool>` : ""
+        }
       </div>
-      <tpen-special-character-tool style="width: 100%"></tpen-special-character-tool>
+      ${
+        TPEN.activeProject.config?.specialCharacters?.enabled ? `<tpen-special-character-tool style="width: 100%"></tpen-special-character-tool>` : ""
+      }
     </div>
     `
   }

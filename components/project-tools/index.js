@@ -296,7 +296,7 @@ class ProjectTools extends HTMLElement {
                     label: name,
                     toolName: name.toLowerCase().split(" ").join("-"),
                     url: url,
-                    location: "drawer",
+                    location: "pane",
                     custom: {
                         enabled: true,
                         tagName: ''
@@ -315,7 +315,7 @@ class ProjectTools extends HTMLElement {
                     label: name,
                     toolName: name.toLowerCase().split(" ").join("-"),
                     url: url,
-                    location: "drawer",
+                    location: "pane",
                     custom: {
                         enabled: true,
                         tagName: null

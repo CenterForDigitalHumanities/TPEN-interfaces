@@ -198,27 +198,36 @@ export default class TranscriptionInterface extends HTMLElement {
   }
 
   addEventListeners() {
-    // Listen for any splitscreen-toggle events from children (if any)
-    this.shadowRoot.addEventListener('splitscreen-toggle', (e) => {
-      this.state.activeTool = e.detail?.selectedTool || ''
+    const closeSplitscreen = () => {
+      if (!this.state.isSplitscreenActive) return
+      this.state.isSplitscreenActive = false
+      this.toggleSplitscreen()
+      this.checkMagnifierVisibility()
+    }
+
+    const openSplitscreen = (selectedTool = '') => {
+      this.state.activeTool = selectedTool
       this.state.isSplitscreenActive = true
       this.toggleSplitscreen()
       this.loadRightPaneContent()
+    }
+
+    this.shadowRoot.addEventListener('splitscreen-toggle', e => openSplitscreen(e.detail?.selectedTool))
+
+    this.shadowRoot.addEventListener('click', e => {
+      if (e.target?.classList.contains('close-button')) closeSplitscreen()
     })
 
-    // Listen for clicks on the close button within the placeholder pane.
-    this.shadowRoot.addEventListener("click", (e) => {
-      if (e.target && e.target.classList.contains("close-button")) {
-        this.state.isSplitscreenActive = false
-        this.toggleSplitscreen()
-        this.checkMagnifierVisibility()
-      }
+    window.addEventListener('keydown', e => {
+      if (e.key === 'Escape') closeSplitscreen()
     })
+
+    TPEN.eventDispatcher.on('tools-dismiss', closeSplitscreen)
   }
 
   checkMagnifierVisibility() {
     const magnifierTool = document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('tpen-workspace-tools').shadowRoot.querySelector('tpen-magnifier-tool')
-    if (magnifierTool.isMagnifierVisible) {
+    if (magnifierTool?.isMagnifierVisible) {
       magnifierTool.hideMagnifier()
       magnifierTool.showMagnifier()
     }
@@ -247,7 +256,7 @@ export default class TranscriptionInterface extends HTMLElement {
       if (page) return page.id
     }
   }
-  
+
   loadRightPaneContent() {
     const rightPane = this.shadowRoot.querySelector('.tools')
     const tool = this.getToolByName(this.state.activeTool)
@@ -261,109 +270,66 @@ export default class TranscriptionInterface extends HTMLElement {
       return
     }
 
-    if (tool.custom.tagName && tool.url) {
+    const tagName = tool.custom?.tagName
+    if (tagName && tool.url) {
       // Dynamically load the script if not already loaded
-      if (customElements.get(tool.tagName)) {
-              rightPane.innerHTML = `<${tool.tagName}></${tool.tagName}>`
-      return
-            }
+      if (customElements.get(tagName)) {
+        rightPane.innerHTML = `<${tagName}></${tagName}>`
+        return
+      }
       const script = document.createElement('script')
       script.type = 'module'
       script.src = tool.url
       script.onload = () => {
-        rightPane.innerHTML = `<${tool.tagName}></${tool.tagName}>`
+        rightPane.innerHTML = `<${tagName}></${tagName}>`
       }
       script.onerror = () => {
-        rightPane.innerHTML = `<p>Failed to load tool: ${tool.tagName}</p>`
+        rightPane.innerHTML = `<p>Failed to load tool: ${tagName}</p>`
       }
       document.head.appendChild(script)
       return
     }
 
-    if (tool.url) {
-      rightPane.innerHTML = `<iframe src="${tool.url}"></iframe>`
-      const iframe = this.shadowRoot.querySelector('iframe')
-      if (iframe) {
-        // build message for url like "https://example.com/manifest/1#https://example.com/canvas/1"
-        const message = `${TPEN.activeProject?.manifest[0]}#${this.#canvas?.id ?? ''}`
-        iframe.onload = () => {
-          iframe.contentWindow.postMessage({
-            type: "MANIFEST_CANVAS_ANNOTATIONPAGE_ANNOTATION",
-            manifest: TPEN.activeProject?.manifest[0] ?? '',
-            canvas: this.#canvas ?? '',
-            annotationPage: this.#page ?? '',
-            annotation: TPEN.activeLineIndex >= 0 ? this.#page?.items?.[TPEN.activeLineIndex] : ''
-          }, "*")
-        }
-      }
-      return
-    }
-
-    rightPane.innerHTML = `<p>${tool.name ?? 'Tool'} - functionality coming soon...</p>`
-    this.checkMagnifierVisibility()
-  }
-
-  loadRightPaneContent() {
-    const rightPane = this.shadowRoot.querySelector('.tools')
-    const tool = this.state.activeTool
-    rightPane.innerHTML = this.getToolHTML(tool)
-    const iframe = this.shadowRoot.querySelector('#fullPageFrame')
-    if (iframe) {
-      iframe.addEventListener("load", () => {
+    if (tool.url && !tagName && tool.location === 'pane') {
+      const iframe = document.createElement('iframe')
+      iframe.id = tool.toolName
+      iframe.addEventListener('load', () => {
         iframe.contentWindow.postMessage(
-          { 
-            type: "MANIFEST_CANVAS_ANNOTATIONPAGE_ANNOTATION", 
-            manifest: TPEN.activeProject.manifest[0],
-            canvas: this.#canvas?.id || this.#canvas?.['@id'],
-            annotationPage: this.fetchCurrentPageId(),
-            annotation: TPEN.activeLineIndex >= 0 ? this.#page?.items?.[TPEN.activeLineIndex]?.id : null
+          {
+            type: "MANIFEST_CANVAS_ANNOTATIONPAGE_ANNOTATION",
+            manifest: TPEN.activeProject?.manifest?.[0] ?? '',
+            canvas: this.#canvas?.id ?? this.#canvas?.['@id'] ?? this.#canvas ?? '',
+            annotationPage: this.fetchCurrentPageId() ?? this.#page ?? '',
+            annotation: TPEN.activeLineIndex >= 0 ? this.#page?.items?.[TPEN.activeLineIndex]?.id ?? null : null
           },
+          '*'
+        )
+      })
+      TPEN.eventDispatcher.on('tpen-transcription-previous-line', () => {
+        iframe.contentWindow.postMessage(
+          { type: "SELECT_ANNOTATION", lineId: TPEN.activeLineIndex },
           "*"
         )
       })
+      TPEN.eventDispatcher.on('tpen-transcription-next-line', () => {
+        iframe.contentWindow.postMessage(
+          { type: "SELECT_ANNOTATION", lineId: TPEN.activeLineIndex },
+          "*"
+        )
+      })
+      iframe.src = tool.url
+      rightPane.innerHTML = ''
+      rightPane.appendChild(iframe)
+      return
     }
+
+    rightPane.innerHTML = `<p>${tool.label ?? tool.custom?.tagName ?? 'Tool'} - functionality coming soon...</p>`
     this.checkMagnifierVisibility()
   }
 
-  getToolHTML(toolValue) {
+  getToolByName(toolName) {
     const tools = TPEN.activeProject?.tools || []
-    const selectedTool = tools.find(tool => tool.toolName === toolValue)
-    
-    if (!selectedTool) {
-      return `<p>No tool selected</p>`
-    }
-    
-    // If the tool has a URL, render it in an iframe
-    if (selectedTool.url) {
-      return `<iframe src='${selectedTool.url}'></iframe>`
-    }
-    
-    // For tools without URLs, show placeholder content based on their value
-    switch (selectedTool.toolName) {
-      case 'page':
-        return `<p>Page Tools functionality coming soon...</p>`
-      case 'inspector':
-        return `<p>Inspector functionality coming soon...</p>`
-      case 'characters':
-        return `<p>Special Characters functionality coming soon...</p>`
-      case 'xml':
-        return `<p>XML Tags functionality coming soon...</p>`
-      case 'view-fullpage':
-        return `<iframe 
-                  id="fullPageFrame"
-                  src="https://centerfordigitalhumanities.github.io/Page-Viewer/">
-                </iframe>`
-      case 'history':
-        return `<p>History Tool functionality coming soon...</p>`
-      case 'preview':
-        return `<p>Preview Tool functionality coming soon...</p>`
-      case 'parsing':
-        return `<p>Parsing Adjustment functionality coming soon...</p>`
-      case 'compare':
-        return `<p>Compare Pages functionality coming soon...</p>`
-      default:
-        return `<p>${selectedTool.name} - functionality coming soon...</p>`
-    }
+    return tools.find(tool => tool.toolName === toolName)
   }
 
   setupResizableSplit() {
@@ -469,12 +435,8 @@ export default class TranscriptionInterface extends HTMLElement {
     targetString ??= thisLine?.target?.selector?.value ? `${thisLine.target?.source}#${thisLine.target.selector.value}` : null
     targetString ??= thisLine?.target
     targetString ??= page?.target?.id ?? page?.target?.['@id'] ?? page?.target
-    ;[canvasID, region] = targetString?.split?.('#xywh=')
-    this.shadowRoot.querySelector('#fullPageFrame')?.contentWindow.postMessage(
-      { type: "SELECT_ANNOTATION", lineId: lineIndex },
-      "*"
-    )
-    return { canvasID, region : region?.split?.(':')?.pop() }
+      ;[canvasID, region] = targetString?.split?.('#xywh=')
+    return { canvasID, region: region?.split?.(':')?.pop() }
   }
 
   async updateTranscriptionImages(pageID) {
