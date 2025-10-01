@@ -307,13 +307,13 @@ export default class TranscriptionInterface extends HTMLElement {
       })
       TPEN.eventDispatcher.on('tpen-transcription-previous-line', () => {
         iframe.contentWindow.postMessage(
-          { type: "SELECT_ANNOTATION", line: TPEN.activeLine },
+          { type: "SELECT_ANNOTATION", lineId: TPEN.activeLineIndex },
           "*"
         )
       })
       TPEN.eventDispatcher.on('tpen-transcription-next-line', () => {
         iframe.contentWindow.postMessage(
-          { type: "SELECT_ANNOTATION", line: TPEN.activeLine },
+          { type: "SELECT_ANNOTATION", lineId: TPEN.activeLineIndex },
           "*"
         )
       })
