@@ -294,7 +294,7 @@ export default class TranscriptionInterface extends HTMLElement {
       const iframe = document.createElement('iframe')
       iframe.id = tool.toolName
       iframe.addEventListener('load', () => {
-        iframe.contentWindow.postMessage(
+        iframe.contentWindow?.postMessage(
           {
             type: "MANIFEST_CANVAS_ANNOTATIONPAGE_ANNOTATION",
             manifest: TPEN.activeProject?.manifest?.[0] ?? '',
@@ -306,13 +306,13 @@ export default class TranscriptionInterface extends HTMLElement {
         )
       })
       TPEN.eventDispatcher.on('tpen-transcription-previous-line', () => {
-        iframe.contentWindow.postMessage(
+        iframe.contentWindow?.postMessage(
           { type: "SELECT_ANNOTATION", lineId: TPEN.activeLineIndex },
           "*"
         )
       })
       TPEN.eventDispatcher.on('tpen-transcription-next-line', () => {
-        iframe.contentWindow.postMessage(
+        iframe.contentWindow?.postMessage(
           { type: "SELECT_ANNOTATION", lineId: TPEN.activeLineIndex },
           "*"
         )
