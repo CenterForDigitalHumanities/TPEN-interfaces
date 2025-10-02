@@ -11,9 +11,15 @@
 import { decodeUserToken, getUserFromToken, checkExpired } from '../components/iiif-tools/index.js'
 import { eventDispatcher } from './events.js'
 
-import "../components/gui/toast/ToastContainer.js"
-import "../components/gui/alert/AlertContainer.js"
-import "../components/gui/confirm/ConfirmContainer.js"
+if (!customElements.get('toast-container')) {
+    import("../components/gui/toast/ToastContainer.js")
+}
+if (!customElements.get('alert-container')) {
+    import("../components/gui/alert/AlertContainer.js")
+}
+if (!customElements.get('confirm-container')) {
+    import("../components/gui/confirm/ConfirmContainer.js")
+}
 
 class Tpen {
     #actionQueue = []
