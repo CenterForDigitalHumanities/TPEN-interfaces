@@ -133,27 +133,6 @@ class TPENLineHistory extends HTMLElement {
     }
 
     /**
-     * Extract timestamp from a line object using RERUM heuristics
-     * @param {Object} line - The line object
-     * @returns {Number} Timestamp in milliseconds
-     */
-    getTimestamp(line) {
-        const createdAt = line?.__rerum?.createdAt ?? line?.createdAt ?? line?.modified ?? line?.created ?? line?.timestamp
-        const isOverwritten = line?.__rerum?.isOverwritten ?? line?.isOverwritten
-        
-        const timestamps = [createdAt, isOverwritten].filter(Boolean).map(ts => {
-            if (typeof ts === 'string') {
-                const date = new Date(ts)
-                return isNaN(date.getTime()) ? null : date.getTime()
-            }
-            if (typeof ts === 'number') return ts
-            return null
-        }).filter(t => t !== null)
-        
-        return timestamps.length > 0 ? Math.max(...timestamps) : 0
-    }
-
-    /**
      * Extract text from a line object
      * @param {Object} line - The line object
      * @returns {String} The text content
