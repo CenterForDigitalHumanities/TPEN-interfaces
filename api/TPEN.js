@@ -95,6 +95,7 @@ class Tpen {
 
     set activeLine(line) {
         this.#activeLine = line
+        this.eventDispatcher.dispatch('tpen-active-line-updated', line)
     }
 
     get activeLine() {

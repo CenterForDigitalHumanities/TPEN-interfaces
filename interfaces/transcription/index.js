@@ -380,6 +380,7 @@ export default class TranscriptionInterface extends HTMLElement {
     const topImage = this.shadowRoot.querySelector('#topImage')
     const thisLine = this.#page.items?.[TPEN.activeLineIndex]
     if (!thisLine) return
+    TPEN.activeLine = thisLine
     const { region } = this.setCanvasAndSelector(thisLine, this.#page, TPEN.activeLineIndex)
     if (!region) return
     const [x, y, width, height] = region.split(',').map(Number)
