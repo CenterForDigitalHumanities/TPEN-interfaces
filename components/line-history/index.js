@@ -263,52 +263,7 @@ class TPENLineHistory extends HTMLElement {
      * @param {Object} line - The line object
      * @returns {String|null} The image source URL
      */
-    getLineImageSource(line) {
-        const target = line.target || line.on
-        if (target) {
-            // Handle IIIF target format
-            if (target.source) {
-                return target.source
-            }
-            // Handle direct target URL
-            if (typeof target === 'string') {
-                return target
-            }
-        }
 
-        // Check for direct image properties
-        return line.image || line.src || line.source || null
-    }
-
-    /**
-     * Extract IIIF manifest and canvas information from TPEN project and current line
-     * @returns {Object} Object with manifest and canvas URLs
-     */
-    getIIIFContext() {
-        // Get manifest from TPEN.activeProject
-        let manifest = null
-        if (TPEN?.activeProject?.manifest) {
-            // Handle both string URL and array of URLs
-            if (typeof TPEN.activeProject.manifest === 'string') {
-                manifest = TPEN.activeProject.manifest
-            } else if (Array.isArray(TPEN.activeProject.manifest) && TPEN.activeProject.manifest[0]) {
-                manifest = TPEN.activeProject.manifest[0]
-            }
-        } else if (this.closest('[iiif-manifest]')) {
-            manifest = this.closest('[iiif-manifest]').getAttribute('iiif-manifest')
-        }
-
-        // Get canvas from current line target (annotation page canvas)
-        let canvas = null
-        if (this.currentLine) {
-            const target = this.currentLine.target || this.currentLine.on
-            if (target && target.source) {
-                canvas = target.source
-            }
-        }
-
-        return { manifest, canvas }
-    }
 
     /**
      * Format a timestamp for display
