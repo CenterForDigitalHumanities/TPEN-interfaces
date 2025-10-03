@@ -304,6 +304,14 @@ export default class TranscriptionInterface extends HTMLElement {
           },
           '*'
         )
+
+        iframe.contentWindow?.postMessage(
+          {
+            type: "ANNOTATIONS",
+            annotations: this.fetchCurrentPageId() ?? this.#page ?? ''
+          },
+          '*'
+        )
       })
       TPEN.eventDispatcher.on('tpen-transcription-previous-line', () => {
         iframe.contentWindow.postMessage(
@@ -318,6 +326,8 @@ export default class TranscriptionInterface extends HTMLElement {
         )
       })
       iframe.src = tool.url
+      iframe.sandbox = "allow-scripts allow-same-origin"
+      iframe.allow = "clipboard-read; clipboard-write"
       rightPane.innerHTML = ''
       rightPane.appendChild(iframe)
       return
