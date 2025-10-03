@@ -326,8 +326,6 @@ export default class TranscriptionInterface extends HTMLElement {
         )
       })
       iframe.src = tool.url
-      iframe.sandbox = "allow-scripts allow-same-origin"
-      iframe.allow = "clipboard-read; clipboard-write"
       rightPane.innerHTML = ''
       rightPane.appendChild(iframe)
       return
