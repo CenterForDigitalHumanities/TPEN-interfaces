@@ -12,7 +12,7 @@ that utilizes Web Components that might be reused by others.
 The directories here each contain an example of an interface that uses the TPEN
 authentication and interactions with the TPEN platform. As an example, the default
 location for the transcription action is `https://tpen.rerum.io/interfaces/transcribe`
-and returns the file in `/transcribe/index.html`. If you have developed a project that
+and returns the file in `/transcription/index.html`. If you have developed a project that
 transcribes music and has helpful tools for layers music encoding and lyric
 transcription, the project configuration can provide a custom location for the
 `project_transcription` option, directing the user instead to

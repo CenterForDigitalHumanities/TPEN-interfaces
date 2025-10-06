@@ -85,8 +85,8 @@ permalink: /project/manage
             TPEN.eventDispatcher.on('tpen-project-loaded', ev => {
                 const goParse = document.getElementById("goParse")
                 const goTranscribe = document.getElementById("goTranscribe")
-                if(goParse) goParse.setAttribute("href", `/annotator/?projectID=${ev.detail._id}`)
-                if(goTranscribe) goTranscribe.setAttribute("href", `/transcribe/?projectID=${ev.detail._id}`)
+                if(goParse) goParse.setAttribute("href", `/annotator?projectID=${ev.detail._id}`)
+                if(goTranscribe) goTranscribe.setAttribute("href", `/transcribe?projectID=${ev.detail._id}`)
             })
             const cards = document.querySelectorAll('tpen-card')
             for (const card of cards) {

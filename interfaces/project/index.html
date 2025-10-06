@@ -86,8 +86,8 @@ permalink: /project
         leaveProject.addEventListener('click', (e) => {
             window.location.href = `/project/leave?projectID=${ev.detail._id}`
         })
-        if(goParse) goParse.setAttribute("href", `/annotator/?projectID=${ev.detail._id}`)
-        if(goTranscribe) goTranscribe.setAttribute("href", `/transcribe/?projectID=${ev.detail._id}`)
+        if(goParse) goParse.setAttribute("href", `/annotator?projectID=${ev.detail._id}`)
+        if(goTranscribe) goTranscribe.setAttribute("href", `/transcribe?projectID=${ev.detail._id}`)
     })
 </script>
 </html>
