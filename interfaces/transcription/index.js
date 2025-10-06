@@ -304,14 +304,6 @@ export default class TranscriptionInterface extends HTMLElement {
           },
           '*'
         )
-
-        iframe.contentWindow?.postMessage(
-          {
-            type: "ANNOTATIONS",
-            annotations: this.fetchCurrentPageId() ?? this.#page ?? ''
-          },
-          '*'
-        )
       })
       TPEN.eventDispatcher.on('tpen-transcription-previous-line', () => {
         iframe.contentWindow.postMessage(

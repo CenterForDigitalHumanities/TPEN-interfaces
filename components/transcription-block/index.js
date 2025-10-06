@@ -149,6 +149,16 @@ export default class TranscriptionBlock extends HTMLElement {
                     this.updateTranscriptionUI()
                 }
             }
+
+            if (event.data?.type === "UPDATE_LINE_TEXT") {
+                if (typeof event.data.lineIndex === 'number') {
+                    this.shadowRoot.querySelector('.transcription-input').value = event.data.text
+                    this.#transcriptions[event.data.lineIndex] = event.data.text
+                    this.markLineDirty(event.data.lineIndex)
+                    this.persistDraft(event.data.lineIndex)
+                    this.scheduleLineSave(event.data.lineIndex)
+                }
+            }
         })
     }
 
@@ -446,7 +456,6 @@ export default class TranscriptionBlock extends HTMLElement {
         const inputElem = this.shadowRoot?.querySelector('.transcription-input')
         if (inputElem) {
             inputElem.value = currentLineText
-            inputElem.focus?.()
             inputElem.setSelectionRange?.(inputElem.value.length, inputElem.value.length)
         }
         // Swap Prev/Prev Page button if on first line
