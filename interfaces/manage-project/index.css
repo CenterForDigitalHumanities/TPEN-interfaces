@@ -5,9 +5,6 @@ tpen-card[tpen-entity="export"]::part(card-body) {
   margin-bottom: 3.5em;
   height: 310px;
 }
-tpen-card[tpen-entity="project"]::part(card-body) {
-    margin-bottom: 0;
-}
 a.left {
     cursor: pointer;
     color: var(--primary-color);
