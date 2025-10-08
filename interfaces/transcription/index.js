@@ -257,6 +257,17 @@ export default class TranscriptionInterface extends HTMLElement {
     }
   }
 
+  fetchCanvasesFromCurrentLayer() {
+    const currentLayer = TPEN.activeProject?.layers.find(layer => layer.pages.some(page => page.id.split('/').pop() === TPEN.screen.pageInQuery))
+    const canvases = currentLayer?.pages.flatMap(page => {
+      return {
+        id: page.target,
+        label: page.label
+      }
+    })
+    return canvases
+  }
+
   loadRightPaneContent() {
     const rightPane = this.shadowRoot.querySelector('.tools')
     const tool = this.getToolByName(this.state.activeTool)
@@ -301,6 +312,13 @@ export default class TranscriptionInterface extends HTMLElement {
             canvas: this.#canvas?.id ?? this.#canvas?.['@id'] ?? this.#canvas ?? '',
             annotationPage: this.fetchCurrentPageId() ?? this.#page ?? '',
             annotation: TPEN.activeLineIndex >= 0 ? this.#page?.items?.[TPEN.activeLineIndex]?.id ?? null : null
+          },
+          '*'
+        )
+
+         iframe.contentWindow?.postMessage(
+          { type: "CANVASES",
+            canvases: this.fetchCanvasesFromCurrentLayer()
           },
           '*'
         )
