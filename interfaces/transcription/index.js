@@ -316,11 +316,18 @@ export default class TranscriptionInterface extends HTMLElement {
           '*'
         )
 
-         iframe.contentWindow?.postMessage(
+        iframe.contentWindow?.postMessage(
           { type: "CANVASES",
             canvases: this.fetchCanvasesFromCurrentLayer()
           },
           '*'
+        )
+
+        iframe.contentWindow?.postMessage(
+          { type: "CURRENT_LINE_INDEX",
+            lineId: TPEN.activeLineIndex 
+          },
+          "*"
         )
       })
       TPEN.eventDispatcher.on('tpen-transcription-previous-line', () => {
