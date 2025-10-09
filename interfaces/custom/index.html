@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Project Property Demo</title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .description {
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+        .project-selector {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .project-selector label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        .project-selector select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        .custom-property-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        tpen-custom-property {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <h1>Custom Project Property Demo</h1>
+    <p class="description">
+        This demo allows you to add custom JSON properties to your TPEN projects. 
+        Select a project from the dropdown below and enter your custom data in JSON format.
+    </p>
+
+    <div id="error-container"></div>
+
+    <div class="project-selector">
+        <label for="project-select">Select Project:</label>
+        <select id="project-select">
+            <option value="">Loading projects...</option>
+        </select>
+    </div>
+
+    <div class="custom-property-container">
+        <tpen-custom-property id="custom-property"></tpen-custom-property>
+    </div>
+
+    <script type="module">
+        import TPEN from '../../api/TPEN.js'
+        import './index.js'
+
+        const projectSelect = document.getElementById('project-select')
+        const customProperty = document.getElementById('custom-property')
+        const errorContainer = document.getElementById('error-container')
+
+        async function loadProjects() {
+            try {
+                // Wait for authentication
+                const token = TPEN.getAuthorization() ?? await TPEN.login()
+                if (!token) {
+                    throw new Error('Authentication required')
+                }
+
+                // Fetch user's projects
+                const response = await fetch(`${TPEN.servicesURL}/projects`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    },
+                    credentials: 'include'
+                })
+
+                if (!response.ok) {
+                    throw new Error(`Failed to load projects: ${response.statusText}`)
+                }
+
+                const projects = await response.json()
+                
+                // Clear loading option
+                projectSelect.innerHTML = ''
+
+                if (!projects || projects.length === 0) {
+                    projectSelect.innerHTML = '<option value="">No projects found</option>'
+                    return
+                }
+
+                // Get default project from query string
+                const defaultProjectId = TPEN.screen?.projectInQuery ?? ''
+
+                // Populate dropdown
+                projects.forEach(project => {
+                    const option = document.createElement('option')
+                    option.value = project._id ?? project.id
+                    option.textContent = project.title ?? project.name ?? `Project ${option.value}`
+                    if (option.value === defaultProjectId) {
+                        option.selected = true
+                    }
+                    projectSelect.appendChild(option)
+                })
+
+                // Set initial project
+                if (defaultProjectId && projects.some(p => (p._id ?? p.id) === defaultProjectId)) {
+                    updateCustomProperty(defaultProjectId)
+                } else if (projects.length > 0) {
+                    const firstProjectId = projects[0]._id ?? projects[0].id
+                    updateCustomProperty(firstProjectId)
+                }
+
+            } catch (error) {
+                console.error('Error loading projects:', error)
+                projectSelect.innerHTML = '<option value="">Error loading projects</option>'
+                showError(error.message ?? 'Failed to load projects')
+            }
+        }
+
+        function updateCustomProperty(projectId) {
+            if (!projectId) return
+            
+            // Update the URL query string
+            const url = new URL(window.location)
+            url.searchParams.set('projectId', projectId)
+            window.history.pushState({}, '', url)
+            
+            // Update TPEN.screen.projectInQuery and trigger re-render
+            if (TPEN.screen) {
+                TPEN.screen.projectInQuery = projectId
+            }
+            
+            // Trigger the component to re-render
+            customProperty.render()
+        }
+
+        function showError(message) {
+            errorContainer.innerHTML = `<div class="error">${message}</div>`
+            setTimeout(() => {
+                errorContainer.innerHTML = ''
+            }, 5000)
+        }
+
+        // Listen for project selection changes
+        projectSelect.addEventListener('change', (e) => {
+            updateCustomProperty(e.target.value)
+        })
+
+        // Listen for TPEN events
+        TPEN.eventDispatcher.on('tpen-authenticated', loadProjects)
+        TPEN.eventDispatcher.on('tpen-project-metadata-updated', (detail) => {
+            console.log('Project metadata updated:', detail)
+        })
+
+        // Initialize
+        if (TPEN.getAuthorization()) {
+            loadProjects()
+        } else {
+            TPEN.eventDispatcher.on('tpen-authenticated', loadProjects)
+        }
+    </script>
+</body>
+</html>
