@@ -21,7 +21,9 @@
             margin-bottom: 30px;
             line-height: 1.5;
         }
-        .project-selector {
+        .project-selector,
+        .metadata-container,
+        .custom-property-container {
             background: white;
             padding: 20px;
             border-radius: 8px;
@@ -42,11 +44,51 @@
             font-size: 14px;
             box-sizing: border-box;
         }
-        .custom-property-container {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        .metadata-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 12px;
+        }
+        .namespace {
+            margin-bottom: 16px;
+        }
+        .namespace h3 {
+            margin: 0 0 6px;
+            color: #444;
+            font-size: 16px;
+        }
+        .kv-list {
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .kv-item {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 8px;
+            padding: 10px 12px;
+            border-bottom: 1px solid #eaeaea;
+            background-color: #fafafa;
+        }
+        .kv-item:nth-child(even) {
+            background-color: #fff;
+        }
+        .kv-item:last-child {
+            border-bottom: none;
+        }
+        .kv-key {
+            font-weight: 600;
+            color: #555;
+            word-break: break-word;
+        }
+        .kv-value {
+            color: #333;
+            word-break: break-word;
+        }
+        .empty-state {
+            color: #777;
+            font-style: italic;
         }
         .loading {
             text-align: center;
@@ -81,6 +123,14 @@
         </select>
     </div>
 
+    <div class="metadata-container">
+        <div class="metadata-header">
+            <h2>Current Project Metadata</h2>
+            <span id="metadata-status" class="empty-state">Select a project to view metadata</span>
+        </div>
+        <div id="metadata-content"></div>
+    </div>
+
     <div class="custom-property-container">
         <tpen-custom-property id="custom-property"></tpen-custom-property>
     </div>
@@ -92,81 +142,169 @@
         const projectSelect = document.getElementById('project-select')
         const customProperty = document.getElementById('custom-property')
         const errorContainer = document.getElementById('error-container')
+        const metadataContent = document.getElementById('metadata-content')
+        const metadataStatus = document.getElementById('metadata-status')
 
         async function loadProjects() {
             try {
-                // Wait for authentication
                 const token = TPEN.getAuthorization()
                 if (!token) {
                     throw new Error('Authentication required')
                 }
 
-                // Fetch user's projects
                 const response = await fetch(`${TPEN.servicesURL}/my/projects`, {
+                    method: 'GET',
                     headers: {
-                        Authorization: `Bearer ${token}`
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json'
                     },
-                    credentials: 'include'
                 })
 
                 if (!response.ok) {
                     throw new Error(`Failed to load projects: ${response.statusText}`)
                 }
 
-                const projects = await response.json()
-                
-                // Clear loading option
+                const { projects } = await response.json()
                 projectSelect.innerHTML = ''
 
-                if (!projects || projects.length === 0) {
+                if (!projects?.length) {
                     projectSelect.innerHTML = '<option value="">No projects found</option>'
+                    metadataStatus.textContent = 'No metadata to display'
+                    metadataContent.innerHTML = ''
                     return
                 }
 
-                // Get default project from query string
                 const defaultProjectId = TPEN.screen?.projectInQuery ?? ''
-
-                // Populate dropdown
                 projects.forEach(project => {
                     const option = document.createElement('option')
-                    option.value = project._id ?? project.id
-                    option.textContent = project.title ?? project.name ?? `Project ${option.value}`
+                    option.value = project._id ?? project.id ?? ''
+                    option.textContent = `${project.title ?? project.label ?? 'Project'} (${option.value})`
                     if (option.value === defaultProjectId) {
                         option.selected = true
                     }
                     projectSelect.appendChild(option)
                 })
 
-                // Set initial project
                 if (defaultProjectId && projects.some(p => (p._id ?? p.id) === defaultProjectId)) {
                     updateCustomProperty(defaultProjectId)
-                } else if (projects.length > 0) {
-                    const firstProjectId = projects[0]._id ?? projects[0].id
+                } else {
+                    const firstProjectId = projects[0]._id ?? projects[0].id ?? ''
                     updateCustomProperty(firstProjectId)
                 }
 
             } catch (error) {
                 console.error('Error loading projects:', error)
                 projectSelect.innerHTML = '<option value="">Error loading projects</option>'
+                metadataStatus.textContent = 'Unable to load metadata'
+                metadataContent.innerHTML = ''
                 showError(error.message ?? 'Failed to load projects')
             }
         }
 
-        function updateCustomProperty(projectId) {
-            if (!projectId) return
-            
-            // Update the URL query string
+        async function updateCustomProperty(projectId) {
+            if (!projectId) {
+                metadataStatus.textContent = 'Select a project to view metadata'
+                metadataContent.innerHTML = ''
+                return
+            }
+
             const url = new URL(window.location)
             url.searchParams.set('projectId', projectId)
             window.history.pushState({}, '', url)
-            
-            // Update TPEN.screen.projectInQuery and trigger re-render
+
             if (TPEN.screen) {
                 TPEN.screen.projectInQuery = projectId
             }
-            
-            // Trigger the component to re-render
+
             customProperty.render()
+            await loadProjectMetadata(projectId)
+        }
+
+        async function loadProjectMetadata(projectId) {
+            metadataStatus.textContent = 'Loading metadata...'
+            metadataContent.innerHTML = '<div class="loading">Fetching project metadata...</div>'
+
+            try {
+                const token = TPEN.getAuthorization() ?? await TPEN.login()
+                if (!token) {
+                    throw new Error('Authentication required')
+                }
+
+                const response = await fetch(`${TPEN.servicesURL}/project/${projectId}`, {
+                    method: 'GET',
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                })
+
+                if (!response.ok) {
+                    throw new Error(`Failed to load metadata: ${response.statusText}`)
+                }
+
+                const project = await response.json()
+                renderMetadata(project?.project_metadata, projectId)
+
+            } catch (error) {
+                console.error('Error loading metadata:', error)
+                metadataStatus.textContent = 'Failed to load metadata'
+                metadataContent.innerHTML = ''
+                showError(error.message ?? 'Unable to load project metadata')
+            }
+        }
+
+        function renderMetadata(metadata, projectId) {
+            if (!metadata || typeof metadata !== 'object') {
+                metadataStatus.textContent = `No metadata for project ${projectId}`
+                metadataContent.innerHTML = '<p class="empty-state">No namespaces found in project_metadata.</p>'
+                return
+            }
+
+            const namespaces = Object.entries(metadata).filter(([, value]) => value && typeof value === 'object')
+            if (!namespaces.length) {
+                metadataStatus.textContent = `No metadata for project ${projectId}`
+                metadataContent.innerHTML = '<p class="empty-state">No namespaces found in project_metadata.</p>'
+                return
+            }
+
+            metadataStatus.textContent = `Metadata namespaces (${namespaces.length})`
+            metadataContent.innerHTML = namespaces.map(([namespace, values]) => {
+                const entries = Object.entries(values ?? {})
+                if (!entries.length) {
+                    return `
+                        <div class="namespace">
+                            <h3>${namespace}</h3>
+                            <p class="empty-state">No key-value pairs defined.</p>
+                        </div>
+                    `
+                }
+
+                const kvRows = entries.map(([key, value]) => `
+                    <div class="kv-item">
+                        <div class="kv-key">${key}</div>
+                        <div class="kv-value">${formatMetadataValue(value)}</div>
+                    </div>
+                `).join('')
+
+                return `
+                    <div class="namespace">
+                        <h3>${namespace}</h3>
+                        <div class="kv-list">
+                            ${kvRows}
+                        </div>
+                    </div>
+                `
+            }).join('')
+        }
+
+        function formatMetadataValue(value) {
+            if (value === null || value === undefined) {
+                return '<span class="empty-state">null</span>'
+            }
+            if (typeof value === 'object') {
+                return `<pre>${JSON.stringify(value, null, 2)}</pre>`
+            }
+            return String(value)
         }
 
         function showError(message) {
@@ -176,18 +314,20 @@
             }, 5000)
         }
 
-        // Listen for project selection changes
-        projectSelect.addEventListener('change', (e) => {
+        projectSelect.addEventListener('change', e => {
             updateCustomProperty(e.target.value)
         })
 
-        // Listen for TPEN events
         TPEN.eventDispatcher.on('tpen-authenticated', loadProjects)
-        TPEN.eventDispatcher.on('tpen-project-metadata-updated', (detail) => {
-            console.log('Project metadata updated:', detail)
+        TPEN.eventDispatcher.on('tpen-project-metadata-updated', detail => {
+            const updatedId = detail?.id ?? ''
+            if (!updatedId) return
+            const currentId = projectSelect.value
+            if (updatedId === currentId) {
+                renderMetadata(detail?.data?.project_metadata ?? detail?.data, updatedId)
+            }
         })
 
-        // Initialize
         if (TPEN.getAuthorization()) {
             loadProjects()
         }

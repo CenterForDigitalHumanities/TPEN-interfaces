@@ -67,7 +67,6 @@ class TpenCustomProperty extends HTMLElement {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(payload),
-                credentials: 'include'
             })
 
             if (!resp.ok) {
