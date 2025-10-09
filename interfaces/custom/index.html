@@ -96,7 +96,7 @@
         async function loadProjects() {
             try {
                 // Wait for authentication
-                const token = TPEN.getAuthorization() ?? await TPEN.login()
+                const token = TPEN.getAuthorization()
                 if (!token) {
                     throw new Error('Authentication required')
                 }
@@ -190,8 +190,6 @@
         // Initialize
         if (TPEN.getAuthorization()) {
             loadProjects()
-        } else {
-            TPEN.eventDispatcher.on('tpen-authenticated', loadProjects)
         }
     </script>
 </body>
