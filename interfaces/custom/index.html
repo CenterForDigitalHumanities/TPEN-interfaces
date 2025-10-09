@@ -22,7 +22,7 @@
             line-height: 1.5;
         }
         .project-selector,
-        .metadata-container,
+        .interface-container,
         .custom-property-container {
             background: white;
             padding: 20px;
@@ -44,7 +44,7 @@
             font-size: 14px;
             box-sizing: border-box;
         }
-        .metadata-header {
+        .interface-header {
             display: flex;
             justify-content: space-between;
             align-items: baseline;
@@ -123,12 +123,12 @@
         </select>
     </div>
 
-    <div class="metadata-container">
-        <div class="metadata-header">
-            <h2>Current Project Metadata</h2>
-            <span id="metadata-status" class="empty-state">Select a project to view metadata</span>
+    <div class="interface-container">
+        <div class="interface-header">
+            <h2>Current Project Interfaces</h2>
+            <span id="interface-status" class="empty-state">Select a project to view interfaces</span>
         </div>
-        <div id="metadata-content"></div>
+        <div id="interface-content"></div>
     </div>
 
     <div class="custom-property-container">
@@ -142,8 +142,8 @@
         const projectSelect = document.getElementById('project-select')
         const customProperty = document.getElementById('custom-property')
         const errorContainer = document.getElementById('error-container')
-        const metadataContent = document.getElementById('metadata-content')
-        const metadataStatus = document.getElementById('metadata-status')
+        const interfaceContent = document.getElementById('interface-content')
+        const interfaceStatus = document.getElementById('interface-status')
 
         async function loadProjects() {
             try {
@@ -169,8 +169,8 @@
 
                 if (!projects?.length) {
                     projectSelect.innerHTML = '<option value="">No projects found</option>'
-                    metadataStatus.textContent = 'No metadata to display'
-                    metadataContent.innerHTML = ''
+                    interfaceStatus.textContent = 'No interfaces to display'
+                    interfaceContent.innerHTML = ''
                     return
                 }
 
@@ -195,16 +195,16 @@
             } catch (error) {
                 console.error('Error loading projects:', error)
                 projectSelect.innerHTML = '<option value="">Error loading projects</option>'
-                metadataStatus.textContent = 'Unable to load metadata'
-                metadataContent.innerHTML = ''
+                interfaceStatus.textContent = 'Unable to load interfaces'
+                interfaceContent.innerHTML = ''
                 showError(error.message ?? 'Failed to load projects')
             }
         }
 
         async function updateCustomProperty(projectId) {
             if (!projectId) {
-                metadataStatus.textContent = 'Select a project to view metadata'
-                metadataContent.innerHTML = ''
+                interfaceStatus.textContent = 'Select a project to view interfaces'
+                interfaceContent.innerHTML = ''
                 return
             }
 
@@ -217,12 +217,12 @@
             }
 
             customProperty.render()
-            await loadProjectMetadata(projectId)
+            await loadProjectInterfaces(projectId)
         }
 
-        async function loadProjectMetadata(projectId) {
-            metadataStatus.textContent = 'Loading metadata...'
-            metadataContent.innerHTML = '<div class="loading">Fetching project metadata...</div>'
+        async function loadProjectInterfaces(projectId) {
+            interfaceStatus.textContent = 'Loading interfaces...'
+            interfaceContent.innerHTML = '<div class="loading">Fetching interface namespaces...</div>'
 
             try {
                 const token = TPEN.getAuthorization() ?? await TPEN.login()
@@ -239,36 +239,36 @@
                 })
 
                 if (!response.ok) {
-                    throw new Error(`Failed to load metadata: ${response.statusText}`)
+                    throw new Error(`Failed to load interfaces: ${response.statusText}`)
                 }
 
                 const project = await response.json()
-                renderMetadata(project?.project_metadata, projectId)
+                renderInterfaceData(project?.interfaces, projectId)
 
             } catch (error) {
-                console.error('Error loading metadata:', error)
-                metadataStatus.textContent = 'Failed to load metadata'
-                metadataContent.innerHTML = ''
-                showError(error.message ?? 'Unable to load project metadata')
+                console.error('Error loading interfaces:', error)
+                interfaceStatus.textContent = 'Failed to load interfaces'
+                interfaceContent.innerHTML = ''
+                showError(error.message ?? 'Unable to load project interfaces')
             }
         }
 
-        function renderMetadata(metadata, projectId) {
-            if (!metadata || typeof metadata !== 'object') {
-                metadataStatus.textContent = `No metadata for project ${projectId}`
-                metadataContent.innerHTML = '<p class="empty-state">No namespaces found in project_metadata.</p>'
+        function renderInterfaceData(interfaces, projectId) {
+            if (!interfaces || typeof interfaces !== 'object') {
+                interfaceStatus.textContent = `No interfaces for project ${projectId}`
+                interfaceContent.innerHTML = '<p class="empty-state">No namespaces found in interfaces.</p>'
                 return
             }
 
-            const namespaces = Object.entries(metadata).filter(([, value]) => value && typeof value === 'object')
+            const namespaces = Object.entries(interfaces).filter(([, value]) => value && typeof value === 'object')
             if (!namespaces.length) {
-                metadataStatus.textContent = `No metadata for project ${projectId}`
-                metadataContent.innerHTML = '<p class="empty-state">No namespaces found in project_metadata.</p>'
+                interfaceStatus.textContent = `No interfaces for project ${projectId}`
+                interfaceContent.innerHTML = '<p class="empty-state">No namespaces found in interfaces.</p>'
                 return
             }
 
-            metadataStatus.textContent = `Metadata namespaces (${namespaces.length})`
-            metadataContent.innerHTML = namespaces.map(([namespace, values]) => {
+            interfaceStatus.textContent = `Interface namespaces (${namespaces.length})`
+            interfaceContent.innerHTML = namespaces.map(([namespace, values]) => {
                 const entries = Object.entries(values ?? {})
                 if (!entries.length) {
                     return `
@@ -282,7 +282,7 @@
                 const kvRows = entries.map(([key, value]) => `
                     <div class="kv-item">
                         <div class="kv-key">${key}</div>
-                        <div class="kv-value">${formatMetadataValue(value)}</div>
+                        <div class="kv-value">${formatInterfacesValue(value)}</div>
                     </div>
                 `).join('')
 
@@ -297,7 +297,7 @@
             }).join('')
         }
 
-        function formatMetadataValue(value) {
+        function formatInterfacesValue(value) {
             if (value === null || value === undefined) {
                 return '<span class="empty-state">null</span>'
             }
@@ -319,12 +319,12 @@
         })
 
         TPEN.eventDispatcher.on('tpen-authenticated', loadProjects)
-        TPEN.eventDispatcher.on('tpen-project-metadata-updated', detail => {
+        TPEN.eventDispatcher.on('tpen-project-interface-updated', detail => {
             const updatedId = detail?.id ?? ''
             if (!updatedId) return
             const currentId = projectSelect.value
             if (updatedId === currentId) {
-                renderMetadata(detail?.data?.project_metadata ?? detail?.data, updatedId)
+                renderInterfaceData(detail?.data?.interfaces ?? detail?.data, updatedId)
             }
         })
 
