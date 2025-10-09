@@ -209,7 +209,7 @@
             }
 
             const url = new URL(window.location)
-            url.searchParams.set('projectId', projectId)
+            url.searchParams.set('projectID', projectId)
             window.history.pushState({}, '', url)
 
             if (TPEN.screen) {
