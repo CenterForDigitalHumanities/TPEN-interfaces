@@ -32,7 +32,7 @@ class SpecialCharacterTool extends HTMLElement {
         })
 
         editCharBtn.addEventListener('click', () => {
-            window.location.href = '/components/hot-keys/manage-hotkeys.html'
+            window.location.href = '/components/hot-keys/manage-hotkeys.html?projectID=' + TPEN.activeProject._id
         })
 
         this.shadowRoot.querySelectorAll('.char-button').forEach(btn => {
@@ -116,7 +116,7 @@ class SpecialCharacterTool extends HTMLElement {
             ${CheckPermissions.checkEditAccess("PROJECT", "CONTENT") ?
                 TPEN.activeProject.interfaces?.hotkeys?.reduce((acc, hk) => {
                     return acc + `<button class="char-button" type="button">${hk}</button>`
-                }, '') : ''
+                }, '') ?? `select "edit" to add buttons` : ''
             }
             </div>
             <div class="panel-controls">
