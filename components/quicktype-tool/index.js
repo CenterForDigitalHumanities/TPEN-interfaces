@@ -2,6 +2,7 @@ import TPEN from "../../api/TPEN.js"
 const eventDispatcher = TPEN.eventDispatcher
 import CheckPermissions from "../check-permissions/checkPermissions.js"
 import { onProjectReady } from "../../utilities/projectReady.js"
+import "./quicktype-editor-dialog.js"
 
 class QuickTypeTool extends HTMLElement {
     constructor() {
@@ -13,26 +14,41 @@ class QuickTypeTool extends HTMLElement {
         this._unsubProject = onProjectReady(this, () => {
             this.render()
             this.addEventListeners()
+            this.initializeDialog()
         })
     }
 
     disconnectedCallback() {
         try { this._unsubProject?.() } catch { }
+        try { this._unsubEditorSaved?.() } catch { }
+    }
+
+    initializeDialog() {
+        // Create dialog if it doesn't exist
+        if (!document.querySelector('tpen-quicktype-editor-dialog')) {
+            const dialog = document.createElement('tpen-quicktype-editor-dialog')
+            document.body.appendChild(dialog)
+        }
+
+        // Listen for save events to refresh the panel
+        this._unsubEditorSaved = eventDispatcher.on("quicktype-editor-saved", (event) => {
+            // Refresh the tool panel with updated shortcuts
+            TPEN.activeProject.interfaces.quicktype = event.detail.quicktype
+            this.render()
+            this.addEventListeners()
+        })
     }
 
     addEventListeners() {
         const charPanel = this.shadowRoot.querySelector('.char-panel')
-        const closeCharBtn = this.shadowRoot.querySelector('.close-char-btn')
         const editCharBtn = this.shadowRoot.querySelector('.edit-char-btn')
 
-        closeCharBtn.addEventListener('click', () => {
-            if (charPanel) {
-                charPanel.style.display = 'none'
-            }
-        })
-
         editCharBtn.addEventListener('click', () => {
-            window.location.href = '/components/quicktype/manage-quicktype.html?projectID=' + TPEN.activeProject._id
+            const dialog = document.querySelector('tpen-quicktype-editor-dialog')
+            if (dialog) {
+                const quicktype = TPEN.activeProject.interfaces?.quicktype ?? []
+                dialog.open(quicktype)
+            }
         })
 
         this.shadowRoot.querySelectorAll('.char-button').forEach(btn => {
@@ -123,7 +139,6 @@ class QuickTypeTool extends HTMLElement {
             ${CheckPermissions.checkEditAccess("PROJECT", "OPTIONS") ? `
                 <button class="panel-btn edit-char-btn" type="button" aria-label="Edit QuickType shortcuts">Edit</button>
             ` : ""}
-                <button class="panel-btn close-char-btn" type="button" aria-label="Close QuickType panel">Close</button>
             </div>
         </div>
         `
@@ -203,7 +218,7 @@ class QuickTypeToolButton extends HTMLElement {
             }
         </style>
         <button class="tools-btn quicktype-btn" type="button" aria-label="Toggle QuickType Panel">
-            QuickType 💻
+            QuickType ⌨️
         </button>
         `
     }

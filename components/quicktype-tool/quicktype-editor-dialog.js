@@ -1,0 +1,568 @@
+import TPEN from "../../api/TPEN.js"
+const eventDispatcher = TPEN.eventDispatcher
+
+class QuickTypeEditorDialog extends HTMLElement {
+    constructor() {
+        super()
+        this.attachShadow({ mode: "open" })
+        this._quicktype = []
+        this._originalQuicktype = []
+        this._draggedIndex = null
+    }
+
+    connectedCallback() {
+        this.render()
+    }
+
+    open(quicktypeArray) {
+        this._quicktype = [...quicktypeArray]
+        this._originalQuicktype = [...quicktypeArray]
+        this.render()
+        this.shadowRoot.querySelector('.dialog-overlay').style.display = 'flex'
+        this.setupEventListeners()
+    }
+
+    close() {
+        this.shadowRoot.querySelector('.dialog-overlay').style.display = 'none'
+    }
+
+    setupEventListeners() {
+        const closeBtn = this.shadowRoot.querySelector('.close-btn')
+        const cancelBtn = this.shadowRoot.querySelector('.cancel-btn')
+        const saveBtn = this.shadowRoot.querySelector('.save-btn')
+        const addBtn = this.shadowRoot.querySelector('.add-btn')
+        const input = this.shadowRoot.querySelector('.quicktype-input')
+        const overlay = this.shadowRoot.querySelector('.dialog-overlay')
+        const dialogContainer = this.shadowRoot.querySelector('.dialog-container')
+
+        // Prevent clicks inside dialog from closing it
+        dialogContainer?.addEventListener('click', (e) => {
+            e.stopPropagation()
+        })
+
+        closeBtn?.addEventListener('click', (e) => this.handleCancel(e))
+        cancelBtn?.addEventListener('click', (e) => this.handleCancel(e))
+        saveBtn?.addEventListener('click', (e) => this.handleSave(e))
+        addBtn?.addEventListener('click', (e) => this.handleAdd(e))
+
+        input?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                this.handleAdd(e)
+            }
+        })
+
+        // Close on overlay click
+        overlay?.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                this.handleCancel(e)
+            }
+        })
+
+        // Setup delete buttons and drag handlers
+        this.setupItemListeners()
+    }
+
+    setupItemListeners() {
+        // Setup delete buttons
+        this.shadowRoot.querySelectorAll('.delete-btn').forEach((btn, index) => {
+            btn.addEventListener('click', (e) => this.handleDelete(e, index))
+        })
+
+        // Setup drag and drop
+        this.shadowRoot.querySelectorAll('.quicktype-item').forEach((item, index) => {
+            item.draggable = true
+            item.setAttribute('data-index', index)
+            
+            item.addEventListener('dragstart', (e) => this.handleDragStart(e, index))
+            item.addEventListener('dragend', (e) => this.handleDragEnd(e))
+            item.addEventListener('dragover', (e) => this.handleDragOver(e))
+            item.addEventListener('drop', (e) => this.handleDrop(e, index))
+            item.addEventListener('dragleave', (e) => this.handleDragLeave(e))
+        })
+    }
+
+    handleAdd(e) {
+        e?.stopPropagation()
+        e?.preventDefault()
+        const input = this.shadowRoot.querySelector('.quicktype-input')
+        const value = input.value.trim()
+
+        if (!value) {
+            eventDispatcher.dispatch("tpen-toast", {
+                message: "Please enter a character or string.",
+                status: "error"
+            })
+            return
+        }
+
+        if (this._quicktype.includes(value)) {
+            eventDispatcher.dispatch("tpen-toast", {
+                message: "This entry already exists.",
+                status: "error"
+            })
+            return
+        }
+
+        this._quicktype.push(value)
+        input.value = ''
+        this.updateList()
+    }
+
+    handleDelete(e, index) {
+        e?.stopPropagation()
+        e?.preventDefault()
+        this._quicktype.splice(index, 1)
+        this.updateList()
+    }
+
+    handleDragStart(e, index) {
+        this._draggedIndex = index
+        e.dataTransfer.effectAllowed = 'move'
+        e.dataTransfer.setData('text/html', e.target.innerHTML)
+        e.target.style.opacity = '0.4'
+    }
+
+    handleDragEnd(e) {
+        e.target.style.opacity = '1'
+        // Remove all drag-over classes
+        this.shadowRoot.querySelectorAll('.quicktype-item').forEach(item => {
+            item.classList.remove('drag-over')
+        })
+    }
+
+    handleDragOver(e) {
+        e.preventDefault()
+        e.dataTransfer.dropEffect = 'move'
+        
+        const item = e.currentTarget
+        if (item && !item.classList.contains('drag-over')) {
+            item.classList.add('drag-over')
+        }
+        
+        return false
+    }
+
+    handleDragLeave(e) {
+        e.currentTarget.classList.remove('drag-over')
+    }
+
+    handleDrop(e, dropIndex) {
+        e.stopPropagation()
+        e.preventDefault()
+        
+        if (this._draggedIndex === null || this._draggedIndex === dropIndex) {
+            return false
+        }
+
+        // Reorder the array
+        const draggedItem = this._quicktype[this._draggedIndex]
+        const newArray = [...this._quicktype]
+        newArray.splice(this._draggedIndex, 1)
+        newArray.splice(dropIndex, 0, draggedItem)
+        
+        this._quicktype = newArray
+        this._draggedIndex = null
+        this.updateList()
+        
+        return false
+    }
+
+    handleCancel(e) {
+        e?.stopPropagation()
+        e?.preventDefault()
+        this._quicktype = [...this._originalQuicktype]
+        this.close()
+        eventDispatcher.dispatch("quicktype-editor-cancelled")
+    }
+
+    async handleSave(e) {
+        e?.stopPropagation()
+        e?.preventDefault()
+        const project = TPEN.activeProject
+        if (!project?.storeInterfacesCustomization) {
+            eventDispatcher.dispatch("tpen-toast", {
+                message: "Project must be loaded before saving QuickType shortcuts",
+                status: "error"
+            })
+            return
+        }
+
+        try {
+            const interfaces = await project.storeInterfacesCustomization({ quicktype: [...this._quicktype] })
+            eventDispatcher.dispatch("tpen-toast", {
+                message: "QuickType shortcuts saved successfully!",
+                status: "success"
+            })
+            eventDispatcher.dispatch("quicktype-editor-saved", { quicktype: this._quicktype })
+            this.close()
+        } catch (error) {
+            eventDispatcher.dispatch("tpen-toast", {
+                message: error?.message ?? "Failed to save QuickType shortcuts",
+                status: "error"
+            })
+        }
+    }
+
+    generateShortcut(index) {
+        if (index < 10) {
+            return `Ctrl+${index + 1}`
+        } else if (index < 19) {
+            return `Ctrl+Shift+${index - 9}`
+        } else {
+            return `#${index + 1}`
+        }
+    }
+
+    updateList() {
+        const itemCount = this.shadowRoot.querySelector('.item-count')
+        const listContainer = this.shadowRoot.querySelector('.quicktype-list')
+        
+        const wasEmpty = !itemCount
+        const isEmpty = this._quicktype.length === 0
+        
+        if (wasEmpty !== isEmpty) {
+            // State changed between empty/non-empty, need full render
+            const overlay = this.shadowRoot.querySelector('.dialog-overlay')
+            const wasVisible = overlay.style.display === 'flex'
+            this.render()
+            if (wasVisible) {
+                overlay.style.display = 'flex'
+            }
+            this.setupEventListeners()
+            return
+        }
+        
+        if (this._quicktype.length > 0 && itemCount) {
+            itemCount.textContent = `${this._quicktype.length} shortcut${this._quicktype.length !== 1 ? 's' : ''} • Drag to reorder`
+        }
+
+        // Update the list
+        if (this._quicktype.length === 0) {
+            listContainer.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">⌨️</div>
+                    <p>No QuickType shortcuts yet.<br>Add your first one above!</p>
+                </div>
+            `
+        } else {
+            listContainer.innerHTML = this._quicktype.map((item, index) => `
+                <div class="quicktype-item">
+                    <div class="item-content">
+                        <span class="item-symbol">${item}</span>
+                        <span class="item-shortcut">${this.generateShortcut(index)}</span>
+                    </div>
+                    <button type="button" class="delete-btn" aria-label="Delete">×</button>
+                </div>
+            `).join('')
+
+            // Re-attach event listeners for the new list items
+            this.setupItemListeners()
+        }
+    }
+
+    render() {
+        this.shadowRoot.innerHTML = `
+        <style>
+            .dialog-overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.6);
+                z-index: 10000;
+                align-items: center;
+                justify-content: center;
+                backdrop-filter: blur(2px);
+            }
+
+            /* Ensure toasts appear above the modal */
+            :host {
+                z-index: 9999;
+            }
+
+            .dialog-container {
+                background: white;
+                border-radius: 12px;
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+                width: 90%;
+                max-width: 600px;
+                max-height: 80vh;
+                display: flex;
+                flex-direction: column;
+                position: relative;
+            }
+
+            .dialog-header {
+                padding: 20px 24px;
+                border-bottom: 2px solid #e0e0e0;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            }
+
+            .dialog-header h2 {
+                margin: 0;
+                color: rgb(0, 90, 140);
+                font-size: 20px;
+                font-weight: 600;
+            }
+
+            .close-btn {
+                background: none;
+                border: none;
+                font-size: 24px;
+                color: #666;
+                cursor: pointer;
+                padding: 0;
+                width: 32px;
+                height: 32px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 4px;
+                transition: all 0.2s;
+            }
+
+            .close-btn:hover {
+                background: #f0f0f0;
+                color: #333;
+            }
+
+            .dialog-body {
+                padding: 20px 24px;
+                overflow-y: auto;
+                flex: 1;
+            }
+
+            .input-section {
+                display: flex;
+                gap: 8px;
+                margin-bottom: 20px;
+            }
+
+            .quicktype-input {
+                flex: 1;
+                padding: 10px 12px;
+                border: 2px solid #e0e0e0;
+                border-radius: 8px;
+                font-size: 14px;
+                transition: border-color 0.2s;
+            }
+
+            .quicktype-input:focus {
+                outline: none;
+                border-color: rgb(0, 90, 140);
+            }
+
+            .add-btn {
+                padding: 10px 20px;
+                background: rgb(0, 90, 140);
+                color: white;
+                border: none;
+                border-radius: 8px;
+                font-size: 14px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.2s;
+                white-space: nowrap;
+            }
+
+            .add-btn:hover {
+                background: rgb(0, 70, 110);
+            }
+
+            .item-count {
+                font-size: 13px;
+                color: #666;
+                margin-bottom: 12px;
+            }
+
+            .quicktype-list {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+                align-items: flex-start;
+            }
+
+            .quicktype-item {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                padding: 8px 12px;
+                background: rgb(0, 90, 140);
+                border: 1px solid rgb(0, 90, 140);
+                color: white;
+                border-radius: 6px;
+                transition: all 0.2s ease;
+                position: relative;
+                font-size: 18px;
+                font-weight: 500;
+                cursor: move;
+                user-select: none;
+            }
+
+            .quicktype-item:hover {
+                background: white;
+                color: rgb(0, 90, 140);
+                box-shadow: 0 2px 8px rgba(0, 90, 140, 0.3);
+            }
+
+            .quicktype-item.drag-over {
+                border-left: 3px solid #ffc107;
+                padding-left: 10px;
+                background: rgba(255, 193, 7, 0.1);
+            }
+
+            .quicktype-item:hover .delete-btn {
+                color: rgb(0, 90, 140);
+                background: rgba(0, 90, 140, 0.1);
+            }
+
+            .item-content {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                pointer-events: none;
+            }
+
+            .item-symbol {
+                font-size: 18px;
+                font-weight: 500;
+                text-align: center;
+            }
+
+            .item-shortcut {
+                font-size: 10px;
+                opacity: 0.8;
+                font-family: monospace;
+                text-align: center;
+                white-space: nowrap;
+            }
+
+            .delete-btn {
+                background: rgba(255, 255, 255, 0.2);
+                border: 1px solid rgba(255, 255, 255, 0.4);
+                color: white;
+                border-radius: 4px;
+                width: 24px;
+                height: 24px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 16px;
+                transition: all 0.2s;
+                padding: 0;
+            }
+
+            .delete-btn:hover {
+                background: rgba(255, 255, 255, 0.9);
+                color: #dc3545;
+                border-color: rgba(255, 255, 255, 0.9);
+            }
+
+            .empty-state {
+                text-align: center;
+                padding: 40px 20px;
+                color: #666;
+            }
+
+            .empty-state-icon {
+                font-size: 48px;
+                margin-bottom: 12px;
+                opacity: 0.3;
+            }
+
+            .dialog-footer {
+                padding: 16px 24px;
+                border-top: 2px solid #e0e0e0;
+                display: flex;
+                justify-content: flex-end;
+                gap: 12px;
+            }
+
+            .cancel-btn, .save-btn {
+                padding: 10px 24px;
+                border: none;
+                border-radius: 8px;
+                font-size: 14px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.2s;
+            }
+
+            .cancel-btn {
+                background: #f0f0f0;
+                color: #333;
+            }
+
+            .cancel-btn:hover {
+                background: #e0e0e0;
+            }
+
+            .save-btn {
+                background: rgb(0, 90, 140);
+                color: white;
+            }
+
+            .save-btn:hover {
+                background: rgb(0, 70, 110);
+            }
+        </style>
+
+        <div class="dialog-overlay">
+            <div class="dialog-container">
+                <div class="dialog-header">
+                    <h2>Edit QuickType Shortcuts</h2>
+                    <button type="button" class="close-btn" aria-label="Close dialog">×</button>
+                </div>
+
+                <div class="dialog-body">
+                    <div class="input-section">
+                        <input 
+                            type="text" 
+                            id="quicktype-shortcut"
+                            class="quicktype-input" 
+                            placeholder="Type or paste a character or string..." 
+                            maxlength="20"
+                        />
+                        <button type="button" role="button" class="add-btn">Add</button>
+                    </div>
+
+                    ${this._quicktype.length > 0 ? `
+                        <div class="item-count">${this._quicktype.length} shortcut${this._quicktype.length !== 1 ? 's' : ''} • Drag to reorder</div>
+                    ` : ''}
+
+                    <div class="quicktype-list">
+                        ${this._quicktype.length === 0 ? `
+                            <div class="empty-state">
+                                <div class="empty-state-icon">⌨️</div>
+                                <p>No QuickType shortcuts yet.<br>Add your first one above!</p>
+                            </div>
+                        ` : this._quicktype.map((item, index) => `
+                            <div class="quicktype-item">
+                                <div class="item-content">
+                                    <span class="item-symbol">${item}</span>
+                                    <span class="item-shortcut">${this.generateShortcut(index)}</span>
+                                </div>
+                                <button type="button" class="delete-btn" aria-label="Delete">×</button>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <div class="dialog-footer">
+                    <button type="button" role="button" class="cancel-btn">Cancel</button>
+                    <button type="button" role="button" class="save-btn">Save Changes</button>
+                </div>
+            </div>
+        </div>
+        `
+    }
+}
+
+customElements.define('tpen-quicktype-editor-dialog', QuickTypeEditorDialog)
+
+export default QuickTypeEditorDialog
