@@ -84,6 +84,18 @@ class QuickTypeTool extends HTMLElement {
                 border-radius: 12px;
                 box-sizing: border-box;
                 position: relative;
+                opacity: 0;
+                max-height: 0;
+                overflow: hidden;
+                transform: translateY(-10px);
+                transition: opacity 0.3s ease, max-height 0.3s ease, transform 0.3s ease, padding 0.3s ease;
+            }
+
+            .char-panel.show {
+                display: flex;
+                opacity: 1;
+                max-height: 500px;
+                transform: translateY(0);
             }
 
             .char-button {
@@ -95,7 +107,37 @@ class QuickTypeTool extends HTMLElement {
                 border-radius: 6px;
                 cursor: pointer;
                 user-select: none;
-                transition: background 0.2s ease;
+                transition: background 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
+                opacity: 0;
+                transform: scale(0.95);
+            }
+
+            .char-panel.show .char-button {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            /* Staggered animation for buttons */
+            .char-panel.show .char-button:nth-child(1) { animation: fadeInScale 0.2s ease 0.05s forwards; }
+            .char-panel.show .char-button:nth-child(2) { animation: fadeInScale 0.2s ease 0.1s forwards; }
+            .char-panel.show .char-button:nth-child(3) { animation: fadeInScale 0.2s ease 0.15s forwards; }
+            .char-panel.show .char-button:nth-child(4) { animation: fadeInScale 0.2s ease 0.2s forwards; }
+            .char-panel.show .char-button:nth-child(5) { animation: fadeInScale 0.2s ease 0.25s forwards; }
+            .char-panel.show .char-button:nth-child(6) { animation: fadeInScale 0.2s ease 0.3s forwards; }
+            .char-panel.show .char-button:nth-child(7) { animation: fadeInScale 0.2s ease 0.35s forwards; }
+            .char-panel.show .char-button:nth-child(8) { animation: fadeInScale 0.2s ease 0.4s forwards; }
+            .char-panel.show .char-button:nth-child(9) { animation: fadeInScale 0.2s ease 0.45s forwards; }
+            .char-panel.show .char-button:nth-child(n+10) { animation: fadeInScale 0.2s ease 0.5s forwards; }
+
+            @keyframes fadeInScale {
+                from {
+                    opacity: 0;
+                    transform: scale(0.95);
+                }
+                to {
+                    opacity: 1;
+                    transform: scale(1);
+                }
             }
 
             .char-button:hover {
@@ -175,7 +217,23 @@ class QuickTypeToolButton extends HTMLElement {
 
         quicktypeBtn.addEventListener('click', () => {
             const charPanel = document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('tpen-workspace-tools').shadowRoot.querySelector('tpen-quicktype-tool').shadowRoot.querySelector('.char-panel')
-            charPanel.style.display === 'flex' ? charPanel.style.display = 'none' : charPanel.style.display = 'flex'
+            
+            if (charPanel.classList.contains('show')) {
+                // Close animation
+                charPanel.classList.remove('show')
+                // Set display to none after animation completes
+                setTimeout(() => {
+                    if (!charPanel.classList.contains('show')) {
+                        charPanel.style.display = 'none'
+                    }
+                }, 300)
+            } else {
+                // Open animation
+                charPanel.style.display = 'flex'
+                // Trigger reflow to ensure display: flex is applied before adding show class
+                charPanel.offsetHeight
+                charPanel.classList.add('show')
+            }
         })
     }
 

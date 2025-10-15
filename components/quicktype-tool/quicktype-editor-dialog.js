@@ -8,6 +8,7 @@ class QuickTypeEditorDialog extends HTMLElement {
         this._quicktype = []
         this._originalQuicktype = []
         this._draggedIndex = null
+        this._previousLength = 0
     }
 
     connectedCallback() {
@@ -17,13 +18,31 @@ class QuickTypeEditorDialog extends HTMLElement {
     open(quicktypeArray) {
         this._quicktype = [...quicktypeArray]
         this._originalQuicktype = [...quicktypeArray]
+        this._previousLength = this._quicktype.length
         this.render()
-        this.shadowRoot.querySelector('.dialog-overlay').style.display = 'flex'
+        const overlay = this.shadowRoot.querySelector('.dialog-overlay')
+        const container = this.shadowRoot.querySelector('.dialog-container')
+        
+        overlay.style.display = 'flex'
+        // Trigger reflow
+        overlay.offsetHeight
+        overlay.classList.add('show')
+        container.classList.add('show')
+        
         this.setupEventListeners()
     }
 
     close() {
-        this.shadowRoot.querySelector('.dialog-overlay').style.display = 'none'
+        const overlay = this.shadowRoot.querySelector('.dialog-overlay')
+        const container = this.shadowRoot.querySelector('.dialog-container')
+        
+        overlay.classList.remove('show')
+        container.classList.remove('show')
+        
+        // Wait for animation to complete before hiding
+        setTimeout(() => {
+            overlay.style.display = 'none'
+        }, 300)
     }
 
     setupEventListeners() {
@@ -220,13 +239,22 @@ class QuickTypeEditorDialog extends HTMLElement {
         const wasEmpty = !itemCount
         const isEmpty = this._quicktype.length === 0
         
+        // Detect if we added a new item
+        const isNewItemAdded = this._quicktype.length > this._previousLength
+        this._previousLength = this._quicktype.length
+        
         if (wasEmpty !== isEmpty) {
             // State changed between empty/non-empty, need full render
             const overlay = this.shadowRoot.querySelector('.dialog-overlay')
-            const wasVisible = overlay.style.display === 'flex'
+            const container = this.shadowRoot.querySelector('.dialog-container')
+            const wasVisible = overlay.classList.contains('show')
             this.render()
             if (wasVisible) {
                 overlay.style.display = 'flex'
+                // Trigger reflow
+                overlay.offsetHeight
+                overlay.classList.add('show')
+                container.classList.add('show')
             }
             this.setupEventListeners()
             return
@@ -246,7 +274,7 @@ class QuickTypeEditorDialog extends HTMLElement {
             `
         } else {
             listContainer.innerHTML = this._quicktype.map((item, index) => `
-                <div class="quicktype-item">
+                <div class="quicktype-item ${index === this._quicktype.length - 1 && isNewItemAdded ? 'newly-added' : ''}">
                     <div class="item-content">
                         <span class="item-symbol">${item}</span>
                         <span class="item-shortcut">${this.generateShortcut(index)}</span>
@@ -270,10 +298,16 @@ class QuickTypeEditorDialog extends HTMLElement {
                 left: 0;
                 right: 0;
                 bottom: 0;
-                background: rgba(0, 0, 0, 0.6);
+                background: rgba(0, 0, 0, 0);
                 z-index: 10000;
                 align-items: center;
                 justify-content: center;
+                backdrop-filter: blur(0px);
+                transition: background 0.3s ease, backdrop-filter 0.3s ease;
+            }
+
+            .dialog-overlay.show {
+                background: rgba(0, 0, 0, 0.6);
                 backdrop-filter: blur(2px);
             }
 
@@ -292,6 +326,14 @@ class QuickTypeEditorDialog extends HTMLElement {
                 display: flex;
                 flex-direction: column;
                 position: relative;
+                opacity: 0;
+                transform: translateY(-30px);
+                transition: opacity 0.3s ease, transform 0.3s ease;
+            }
+
+            .dialog-container.show {
+                opacity: 1;
+                transform: translateY(0);
             }
 
             .dialog-header {
@@ -401,6 +443,24 @@ class QuickTypeEditorDialog extends HTMLElement {
                 font-weight: 500;
                 cursor: move;
                 user-select: none;
+            }
+
+            .quicktype-item.newly-added {
+                animation: popIn 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            }
+
+            @keyframes popIn {
+                0% {
+                    opacity: 0;
+                    transform: scale(0.5);
+                }
+                50% {
+                    transform: scale(1.1);
+                }
+                100% {
+                    opacity: 1;
+                    transform: scale(1);
+                }
             }
 
             .quicktype-item:hover {
