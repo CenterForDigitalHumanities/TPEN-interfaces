@@ -16,10 +16,13 @@ class QuickTypeEditorDialog extends HTMLElement {
     }
 
     open(quicktypeArray) {
-        this._quicktype = [...quicktypeArray]
-        this._originalQuicktype = [...quicktypeArray]
+        const incomingQuicktype = Array.isArray(quicktypeArray) ? quicktypeArray.map(item => `${item ?? ''}`) : []
+
+        this._quicktype = [...incomingQuicktype]
+        this._originalQuicktype = [...incomingQuicktype]
         this._previousLength = this._quicktype.length
         this.render()
+        this.notifyInvalidShortcuts("load")
         const overlay = this.shadowRoot.querySelector('.dialog-overlay')
         const container = this.shadowRoot.querySelector('.dialog-container')
         
@@ -114,6 +117,15 @@ class QuickTypeEditorDialog extends HTMLElement {
             return
         }
 
+        const evaluation = this.evaluateEntry(value)
+
+        if (!evaluation.valid) {
+            eventDispatcher.dispatch("tpen-toast", {
+                message: `Shortcut added but needs attention: ${evaluation.reason}`,
+                status: "warning"
+            })
+        }
+
         if (this._quicktype.includes(value)) {
             eventDispatcher.dispatch("tpen-toast", {
                 message: "This entry already exists.",
@@ -206,13 +218,23 @@ class QuickTypeEditorDialog extends HTMLElement {
             return
         }
 
+        const validShortcuts = this._quicktype.filter(item => this.evaluateEntry(item).valid)
+        const skippedCount = this._quicktype.length - validShortcuts.length
+
+        if (skippedCount > 0) {
+            eventDispatcher.dispatch("tpen-toast", {
+                message: `${skippedCount} shortcut${skippedCount === 1 ? '' : 's'} skipped while saving. Review highlighted items to resolve.`,
+                status: "warning"
+            })
+        }
+
         try {
-            const interfaces = await project.storeInterfacesCustomization({ quicktype: [...this._quicktype] })
+            const interfaces = await project.storeInterfacesCustomization({ quicktype: [...validShortcuts] })
             eventDispatcher.dispatch("tpen-toast", {
                 message: "QuickType shortcuts saved successfully!",
                 status: "success"
             })
-            eventDispatcher.dispatch("quicktype-editor-saved", { quicktype: this._quicktype })
+            eventDispatcher.dispatch("quicktype-editor-saved", { quicktype: validShortcuts })
             this.close()
         } catch (error) {
             eventDispatcher.dispatch("tpen-toast", {
@@ -235,57 +257,90 @@ class QuickTypeEditorDialog extends HTMLElement {
     updateList() {
         const itemCount = this.shadowRoot.querySelector('.item-count')
         const listContainer = this.shadowRoot.querySelector('.quicktype-list')
-        
+
         const wasEmpty = !itemCount
         const isEmpty = this._quicktype.length === 0
-        
-        // Detect if we added a new item
+        const overlay = this.shadowRoot.querySelector('.dialog-overlay')
+        const container = this.shadowRoot.querySelector('.dialog-container')
+        const wasOverlayVisible = overlay?.classList.contains('show') ?? false
+        const wasContainerVisible = container?.classList.contains('show') ?? false
+
         const isNewItemAdded = this._quicktype.length > this._previousLength
         this._previousLength = this._quicktype.length
-        
-        if (wasEmpty !== isEmpty) {
-            // State changed between empty/non-empty, need full render
-            const overlay = this.shadowRoot.querySelector('.dialog-overlay')
-            const container = this.shadowRoot.querySelector('.dialog-container')
-            const wasVisible = overlay.classList.contains('show')
-            this.render()
-            if (wasVisible) {
-                overlay.style.display = 'flex'
-                // Trigger reflow
-                overlay.offsetHeight
-                overlay.classList.add('show')
-                container.classList.add('show')
-            }
-            this.setupEventListeners()
+
+        const handledTransition = this.handleEmptyStateChange({
+            wasEmpty,
+            isEmpty,
+            wasOverlayVisible,
+            wasContainerVisible
+        })
+
+        if (handledTransition) {
             return
         }
-        
-        if (this._quicktype.length > 0 && itemCount) {
-            itemCount.textContent = `${this._quicktype.length} shortcut${this._quicktype.length !== 1 ? 's' : ''} • Drag to reorder`
+
+        this.updateItemCount(itemCount)
+
+        if (isEmpty) {
+            this.renderEmptyState(listContainer)
+            return
         }
 
-        // Update the list
-        if (this._quicktype.length === 0) {
-            listContainer.innerHTML = `
-                <div class="empty-state">
-                    <div class="empty-state-icon">⌨️</div>
-                    <p>No QuickType shortcuts yet.<br>Add your first one above!</p>
-                </div>
-            `
-        } else {
-            listContainer.innerHTML = this._quicktype.map((item, index) => `
-                <div class="quicktype-item ${index === this._quicktype.length - 1 && isNewItemAdded ? 'newly-added' : ''}">
-                    <div class="item-content">
-                        <span class="item-symbol">${item}</span>
-                        <span class="item-shortcut">${this.generateShortcut(index)}</span>
-                    </div>
-                    <button type="button" class="delete-btn" aria-label="Delete">×</button>
-                </div>
-            `).join('')
+        this.renderQuicktypeItems(listContainer, isNewItemAdded)
+        this.setupItemListeners()
+    }
 
-            // Re-attach event listeners for the new list items
-            this.setupItemListeners()
+    handleEmptyStateChange({ wasEmpty, isEmpty, wasOverlayVisible, wasContainerVisible }) {
+        if (wasEmpty === isEmpty) {
+            return false
         }
+
+        this.render()
+
+        const overlay = this.shadowRoot.querySelector('.dialog-overlay')
+        const container = this.shadowRoot.querySelector('.dialog-container')
+
+        if (wasOverlayVisible && overlay) {
+            overlay.style.display = 'flex'
+            overlay.offsetHeight
+            overlay.classList.add('show')
+        }
+
+        if (wasContainerVisible) {
+            container?.classList.add('show')
+        }
+
+        this.setupEventListeners()
+        return true
+    }
+
+    updateItemCount(itemCount) {
+        if (!itemCount || this._quicktype.length === 0) {
+            return
+        }
+
+        itemCount.textContent = `${this._quicktype.length} shortcut${this._quicktype.length !== 1 ? 's' : ''} • Drag to reorder`
+    }
+
+    renderEmptyState(listContainer) {
+        if (!listContainer) {
+            return
+        }
+
+        listContainer.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">⌨️</div>
+                <p>No QuickType shortcuts yet.<br>Add your first one above!</p>
+            </div>
+        `
+    }
+
+    renderQuicktypeItems(listContainer, isNewItemAdded) {
+        if (!listContainer) {
+            return
+        }
+
+        listContainer.innerHTML = this._quicktype.map((item, index) => this.getQuicktypeItemMarkup(item, index, index === this._quicktype.length - 1 && isNewItemAdded)).join('')
     }
 
     render() {
@@ -430,7 +485,7 @@ class QuickTypeEditorDialog extends HTMLElement {
 
             .quicktype-item {
                 display: inline-flex;
-                align-items: center;
+                align-items: stretch;
                 gap: 8px;
                 padding: 8px 12px;
                 background: rgb(0, 90, 140);
@@ -443,6 +498,9 @@ class QuickTypeEditorDialog extends HTMLElement {
                 font-weight: 500;
                 cursor: move;
                 user-select: none;
+                flex-direction: column;
+                min-width: 160px;
+                box-sizing: border-box;
             }
 
             .quicktype-item.newly-added {
@@ -469,6 +527,18 @@ class QuickTypeEditorDialog extends HTMLElement {
                 box-shadow: 0 2px 8px rgba(0, 90, 140, 0.3);
             }
 
+            .quicktype-item.invalid {
+                border-color: #d93025;
+                background: rgba(217, 48, 37, 0.12);
+                color: #d93025;
+            }
+
+            .quicktype-item.invalid:hover {
+                background: rgba(217, 48, 37, 0.18);
+                color: #d93025;
+                box-shadow: 0 2px 10px rgba(217, 48, 37, 0.25);
+            }
+
             .quicktype-item.drag-over {
                 border-left: 3px solid #ffc107;
                 padding-left: 10px;
@@ -480,11 +550,31 @@ class QuickTypeEditorDialog extends HTMLElement {
                 background: rgba(0, 90, 140, 0.1);
             }
 
+            .quicktype-item.invalid .delete-btn {
+                border-color: rgba(217, 48, 37, 0.4);
+                background: rgba(217, 48, 37, 0.15);
+                color: #d93025;
+            }
+
+            .quicktype-item.invalid:hover .delete-btn {
+                color: #d93025;
+                background: rgba(217, 48, 37, 0.2);
+                border-color: rgba(217, 48, 37, 0.6);
+            }
+
             .item-content {
                 display: flex;
                 align-items: center;
                 gap: 6px;
                 pointer-events: none;
+            }
+
+            .item-row {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 12px;
+                width: 100%;
             }
 
             .item-symbol {
@@ -521,6 +611,29 @@ class QuickTypeEditorDialog extends HTMLElement {
                 background: rgba(255, 255, 255, 0.9);
                 color: #dc3545;
                 border-color: rgba(255, 255, 255, 0.9);
+            }
+
+            .validation-warning {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                margin-top: 6px;
+                font-size: 12px;
+                color: inherit;
+                background: rgba(255, 255, 255, 0.4);
+                border-radius: 4px;
+                padding: 4px 6px;
+                width: 100%;
+                box-sizing: border-box;
+            }
+
+            .validation-icon {
+                font-size: 14px;
+            }
+
+            .validation-text {
+                flex: 1;
+                line-height: 1.3;
             }
 
             .empty-state {
@@ -601,15 +714,7 @@ class QuickTypeEditorDialog extends HTMLElement {
                                 <div class="empty-state-icon">⌨️</div>
                                 <p>No QuickType shortcuts yet.<br>Add your first one above!</p>
                             </div>
-                        ` : this._quicktype.map((item, index) => `
-                            <div class="quicktype-item">
-                                <div class="item-content">
-                                    <span class="item-symbol">${item}</span>
-                                    <span class="item-shortcut">${this.generateShortcut(index)}</span>
-                                </div>
-                                <button type="button" class="delete-btn" aria-label="Delete">×</button>
-                            </div>
-                        `).join('')}
+                        ` : this._quicktype.map((item, index) => this.getQuicktypeItemMarkup(item, index, false)).join('')}
                     </div>
                 </div>
 
@@ -620,6 +725,107 @@ class QuickTypeEditorDialog extends HTMLElement {
             </div>
         </div>
         `
+    }
+
+    getQuicktypeItemMarkup(item, index, isNewlyAdded) {
+        const evaluation = this.evaluateEntry(item)
+        const safeItem = this.escapeHTML(item)
+        const shortcut = this.generateShortcut(index)
+        const invalidClass = evaluation.valid ? '' : ' invalid'
+        const ariaInvalid = evaluation.valid ? '' : ' aria-invalid="true"'
+        const warningMarkup = evaluation.valid ? '' : `
+                <div class="validation-warning" role="note">
+                    <span class="validation-icon" aria-hidden="true">⚠️</span>
+                    <span class="validation-text">${this.escapeHTML(evaluation.reason)}</span>
+                </div>
+        `
+
+        return `
+            <div class="quicktype-item${invalidClass}${isNewlyAdded ? ' newly-added' : ''}"${ariaInvalid}>
+                <div class="item-row">
+                    <div class="item-content">
+                        <span class="item-symbol">${safeItem}</span>
+                        <span class="item-shortcut">${shortcut}</span>
+                    </div>
+                    <button type="button" class="delete-btn" aria-label="Delete">×</button>
+                </div>
+                ${warningMarkup}
+            </div>
+        `
+    }
+
+    notifyInvalidShortcuts(context) {
+        const invalidEntries = this._quicktype.map(item => this.evaluateEntry(item)).filter(result => !result.valid)
+
+        if (invalidEntries.length === 0) {
+            return
+        }
+
+        const contextPrefix = context === "load" ? "Existing shortcuts need attention." : "Shortcuts need attention."
+        eventDispatcher.dispatch("tpen-toast", {
+            message: `${contextPrefix} Hover over highlighted items for details.`,
+            status: "warning"
+        })
+    }
+
+    evaluateEntry(value) {
+        const candidate = `${value ?? ''}`
+        const trimmed = candidate.trim()
+
+        if (trimmed.length === 0) {
+            return { valid: false, reason: "Shortcut cannot be empty." }
+        }
+
+        const controlChars = /[\u0000-\u001F\u007F]/
+        if (controlChars.test(candidate)) {
+            return { valid: false, reason: "Contains unsupported control characters." }
+        }
+
+        const suspiciousSequences = [
+            { pattern: /<\s*script/i, reason: "Script tags are not allowed." },
+            { pattern: /(?:^|["'\s])javascript:/i, reason: "Avoid javascript: URLs inside shortcuts." },
+            { pattern: /^(?:\s*)data:/i, reason: "Data URLs are not supported." },
+            { pattern: /(?:^|[\s<"'])on[a-z]+\s*=/i, reason: "Event handler attributes are not allowed." }
+        ]
+
+        const violatedSequence = suspiciousSequences.find(entry => entry.pattern.test(candidate))
+        if (violatedSequence) {
+            return { valid: false, reason: violatedSequence.reason }
+        }
+
+        if (trimmed.startsWith('<')) {
+            if (!trimmed.endsWith('>')) {
+                return { valid: false, reason: "HTML shortcuts must end with a closing '>'." }
+            }
+
+            const selfClosingPattern = /^<([a-z][\w-]*)(\s[^<>]*)?\s*\/\s*>$/i
+            const pairedPattern = /^<([a-z][\w-]*)(\s[^<>]*)?>([\s\S]*)<\/\1\s*>$/i
+            const selfClosingMatch = trimmed.match(selfClosingPattern)
+            const pairedMatch = trimmed.match(pairedPattern)
+
+            if (!selfClosingMatch && !pairedMatch) {
+                return { valid: false, reason: "HTML must include a full opening and closing tag or be self-closing." }
+            }
+
+            const tagName = (selfClosingMatch ? selfClosingMatch[1] : pairedMatch[1]).toLowerCase()
+            const forbiddenTags = new Set(["html", "head", "body"])
+            if (forbiddenTags.has(tagName)) {
+                return { valid: false, reason: `<${tagName}> tags are not allowed in shortcuts.` }
+            }
+        }
+
+        return { valid: true }
+    }
+
+    escapeHTML(value) {
+        const safeValue = `${value ?? ''}`
+
+        return safeValue
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;')
     }
 }
 

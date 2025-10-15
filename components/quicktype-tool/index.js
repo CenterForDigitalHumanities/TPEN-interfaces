@@ -8,6 +8,7 @@ class QuickTypeTool extends HTMLElement {
     constructor() {
         super()
         this.attachShadow({ mode: "open" })
+        this._invalidToastShown = false
     }
 
     connectedCallback() {
@@ -46,7 +47,7 @@ class QuickTypeTool extends HTMLElement {
         editCharBtn.addEventListener('click', () => {
             const dialog = document.querySelector('tpen-quicktype-editor-dialog')
             if (dialog) {
-                const quicktype = TPEN.activeProject.interfaces?.quicktype ?? []
+                const quicktype = TPEN.activeProject?.interfaces?.quicktype ?? []
                 dialog.open(quicktype)
             }
         })
@@ -70,6 +71,33 @@ class QuickTypeTool extends HTMLElement {
     }
 
     render() {
+        const quicktypeEntries = TPEN.activeProject?.interfaces?.quicktype ?? []
+        const entriesWithStatus = quicktypeEntries.map(entry => ({
+            value: `${entry ?? ''}`,
+            evaluation: this.evaluateEntry(entry)
+        }))
+        const quicktypeButtons = entriesWithStatus.map(({ value, evaluation }) => {
+            const classes = `char-button${evaluation.valid ? '' : ' invalid'}`
+            const titleAttr = evaluation.valid ? '' : ` title="${this.escapeHTML(evaluation.reason)}"`
+            const ariaInvalid = evaluation.valid ? '' : ' aria-invalid="true"'
+            const ariaLabel = evaluation.valid ? '' : ` aria-label="${this.escapeHTML(`${value} (needs attention: ${evaluation.reason})`)}"`
+            return `<button class="${classes}" type="button"${titleAttr}${ariaInvalid}${ariaLabel}>${this.escapeHTML(value)}</button>`
+        }).join('')
+        const quicktypeMarkup = quicktypeButtons || `select "edit" to add buttons`
+        const hasInvalidEntries = entriesWithStatus.some(({ evaluation }) => !evaluation.valid)
+
+        if (hasInvalidEntries) {
+            if (!this._invalidToastShown) {
+                eventDispatcher.dispatch("tpen-toast", {
+                    message: "Some QuickType shortcuts need attention. Hover over red buttons for details.",
+                    status: "warning"
+                })
+                this._invalidToastShown = true
+            }
+        } else {
+            this._invalidToastShown = false
+        }
+
         this.shadowRoot.innerHTML = `
         <style>
             .char-panel {
@@ -145,6 +173,17 @@ class QuickTypeTool extends HTMLElement {
                 color: rgb(0, 90, 140);
             }
 
+            .char-button.invalid {
+                border-color: #d93025;
+                background: rgba(217, 48, 37, 0.12);
+                color: #d93025;
+            }
+
+            .char-button.invalid:hover {
+                background: rgba(217, 48, 37, 0.18);
+                color: #d93025;
+            }
+
             .panel-controls {
                 position: relative;
                 display: flex;
@@ -172,9 +211,7 @@ class QuickTypeTool extends HTMLElement {
         <div class="char-panel" role="region" aria-label="QuickType Panel" tabindex="0">
             <div class="panel-controls">
             ${CheckPermissions.checkEditAccess("PROJECT", "CONTENT") ?
-                TPEN.activeProject.interfaces?.quicktype?.reduce((acc, hk) => {
-                    return acc + `<button class="char-button" type="button">${hk}</button>`
-                }, '') ?? `select "edit" to add buttons` : ''
+                quicktypeMarkup : ''
             }
             </div>
             <div class="panel-controls">
@@ -184,6 +221,66 @@ class QuickTypeTool extends HTMLElement {
             </div>
         </div>
         `
+    }
+
+    escapeHTML(value) {
+        const safeValue = `${value ?? ''}`
+
+        return safeValue
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;')
+    }
+
+    evaluateEntry(value) {
+        const candidate = `${value ?? ''}`
+        const trimmed = candidate.trim()
+
+        if (trimmed.length === 0) {
+            return { valid: false, reason: "Shortcut cannot be empty." }
+        }
+
+        const controlChars = /[\u0000-\u001F\u007F]/
+        if (controlChars.test(candidate)) {
+            return { valid: false, reason: "Contains unsupported control characters." }
+        }
+
+        const suspiciousSequences = [
+            { pattern: /<\s*script/i, reason: "Script tags are not allowed." },
+            { pattern: /(?:^|["'\s])javascript:/i, reason: "Avoid javascript: URLs inside shortcuts." },
+            { pattern: /^(?:\s*)data:/i, reason: "Data URLs are not supported." },
+            { pattern: /(?:^|[\s<"'])on[a-z]+\s*=/i, reason: "Event handler attributes are not allowed." }
+        ]
+
+        const violatedSequence = suspiciousSequences.find(entry => entry.pattern.test(candidate))
+        if (violatedSequence) {
+            return { valid: false, reason: violatedSequence.reason }
+        }
+
+        if (trimmed.startsWith('<')) {
+            if (!trimmed.endsWith('>')) {
+                return { valid: false, reason: "HTML shortcuts must end with a closing '>'." }
+            }
+
+            const selfClosingPattern = /^<([a-z][\w-]*)(\s[^<>]*)?\s*\/\s*>$/i
+            const pairedPattern = /^<([a-z][\w-]*)(\s[^<>]*)?>([\s\S]*)<\/\1\s*>$/i
+            const selfClosingMatch = trimmed.match(selfClosingPattern)
+            const pairedMatch = trimmed.match(pairedPattern)
+
+            if (!selfClosingMatch && !pairedMatch) {
+                return { valid: false, reason: "HTML must include a full opening and closing tag or be self-closing." }
+            }
+
+            const tagName = (selfClosingMatch ? selfClosingMatch[1] : pairedMatch[1]).toLowerCase()
+            const forbiddenTags = new Set(["html", "head", "body"])
+            if (forbiddenTags.has(tagName)) {
+                return { valid: false, reason: `<${tagName}> tags are not allowed in shortcuts.` }
+            }
+        }
+
+        return { valid: true }
     }
 }
 
