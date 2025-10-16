@@ -126,6 +126,7 @@ export default class WorkspaceTools extends HTMLElement {
             if (event.key === "Escape") {
                 this.magnifierTool.hideMagnifier()
                 transcriptionInterface?.querySelector("tpen-image-fragment").style.removeProperty("z-index")
+                this.magnifierBtn.blur()
                 window.removeEventListener("keydown", escFunction)
             }
         }
