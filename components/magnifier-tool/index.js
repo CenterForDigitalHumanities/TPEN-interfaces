@@ -123,7 +123,7 @@ export class MagnifierTool extends HTMLElement {
         const img = this.imageElem
         if (!magnifier || !img) return
 
-        const magnifierSize = 200
+        const magnifierSize = magnifier.offsetWidth || 200
         magnifier.style.width = `${magnifierSize}px`
         magnifier.style.height = `${magnifierSize}px`
 
@@ -135,7 +135,7 @@ export class MagnifierTool extends HTMLElement {
 
         magnifier.style.left = `${img.offsetLeft}px`
         magnifier.style.top = `${img.offsetTop}px`
-        magnifier.style.backgroundPosition = `-${halfSize * this.zoomLevel}px -${halfSize * this.zoomLevel}px`
+        magnifier.style.backgroundPosition = `-${halfSize * this.zoomLevel * img.width}px -${halfSize * this.zoomLevel}px`
 
         this.isMagnifierVisible = true
     }
