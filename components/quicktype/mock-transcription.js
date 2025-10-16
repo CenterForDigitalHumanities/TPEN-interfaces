@@ -16,7 +16,7 @@ class TpenMockTranscription extends HTMLElement {
 
     eventDispatcher.on('tpen-project-loaded', (event) => {
       const project = event.detail
-      this.quicktype = project.options.quicktype ?? []
+      this.quicktype = project.interfaces.quicktype ?? []
       this.updateQuickTypeDisplay()
     })
 
