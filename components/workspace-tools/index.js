@@ -77,9 +77,5 @@ export default class WorkspaceTools extends HTMLElement {
         // TPEN.activeProject.config?.quicktype?.enabled
         true ? `<tpen-quicktype-tool style="width: 100%"></tpen-quicktype-tool>` : ""
       }
-    </div>
-    `
-  }
-}
 
 customElements.define('tpen-workspace-tools', WorkspaceTools)
