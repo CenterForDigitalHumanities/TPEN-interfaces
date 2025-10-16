@@ -77,12 +77,17 @@ export default class TranscriptionInterface extends HTMLElement {
         }
         .container.active-splitscreen .left-pane {
           width: 60%;
+          position: relative;
+          z-index: 1;
         }
         .container.active-splitscreen .right-pane {
           width: 40%;
           border-left: 1px solid #ddd;
           background-color: #ffffff;
-          z-index: 0;
+          position: relative;
+          z-index: 5;
+          box-shadow: -4px 0 12px rgba(0, 0, 0, 0.1);
+          overflow: hidden;
         }
         .splitter:hover {
           background-color: #bbb;
@@ -94,6 +99,10 @@ export default class TranscriptionInterface extends HTMLElement {
           padding: 10px;
           background-color: rgb(166, 65, 41);
           border-bottom: 1px solid #ddd;
+        }
+        .container.active-splitscreen {
+          position: relative;
+          z-index: 2;
         }
         .close-button {
           background: none;
@@ -159,6 +168,7 @@ export default class TranscriptionInterface extends HTMLElement {
           width: 100%;
           height: 100%;
           border: none;
+          position: relative;
           z-index: 0;
         }
       </style>
