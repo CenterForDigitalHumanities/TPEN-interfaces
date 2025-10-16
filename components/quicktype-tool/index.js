@@ -63,6 +63,7 @@ class QuickTypeTool extends HTMLElement {
                     const value = textAreaContent.value
 
                     textAreaContent.value = value.slice(0, start) + char + value.slice(end)
+                    
                     textAreaContent.selectionStart = textAreaContent.selectionEnd = start + char.length
                     textAreaContent.focus()
                 }
