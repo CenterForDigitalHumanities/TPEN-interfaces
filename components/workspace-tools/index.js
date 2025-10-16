@@ -122,17 +122,13 @@ export default class WorkspaceTools extends HTMLElement {
 
         transcriptionInterface?.querySelector("tpen-image-fragment").style.setProperty("z-index", "10")
 
-        const escFunction = (event) => {
-            if (event.key === "Escape") {
-                this.magnifierTool.hideMagnifier()
-                transcriptionInterface?.querySelector("tpen-image-fragment").style.removeProperty("z-index")
-                this.magnifierBtn.blur()
-                window.removeEventListener("keydown", escFunction)
-            }
-        }
-
-        window.removeEventListener("keydown", escFunction)
-        window.addEventListener("keydown", escFunction)
+        window.addEventListener("keydown", (e) => {
+          if (e.key === "Escape") {
+              this.magnifierTool.hideMagnifier()
+              transcriptionInterface?.querySelector("tpen-image-fragment").style.removeProperty("z-index")
+              this.magnifierBtn.blur()
+          }
+      })
     })
   }
 }
