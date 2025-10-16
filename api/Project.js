@@ -33,6 +33,22 @@ export default class Project {
         this._id = _id
     }
 
+    #getInterfacesNamespace() {
+        const location = typeof window !== "undefined" ? window.location : undefined
+        const hostname = location?.hostname?.toLowerCase() ?? ""
+
+        if (!hostname) {
+            return "*"
+        }
+
+        const localhostAliases = ["localhost", "127.0.0.1", "0.0.0.0", "::1", "[::1]"]
+        if (localhostAliases.includes(hostname) || hostname.includes("localhost") || hostname.endsWith(".local")) {
+            return "*"
+        }
+
+        return hostname
+    }
+
     async fetch() {
         const AUTH_TOKEN = TPEN.getAuthorization() ?? TPEN.login()
         try {
@@ -50,6 +66,7 @@ export default class Project {
                         return Promise.reject(data.error ?? data.errorResponse?.errmsg ?? data.status)
                     }
                     Object.assign(this, data)
+                    this.interfaces = this.interfaces?.[this.#getInterfacesNamespace()] ?? this.interfaces?.["*"]
                     this.#isLoaded = true
                     eventDispatcher.dispatch("tpen-project-loaded", this)
                     return this
@@ -340,6 +357,54 @@ export default class Project {
             }),
             body: JSON.stringify(roles)
         }).catch(err => Promise.reject(err))
+    }
+
+    async storeInterfacesCustomization(customizations, replace = false) {
+        if (!this.#isLoaded) {
+            throw new Error("Project must be loaded before storing interface customizations")
+        }
+
+        if (!customizations || typeof customizations !== "object" || Array.isArray(customizations)) {
+            throw new Error("Interface customizations must be provided as an object")
+        }
+
+        const AUTH_TOKEN = TPEN.getAuthorization() ?? await TPEN.login()
+        if (!AUTH_TOKEN) {
+            throw new Error("Authentication is required to store interface customizations")
+        }
+
+        const method = replace ? "POST" : "PUT"
+        const existing = replace ? {} : (typeof this.interfaces === "object" && !Array.isArray(this.interfaces) ? this.interfaces : {})
+
+        try {
+            const response = await fetch(`${TPEN.servicesURL}/project/${this._id}/custom`, {
+                method,
+                headers: {
+                    Authorization: `Bearer ${AUTH_TOKEN}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(customizations)
+            })
+
+            if (!response.ok) {
+                const errorText = await response.text().catch(() => response.statusText)
+                throw new Error(errorText ?? `Failed to ${replace ? "store" : "update"} interface customizations`)
+            }
+
+            const result = await response.json().catch(() => null)
+            const returnedCustomizations = result.data
+            const resolved = returnedCustomizations && typeof returnedCustomizations === "object" && !Array.isArray(returnedCustomizations) ? returnedCustomizations : customizations
+            const nextInterfaces = replace ? resolved : { ...existing, ...resolved }
+            this.interfaces = nextInterfaces
+
+            eventDispatcher.dispatch("tpen-project-interface-updated", { id: this._id, data: resolved })
+            return this.interfaces
+        } catch (error) {
+            eventDispatcher.dispatch("tpen-project-interface-update-failed", error)
+            // send a toast error as well
+            eventDispatcher.dispatch("tpen-toast", { status: "error", message: error.message ?? "Failed to update interface customizations" })
+            return Promise.reject(error)
+        }
     }
 
     getLabel() {

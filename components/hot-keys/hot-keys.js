@@ -3,13 +3,10 @@ import TPEN from "../../api/TPEN.js"
 const eventDispatcher = TPEN.eventDispatcher
 
 class TpenHotKeys extends HTMLElement {
-  #method
-
   constructor() {
     super()
     this.attachShadow({ mode: 'open' })
     this._hotkeys = []
-    this.projectId = TPEN.screen.projectInQuery
     TPEN.attachAuthentication(this)
     eventDispatcher.on("tpen-project-loaded", () => this.loadHotkeys())
   }
@@ -25,44 +22,40 @@ class TpenHotKeys extends HTMLElement {
   }
 
   async loadHotkeys() {
-    const incomingKeys = TPEN.activeProject.options.hotkeys ?? []
-    if (incomingKeys.length > 0) {
-      this.#method = "PUT"
-      this.hotkeys = incomingKeys
+    const project = TPEN.activeProject
+    if (!project) {
+      this.hotkeys = []
       return
     }
-    this.#method = "POST"
-    this.hotkeys = []
+
+    const incomingKeys = project.interfaces?.hotkeys ?? []
+    this.hotkeys = Array.isArray(incomingKeys) ? [...incomingKeys] : []
   }
 
   async saveHotkeys() {
-    if(this.hotkeys.length === 0) { this.#method = "DELETE" }
-    try {
-      const response = await fetch(`${TPEN.servicesURL}/project/${this.projectId}/hotkeys`, {
-        method : this.#method,
-        headers: {
-          Authorization: `Bearer ${TPEN.getAuthorization()}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({symbols:this.hotkeys}),
+    const project = TPEN.activeProject
+    if (!project?.storeInterfacesCustomization) {
+      eventDispatcher.dispatch("tpen-toast", {
+        message: "Project must be loaded before saving hotkeys",
+        status: "error"
       })
+      return null
+    }
 
-      if (!response.ok) {
-        throw response
-      }
-
-      this.#method = this.hotkeys.length > 0 ? "PUT" : "POST"
-
+    try {
+      const interfaces = await project.storeInterfacesCustomization({ hotkeys: [...this.hotkeys] })
+      this.hotkeys = interfaces?.hotkeys ?? project.interfaces?.hotkeys ?? []
       eventDispatcher.dispatch("tpen-toast", {
         message: "Hotkeys updated successfully",
         status: "success"
       })
-      return response
+      return interfaces
     } catch (error) {
       eventDispatcher.dispatch("tpen-toast", {
-        message: error.toString(),
+        message: error?.message ?? error?.toString() ?? "Failed to save hotkeys",
         status: "error"
       })
+      return null
     }
   }
 
@@ -70,6 +63,9 @@ class TpenHotKeys extends HTMLElement {
   connectedCallback() {
     this.render()
     this.setupEventListeners()
+    if (TPEN.activeProject) {
+      this.loadHotkeys()
+    }
   }
 
   render() {
@@ -365,14 +361,18 @@ class TpenHotKeys extends HTMLElement {
       return
     }
 
+    const previous = [...this.hotkeys]
     this.hotkeys = [...this.hotkeys, symbol]
     const resp = await this.saveHotkeys()
-    if (!resp) this.hotkeys = this.hotkeys.filter(item => item !== symbol)
+    if (!resp) this.hotkeys = previous
     symbolInput.value = ''
   }
 
   updateHotkeysDisplay() {
     const hotkeysDisplay = this.shadowRoot.getElementById('hotkeys-display')
+    if (!hotkeysDisplay) {
+      return
+    }
     hotkeysDisplay.innerHTML = this.hotkeys
       .map((symbol, index) => `
           <div class="hotkey-row">
@@ -387,8 +387,10 @@ class TpenHotKeys extends HTMLElement {
   }
 
   async deleteHotkey(index) {
+    const previous = [...this.hotkeys]
     this.hotkeys = this.hotkeys.filter((_, i) => i !== index)
-    await this.saveHotkeys()
+    const resp = await this.saveHotkeys()
+    if (!resp) this.hotkeys = previous
   }
 }
 

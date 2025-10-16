@@ -66,14 +66,16 @@ export default class WorkspaceTools extends HTMLElement {
         <tpen-splitscreen-tool></tpen-splitscreen-tool>
         <tpen-page-tool></tpen-page-tool>
         ${
-          TPEN.activeProject.config?.specialCharacters?.enabled ? `<tpen-special-character-tool></tpen-special-character-tool>` : ""
+          // TPEN.activeProject.config?.specialCharacters?.enabled
+          true ? `<tpen-special-character-tool-button></tpen-special-character-tool-button>` : ""
         }
         ${
           TPEN.activeProject.tools.find(t => t.toolName === "inspect")?.custom?.enabled ? `<tpen-magnifier-tool></tpen-magnifier-tool>` : ""
         }
       </div>
       ${
-        TPEN.activeProject.config?.specialCharacters?.enabled ? `<tpen-special-character-tool style="width: 100%"></tpen-special-character-tool>` : ""
+        // TPEN.activeProject.config?.specialCharacters?.enabled
+        true ? `<tpen-special-character-tool style="width: 100%"></tpen-special-character-tool>` : ""
       }
     </div>
     `

@@ -10,20 +10,14 @@ class SpecialCharacterTool extends HTMLElement {
     }
 
     connectedCallback() {
-        this._unsubProject = onProjectReady(this, this.authgate)
-    }
-
-    authgate() {
-        if (!CheckPermissions.checkViewAccess("TOOL", "ANY")) {
-            this.remove()
-            return
-        }
-        this.render()
-        this.addEventListeners()
+        this._unsubProject = onProjectReady(this, () => {
+            this.render()
+            this.addEventListeners()
+        })
     }
 
     disconnectedCallback() {
-        try { this._unsubProject?.() } catch {}
+        try { this._unsubProject?.() } catch { }
     }
 
     addEventListeners() {
@@ -38,7 +32,7 @@ class SpecialCharacterTool extends HTMLElement {
         })
 
         editCharBtn.addEventListener('click', () => {
-            window.location.href = '/components/hot-keys/manage-hotkeys.html'
+            window.location.href = '/components/hot-keys/manage-hotkeys.html?projectID=' + TPEN.activeProject._id
         })
 
         this.shadowRoot.querySelectorAll('.char-button').forEach(btn => {
@@ -119,12 +113,16 @@ class SpecialCharacterTool extends HTMLElement {
         </style>
         <div class="char-panel" role="region" aria-label="Special Characters Panel" tabindex="0">
             <div class="panel-controls">
-                <button class="char-button" type="button" aria-label="Greek letter alpha">α</button>
-                <button class="char-button" type="button" aria-label="Greek letter beta">β</button>
-                <button class="char-button" type="button" aria-label="Greek letter gamma">γ</button>
+            ${CheckPermissions.checkEditAccess("PROJECT", "CONTENT") ?
+                TPEN.activeProject.interfaces?.hotkeys?.reduce((acc, hk) => {
+                    return acc + `<button class="char-button" type="button">${hk}</button>`
+                }, '') ?? `select "edit" to add buttons` : ''
+            }
             </div>
             <div class="panel-controls">
+            ${CheckPermissions.checkEditAccess("PROJECT", "OPTIONS") ? `
                 <button class="panel-btn edit-char-btn" type="button" aria-label="Edit special characters">Edit</button>
+            ` : ""}
                 <button class="panel-btn close-char-btn" type="button" aria-label="Close special characters panel">Close</button>
             </div>
         </div>
@@ -154,7 +152,7 @@ class SpecialCharacterToolButton extends HTMLElement {
     }
 
     disconnectedCallback() {
-        try { this._unsubProject?.() } catch {}
+        try { this._unsubProject?.() } catch { }
     }
 
     addEventListeners() {
