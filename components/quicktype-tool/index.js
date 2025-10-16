@@ -63,9 +63,10 @@ class QuickTypeTool extends HTMLElement {
                     const value = textAreaContent.value
 
                     textAreaContent.value = value.slice(0, start) + char + value.slice(end)
-                    
+
                     textAreaContent.selectionStart = textAreaContent.selectionEnd = start + char.length
                     textAreaContent.focus()
+                    textAreaContent.dispatchEvent(new Event('input', { bubbles: true }))
                 }
             })
         })
@@ -315,7 +316,7 @@ class QuickTypeToolButton extends HTMLElement {
 
         quicktypeBtn.addEventListener('click', () => {
             const charPanel = document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('tpen-workspace-tools').shadowRoot.querySelector('tpen-quicktype-tool').shadowRoot.querySelector('.char-panel')
-            
+
             if (charPanel.classList.contains('show')) {
                 // Close animation
                 charPanel.classList.remove('show')
