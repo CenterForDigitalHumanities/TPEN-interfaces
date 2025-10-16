@@ -98,6 +98,19 @@ export class MagnifierTool extends HTMLElement {
                 minY = Math.max(halfSize, requiredTopOffset + halfSize)
             }
             y = Math.max(minY, Math.min(y, imgRect.height - halfSize))
+
+            let rightPane = null
+            const tpenInterface = document.querySelector('tpen-transcription-interface')
+            if (tpenInterface?.shadowRoot) {
+                rightPane = tpenInterface.shadowRoot.querySelector('.right-pane')
+            }
+
+            if (rightPane && rightPane.offsetParent !== null) {
+                const rightRect = rightPane.getBoundingClientRect()
+                const overlapX = rightRect.left - imgRect.left - halfSize + 100
+                if (x > overlapX) x = overlapX
+            }
+
             magnifier.style.left = `${x + imgRect.left - halfSize}px`
             magnifier.style.top = `${y + imgRect.top - halfSize}px`
 
@@ -137,6 +150,7 @@ export class MagnifierTool extends HTMLElement {
         magnifier.style.top = `${img.offsetTop}px`
         magnifier.style.backgroundPosition = `-${halfSize * this.zoomLevel * img.width}px -${halfSize * this.zoomLevel}px`
 
+        this.updateMagnifier()
         this.isMagnifierVisible = true
     }
 
