@@ -4,6 +4,7 @@ import { onProjectReady } from "../../utilities/projectReady.js"
 export class MagnifierTool extends HTMLElement {
     #imageElem = null
     #magnifier
+    #boundsOffset = 0
 
     constructor() {
         super()
@@ -91,13 +92,13 @@ export class MagnifierTool extends HTMLElement {
             const headerHeight = -60
             let x = e.clientX - imgRect.left
             let y = e.clientY - imgRect.top
-            x = Math.max(halfSize, Math.min(x, imgRect.width - halfSize))
-            let minY = halfSize
+            x = Math.max(-this.#boundsOffset + halfSize, Math.min(x, imgRect.width + this.#boundsOffset - halfSize))
+            let minY = -this.#boundsOffset + halfSize
             if (imgRect.top < headerHeight) {
                 const requiredTopOffset = headerHeight - imgRect.top
-                minY = Math.max(halfSize, requiredTopOffset + halfSize)
+                minY = Math.max(-this.#boundsOffset + halfSize, requiredTopOffset + halfSize)
             }
-            y = Math.max(minY, Math.min(y, imgRect.height - halfSize))
+            y = Math.max(minY, Math.min(y, imgRect.height + this.#boundsOffset - halfSize))
 
             let rightPane = null
             const tpenInterface = document.querySelector('tpen-transcription-interface')
@@ -183,8 +184,8 @@ export class MagnifierTool extends HTMLElement {
                 border: 3px solid #333;
                 border-radius: 50%;
                 cursor: grab;
-                width: 320px;
-                height: 320px;
+                width: 200px;
+                height: 200px;
                 background-repeat: no-repeat;
                 background-size: calc(100% * 3) calc(100% * 3);
                 pointer-events: all;

@@ -1,7 +1,6 @@
 import TPEN from "../../api/TPEN.js"
 const eventDispatcher = TPEN.eventDispatcher
 import CheckPermissions from "../check-permissions/checkPermissions.js"
-import "../../components/magnifier-tool/index.js"
 import "../../components/quicktype-tool/index.js"
 import "../../components/splitscreen-tool/index.js"
 import "../../components/page-tool/index.js"

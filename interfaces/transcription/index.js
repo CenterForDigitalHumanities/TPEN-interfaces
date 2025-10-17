@@ -114,7 +114,7 @@ export default class TranscriptionInterface extends HTMLElement {
         }
         .tools {
           padding: 15px;
-          height: calc(100% - 50px);
+          height: calc(100vh - 85px);
           overflow-y: auto;
         }
         .tools p {
