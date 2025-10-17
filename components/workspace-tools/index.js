@@ -2,7 +2,7 @@ import TPEN from "../../api/TPEN.js"
 const eventDispatcher = TPEN.eventDispatcher
 import CheckPermissions from "../check-permissions/checkPermissions.js"
 import "../../components/magnifier-tool/index.js"
-import "../../components/special-character-tool/index.js"
+import "../../components/quicktype-tool/index.js"
 import "../../components/splitscreen-tool/index.js"
 import "../../components/page-tool/index.js"
 
@@ -66,18 +66,18 @@ export default class WorkspaceTools extends HTMLElement {
         <tpen-splitscreen-tool></tpen-splitscreen-tool>
         <tpen-page-tool></tpen-page-tool>
         ${
-          // TPEN.activeProject.config?.specialCharacters?.enabled
-          true ? `<tpen-special-character-tool-button></tpen-special-character-tool-button>` : ""
+          // TPEN.activeProject.config?.quicktype?.enabled
+          true ? `<tpen-quicktype-tool-button></tpen-quicktype-tool-button>` : ""
         }
         ${
           TPEN.activeProject.tools.find(t => t.toolName === "inspect")?.custom?.enabled ? `<tpen-magnifier-tool></tpen-magnifier-tool>` : ""
         }
       </div>
       ${
-        // TPEN.activeProject.config?.specialCharacters?.enabled
-        true ? `<tpen-special-character-tool style="width: 100%"></tpen-special-character-tool>` : ""
+        // TPEN.activeProject.config?.quicktype?.enabled
+        true ? `<tpen-quicktype-tool style="width: 100%"></tpen-quicktype-tool>` : ""
       }
-    </div>
+      </div>
     `
   }
 }
