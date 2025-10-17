@@ -64,7 +64,7 @@ class ToastContainer extends HTMLElement {
         style.textContent = `
             .toast-group {
                 position: fixed;
-                z-index: 1;
+                z-index: 10100;
                 inset-block-end: 0;
                 inset-inline: 0;
                 padding-block-end: 5vh;
@@ -73,6 +73,7 @@ class ToastContainer extends HTMLElement {
                 justify-content: center;
                 gap: 1vh;
                 user-select: none;
+                pointer-events: none;
             }
             tpen-toast {
                 display: block;
