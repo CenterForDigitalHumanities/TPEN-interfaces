@@ -7,7 +7,7 @@ class CopyExistingProjectWithCustomizations extends HTMLElement {
     #modules = {
         "Metadata": true,
         "Group Members": true,
-        "Hotkeys": true,
+        "QuickType": true,
         "Tools": true,
         "Layers": true
     }
