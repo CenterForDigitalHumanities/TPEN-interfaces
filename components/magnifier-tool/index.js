@@ -19,10 +19,6 @@ export class MagnifierTool extends HTMLElement {
         this.#imageElem = el
     }
 
-    set imageElem(el) {
-        this.#imageElem = el
-    }
-
     get imageElem() {
         return this.#imageElem
     }
