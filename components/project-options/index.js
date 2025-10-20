@@ -1,6 +1,7 @@
 import TPEN from '/api/TPEN.js'
 import '/components/gui/card/Card.js'
 import '/components/project-details/index.js'
+import '/components/project-tools/index.js'
 import { stringFromDate } from '/js/utils.js'
 import vault from '../../js/vault.js'
 
@@ -56,7 +57,7 @@ class ProjectOptions extends HTMLElement {
                 <li><b>Owner:</b> ${project.getOwner()?.displayName ?? ''}</li>
             </ul>
             <h3>Project Tools</h3>
-            <tpen-project-tools></tpen-project-tools>
+            <tpen-project-tools readonly="true"></tpen-project-tools>
             <h3>Define Lines</h3>
             ${project.layers?.map(layer => `
                 <details>
