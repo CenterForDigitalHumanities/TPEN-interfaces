@@ -56,7 +56,7 @@ class ProjectOptions extends HTMLElement {
                 <li><b>Last Modified:</b> ${stringFromDate(project._modifiedAt)}</li>
                 <li><b>Owner:</b> ${project.getOwner()?.displayName ?? ''}</li>
             </ul>
-            <h3>Project Tools</h3>
+            <h3>Project Tools <a href="/project/manage/?projectID=${project._id}">✏️</a></h3>
             <tpen-project-tools readonly="true"></tpen-project-tools>
             <h3>Define Lines</h3>
             ${project.layers?.map(layer => `
