@@ -10,6 +10,8 @@ export default class PageTool extends HTMLElement {
         this.attachShadow({ mode: "open" })
         this.isDrawerOpen = false
         this.drawerPosition = 'right'
+        this.contrast = 100
+        this.brightness = 100
     }
 
     get drawerContent() {
@@ -56,6 +58,12 @@ export default class PageTool extends HTMLElement {
     openDrawer() {
         const drawer = this.shadowRoot.querySelector('.drawer')
         if (!drawer) return
+        const container = document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('.container')
+        if(document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('.container.active-splitscreen .right-pane')){ 
+          container.classList.remove('active-splitscreen')
+          container.classList.add('no-splitscreen')
+        }
+        container.style.width = 'calc(100% - 320px)'
         drawer.classList.add('open')
         this.isDrawerOpen = true
         this.drawerToggleBtn.focus()
@@ -64,10 +72,113 @@ export default class PageTool extends HTMLElement {
     closeDrawer() {
         const drawer = this.shadowRoot.querySelector('.drawer')
         if (!drawer) return
+        const container = document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('.container')
+        container.style.width = '100%'
         drawer.classList.remove('open')
         this.isDrawerOpen = false
         this.drawerToggleBtn.blur()
     }
+
+    updateMainImageFilters(imageEl) {
+        if (!imageEl) return
+
+        const filters = []
+        if (imageEl.classList.contains('grayscale')) filters.push('grayscale(100%)')
+        if (imageEl.classList.contains('invert')) filters.push('invert(100%)')
+        filters.push(`contrast(${this.contrast}%)`)
+        filters.push(`brightness(${this.brightness}%)`)
+
+        imageEl.style.transition = 'filter 250ms ease'
+        imageEl.style.filter = filters.join(' ')
+    }
+
+    applyFilters() {
+        const transcriptionInterface = document.querySelector('tpen-transcription-interface')?.shadowRoot
+        if (!transcriptionInterface) return
+
+        const imageEl = transcriptionInterface.querySelector('tpen-image-fragment')?.shadowRoot?.querySelector('img')
+        if (imageEl) this.updateMainImageFilters(imageEl)
+
+        const canvasPanel = transcriptionInterface.querySelector('tpen-line-image')?.shadowRoot?.querySelector('canvas-panel')?.shadowRoot
+        if (!canvasPanel) return
+
+        let atlasStyle = canvasPanel.querySelector('#atlas-filters-style')
+        if (!atlasStyle) {
+            atlasStyle = document.createElement('style')
+            atlasStyle.id = 'atlas-filters-style'
+            canvasPanel.appendChild(atlasStyle)
+        }
+
+        const imageFilters = []
+        if (imageEl?.classList.contains('grayscale')) imageFilters.push('grayscale(100%)')
+        if (imageEl?.classList.contains('invert')) imageFilters.push('invert(100%)')
+        imageFilters.push(`contrast(${this.contrast}%)`)
+        imageFilters.push(`brightness(${this.brightness}%)`)
+
+        atlasStyle.textContent = `
+            .atlas-static-image {
+                filter: ${imageFilters.join(' ')};
+                transition: filter 250ms ease;
+            }
+        `
+    }
+
+    toggleFilter(type) {
+        const transcriptionInterface = document.querySelector('tpen-transcription-interface')?.shadowRoot
+        if (!transcriptionInterface) return
+        const imageFragment = transcriptionInterface.querySelector('tpen-image-fragment')?.shadowRoot
+        const imageEl = imageFragment?.querySelector('img')
+
+        if (imageEl) {
+            imageEl.classList.toggle(type)
+            this.applyFilters()
+        }
+
+        const btnClass = type === 'grayscale' ? '.grayscale-btn' : '.invert-btn'
+        const btn = this.shadowRoot.querySelector(btnClass)
+        if (btn) btn.classList.toggle('active')
+    }
+
+    toggleGrayscale() {
+        this.toggleFilter('grayscale')
+    }
+
+    toggleInvert() {
+        this.toggleFilter('invert')
+    }
+
+    setContrast(e) {
+        this.contrast = e.target.value
+        this.applyFilters()
+    }
+
+    setBrightness(e) {
+        this.brightness = e.target.value
+        this.applyFilters()
+    }
+
+    resetFilters() {
+      this.contrast = 100
+      this.brightness = 100
+      const contrastSlider = this.shadowRoot.querySelector('.contrast-slider')
+      const brightnessSlider = this.shadowRoot.querySelector('.brightness-slider')
+      if (contrastSlider) contrastSlider.value = 100
+      if (brightnessSlider) brightnessSlider.value = 100
+
+      const transcriptionInterface = document.querySelector('tpen-transcription-interface')?.shadowRoot
+      const imageEl = transcriptionInterface
+          ?.querySelector('tpen-image-fragment')?.shadowRoot?.querySelector('img')
+
+      if (imageEl) {
+          imageEl.classList.remove('grayscale', 'invert')
+      }
+
+      const grayscaleBtn = this.shadowRoot.querySelector('.grayscale-btn')
+      const invertBtn = this.shadowRoot.querySelector('.invert-btn')
+      grayscaleBtn?.classList.remove('active')
+      invertBtn?.classList.remove('active')
+      this.applyFilters()
+  }
 
     render() {
         this.shadowRoot.innerHTML = `
@@ -152,12 +263,100 @@ export default class PageTool extends HTMLElement {
 
             .drawer-content { 
               flex: 1; 
-              padding: 20px; 
               overflow-y: auto; 
             }
 
             .tool-section { 
-              margin-bottom: 20px; 
+              display: flex;
+              flex-direction: column;
+              gap: 16px;
+              align-items: center;
+              justify-content: center;
+              margin-bottom: 20px;
+            }
+
+            .tool-section-title {
+              font-size: 0.95rem;
+              font-weight: 700;
+              color: white;
+              background-color: rgb(0, 90, 140);
+              margin: 0;
+              padding: 5px 0;
+              border-bottom: 2px solid rgb(0, 90, 140);
+              width: 100%;
+              text-align: center;
+              margin-top: 10px;
+            }
+
+            .reset-btn {
+              margin: 10px auto;
+              display: block;
+              width: fit-content;
+            }
+
+            .grayscale-btn, .invert-btn, .reset-btn {
+              min-width: 220px;
+              padding: 10px 18px;
+              border: 2px solid rgb(0, 90, 140);
+              border-radius: 25px;
+              background-color: white;
+              color: rgb(0, 90, 140);
+              font-weight: 600;
+              cursor: pointer;
+              transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+            }
+
+            .grayscale-btn:hover, .invert-btn:hover, .reset-btn:hover,
+            .grayscale-btn:focus, .invert-btn:focus, .reset-btn:focus {
+              background-color: rgb(0, 90, 140);
+              color: white;
+            }
+
+            .grayscale-btn.active, .invert-btn.active, .reset-btn.active {
+              background-color: rgb(0, 90, 140);
+              color: white;
+              border-color: rgb(0, 90, 140);
+            }
+
+            .tool-sliders {
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              gap: 10px;
+            }
+
+            .tool-sliders label {
+              font-size: 0.92rem;
+              font-weight: 700;
+              color: rgb(0, 90, 140);
+            }
+
+            .contrast-slider, .brightness-slider {
+              -webkit-appearance: none;
+              appearance: none;
+              width: 220px;
+              height: 10px;
+              background: linear-gradient(to right, #d3d3d3, #6f6f6f);
+              border-radius: 10px;
+              outline: none;
+              cursor: pointer;
+              transition: opacity 0.2s ease;
+            }
+
+            .contrast-slider:hover, .brightness-slider:hover {
+              opacity: 0.9;
+            }
+
+            .contrast-slider::-webkit-slider-thumb,
+            .brightness-slider::-webkit-slider-thumb {
+              -webkit-appearance: none;
+              appearance: none;
+              width: 18px;
+              height: 18px;
+              border-radius: 50%;
+              background: rgb(0, 90, 140);
+              cursor: pointer;
+              transition: background 0.3s ease;
             }
         </style>
         <button class="drawer-toggle-btn" type="button" title="Open Tools" aria-label="Open Tools">Page Tools</button>
@@ -167,11 +366,29 @@ export default class PageTool extends HTMLElement {
                 <button class="drawer-close-btn" type="button" title="Close" aria-label="Close">×</button>
             </div>
             <div class="drawer-content">
+                <button type="button" class="reset-btn">RESET TO DEFAULTS</button>
                 <div class="tool-section">
+                  <h4 class="tool-section-title">IMAGE CONTROLS</h4>
+                  <button type="button" class="grayscale-btn">GRAYSCALE</button>
+                  <button type="button" class="invert-btn">INVERT</button>
+                  <div class="tool-sliders">
+                    <label for="contrast-slider">CONTRAST</label>
+                    <input type="range" class="contrast-slider" min="0" max="200" value="100">
+                  </div>
+                  <div class="tool-sliders">
+                    <label for="brightness-slider">BRIGHTNESS</label>
+                    <input type="range" class="brightness-slider" min="0" max="200" value="100">
+                  </div>
                 </div>
             </div>
         </div>
         `
+
+        this.shadowRoot.querySelector('.grayscale-btn')?.addEventListener('click', () => this.toggleGrayscale())
+        this.shadowRoot.querySelector('.invert-btn')?.addEventListener('click', () => this.toggleInvert())
+        this.shadowRoot.querySelector('.contrast-slider')?.addEventListener('input', (e) => this.setContrast(e))
+        this.shadowRoot.querySelector('.brightness-slider')?.addEventListener('input', (e) => this.setBrightness(e))
+        this.shadowRoot.querySelector('.reset-btn')?.addEventListener('click', () => this.resetFilters())
     }
 }
 
