@@ -213,6 +213,7 @@ export default class TranscriptionInterface extends HTMLElement {
       this.state.isSplitscreenActive = false
       this.toggleSplitscreen()
       this.checkMagnifierVisibility()
+      this.updateLines()
     }
 
     const openSplitscreen = (selectedTool = '') => {
@@ -220,6 +221,7 @@ export default class TranscriptionInterface extends HTMLElement {
       this.state.isSplitscreenActive = true
       this.toggleSplitscreen()
       this.loadRightPaneContent()
+      this.updateLines()
     }
 
     this.shadowRoot.addEventListener('splitscreen-toggle', e => openSplitscreen(e.detail?.selectedTool))
