@@ -14,12 +14,12 @@ class ProjectTools extends HTMLElement {
     }
 
     disconnectedCallback() {
-        try { this._unsubProject?.() } catch {}
+        try { this._unsubProject?.() } catch { }
     }
 
     async render() {
         const tools = TPEN.activeProject.tools
-        const isToolsEditAccess = await CheckPermissions.checkEditAccess("TOOL")
+        const isToolsEditAccess = !this.getAttribute("readonly") && await CheckPermissions.checkEditAccess("TOOL")
         this.shadowRoot.innerHTML = `
             <style>
                 .container {
@@ -169,20 +169,22 @@ class ProjectTools extends HTMLElement {
             </style>
             <div class="tools-body">
                 ${tools.map(tool => `
+                    ${ isToolsEditAccess || tool.custom?.enabled ? `
                     <div class="container">
                         <div class="tool-card">
                             <div>
                                 ${isToolsEditAccess ? `<input type="checkbox" name="tools" value="${tool.toolName}" ${tool.custom?.enabled ? "checked" : ""}>` : ""}
-                                <label>${tool.label}</label>
+                                <label title="${tool.url ?? tool.toolName}">${tool.label}</label>
                             </div>
+                            ${isToolsEditAccess ? `
                             <button type="button" class="remove-field-btn">
                                 <!-- Icon source: https://www.flaticon.com/free-icons/delete by Freepik -->
                                 <img class="icon" src="../../assets/icons/delete.png" alt="Remove" />
-                            </button>
-                        </div>
-                    </div>
+                            </button>` : ""}
+                            </div>
+                            </div>` : ""}
                 `).join("")}
-
+                ${isToolsEditAccess ? `
                 <div class="modal" id="tool-modal">
                     <div class="modal-content">
                         <button class="tools-btn close-btn" id="close-modal-btn">&times;</button>
@@ -197,10 +199,10 @@ class ProjectTools extends HTMLElement {
                         </div>
                         <iframe id="tool-preview" style="display: none;"></iframe>
                     </div>
-                </div>
+                </div>` : ""}
             </div>
         `
-    
+
         const modal = this.shadowRoot.querySelector("#tool-modal")
         const toggleTools = this.shadowRoot.querySelectorAll('input[type="checkbox"][name="tools"]')
         const openModalBtn = document.querySelector("tpen-page").querySelector('tpen-card[tpen-entity="tools"] #add-iframe-tools')
@@ -215,7 +217,7 @@ class ProjectTools extends HTMLElement {
         function isValidURL(str) {
             try {
                 new URL(str)
-                if(!str.startsWith("http://") && !str.startsWith("https://"))
+                if (!str.startsWith("http://") && !str.startsWith("https://"))
                     return false
                 return true
             } catch (_) {
@@ -236,56 +238,56 @@ class ProjectTools extends HTMLElement {
             const code = /[<>{}()[\];'"`]|script|on\w+=|javascript:/i
             return code.test(str)
         }
-    
-        openModalBtn.addEventListener("click", () => {
+
+        openModalBtn?.addEventListener("click", () => {
             modal.style.display = "flex"
             iframe.style.display = "none"
             nameInput.value = ""
             urlInput.value = ""
         })
-    
-        closeModalBtn.addEventListener("click", () => {
+
+        closeModalBtn?.addEventListener("click", () => {
             modal.style.display = "none"
         })
-    
-        testBtn.addEventListener("click", () => {
+
+        testBtn?.addEventListener("click", () => {
             const name = nameInput.value.trim()
             const url = urlInput.value.trim()
 
-            if(!url) 
+            if (!url)
                 return TPEN.eventDispatcher.dispatch("tpen-toast", { status: "error", message: 'Please enter a valid URL' })
 
-            if(checkForCode(name))
+            if (checkForCode(name))
                 return TPEN.eventDispatcher.dispatch("tpen-toast", { status: "error", message: 'Please enter a valid tool name' })
 
-            if(!isValidURL(url))
+            if (!isValidURL(url))
                 return TPEN.eventDispatcher.dispatch("tpen-toast", { status: "error", message: 'Please enter a valid URL' })
 
             iframe.src = url
             iframe.style.display = "block"
         })
 
-        addBtn.addEventListener("click", async() => {
+        addBtn?.addEventListener("click", async () => {
             const name = nameInput.value.trim()
             const url = urlInput.value.trim()
-    
-            if(!name || !url) 
+
+            if (!name || !url)
                 return TPEN.eventDispatcher.dispatch("tpen-toast", { status: "error", message: 'Please enter a valid tool name and URL' })
 
-            if(checkForCode(name))
+            if (checkForCode(name))
                 return TPEN.eventDispatcher.dispatch("tpen-toast", { status: "error", message: 'Please enter a valid tool name' })
 
-            if(!isValidURL(url))
+            if (!isValidURL(url))
                 return TPEN.eventDispatcher.dispatch("tpen-toast", { status: "error", message: 'Please enter a valid URL' })
 
-            if(checkTools(name, url)) {
+            if (checkTools(name, url)) {
                 modal.style.display = "none"
                 iframe.style.display = "none"
                 nameInput.value = ""
                 urlInput.value = ""
                 return TPEN.eventDispatcher.dispatch("tpen-toast", { status: "info", message: 'This tool already exists' })
             }
-    
+
             const response = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/tool`, {
                 method: "POST",
                 headers: {
@@ -322,16 +324,16 @@ class ProjectTools extends HTMLElement {
                     }
                 })
             }
-    
-            return TPEN.eventDispatcher.dispatch("tpen-toast", 
-                response.ok ? 
-                    { status: "info", message: 'Successfully Added Tool' } : 
+
+            return TPEN.eventDispatcher.dispatch("tpen-toast",
+                response.ok ?
+                    { status: "info", message: 'Successfully Added Tool' } :
                     { status: "error", message: 'Error Adding Tool' }
             )
         })
 
-        toggleTools.forEach(toggle => {
-            toggle.addEventListener("click", async() => {
+        toggleTools?.forEach(toggle => {
+            toggle.addEventListener("click", async () => {
                 const toolName = toggle.value
                 const response = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/toggleTool`, {
                     method: "PUT",
@@ -341,21 +343,21 @@ class ProjectTools extends HTMLElement {
                     },
                     body: JSON.stringify({ toolName })
                 })
-                    
+
                 modal.style.display = "none"
                 iframe.style.display = "none"
                 nameInput.value = ""
                 urlInput.value = ""
-        
-                return TPEN.eventDispatcher.dispatch("tpen-toast", 
-                response.ok ? 
-                    { status: "info", message: 'Successfully Updated Tools' } : 
-                    { status: "error", message: 'Error Updating Tools' }
+
+                return TPEN.eventDispatcher.dispatch("tpen-toast",
+                    response.ok ?
+                        { status: "info", message: 'Successfully Updated Tools' } :
+                        { status: "error", message: 'Error Updating Tools' }
                 )
             })
         })
 
-        deleteButtons.forEach(button => {
+        deleteButtons?.forEach(button => {
             button.addEventListener("click", async (e) => {
                 const toolName = e.target.closest(".tool-card").querySelector("label").textContent.trim()
                 const toolValue = e.target.closest(".tool-card").querySelector("input[type='checkbox']").value
@@ -385,7 +387,7 @@ class ProjectTools extends HTMLElement {
                 }
             })
         })
-    }    
+    }
 }
 
 customElements.define("tpen-project-tools", ProjectTools)

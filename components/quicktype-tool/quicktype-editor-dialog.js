@@ -1,4 +1,5 @@
 import TPEN from "../../api/TPEN.js"
+import { escapeHtml } from "/js/utils.js"
 const eventDispatcher = TPEN.eventDispatcher
 
 class QuickTypeEditorDialog extends HTMLElement {
@@ -729,14 +730,14 @@ class QuickTypeEditorDialog extends HTMLElement {
 
     getQuicktypeItemMarkup(item, index, isNewlyAdded) {
         const evaluation = this.evaluateEntry(item)
-        const safeItem = this.escapeHTML(item)
+    const safeItem = escapeHtml(item)
         const shortcut = this.generateShortcut(index)
         const invalidClass = evaluation.valid ? '' : ' invalid'
         const ariaInvalid = evaluation.valid ? '' : ' aria-invalid="true"'
         const warningMarkup = evaluation.valid ? '' : `
                 <div class="validation-warning" role="note">
                     <span class="validation-icon" aria-hidden="true">⚠️</span>
-                    <span class="validation-text">${this.escapeHTML(evaluation.reason)}</span>
+                    <span class="validation-text">${escapeHtml(evaluation.reason)}</span>
                 </div>
         `
 
@@ -817,16 +818,7 @@ class QuickTypeEditorDialog extends HTMLElement {
         return { valid: true }
     }
 
-    escapeHTML(value) {
-        const safeValue = `${value ?? ''}`
-
-        return safeValue
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;')
-    }
+    // escapeHtml provided via shared util
 }
 
 customElements.define('tpen-quicktype-editor-dialog', QuickTypeEditorDialog)
