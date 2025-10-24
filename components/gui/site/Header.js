@@ -90,7 +90,7 @@ class TpenHeader extends HTMLElement {
         const TIME_THRESHOLD = 200 // milliseconds
         const FRICTION = 0.92 // Deceleration factor
         const MIN_VELOCITY = 0.5 // Stop animation below this velocity
-        const BOUNCE_DAMPING = 0.4 // How much velocity is retained after bounce
+        const BOUNCE_DAMPING = 0.1 // How much velocity is retained after bounce
 
         const getBounds = () => {
             if (!initialRect) {
