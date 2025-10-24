@@ -180,6 +180,16 @@ class ProjectCustomization extends HTMLElement {
                     color: #666;
                     font-style: italic;
                 }
+                .interface-info .more {
+                    color: #666;
+                    margin-left: 6px;
+                }
+                .interface-info .list-item {
+                    margin: 2px 0;
+                }
+                .interface-info .short-list {
+                    word-break: break-word;
+                }
             </style>
             ${hasInterfaces ? Object.entries(interfaces).map(([name, config]) => {
                 const editUrl = this.getEditUrl(name, project._id)
@@ -216,13 +226,57 @@ class ProjectCustomization extends HTMLElement {
     }
 
     getInterfaceInfo(name, config) {
-        // Provide specific info based on interface type
+        // If this interface is a list of text values, preview the values intelligently
+        if (Array.isArray(config)) {
+            const values = config
+                .map(v => typeof v === 'string' ? v.trim() : '')
+                .filter(v => v.length > 0)
+
+            if (values.length === 0) return 'Configured'
+
+            // Determine if this is a list of short items (e.g., single characters for quicktype)
+            const isShortItems = values.every(v => v.length <= 8)
+
+            if (isShortItems) {
+                const maxItems = 10
+                const shown = values.slice(0, maxItems).map(v => this.escapeHtml(v))
+                const remaining = values.length - shown.length
+                return `
+                    <span class="short-list">${shown.join(' · ')}${remaining > 0 ? ` <span class="more">+${remaining} more</span>` : ''}</span>
+                `
+            }
+
+            // Longer strings: show up to ~4 lines
+            const maxLines = 4
+            const shownLines = values.slice(0, maxLines).map(v => `
+                <div class="list-item">${this.escapeHtml(v)}</div>
+            `).join('')
+            const remaining = values.length - Math.min(values.length, maxLines)
+            return `
+                <div class="long-list">
+                    ${shownLines}
+                    ${remaining > 0 ? `<div class="more">+${remaining} more</div>` : ''}
+                </div>
+            `
+        }
+
+        // Specific info based on known interface types can go here as a fallback summary
         if (name === 'quicktype') {
             const shortcuts = Array.isArray(config) ? config : []
             return `${shortcuts.length} shortcut${shortcuts.length !== 1 ? 's' : ''} defined`
         }
+
         // Generic fallback for other interfaces
-        return Array.isArray(config) ? `${config.length} items` : 'Configured'
+        return 'Configured'
+    }
+
+    escapeHtml(str) {
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;')
     }
 }
 
