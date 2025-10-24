@@ -2,7 +2,7 @@ import TPEN from '/api/TPEN.js'
 import '/components/gui/card/Card.js'
 import '/components/project-details/index.js'
 import '/components/project-tools/index.js'
-import { stringFromDate } from '/js/utils.js'
+import { stringFromDate, escapeHtml } from '/js/utils.js'
 import vault from '../../js/vault.js'
 
 class ProjectOptions extends HTMLElement {
@@ -239,7 +239,7 @@ class ProjectCustomization extends HTMLElement {
 
             if (isShortItems) {
                 const maxItems = 10
-                const shown = values.slice(0, maxItems).map(v => this.escapeHtml(v))
+                const shown = values.slice(0, maxItems).map(v => escapeHtml(v))
                 const remaining = values.length - shown.length
                 return `
                     <span class="short-list">${shown.join(' · ')}${remaining > 0 ? ` <span class="more">+${remaining} more</span>` : ''}</span>
@@ -249,7 +249,7 @@ class ProjectCustomization extends HTMLElement {
             // Longer strings: show up to ~4 lines
             const maxLines = 4
             const shownLines = values.slice(0, maxLines).map(v => `
-                <div class="list-item">${this.escapeHtml(v)}</div>
+                <div class="list-item">${escapeHtml(v)}</div>
             `).join('')
             const remaining = values.length - Math.min(values.length, maxLines)
             return `
@@ -268,15 +268,6 @@ class ProjectCustomization extends HTMLElement {
 
         // Generic fallback for other interfaces
         return 'Configured'
-    }
-
-    escapeHtml(str) {
-        return String(str)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;')
     }
 }
 

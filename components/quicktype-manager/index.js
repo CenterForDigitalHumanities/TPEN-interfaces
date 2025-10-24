@@ -1,4 +1,5 @@
 import TPEN from '../../api/TPEN.js'
+import { escapeHtml } from '/js/utils.js'
 import '../quicktype-tool/quicktype-editor-dialog.js'
 
 export const PRESET_COLLECTIONS = {
@@ -35,11 +36,7 @@ class QuickTypeManager extends HTMLElement {
         this._savedShortcuts = [...this._shortcuts]
     }
 
-    escapeHtml(text) {
-        const div = document.createElement('div')
-        div.textContent = text
-        return div.innerHTML
-    }
+    // escapeHtml moved to shared util
 
     hasUnsavedChanges() {
         if (this._shortcuts.length !== this._savedShortcuts.length) return true
@@ -264,7 +261,7 @@ class QuickTypeManager extends HTMLElement {
             </style>
 
             <h1>Quicktype Shortcuts</h1>
-            <p class="subtitle">Manage character shortcuts for <em>${this.escapeHtml(project.getLabel())}</em></p>
+            <p class="subtitle">Manage character shortcuts for <em>${escapeHtml(project.getLabel())}</em></p>
 
             <div class="section">
             <h2>Current Shortcuts</h2>
@@ -272,7 +269,7 @@ class QuickTypeManager extends HTMLElement {
                 ${this._shortcuts.length > 0 
                 ? this._shortcuts.map((char, index) => `
                     <div class="shortcut-chip">
-                    <span>${this.escapeHtml(char)}</span>
+                    <span>${escapeHtml(char)}</span>
                     <span class="remove-shortcut" data-index="${index}">×</span>
                     </div>
                 `).join('')
@@ -305,10 +302,10 @@ class QuickTypeManager extends HTMLElement {
             <p style="color: #666; margin-bottom: 15px;">Click to add an entire collection to your shortcuts</p>
             <div class="presets-grid">
                 ${Object.entries(PRESET_COLLECTIONS).map(([name, chars]) => `
-                <div class="preset-card" data-preset="${this.escapeHtml(name)}" title="Add ${chars.join(', ')}">
-                    <div class="preset-name">${this.escapeHtml(name)}</div>
+                <div class="preset-card" data-preset="${escapeHtml(name)}" title="Add ${chars.join(', ')}">
+                    <div class="preset-name">${escapeHtml(name)}</div>
                     <div class="preset-preview">
-                    ${chars.slice(0, 8).map(char => `<span class="preset-char">${this.escapeHtml(char)}</span>`).join('')}
+                    ${chars.slice(0, 8).map(char => `<span class="preset-char">${escapeHtml(char)}</span>`).join('')}
                     ${chars.length > 8 ? `<span class="preset-char">+${chars.length - 8}</span>` : ''}
                     </div>
                 </div>
