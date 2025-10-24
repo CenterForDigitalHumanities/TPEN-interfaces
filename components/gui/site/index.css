@@ -20,8 +20,27 @@ html, body {
     --white        : hsl(0, 0%, 100%);
     --gray         : hsl(0, 0%, 60%);
     --light-gray   : hsl(0, 0%, 90%);
-    --accent         : hsl(12, 60%, 40%);
+    --accent       : hsl(12, 60%, 40%);
     --link         : hsl(12, 60%, 40%);
+    
+    /* Interface colors - used by buttons, shortcuts, and interactive elements */
+    --interface-primary: rgb(0, 90, 140);
+    --interface-primary-hover: rgb(0, 70, 110);
+    --interface-primary-light: rgba(0, 90, 140, 0.1);
+    --interface-primary-shadow: rgba(0, 90, 140, 0.3);
+    --interface-secondary: #f0f0f0;
+    --interface-secondary-hover: #e0e0e0;
+    
+    /* Semantic colors */
+    --error-color: #d93025;
+    --error-light: rgba(217, 48, 37, 0.1);
+    --warning-color: #ffc107;
+    --success-color: #34a853;
+    
+    /* Text colors */
+    --text-primary: #333;
+    --text-secondary: #666;
+    --text-muted: #999;
 }
 
 /* Dark Theme Variables */
@@ -35,8 +54,25 @@ html, body {
         --white: hsl(0, 0%, 100%);
         --gray: hsl(0, 0%, 60%);
         --light-gray: hsl(0, 0%, 90%);
-        --accent         : hsl(12, 60%, 40%);
+        --accent       : hsl(12, 60%, 40%);
         --link: hsl(12, 60%, 40%);
+        
+        /* Interface colors remain the same in dark mode for consistency */
+        --interface-primary: rgb(0, 90, 140);
+        --interface-primary-hover: rgb(0, 70, 110);
+        --interface-primary-light: rgba(0, 90, 140, 0.1);
+        --interface-primary-shadow: rgba(0, 90, 140, 0.3);
+        --interface-secondary: #f0f0f0;
+        --interface-secondary-hover: #e0e0e0;
+        
+        --error-color: #d93025;
+        --error-light: rgba(217, 48, 37, 0.1);
+        --warning-color: #ffc107;
+        --success-color: #34a853;
+        
+        --text-primary: #333;
+        --text-secondary: #666;
+        --text-muted: #999;
     }
 }
 
