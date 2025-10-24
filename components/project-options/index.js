@@ -29,6 +29,25 @@ class ProjectOptions extends HTMLElement {
         }
     }
 
+    getNavigationUrl(type, project) {
+        const projectId = project._id
+        const interfaces = project.interfaces || {}
+        
+        // Default base URLs (without query strings)
+        const defaults = {
+            transcribe: `/transcribe`,
+            defineLines: `/annotator`,
+            manageProject: `/project/manage/`
+        }
+        
+        // Get custom URL from interfaces or use default
+        const baseUrl = interfaces.navigation?.[type] || defaults[type]
+        
+        // Always append projectID query string
+        const separator = baseUrl.includes('?') ? '&' : '?'
+        return `${baseUrl}${separator}projectID=${projectId}`
+    }
+
     render() {
         const project = TPEN.activeProject
         if (!project) {
@@ -57,7 +76,7 @@ class ProjectOptions extends HTMLElement {
             <li><b>Last Modified:</b> ${stringFromDate(project._modifiedAt)}</li>
             <li><b>Owner:</b> ${project.getOwner()?.displayName ?? ''}</li>
             </ul>
-            <h3>Project Tools <a href="/project/manage/?projectID=${project._id}">✏️</a></h3>
+            <h3>Project Tools <a href="${this.getNavigationUrl('manageProject', project)}">✏️</a></h3>
             <tpen-project-tools readonly="true"></tpen-project-tools>
             <h3>Define Lines</h3>
             ${project.layers?.map(layer => `
@@ -93,8 +112,8 @@ class ProjectOptions extends HTMLElement {
             label: hasLines ? 'Transcribe' : 'Find Lines',
             callback: () => {
                 const url = hasLines 
-                    ? `/transcribe?projectID=${project._id}`
-                    : `/annotator?projectID=${project._id}`
+                    ? this.getNavigationUrl('transcribe', project)
+                    : this.getNavigationUrl('defineLines', project)
                 window.location.href = url
             }
         })
@@ -126,11 +145,23 @@ class LineAnnotationLink extends HTMLElement {
 
     render() {
         this.shadowRoot.innerHTML = `
-            <a href="/annotator?projectID=${TPEN.activeProject._id}&pageID=${this._pageId.split("/").pop()}">
+            <a href="${this.getDefineLineUrl()}">
                 ${this._pageLabel}
                 ${this._linesCount !== '' ? ` (${this._linesCount} lines)` : ''}
             </a>
         `
+    }
+
+    getDefineLineUrl() {
+        const project = TPEN.activeProject
+        const pageId = this._pageId.split("/").pop()
+        
+        // Get base URL from interfaces or use default
+        const baseUrl = project?.interfaces?.navigation?.defineLines || `/annotator`
+        
+        // Always append query strings
+        const separator = baseUrl.includes('?') ? '&' : '?'
+        return `${baseUrl}${separator}projectID=${project._id}&pageID=${pageId}`
     }
 }
 customElements.define('line-annotation-link', LineAnnotationLink)
@@ -157,7 +188,14 @@ class ProjectCustomization extends HTMLElement {
         }
 
         const interfaces = project.interfaces || {}
-        const hasInterfaces = Object.keys(interfaces).length > 0
+        
+        // Always include navigation in the list (even if not configured yet)
+        const interfacesToShow = { ...interfaces }
+        if (!interfacesToShow.navigation) {
+            interfacesToShow.navigation = {}
+        }
+        
+        const hasInterfaces = Object.keys(interfacesToShow).length > 0
 
         this.shadowRoot.innerHTML = `
             <style>
@@ -191,7 +229,7 @@ class ProjectCustomization extends HTMLElement {
                     word-break: break-word;
                 }
             </style>
-            ${hasInterfaces ? Object.entries(interfaces).map(([name, config]) => {
+            ${hasInterfaces ? Object.entries(interfacesToShow).map(([name, config]) => {
                 const editUrl = this.getEditUrl(name, project._id)
                 return `
                     <div class="interface-item">
@@ -220,7 +258,8 @@ class ProjectCustomization extends HTMLElement {
     getEditUrl(interfaceName, projectId) {
         // Map interface names to their edit pages
         const editPages = {
-            'quicktype': `/interfaces/quicktype?projectID=${projectId}`
+            'quicktype': `/interfaces/quicktype?projectID=${projectId}`,
+            'navigation': `/interfaces/navigation?projectID=${projectId}`
         }
         return editPages[interfaceName] || null
     }
@@ -256,6 +295,27 @@ class ProjectCustomization extends HTMLElement {
                 <div class="long-list">
                     ${shownLines}
                     ${remaining > 0 ? `<div class="more">+${remaining} more</div>` : ''}
+                </div>
+            `
+        }
+
+        // Handle navigation URLs object
+        if (name === 'navigation' && typeof config === 'object') {
+            const defaults = {
+                transcribe: '/transcribe',
+                defineLines: '/annotator',
+                manageProject: '/project/manage/'
+            }
+            
+            const urls = [
+                `Transcribe: ${escapeHtml(config.transcribe || defaults.transcribe)}`,
+                `Define Lines: ${escapeHtml(config.defineLines || defaults.defineLines)}`,
+                `Manage: ${escapeHtml(config.manageProject || defaults.manageProject)}`
+            ]
+            
+            return `
+                <div class="long-list">
+                    ${urls.map(url => `<div class="list-item">${url}</div>`).join('')}
                 </div>
             `
         }
