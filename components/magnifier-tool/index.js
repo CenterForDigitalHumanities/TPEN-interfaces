@@ -4,7 +4,6 @@ import { onProjectReady } from "../../utilities/projectReady.js"
 export class MagnifierTool extends HTMLElement {
     #imageElem = null
     #magnifier
-    #boundsOffset = 0
 
     constructor() {
         super()
@@ -13,6 +12,7 @@ export class MagnifierTool extends HTMLElement {
         this.dragOffset = { x: 0, y: 0 }
         this.isDragging = false
         this.zoomLevel = 2 // Default zoom
+        this.boundsOffset = 0
     }
 
     set imageElem(el) {
@@ -92,13 +92,13 @@ export class MagnifierTool extends HTMLElement {
             const headerHeight = -60
             let x = e.clientX - imgRect.left
             let y = e.clientY - imgRect.top
-            x = Math.max(-this.#boundsOffset + halfSize, Math.min(x, imgRect.width + this.#boundsOffset - halfSize))
-            let minY = -this.#boundsOffset + halfSize
+            x = Math.max(-this.boundsOffset + halfSize, Math.min(x, imgRect.width + this.boundsOffset - halfSize))
+            let minY = -this.boundsOffset + halfSize
             if (imgRect.top < headerHeight) {
                 const requiredTopOffset = headerHeight - imgRect.top
-                minY = Math.max(-this.#boundsOffset + halfSize, requiredTopOffset + halfSize)
+                minY = Math.max(-this.boundsOffset + halfSize, requiredTopOffset + halfSize)
             }
-            y = Math.max(minY, Math.min(y, imgRect.height + this.#boundsOffset - halfSize))
+            y = Math.max(minY, Math.min(y, imgRect.height + this.boundsOffset - halfSize))
 
             let rightPane = null
             const tpenInterface = document.querySelector('tpen-transcription-interface')
