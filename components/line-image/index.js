@@ -80,6 +80,29 @@ class TpenLineImage extends HTMLElement {
             width = parseInt(w)
             height = parseInt(h)
         }
+
+        this.#canvasPanel.remove()
+        this.#manifest = this.#canvasPanel.getAttribute("manifest-id")
+        this.#canvas = this.#canvasPanel.getAttribute("canvas-id")
+
+        const canvasPanel = LINE_IMG()
+        this.#canvasPanel = canvasPanel
+
+        canvasPanel.setAttribute("preset", "responsive")
+        canvasPanel.setAttribute("manifest-id", this.#manifest)
+        canvasPanel.setAttribute("canvas-id", this.#canvas)
+        canvasPanel.setAttribute('region', `${x},${y},${width},${height}`)
+
+        canvasPanel.style.transform = 'translateY(100%)'
+        canvasPanel.style.transition = `transform ${duration}ms cubic-bezier(0.19, 1, 0.22, 1)`
+        canvasPanel.style.width = '100%'
+        canvasPanel.style.height = '100%'
+
+        requestAnimationFrame(() => {
+            canvasPanel.style.transform = 'translateY(0)'
+        })
+
+        this.shadowRoot.append(canvasPanel)
         this.#canvasPanel.transition(tm => {
             tm.goToRegion({ height, width, x, y }, {
                 transition: {
@@ -196,14 +219,9 @@ class TpenImageFragment extends HTMLElement {
         }
         if (!topImage) return
 
-        // Get actual dimensions of top image
-        const topImageHeight = topImage.offsetHeight ?? 1
-        const topImageWidth = topImage.offsetWidth ?? 1
-
         // Calculate scale factors
-        const scaleY = topImageHeight / height
-        const scaleX = topImageWidth / width
-        const scaleFactor = Math.min(scaleX, scaleY)
+        const regionBox = topImage.getBoundingClientRect()
+        const scaleFactor = regionBox.width / width
 
         // Set image size and position to align with top image
         this.#lineImage.style.transition = `transform 1.5s cubic-bezier(0.19, 1, 0.22, 1)`
