@@ -135,7 +135,7 @@ class LineAnnotationLink extends HTMLElement {
 }
 customElements.define('line-annotation-link', LineAnnotationLink)
 
-class ProjectConfig extends HTMLElement {
+class ProjectCustomization extends HTMLElement {
     constructor() {
         super()
         this.attachShadow({ mode: 'open' })
@@ -150,8 +150,80 @@ class ProjectConfig extends HTMLElement {
     connectedCallback() { }
 
     render() {
-        this.shadowRoot.innerHTML = `<div>Configuration for project <b>${TPEN.activeProject._id}</b> will appear here.</div>`
+        const project = TPEN.activeProject
+        if (!project) {
+            this.shadowRoot.innerHTML = `<div>No project loaded.</div>`
+            return
+        }
+
+        const interfaces = project.interfaces || {}
+        const hasInterfaces = Object.keys(interfaces).length > 0
+
+        this.shadowRoot.innerHTML = `
+            <style>
+                .interface-item {
+                    margin: 10px 0;
+                    padding: 10px;
+                    background: #f8f9fa;
+                    border-radius: 4px;
+                }
+                .interface-name {
+                    font-weight: bold;
+                    margin-bottom: 5px;
+                }
+                .edit-link {
+                    margin-left: 10px;
+                    text-decoration: none;
+                    font-size: 1.2em;
+                }
+                .no-interfaces {
+                    color: #666;
+                    font-style: italic;
+                }
+            </style>
+            ${hasInterfaces ? Object.entries(interfaces).map(([name, config]) => {
+                const editUrl = this.getEditUrl(name, project._id)
+                return `
+                    <div class="interface-item">
+                        <div class="interface-name">
+                            ${this.formatInterfaceName(name)}
+                            ${editUrl ? `<a href="${editUrl}" class="edit-link" title="Edit ${name} settings">✏️</a>` : ''}
+                        </div>
+                        <div class="interface-info">
+                            ${this.getInterfaceInfo(name, config)}
+                        </div>
+                    </div>
+                `
+            }).join('') : '<div class="no-interfaces">No interface customizations configured.</div>'}
+        `
+    }
+
+    formatInterfaceName(name) {
+        // Convert camelCase or kebab-case to Title Case
+        return name
+            .replace(/([A-Z])/g, ' $1')
+            .replace(/[-_]/g, ' ')
+            .replace(/\b\w/g, c => c.toUpperCase())
+            .trim()
+    }
+
+    getEditUrl(interfaceName, projectId) {
+        // Map interface names to their edit pages
+        const editPages = {
+            'quicktype': `/interfaces/quicktype?projectID=${projectId}`
+        }
+        return editPages[interfaceName] || null
+    }
+
+    getInterfaceInfo(name, config) {
+        // Provide specific info based on interface type
+        if (name === 'quicktype') {
+            const shortcuts = Array.isArray(config) ? config : []
+            return `${shortcuts.length} shortcut${shortcuts.length !== 1 ? 's' : ''} defined`
+        }
+        // Generic fallback for other interfaces
+        return Array.isArray(config) ? `${config.length} items` : 'Configured'
     }
 }
 
-customElements.define('tpen-project-config', ProjectConfig)
+customElements.define('tpen-project-customization', ProjectCustomization)
