@@ -81,11 +81,11 @@ class TpenLineImage extends HTMLElement {
             height = parseInt(h)
         }
 
-        this.#canvasPanel.remove()
         this.#manifest = this.#canvasPanel.getAttribute("manifest-id")
         this.#canvas = this.#canvasPanel.getAttribute("canvas-id")
 
         const canvasPanel = LINE_IMG()
+        this.#canvasPanel.remove()
         this.#canvasPanel = canvasPanel
 
         canvasPanel.setAttribute("preset", "responsive")
@@ -94,7 +94,7 @@ class TpenLineImage extends HTMLElement {
         canvasPanel.setAttribute('region', `${x},${y},${width},${height}`)
 
         canvasPanel.style.opacity = '0'
-        canvasPanel.style.transition = `opacity ${duration}ms ease-in-out`
+        canvasPanel.style.transition = `opacity ${500}ms ease-in-out`
 
         requestAnimationFrame(() => {
             canvasPanel.style.opacity = '1'
