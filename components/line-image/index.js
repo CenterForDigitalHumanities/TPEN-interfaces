@@ -84,31 +84,26 @@ class TpenLineImage extends HTMLElement {
         this.#manifest = this.#canvasPanel.getAttribute("manifest-id")
         this.#canvas = this.#canvasPanel.getAttribute("canvas-id")
 
+        const oldPanel = this.#canvasPanel
         const canvasPanel = LINE_IMG()
-        this.#canvasPanel.remove()
         this.#canvasPanel = canvasPanel
 
         canvasPanel.setAttribute("preset", "responsive")
         canvasPanel.setAttribute("manifest-id", this.#manifest)
         canvasPanel.setAttribute("canvas-id", this.#canvas)
         canvasPanel.setAttribute('region', `${x},${y},${width},${height}`)
-
-        canvasPanel.style.opacity = '0'
-        canvasPanel.style.transition = `opacity ${500}ms ease-in-out`
-
-        requestAnimationFrame(() => {
-            canvasPanel.style.opacity = '1'
-        })
-
         this.shadowRoot.append(canvasPanel)
-        this.#canvasPanel.transition(tm => {
+        
+        canvasPanel.transition(tm => {
             tm.goToRegion({ height, width, x, y }, {
                 transition: {
-                    easing: this.#canvasPanel.easingFunctions().easeOutExpo,
+                    easing: canvasPanel.easingFunctions().easeOutExpo,
                     duration,
                 },
             })
         })
+
+        oldPanel.remove()
     }
 
     setManifest(value) {
