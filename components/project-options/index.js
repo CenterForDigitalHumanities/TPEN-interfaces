@@ -13,6 +13,7 @@ class ProjectOptions extends HTMLElement {
     `
         TPEN.eventDispatcher.on('tpen-project-loaded', (ev) => {
             this.render()
+            this.updateActionLink()
         })
     }
 
@@ -35,56 +36,67 @@ class ProjectOptions extends HTMLElement {
         }
         this.shadowRoot.innerHTML = `
             <style>
-                .inline img {
-                    height: 35px;
-                    width: 35px;
-                    margin-left: 1em;
-                }
-                .inline span {
-                    position: relative;
-                    display: inline-block;
-                }
+            .inline img {
+                height: 35px;
+                width: 35px;
+                margin-left: 1em;
+            }
+            .inline span {
+                position: relative;
+                display: inline-block;
+            }
             </style>
             <p>
-                ${project.description ?? 'No description provided.'}
-                <a href="/components/update-metadata/index.html?projectID=${project._id}">✏️</a>
+            ${project.description ?? 'No description provided.'}
+            <a href="/components/update-metadata/index.html?projectID=${project._id}">✏️</a>
             </p>
             <ul style="padding-left:1em;">
-                <li><b>Label:</b> ${project.getLabel()}</li>
-                <li><b>Created:</b> ${stringFromDate(project._createdAt)}</li>
-                <li><b>Last Modified:</b> ${stringFromDate(project._modifiedAt)}</li>
-                <li><b>Owner:</b> ${project.getOwner()?.displayName ?? ''}</li>
+            <li><b>Label:</b> ${project.getLabel()}</li>
+            <li><b>Created:</b> ${stringFromDate(project._createdAt)}</li>
+            <li><b>Last Modified:</b> ${stringFromDate(project._modifiedAt)}</li>
+            <li><b>Owner:</b> ${project.getOwner()?.displayName ?? ''}</li>
             </ul>
             <h3>Project Tools</h3>
             <tpen-project-tools></tpen-project-tools>
             <h3>Define Lines</h3>
             ${project.layers?.map(layer => `
-                <details>
-                    <summary>
-                        ${layer.label ?? 'Untitled Layer'} (${layer.pages?.length ?? 0} pages)
-                    </summary>
-                    <ul>
-                        ${layer.pages?.map(page => `
-                            <li>
-                                <line-annotation-link 
-                                    page-id="${page.id}" 
-                                    page-label="${page.label ?? 'Untitled Page'}"
-                                    lines-count="${page.items?.length ?? ''}">
-                                </line-annotation-link>
-                            </li>
-                        `).join('') ?? '<li>No pages</li>'}
-                    </ul>
-                </details>
+            <details>
+                <summary>
+                ${layer.label ?? 'Untitled Layer'} (${layer.pages?.length ?? 0} pages)
+                </summary>
+                <ul>
+                ${layer.pages?.map(page => `
+                    <li>
+                    <line-annotation-link 
+                        page-id="${page.id}" 
+                        page-label="${page.label ?? 'Untitled Page'}"
+                        lines-count="${page.items?.length ?? ''}">
+                    </line-annotation-link>
+                    </li>
+                `).join('') ?? '<li>No pages</li>'}
+                </ul>
+            </details>
             `).join('') ?? '<div>No layers defined.</div>'}
-            <h3>Transcribe Text</h3>
-            <div>
-                <a title="Go Transcribe" class="inline" href="/transcribe?projectID=${project._id}">
-                    <img src="../../assets/icons/transcribe.png"/><span>Go Transcribe</span>
-                </a>
-            </div>
-            
         `
+    }
 
+    updateActionLink() {
+        const project = TPEN.activeProject
+        if (!project) return
+
+        const hasLines = project.layers?.some(layer => 
+            layer.pages?.some(page => page.items && page.items.length > 0)
+        ) ?? false
+
+        TPEN.eventDispatcher.dispatch('tpen-gui-action-link', {
+            label: hasLines ? 'Transcribe' : 'Find Lines',
+            callback: () => {
+                const url = hasLines 
+                    ? `/transcribe?projectID=${project._id}`
+                    : `/annotator?projectID=${project._id}`
+                window.location.href = url
+            }
+        })
     }
 }
 
