@@ -54,6 +54,7 @@ class QuickTypeManager extends HTMLElement {
                 message: 'Shortcuts saved successfully' 
             })
             this.render()
+            this.setupEventListeners()
         } catch (error) {
             TPEN.eventDispatcher.dispatch('tpen-toast', { 
                 status: 'error', 
