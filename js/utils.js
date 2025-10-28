@@ -36,7 +36,6 @@ export function urlFromIdAndType(id, type, { projectId, pageId, layerId}) {
     }
 }
 
-// Safely escape text for HTML/attribute contexts
 export function escapeHtml(value) {
     const safeValue = `${value ?? ''}`
     return safeValue

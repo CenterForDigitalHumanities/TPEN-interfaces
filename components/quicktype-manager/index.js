@@ -1,5 +1,6 @@
 import TPEN from '../../api/TPEN.js'
 import { escapeHtml } from '/js/utils.js'
+import { evaluateEntry } from '../quicktype/validation.js'
 import '../quicktype-tool/quicktype-editor-dialog.js'
 
 export const PRESET_COLLECTIONS = {
@@ -36,11 +37,9 @@ class QuickTypeManager extends HTMLElement {
         this._savedShortcuts = [...this._shortcuts]
     }
 
-    // escapeHtml moved to shared util
-
     hasUnsavedChanges() {
         if (this._shortcuts.length !== this._savedShortcuts.length) return true
-        return !this._shortcuts.every((char, index) => char === this._savedShortcuts[index])
+        return !this._shortcuts.every((shortcut, index) => shortcut === this._savedShortcuts[index])
     }
 
     async saveShortcuts() {
@@ -48,13 +47,14 @@ class QuickTypeManager extends HTMLElement {
         if (!project) return
 
         try {
-            await project.storeInterfaceCustomizations({ quicktype: this._shortcuts })
+            await project.storeInterfacesCustomization({ quicktype: this._shortcuts })
             this._savedShortcuts = [...this._shortcuts]
             TPEN.eventDispatcher.dispatch('tpen-toast', { 
                 status: 'info', 
                 message: 'Shortcuts saved successfully' 
             })
             this.render()
+            this.setupEventListeners()
         } catch (error) {
             TPEN.eventDispatcher.dispatch('tpen-toast', { 
                 status: 'error', 
@@ -233,7 +233,7 @@ class QuickTypeManager extends HTMLElement {
                 font-size: 1.2em;
             }
 
-            .preset-char {
+            .preset-shortcut {
                 padding: 2px 6px;
                 background: var(--interface-secondary);
                 border-radius: 3px;
@@ -261,19 +261,19 @@ class QuickTypeManager extends HTMLElement {
             </style>
 
             <h1>Quicktype Shortcuts</h1>
-            <p class="subtitle">Manage character shortcuts for <em>${escapeHtml(project.getLabel())}</em></p>
+            <p class="subtitle">Manage shortcuts for <em>${escapeHtml(project.getLabel())}</em></p>
 
             <div class="section">
             <h2>Current Shortcuts</h2>
             <div class="current-shortcuts">
                 ${this._shortcuts.length > 0 
-                ? this._shortcuts.map((char, index) => `
+                ? this._shortcuts.map((shortcut, index) => `
                     <div class="shortcut-chip">
-                    <span>${escapeHtml(char)}</span>
+                    <span>${escapeHtml(shortcut)}</span>
                     <span class="remove-shortcut" data-index="${index}">×</span>
                     </div>
                 `).join('')
-                : '<div class="empty-state">No shortcuts configured yet. Add individual characters or choose a preset collection below.</div>'
+                : '<div class="empty-state">No shortcuts configured yet. Add a shortcut or choose a preset collection below.</div>'
                 }
             </div>
             <div class="button-group">
@@ -284,16 +284,16 @@ class QuickTypeManager extends HTMLElement {
             </div>
 
             <div class="section">
-            <h2>Add Custom Symbols</h2>
+            <h2>Add Custom Shortcut</h2>
             <div class="custom-input-group">
                 <input 
                 type="text" 
                 class="custom-input" 
-                id="custom-char" 
-                placeholder="Enter a character or paste text"
-                maxlength="15"
+                id="custom-shortcut" 
+                placeholder="Enter a shortcut (character or text)"
+                maxlength="50"
                 />
-                <button class="btn btn-primary" id="add-custom-btn">Add Character</button>
+                <button class="btn btn-primary" id="add-custom-btn">Add Shortcut</button>
             </div>
             </div>
 
@@ -301,12 +301,12 @@ class QuickTypeManager extends HTMLElement {
             <h2>Preset Collections</h2>
             <p style="color: #666; margin-bottom: 15px;">Click to add an entire collection to your shortcuts</p>
             <div class="presets-grid">
-                ${Object.entries(PRESET_COLLECTIONS).map(([name, chars]) => `
-                <div class="preset-card" data-preset="${escapeHtml(name)}" title="Add ${chars.join(', ')}">
+                ${Object.entries(PRESET_COLLECTIONS).map(([name, shortcuts]) => `
+                <div class="preset-card" data-preset="${escapeHtml(name)}" title="Add ${shortcuts.join(', ')}">
                     <div class="preset-name">${escapeHtml(name)}</div>
                     <div class="preset-preview">
-                    ${chars.slice(0, 8).map(char => `<span class="preset-char">${escapeHtml(char)}</span>`).join('')}
-                    ${chars.length > 8 ? `<span class="preset-char">+${chars.length - 8}</span>` : ''}
+                    ${shortcuts.slice(0, 8).map(shortcut => `<span class="preset-shortcut">${escapeHtml(shortcut)}</span>`).join('')}
+                    ${shortcuts.length > 8 ? `<span class="preset-shortcut">+${shortcuts.length - 8}</span>` : ''}
                     </div>
                 </div>
                 `).join('')}
@@ -356,22 +356,42 @@ class QuickTypeManager extends HTMLElement {
             }
         })
 
-        // Add custom character
-        const customInput = this.shadowRoot.querySelector('#custom-char')
+    // Add custom shortcut
+    const customInput = this.shadowRoot.querySelector('#custom-shortcut')
         const addCustomBtn = this.shadowRoot.querySelector('#add-custom-btn')
         
         const addCustomChar = () => {
             const value = customInput.value.trim()
-            if (value) {
-                // Add each character separately if multiple characters entered
-                for (const char of value) {
-                    if (char && !this._shortcuts.includes(char)) {
-                        this._shortcuts.push(char)
-                    }
-                }
-                customInput.value = ''
-                this.render()
-                this.setupEventListeners()
+            if (!value) return
+
+            const evaluation = evaluateEntry(value)
+
+            if (!evaluation.valid) {
+                TPEN.eventDispatcher.dispatch('tpen-toast', {
+                    status: 'error',
+                    message: evaluation.reason
+                })
+                return
+            }
+
+            // Treat input as a single shortcut (single char or short phrase)
+            if (this._shortcuts.includes(value)) {
+                TPEN.eventDispatcher.dispatch('tpen-toast', {
+                    status: 'error',
+                    message: 'This entry already exists.'
+                })
+                return
+            }
+
+            this._shortcuts.push(value)
+            customInput.value = ''
+            this.render()
+            this.setupEventListeners()
+            
+            // Refocus the input after re-rendering
+            const newInput = this.shadowRoot.querySelector('#custom-shortcut')
+            if (newInput) {
+                newInput.focus()
             }
         }
 
@@ -386,21 +406,33 @@ class QuickTypeManager extends HTMLElement {
         this.shadowRoot.querySelectorAll('.preset-card').forEach(card => {
             card.addEventListener('click', () => {
                 const presetName = card.dataset.preset
-                const chars = PRESET_COLLECTIONS[presetName]
+                const shortcuts = PRESET_COLLECTIONS[presetName]
                 
                 // Add characters that aren't already in the list
                 let addedCount = 0
-                chars.forEach(char => {
-                    if (!this._shortcuts.includes(char)) {
-                        this._shortcuts.push(char)
+                let invalidCount = 0
+                shortcuts.forEach(shortcut => {
+                    if (!this._shortcuts.includes(shortcut)) {
+                        const evaluation = evaluateEntry(shortcut)
+                        if (!evaluation.valid) {
+                            invalidCount++
+                        }
+                        this._shortcuts.push(shortcut)
                         addedCount++
                     }
                 })
                 
-                TPEN.eventDispatcher.dispatch('tpen-toast', { 
-                    status: 'info', 
-                    message: `Added ${addedCount} characters from ${presetName}` 
-                })
+                if (invalidCount > 0) {
+                    TPEN.eventDispatcher.dispatch('tpen-toast', { 
+                        status: 'warning', 
+                        message: `Added ${addedCount} shortcuts from ${presetName} (${invalidCount} may need attention)` 
+                    })
+                } else {
+                    TPEN.eventDispatcher.dispatch('tpen-toast', { 
+                        status: 'info', 
+                        message: `Added ${addedCount} shortcuts from ${presetName}` 
+                    })
+                }
                 
                 this.render()
                 this.setupEventListeners()
