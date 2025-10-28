@@ -1,4 +1,4 @@
-name: Dev Preview (PR)
+name: Dev Preview Build (PR)
 
 on:
   pull_request:
@@ -6,12 +6,7 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: pages-dev-preview-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
+  pull-requests: write
 
 jobs:
   build:
@@ -23,10 +18,8 @@ jobs:
       - name: Set ACTIVE_ENV=dev
         run: |
           sed -i "s/^export const ACTIVE_ENV = .*/export const ACTIVE_ENV = 'dev' \/\/ 'dev' | 'prod'/" api/config.js
-          echo "Configured ACTIVE_ENV to dev" && grep -n "ACTIVE_ENV" api/config.js
-
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
+          echo "✓ Configured ACTIVE_ENV to dev"
+          grep -n "ACTIVE_ENV" api/config.js
 
       - name: Build with Jekyll
         uses: actions/jekyll-build-pages@v1
@@ -34,18 +27,28 @@ jobs:
           source: ./
           destination: ./_site
 
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: _site
+      - name: Validate build output
+        run: |
+          echo "✓ Build successful"
+          echo "Checking critical files..."
+          test -f _site/index.html || { echo "❌ Missing index.html"; exit 1; }
+          test -f _site/api/config.js || { echo "❌ Missing config.js"; exit 1; }
+          test -f _site/api/TPEN.js || { echo "❌ Missing TPEN.js"; exit 1; }
+          echo "✓ All critical files present"
+          
+      - name: Check dev configuration
+        run: |
+          grep -q "ACTIVE_ENV = 'dev'" _site/api/config.js && echo "✓ Dev environment confirmed" || { echo "❌ Config not set to dev"; exit 1; }
 
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages (Preview)
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Comment PR with build status
+        uses: actions/github-script@v7
+        if: always()
+        with:
+          script: |
+            const status = '${{ job.status }}' === 'success' ? '✅' : '❌';
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `${status} **Dev Build ${status === '✅' ? 'Successful' : 'Failed'}**\n\nEnvironment: \`dev\`\n\nThe build has been validated with dev configuration. Production deployment will occur after merge to main.`
+            })
