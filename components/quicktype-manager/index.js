@@ -1,5 +1,6 @@
 import TPEN from '../../api/TPEN.js'
 import { escapeHtml } from '/js/utils.js'
+import { evaluateEntry } from '../quicktype/validation.js'
 import '../quicktype-tool/quicktype-editor-dialog.js'
 
 export const PRESET_COLLECTIONS = {
@@ -362,6 +363,16 @@ class QuickTypeManager extends HTMLElement {
             const value = customInput.value.trim()
             if (!value) return
 
+            const evaluation = evaluateEntry(value)
+
+            if (!evaluation.valid) {
+                TPEN.eventDispatcher.dispatch('tpen-toast', {
+                    status: 'error',
+                    message: evaluation.reason
+                })
+                return
+            }
+
             // Treat input as a single shortcut (single char or short phrase)
             if (this._shortcuts.includes(value)) {
                 TPEN.eventDispatcher.dispatch('tpen-toast', {
@@ -392,17 +403,29 @@ class QuickTypeManager extends HTMLElement {
                 
                 // Add characters that aren't already in the list
                 let addedCount = 0
+                let invalidCount = 0
                 shortcuts.forEach(shortcut => {
                     if (!this._shortcuts.includes(shortcut)) {
+                        const evaluation = evaluateEntry(shortcut)
+                        if (!evaluation.valid) {
+                            invalidCount++
+                        }
                         this._shortcuts.push(shortcut)
                         addedCount++
                     }
                 })
                 
-                TPEN.eventDispatcher.dispatch('tpen-toast', { 
-                    status: 'info', 
-                    message: `Added ${addedCount} shortcuts from ${presetName}` 
-                })
+                if (invalidCount > 0) {
+                    TPEN.eventDispatcher.dispatch('tpen-toast', { 
+                        status: 'warning', 
+                        message: `Added ${addedCount} shortcuts from ${presetName} (${invalidCount} may need attention)` 
+                    })
+                } else {
+                    TPEN.eventDispatcher.dispatch('tpen-toast', { 
+                        status: 'info', 
+                        message: `Added ${addedCount} shortcuts from ${presetName}` 
+                    })
+                }
                 
                 this.render()
                 this.setupEventListeners()

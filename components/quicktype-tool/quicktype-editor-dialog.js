@@ -1,4 +1,5 @@
 import TPEN from "../../api/TPEN.js"
+import { evaluateEntry, escapeHTML } from '../quicktype/validation.js'
 const eventDispatcher = TPEN.eventDispatcher
 
 class QuickTypeEditorDialog extends HTMLElement {
@@ -117,7 +118,7 @@ class QuickTypeEditorDialog extends HTMLElement {
             return
         }
 
-        const evaluation = this.evaluateEntry(value)
+        const evaluation = evaluateEntry(value)
 
         if (!evaluation.valid) {
             eventDispatcher.dispatch("tpen-toast", {
@@ -218,7 +219,7 @@ class QuickTypeEditorDialog extends HTMLElement {
             return
         }
 
-        const validShortcuts = this._quicktype.filter(item => this.evaluateEntry(item).valid)
+        const validShortcuts = this._quicktype.filter(item => evaluateEntry(item).valid)
         const skippedCount = this._quicktype.length - validShortcuts.length
 
         if (skippedCount > 0) {
@@ -728,8 +729,8 @@ class QuickTypeEditorDialog extends HTMLElement {
     }
 
     getQuicktypeItemMarkup(item, index, isNewlyAdded) {
-        const evaluation = this.evaluateEntry(item)
-        const safeItem = this.escapeHTML(item)
+        const evaluation = evaluateEntry(item)
+        const safeItem = escapeHTML(item)
         const shortcut = this.generateShortcut(index)
         const invalidClass = evaluation.valid ? '' : ' invalid'
         const ariaInvalid = evaluation.valid ? '' : ' aria-invalid="true"'
@@ -755,7 +756,7 @@ class QuickTypeEditorDialog extends HTMLElement {
     }
 
     notifyInvalidShortcuts(context) {
-        const invalidEntries = this._quicktype.map(item => this.evaluateEntry(item)).filter(result => !result.valid)
+        const invalidEntries = this._quicktype.map(item => evaluateEntry(item)).filter(result => !result.valid)
 
         if (invalidEntries.length === 0) {
             return
@@ -766,66 +767,6 @@ class QuickTypeEditorDialog extends HTMLElement {
             message: `${contextPrefix} Hover over highlighted items for details.`,
             status: "warning"
         })
-    }
-
-    evaluateEntry(value) {
-        const candidate = `${value ?? ''}`
-        const trimmed = candidate.trim()
-
-        if (trimmed.length === 0) {
-            return { valid: false, reason: "Shortcut cannot be empty." }
-        }
-
-        const controlChars = /[\u0000-\u001F\u007F]/
-        if (controlChars.test(candidate)) {
-            return { valid: false, reason: "Contains unsupported control characters." }
-        }
-
-        const suspiciousSequences = [
-            { pattern: /<\s*script/i, reason: "Script tags are not allowed." },
-            { pattern: /(?:^|["'\s])javascript:/i, reason: "Avoid javascript: URLs inside shortcuts." },
-            { pattern: /^(?:\s*)data:/i, reason: "Data URLs are not supported." },
-            { pattern: /(?:^|[\s<"'])on[a-z]+\s*=/i, reason: "Event handler attributes are not allowed." }
-        ]
-
-        const violatedSequence = suspiciousSequences.find(entry => entry.pattern.test(candidate))
-        if (violatedSequence) {
-            return { valid: false, reason: violatedSequence.reason }
-        }
-
-        if (trimmed.startsWith('<')) {
-            if (!trimmed.endsWith('>')) {
-                return { valid: false, reason: "HTML shortcuts must end with a closing '>'." }
-            }
-
-            const selfClosingPattern = /^<([a-z][\w-]*)(\s[^<>]*)?\s*\/\s*>$/i
-            const pairedPattern = /^<([a-z][\w-]*)(\s[^<>]*)?>([\s\S]*)<\/\1\s*>$/i
-            const selfClosingMatch = trimmed.match(selfClosingPattern)
-            const pairedMatch = trimmed.match(pairedPattern)
-
-            if (!selfClosingMatch && !pairedMatch) {
-                return { valid: false, reason: "HTML must include a full opening and closing tag or be self-closing." }
-            }
-
-            const tagName = (selfClosingMatch ? selfClosingMatch[1] : pairedMatch[1]).toLowerCase()
-            const forbiddenTags = new Set(["html", "head", "body"])
-            if (forbiddenTags.has(tagName)) {
-                return { valid: false, reason: `<${tagName}> tags are not allowed in shortcuts.` }
-            }
-        }
-
-        return { valid: true }
-    }
-
-    escapeHTML(value) {
-        const safeValue = `${value ?? ''}`
-
-        return safeValue
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;')
     }
 }
 
