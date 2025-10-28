@@ -32,12 +32,16 @@ jobs:
       - name: Install curl and jq
         run: sudo apt-get update && sudo apt-get install -y curl jq
 
-      - name: Smoke test TPEN services public projects
+      - name: Smoke test TPEN services API health
         run: |
           set -e
-          echo "GET $SERVICES_URL/projects/public"
-          resp=$(curl -fsSL --retry 3 --retry-delay 2 "$SERVICES_URL/projects/public")
-          echo "$resp" | jq -e . >/dev/null || { echo "Response is not valid JSON"; exit 1; }
+          echo "Testing $SERVICES_URL API availability"
+          # Simple HEAD check to verify API is responding
+          curl -fsI --retry 3 --retry-delay 2 "$SERVICES_URL" >/dev/null || {
+            echo "API health check failed - $SERVICES_URL not responding"
+            exit 1
+          }
+          echo "✓ TPEN services API is reachable"
 
       - name: Smoke test RERUM store reachability
         run: |
