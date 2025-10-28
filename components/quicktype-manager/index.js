@@ -46,7 +46,7 @@ class QuickTypeManager extends HTMLElement {
         if (!project) return
 
         try {
-            await project.storeInterfaceCustomizations({ quicktype: this._shortcuts })
+            await project.storeInterfacesCustomization({ quicktype: this._shortcuts })
             this._savedShortcuts = [...this._shortcuts]
             TPEN.eventDispatcher.dispatch('tpen-toast', { 
                 status: 'info', 
