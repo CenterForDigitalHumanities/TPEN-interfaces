@@ -4,11 +4,12 @@
  * @module TPEN
  * @class
  * @example https://centerfordigitalhumanities.github.io/TPEN-interfaces/classes/TPEN
- * @param {String} tinyThingsURL - The URL of the TinyThings API. Defaults to "https://dev.tiny.t-pen.org"
+ * @param {String} tinyThingsURL - The URL of the TinyThings API. Defaults to environment-aware TinyThings URL
  * @imports { EventDispatcher }
  */
 
-import { decodeUserToken, getUserFromToken, checkExpired } from '../components/iiif-tools/index.js'
+import { decodeUserToken, getUserFromToken, checkExpired, getAgentIRIFromToken } from '../components/iiif-tools/index.js'
+import { CONFIG } from './config.js'
 import { eventDispatcher } from './events.js'
 
 import "../components/gui/toast/ToastContainer.js"
@@ -37,13 +38,16 @@ class Tpen {
         title: document.title
     }
 
-    constructor(tinyThingsURL = "https://dev.tiny.t-pen.org") {
-        this.tinyThingsURL = tinyThingsURL
-        this.servicesURL = "https://dev.api.t-pen.org"
-        this.TPEN28URL = "https://t-pen.org"
-        this.TPEN3URL = "https://three.t-pen.org"
-        this.RERUMURL = "https://devstore.rerum.io/v1"
-        this.BASEURL = "https://app.t-pen.org"
+    constructor(tinyThingsURL) {
+        // Core service endpoints from centralized config
+        this.tinyThingsURL = tinyThingsURL ?? CONFIG.tinyThingsURL
+        this.servicesURL = CONFIG.servicesURL
+        this.RERUMURL = CONFIG.RERUMURL
+
+        // Application URLs
+        this.TPEN28URL = CONFIG.TPEN28URL
+        this.TPEN3URL = CONFIG.TPEN3URL
+        this.BASEURL = CONFIG.BASEURL
         this.currentUser
         this.activeProject
 
@@ -211,7 +215,8 @@ class Tpen {
             this.login()
             return
         }
-        const agentID = decodeUserToken(token)["http://store.rerum.io/agent"].split("/").pop()
+    const agentIRI = getAgentIRIFromToken(token)
+    const agentID = (agentIRI ?? '').split('/').pop()
         if (inviteCode && agentID && inviteCode !== agentID) {
             const projectID = this.screen.projectInQuery ?? this.activeProject._id
             if (!projectID) throw new Error("We need a project id so we can align the user with their project.")
@@ -234,7 +239,13 @@ function updateUser(element, token) {
     element.expiring = setTimeout(() => {
         eventDispatcher.dispatch("token-expiration")
     }, expires * 1000 - Date.now())
-    element.querySelectorAll("[tpen-creator]").forEach(elem => elem.setAttribute("tpen-creator", `https://store.rerum.io/v1/id/${userId}`))
+    // Respect the selected RERUM store based on environment
+    try {
+        const rerumBase = (TPEN?.RERUMURL ?? "https://store.rerum.io/v1").replace(/\/$/, "")
+        element.querySelectorAll("[tpen-creator]").forEach(elem => elem.setAttribute("tpen-creator", `${rerumBase}/id/${userId}`))
+    } catch (_) {
+        element.querySelectorAll("[tpen-creator]").forEach(elem => elem.setAttribute("tpen-creator", `https://store.rerum.io/v1/id/${userId}`))
+    }
 }
 
 // Export a shared instance of EventDispatcher
