@@ -1,5 +1,5 @@
 import TPEN from "../../api/TPEN.js"
-import { decodeUserToken } from '../iiif-tools/index.js'
+import { getAgentIRIFromToken } from '../iiif-tools/index.js'
 
 class LeaveProject extends HTMLElement {
 
@@ -30,7 +30,7 @@ class LeaveProject extends HTMLElement {
     }
 
     render() {
-        const agent = decodeUserToken(this.userToken)['http://store.rerum.io/agent']
+    const agent = getAgentIRIFromToken(this.userToken)
         let collaboratorIdList = []
         let leaderCount = 0
         for (const key in TPEN.activeProject.collaborators) {
