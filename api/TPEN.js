@@ -48,6 +48,12 @@ class Tpen {
         this.TPEN28URL = CONFIG.TPEN28URL
         this.TPEN3URL = CONFIG.TPEN3URL
         this.BASEURL = CONFIG.BASEURL
+        // In dev (including PR preview deployments), prefer the current host as the base URL
+        try {
+            if (CONFIG.env === 'dev' && typeof window !== 'undefined' && window.location?.origin) {
+                this.BASEURL = window.location.origin
+            }
+        } catch (_) { /* noop */ }
         this.currentUser
         this.activeProject
 
