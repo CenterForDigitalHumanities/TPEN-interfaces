@@ -387,6 +387,12 @@ class QuickTypeManager extends HTMLElement {
             customInput.value = ''
             this.render()
             this.setupEventListeners()
+            
+            // Refocus the input after re-rendering
+            const newInput = this.shadowRoot.querySelector('#custom-shortcut')
+            if (newInput) {
+                newInput.focus()
+            }
         }
 
         addCustomBtn?.addEventListener('click', addCustomChar)
