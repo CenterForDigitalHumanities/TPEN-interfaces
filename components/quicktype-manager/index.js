@@ -414,11 +414,12 @@ class QuickTypeManager extends HTMLElement {
                 shortcuts.forEach(shortcut => {
                     if (!this._shortcuts.includes(shortcut)) {
                         const evaluation = evaluateEntry(shortcut)
-                        if (!evaluation.valid) {
+                        if (evaluation.valid) {
+                            this._shortcuts.push(shortcut)
+                            addedCount++
+                        } else {
                             invalidCount++
                         }
-                        this._shortcuts.push(shortcut)
-                        addedCount++
                     }
                 })
                 
