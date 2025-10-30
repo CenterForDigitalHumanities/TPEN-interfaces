@@ -43,7 +43,7 @@ class Tpen {
         this.TPEN28URL = "https://t-pen.org"
         this.TPEN3URL = "https://three.t-pen.org"
         this.RERUMURL = "https://devstore.rerum.io/v1"
-        this.BASEURL = "https://app.t-pen.org"
+        this.BASEURL = window.location.origin
         this.currentUser
         this.activeProject
 
