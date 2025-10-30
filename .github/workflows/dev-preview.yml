@@ -1,0 +1,54 @@
+name: Dev Preview (PR)
+
+on:
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: pages-dev-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set ACTIVE_ENV=dev
+        run: |
+          sed -i "s/^export const ACTIVE_ENV = .*/export const ACTIVE_ENV = 'dev' \/\/ 'dev' | 'prod'/" api/config.js
+          echo "Configured ACTIVE_ENV to dev" && grep -n "ACTIVE_ENV" api/config.js
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.1'
+
+      - name: Install Jekyll and dependencies
+        run: |
+          gem install bundler jekyll
+          gem install jekyll-theme-modernist
+          gem install jekyll-redirect-from
+
+      - name: Build with Jekyll
+        run: jekyll build --source ./ --destination ./_site
+
+      - name: Deploy to Netlify
+        uses: nwtgck/actions-netlify@v3.0
+        with:
+          publish-dir: './_site'
+          production-deploy: false
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          deploy-message: "Deploy from PR #${{ github.event.pull_request.number }}"
+          enable-pull-request-comment: true
+          enable-commit-comment: false
+          overwrites-pull-request-comment: true
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        timeout-minutes: 5

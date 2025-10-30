@@ -302,7 +302,7 @@ class QuickTypeManager extends HTMLElement {
             <p style="color: #666; margin-bottom: 15px;">Click to add an entire collection to your shortcuts</p>
             <div class="presets-grid">
                 ${Object.entries(PRESET_COLLECTIONS).map(([name, shortcuts]) => `
-                <div class="preset-card" data-preset="${escapeHtml(name)}" title="Add ${shortcuts.join(', ')}">
+                <div class="preset-card" data-preset="${escapeHtml(name)}" title="Add ${shortcuts.map(s => escapeHtml(s)).join(', ')}">
                     <div class="preset-name">${escapeHtml(name)}</div>
                     <div class="preset-preview">
                     ${shortcuts.slice(0, 8).map(shortcut => `<span class="preset-shortcut">${escapeHtml(shortcut)}</span>`).join('')}
@@ -414,11 +414,12 @@ class QuickTypeManager extends HTMLElement {
                 shortcuts.forEach(shortcut => {
                     if (!this._shortcuts.includes(shortcut)) {
                         const evaluation = evaluateEntry(shortcut)
-                        if (!evaluation.valid) {
+                        if (evaluation.valid) {
+                            this._shortcuts.push(shortcut)
+                            addedCount++
+                        } else {
                             invalidCount++
                         }
-                        this._shortcuts.push(shortcut)
-                        addedCount++
                     }
                 })
                 
