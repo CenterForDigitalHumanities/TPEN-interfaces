@@ -1,0 +1,18 @@
+[build]
+  # No build command needed - GitHub Actions builds the site
+  command = "echo 'Site already built by GitHub Actions'"
+  publish = "_site"
+
+[build.environment]
+  # Prevent Netlify from trying to install Ruby/Jekyll
+  NODE_VERSION = "22"
+
+# Disable automatic branch deploys (we control this via GitHub Actions)
+[context.branch-deploy]
+  command = "echo 'Site already built by GitHub Actions'"
+  publish = "_site"
+
+# Deploy previews from PRs
+[context.deploy-preview]
+  command = "echo 'Site already built by GitHub Actions'"
+  publish = "_site"
