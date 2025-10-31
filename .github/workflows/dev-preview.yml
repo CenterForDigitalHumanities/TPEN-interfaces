@@ -28,12 +28,15 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.1'
-          bundler-cache: true
 
-      - name: Build with Jekyll
+      - name: Install Jekyll and dependencies
         run: |
           gem install bundler jekyll
-          jekyll build --source ./ --destination ./_site
+          gem install jekyll-theme-modernist
+          gem install jekyll-redirect-from
+
+      - name: Build with Jekyll
+        run: jekyll build --source ./ --destination ./_site
 
       - name: Deploy to Netlify
         uses: nwtgck/actions-netlify@v3.0
@@ -45,6 +48,8 @@ jobs:
           enable-pull-request-comment: true
           enable-commit-comment: false
           overwrites-pull-request-comment: true
+          github-deployment-environment: ''
+          github-deployment-description: ''
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
