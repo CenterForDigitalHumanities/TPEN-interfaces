@@ -101,7 +101,7 @@ class ImageImporter extends HTMLElement {
 
   async handleImport() {
     let url = this.urlInput.value.trim()
-    const urls = url.split(',').map(u => u.trim()).filter(Boolean)
+    const urls = url.split(',').map(u => u.trim())
     const label = this.shadowRoot.querySelector('#name').value.trim()
     this.feedback.textContent = ''
     this.pageInfoContainer.innerHTML = ''
