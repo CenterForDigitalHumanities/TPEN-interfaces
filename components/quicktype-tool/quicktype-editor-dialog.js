@@ -737,7 +737,7 @@ class QuickTypeEditorDialog extends HTMLElement {
         const warningMarkup = evaluation.valid ? '' : `
                 <div class="validation-warning" role="note">
                     <span class="validation-icon" aria-hidden="true">⚠️</span>
-                    <span class="validation-text">${escapeHTML(evaluation.reason)}</span>
+                    <span class="validation-text">${escapeHtml(evaluation.reason)}</span>
                 </div>
         `
 

@@ -1,4 +1,5 @@
 import TPEN from "../../api/TPEN.js"
+import { escapeHtml } from "/js/utils.js"
 const eventDispatcher = TPEN.eventDispatcher
 import CheckPermissions from "../check-permissions/checkPermissions.js"
 import { onProjectReady } from "../../utilities/projectReady.js"
@@ -80,10 +81,10 @@ class QuickTypeTool extends HTMLElement {
         }))
         const quicktypeButtons = entriesWithStatus.map(({ value, evaluation }) => {
             const classes = `char-button${evaluation.valid ? '' : ' invalid'}`
-            const titleAttr = evaluation.valid ? '' : ` title="${this.escapeHTML(evaluation.reason)}"`
+            const titleAttr = evaluation.valid ? '' : ` title="${escapeHtml(evaluation.reason)}"`
             const ariaInvalid = evaluation.valid ? '' : ' aria-invalid="true"'
-            const ariaLabel = evaluation.valid ? '' : ` aria-label="${this.escapeHTML(`${value} (needs attention: ${evaluation.reason})`)}"`
-            return `<button class="${classes}" type="button"${titleAttr}${ariaInvalid}${ariaLabel}>${this.escapeHTML(value)}</button>`
+            const ariaLabel = evaluation.valid ? '' : ` aria-label="${escapeHtml(`${value} (needs attention: ${evaluation.reason})`)}"`
+            return `<button class="${classes}" type="button"${titleAttr}${ariaInvalid}${ariaLabel}>${escapeHtml(value)}</button>`
         }).join('')
         const quicktypeMarkup = quicktypeButtons || `select "edit" to add buttons`
         const hasInvalidEntries = entriesWithStatus.some(({ evaluation }) => !evaluation.valid)
@@ -225,16 +226,7 @@ class QuickTypeTool extends HTMLElement {
         `
     }
 
-    escapeHTML(value) {
-        const safeValue = `${value ?? ''}`
-
-        return safeValue
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;')
-    }
+    // escapeHtml provided via shared util
 
     evaluateEntry(value) {
         const candidate = `${value ?? ''}`
