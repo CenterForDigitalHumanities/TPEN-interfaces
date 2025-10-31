@@ -53,7 +53,7 @@ class ImageImporter extends HTMLElement {
         <label for="name">Enter Project Name:</label>
         <input type="text" id="name" placeholder="Enter Project Name..." />
         <label for="url">Image URL:</label>
-        <input type="text" id="url" placeholder="Drop an image URL here or paste URLs..." />
+        <input type="text" id="url" placeholder="Drop an image URL here or paste URLs with commas..." />
         <button id="submit">Create Project</button>
         <div id="feedback" class="feedback"></div>
         <div id="page-info-container"></div>
