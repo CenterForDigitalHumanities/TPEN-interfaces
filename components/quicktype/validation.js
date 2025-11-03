@@ -56,19 +56,3 @@ export function evaluateEntry(value) {
 
     return { valid: true }
 }
-
-/**
- * Escapes HTML special characters for safe display
- * @param {string} value - The value to escape
- * @returns {string} Escaped HTML string
- */
-export function escapeHTML(value) {
-    const safeValue = `${value ?? ''}`
-
-    return safeValue
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;')
-}

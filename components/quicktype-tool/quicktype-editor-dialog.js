@@ -1,5 +1,7 @@
 import TPEN from "../../api/TPEN.js"
-import { evaluateEntry, escapeHTML } from '../quicktype/validation.js'
+import { evaluateEntry } from '../quicktype/validation.js'
+import { escapeHtml } from "../../js/utils.js"
+
 const eventDispatcher = TPEN.eventDispatcher
 
 class QuickTypeEditorDialog extends HTMLElement {
