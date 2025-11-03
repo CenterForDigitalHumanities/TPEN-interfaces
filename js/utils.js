@@ -35,3 +35,13 @@ export function urlFromIdAndType(id, type, { projectId, pageId, layerId}) {
             return `${TPEN.RERUMURL}/id/${id}`
     }
 }
+
+export function escapeHtml(value) {
+    const safeValue = `${value ?? ''}`
+    return safeValue
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+}
