@@ -183,11 +183,12 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
         #imgTop img {
           position: absolute;
           top: 0px;
-          left: 0;
+          left: 0px;
           width: 100%;
           height: auto;
-          transition: top 0.5s ease-in-out;
+          transition: top 0.5s ease-in-out, left 0.5s ease-in-out, transform 0.5s ease-in-out;
           display: block;
+          transform-origin: top left;
         }
         
         #transWorkspace {
@@ -210,11 +211,12 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
         #imgBottom img {
           position: absolute;
           top: 0px;
-          left: 0;
+          left: 0px;
           width: 100%;
           height: auto;
-          transition: top 0.5s ease-in-out;
+          transition: top 0.5s ease-in-out, left 0.5s ease-in-out, transform 0.5s ease-in-out;
           display: block;
+          transform-origin: top left;
         }
         
         .transcription-image {
@@ -475,16 +477,17 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     console.log('Canvas dimensions:', this.#imgTopOriginalWidth, 'x', this.#imgTopOriginalHeight)
     
     // Get the actual rendered dimensions of the image (after scaling to width: 100%)
-    const renderedWidth = imgTopImg.offsetWidth
-    const renderedHeight = imgTopImg.offsetHeight
+    // If not yet rendered, calculate based on container width and aspect ratio
+    let renderedWidth = imgBottomImg.offsetWidth || imgBottom.offsetWidth
+    let renderedHeight = imgBottomImg.offsetHeight
+    
+    // If height is still 0, calculate it based on aspect ratio
+    if (!renderedHeight && renderedWidth && this.#imgTopOriginalWidth && this.#imgTopOriginalHeight) {
+      const aspectRatio = this.#imgTopOriginalHeight / this.#imgTopOriginalWidth
+      renderedHeight = renderedWidth * aspectRatio
+    }
     
     console.log('Rendered image dimensions:', renderedWidth, 'x', renderedHeight)
-    
-    // Calculate the scale factor between canvas and rendered dimensions
-    const scaleX = renderedWidth / this.#imgTopOriginalWidth
-    const scaleY = renderedHeight / this.#imgTopOriginalHeight
-    
-    console.log('Scale factors:', { scaleX, scaleY })
     
     // Handle target being an object with source property
     if (typeof target === 'object' && target?.source) {
@@ -543,7 +546,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     
     console.log('Scale factor:', scaleFactor)
     
-    // Calculate scaled pixel positions
+      // Calculate scaled pixel positions (where the line is on the rendered image)
     const scaledY = y * scaleFactor
     const scaledH = h * scaleFactor
     const scaledX = x * scaleFactor
@@ -552,39 +555,83 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     console.log('Scaled pixel values:', { scaledX, scaledY, scaledW, scaledH })
     
     // Add margin around the active line (in scaled pixels)
-    const marginTop = Math.max(20, scaledH * 0.2) // 20px or 20% of line height
-    const marginBottom = Math.max(30, scaledH * 0.3) // 30px or 30% of line height
+    const marginTop = Math.min(20, scaledH * 0.3) // 30% of line height or 20px
+    const marginBottom = Math.min(20, scaledH * 0.3) // 40% of line height or 30px
+      const marginLeft = Math.min(30, scaledW * 0.15) // 15% of line width or 30px
+      const marginRight = Math.min(30, scaledW * 0.15) // 15% of line width or 30px
     
-    // Calculate the viewport height for imgTop (line + margins)
-    const imgTopHeight = scaledH + marginTop + marginBottom
-    let topPosition = scaledY - marginTop
+      // Calculate what we want to show in the top viewport (line + margins)
+      const viewportContentHeight = scaledH + marginTop + marginBottom
+      const viewportContentWidth = scaledW + marginLeft + marginRight
+    
+      // Calculate the top-left corner of what we want to show
+      let cropTop = scaledY - marginTop
+      let cropLeft = scaledX - marginLeft
 
-    // Ensure we don't go off the top of the image
-    if (topPosition < 0) {
-      topPosition = 0
+    // Ensure we don't go off the edges of the image
+      if (cropTop < 0) {
+        cropTop = 0
+    }
+      if (cropLeft < 0) {
+        cropLeft = 0
     }
 
-    // Calculate the bottom image position (start showing from where the line ends)
-    const bottomPosition = scaledY + scaledH
+      // Get container width to determine how much to zoom
+      const containerWidth = imgTop.offsetWidth || renderedWidth
     
-    console.log('Applying pixel styles:', {
-      imgTopHeight: `${imgTopHeight}px`,
-      imgTopImgTop: `-${topPosition}px`,
+      // Calculate zoom: we want the cropped width to fill the container
+      const zoom = containerWidth / viewportContentWidth
+    
+      // The viewport height is the content height times the zoom
+      const viewportHeight = viewportContentHeight * zoom
+    
+      console.log('Zoom calculation:', { 
+        containerWidth, 
+        viewportContentWidth, 
+        zoom,
+        viewportHeight,
+        cropTop,
+        cropLeft
+      })
+
+  // Calculate the bottom image start in pre-zoom pixels, then apply zoom for visual alignment
+  const bottomPosition = cropTop + viewportContentHeight
+    
+    console.log('Applying styles:', {
+        imgTopHeight: `${viewportHeight}px`,
+        imgTopImgTop: `-${cropTop * zoom}px`,
+        imgTopImgLeft: `-${cropLeft * zoom}px`,
+        imgTopImgScale: zoom,
       imgBottomImgTop: `-${bottomPosition}px`
     })
     
     // Store positions for resize handling
-    this.#imgTopPositionRatio = topPosition / renderedHeight
+      this.#imgTopPositionRatio = cropTop / renderedHeight
     this.#imgBottomPositionRatio = bottomPosition / renderedHeight
 
-    // Apply styles with smooth animation using pixel values
-    imgTop.style.height = `${imgTopHeight}px`
-    imgTopImg.style.top = `-${topPosition}px`
-    imgBottomImg.style.top = `-${bottomPosition}px`
+      // Apply styles with smooth animation
+      // The container shows a viewport of specific height
+      imgTop.style.height = `${viewportHeight}px`
+    imgTop.style.width = `${containerWidth}px`
+    
+      // The image is positioned and scaled
+      imgTopImg.style.top = `-${cropTop * zoom}px`
+      imgTopImg.style.left = `-${cropLeft * zoom}px`
+      imgTopImg.style.transform = `scale(${zoom})`
+    
+  // Bottom image stays at 100% width, but we scale and offset so it visually matches the top zoom
+  imgBottomImg.style.top = `-${bottomPosition * zoom}px`
+  imgBottomImg.style.left = `-${cropLeft * zoom}px`
+  imgBottomImg.style.transform = `scale(${zoom})`
 
     // Add a visible indicator on imgTop to show the active line
-    // Use pixel values for the overlay too
-    this.highlightActiveLine(imgTop, scaledX, marginTop, scaledW, scaledH)
+    // Position relative to the cropped/zoomed viewport
+      const overlayLeft = (scaledX - cropLeft) * zoom
+      const overlayTop = (scaledY - cropTop) * zoom
+      const overlayWidth = scaledW * zoom
+      const overlayHeight = scaledH * zoom
+    
+    this.highlightActiveLine(imgTop, overlayLeft, overlayTop, overlayWidth, overlayHeight)
   }
 
   highlightActiveLine(container, leftPx, topPx, widthPx, heightPx) {
