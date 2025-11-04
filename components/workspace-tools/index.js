@@ -117,26 +117,39 @@ export default class WorkspaceTools extends HTMLElement {
     }
 
     // Prefer standard fragment image; fall back to simple-transcription top image
-    const fragmentImg = transcriptionInterface?.querySelector("tpen-image-fragment")?.shadowRoot?.querySelector("img")
+    const fragmentEl = transcriptionInterface?.querySelector("tpen-image-fragment")
+    const fragmentImg = fragmentEl?.shadowRoot?.querySelector("img")
     const simpleTopImg = transcriptionInterface?.querySelector("#imgTop img")
     const img = fragmentImg || simpleTopImg
     if (img) this.magnifierTool.imageElem = img
 
+    // Toggle behavior: hide if visible, otherwise show
+    if (this.magnifierTool.isMagnifierVisible) {
+      this.magnifierTool.hideMagnifier()
+      fragmentEl?.style.removeProperty("z-index")
+      if (this._magnifierEscHandler) {
+        window.removeEventListener("keydown", this._magnifierEscHandler)
+        this._magnifierEscHandler = null
+      }
+      this.magnifierBtn.blur()
+      return
+    }
+
     showMagnifier(this.magnifierTool)
 
     // Only adjust z-index for standard fragment interface
-    const fragmentEl = transcriptionInterface?.querySelector("tpen-image-fragment")
     fragmentEl?.style.setProperty("z-index", "10")
 
-    const escHandler = (e) => {
+    this._magnifierEscHandler = (e) => {
       if (e.key === "Escape") {
         this.magnifierTool.hideMagnifier()
         fragmentEl?.style.removeProperty("z-index")
         this.magnifierBtn.blur()
-        window.removeEventListener("keydown", escHandler)
+        window.removeEventListener("keydown", this._magnifierEscHandler)
+        this._magnifierEscHandler = null
       }
     }
-    window.addEventListener("keydown", escHandler)
+    window.addEventListener("keydown", this._magnifierEscHandler)
   })
   }
 }
