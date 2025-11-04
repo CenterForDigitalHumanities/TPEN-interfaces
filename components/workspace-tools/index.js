@@ -106,30 +106,38 @@ export default class WorkspaceTools extends HTMLElement {
       </div>
     `
 
-    this.magnifierBtn = this.shadowRoot.querySelector(".magnifier-btn")
-    this.magnifierBtn.addEventListener("click", () => {
-        const transcriptionInterface = document.querySelector("tpen-transcription-interface")?.shadowRoot
+  this.magnifierBtn = this.shadowRoot.querySelector(".magnifier-btn")
+  this.magnifierBtn.addEventListener("click", () => {
+    const iface = document.querySelector("tpen-transcription-interface") || document.querySelector("tpen-simple-transcription")
+    const transcriptionInterface = iface?.shadowRoot
 
-        if (!this.magnifierTool) {
-            this.magnifierTool = new MagnifierTool()
-            document.body.appendChild(this.magnifierTool)
-        }
+    if (!this.magnifierTool) {
+      this.magnifierTool = new MagnifierTool()
+      document.body.appendChild(this.magnifierTool)
+    }
 
-        const img = transcriptionInterface?.querySelector("tpen-image-fragment")?.shadowRoot?.querySelector("img")
-        if (img) this.magnifierTool.imageElem = img
+    // Prefer standard fragment image; fall back to simple-transcription top image
+    const fragmentImg = transcriptionInterface?.querySelector("tpen-image-fragment")?.shadowRoot?.querySelector("img")
+    const simpleTopImg = transcriptionInterface?.querySelector("#imgTop img")
+    const img = fragmentImg || simpleTopImg
+    if (img) this.magnifierTool.imageElem = img
 
-        showMagnifier(this.magnifierTool)
+    showMagnifier(this.magnifierTool)
 
-        transcriptionInterface?.querySelector("tpen-image-fragment").style.setProperty("z-index", "10")
+    // Only adjust z-index for standard fragment interface
+    const fragmentEl = transcriptionInterface?.querySelector("tpen-image-fragment")
+    fragmentEl?.style.setProperty("z-index", "10")
 
-        window.addEventListener("keydown", (e) => {
-          if (e.key === "Escape") {
-              this.magnifierTool.hideMagnifier()
-              transcriptionInterface?.querySelector("tpen-image-fragment").style.removeProperty("z-index")
-              this.magnifierBtn.blur()
-          }
-      })
-    })
+    const escHandler = (e) => {
+      if (e.key === "Escape") {
+        this.magnifierTool.hideMagnifier()
+        fragmentEl?.style.removeProperty("z-index")
+        this.magnifierBtn.blur()
+        window.removeEventListener("keydown", escHandler)
+      }
+    }
+    window.addEventListener("keydown", escHandler)
+  })
   }
 }
 
