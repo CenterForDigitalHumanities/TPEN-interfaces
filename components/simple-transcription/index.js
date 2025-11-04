@@ -314,6 +314,12 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       container.classList.remove("active-splitscreen")
       container.classList.add("no-splitscreen")
     }
+
+    // Ensure layout has applied before recalculating image positions
+    requestAnimationFrame(() => {
+      // Some layouts need an extra frame to settle widths
+      requestAnimationFrame(() => this.updateLines())
+    })
   }
 
   setupResizableSplit() {
@@ -325,11 +331,32 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     let startX = 0
     let startLeftWidth = 0
 
+    const disableTransitions = () => {
+      const imgTopImg = this.shadowRoot.querySelector('#imgTop img')
+      const imgBottomImg = this.shadowRoot.querySelector('#imgBottom img')
+      const imgTop = this.shadowRoot.querySelector('#imgTop')
+      
+      if (imgTopImg) imgTopImg.style.transition = 'none'
+      if (imgBottomImg) imgBottomImg.style.transition = 'none'
+      if (imgTop) imgTop.style.transition = 'none'
+    }
+
+    const enableTransitions = () => {
+      const imgTopImg = this.shadowRoot.querySelector('#imgTop img')
+      const imgBottomImg = this.shadowRoot.querySelector('#imgBottom img')
+      const imgTop = this.shadowRoot.querySelector('#imgTop')
+      
+      if (imgTopImg) imgTopImg.style.transition = 'top 0.5s ease-in-out, left 0.5s ease-in-out, transform 0.5s ease-in-out'
+      if (imgBottomImg) imgBottomImg.style.transition = 'top 0.5s ease-in-out, left 0.5s ease-in-out, transform 0.5s ease-in-out'
+      if (imgTop) imgTop.style.transition = 'height 0.5s ease-in-out'
+    }
+
     splitter?.addEventListener('mousedown', (e) => {
       isDragging = true
       startX = e.clientX
       startLeftWidth = leftPane.getBoundingClientRect().width
       document.body.style.cursor = 'ew-resize'
+      disableTransitions()
       e.preventDefault()
     })
 
@@ -353,6 +380,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       if (isDragging) {
         isDragging = false
         document.body.style.cursor = ''
+        enableTransitions()
       }
     })
   }
@@ -577,7 +605,8 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     }
 
       // Get container width to determine how much to zoom
-      const containerWidth = imgTop.offsetWidth || renderedWidth
+  // Use the actual left-pane/top container width to determine zoom
+  const containerWidth = imgTop.clientWidth || imgTop.getBoundingClientRect().width || renderedWidth
     
       // Calculate zoom: we want the cropped width to fill the container
       const zoom = containerWidth / viewportContentWidth
@@ -612,7 +641,8 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       // Apply styles with smooth animation
       // The container shows a viewport of specific height
       imgTop.style.height = `${viewportHeight}px`
-    imgTop.style.width = `${containerWidth}px`
+      // Keep width responsive to the left pane; avoid pegging to a fixed pixel width
+      imgTop.style.width = `100%`
     
       // The image is positioned and scaled
       imgTopImg.style.top = `-${cropTop * zoom}px`
