@@ -280,7 +280,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
         }
         
         .line-overlay.active {
-          border-color: rgba(255, 0, 0, 0.8);
+          border-color: #A64129;
           box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
           z-index: 20;
         }
@@ -507,6 +507,8 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     }
 
     this.#activeLine = line
+    // Notify TPEN ecosystem (e.g., history tool) of active line changes
+    try { TPEN.activeLine = line } catch {}
     this.adjustImages(line)
   }
 
