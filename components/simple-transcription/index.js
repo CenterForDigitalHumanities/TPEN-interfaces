@@ -611,9 +611,10 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     
     // Add margin around the active line (in scaled pixels)
     const marginTop = Math.min(20, scaledH * 0.3) // 30% of line height or 20px
-    const marginBottom = Math.min(20, scaledH * 0.3) // 40% of line height or 30px
-      const marginLeft = Math.min(30, scaledW * 0.15) // 15% of line width or 30px
-      const marginRight = Math.min(30, scaledW * 0.15) // 15% of line width or 30px
+    const marginTop = Math.min(10, scaledH * 0.3) // 30% of line height or 20px
+    const marginBottom = Math.min(10, scaledH * 0.3) // 40% of line height or 30px
+      const marginLeft = Math.min(15, scaledW * 0.15) // 15% of line width or 30px
+      const marginRight = Math.min(15, scaledW * 0.15) // 15% of line width or 30px
     
       // Calculate what we want to show in the top viewport (line + margins)
       const viewportContentHeight = scaledH + marginTop + marginBottom
