@@ -31,33 +31,29 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     TPEN.eventDispatcher.on('tpen-project-loaded', this.authgate.bind(this))
     TPEN.eventDispatcher.on('tpen-transcription-previous-line', () => this.updateLines())
     TPEN.eventDispatcher.on('tpen-transcription-next-line', () => this.updateLines())
-    
+
     // Handle window resize
     this.resizeHandler = this.handleResize.bind(this)
     window.addEventListener('resize', this.resizeHandler)
-    
+
     // Handle drawer opening/closing - wait for CSS transition to complete
     this.addEventListener('drawer-opening', () => {
-    //   this.disableTransitions()
     })
-    
+
     this.addEventListener('drawer-opened', () => {
       // Wait for the 0.3s CSS transition to complete before recalculating
       setTimeout(() => {
         this.updateLines()
-        // this.enableTransitions()
       }, 300)
     })
-    
+
     this.addEventListener('drawer-closing', () => {
-    //   this.disableTransitions()
     })
-    
+
     this.addEventListener('drawer-closed', () => {
       // Wait for the 0.3s CSS transition to complete before recalculating
       setTimeout(() => {
         this.updateLines()
-        // this.enableTransitions()
       }, 300)
     })
   }
@@ -70,7 +66,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     const imgTopImg = this.shadowRoot.querySelector('#imgTop img')
     const imgBottomImg = this.shadowRoot.querySelector('#imgBottom img')
     const imgTop = this.shadowRoot.querySelector('#imgTop')
-    
+
     if (imgTopImg) imgTopImg.style.transition = 'none'
     if (imgBottomImg) imgBottomImg.style.transition = 'none'
     if (imgTop) imgTop.style.transition = 'none'
@@ -80,7 +76,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     const imgTopImg = this.shadowRoot.querySelector('#imgTop img')
     const imgBottomImg = this.shadowRoot.querySelector('#imgBottom img')
     const imgTop = this.shadowRoot.querySelector('#imgTop')
-    
+
     if (imgTopImg) imgTopImg.style.transition = 'top 0.5s ease-in-out, left 0.5s ease-in-out, transform 0.5s ease-in-out'
     if (imgBottomImg) imgBottomImg.style.transition = 'top 0.5s ease-in-out, left 0.5s ease-in-out, transform 0.5s ease-in-out'
     if (imgTop) imgTop.style.transition = 'height 0.5s ease-in-out'
@@ -103,12 +99,12 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     this.setupResizableSplit()
     const pageID = TPEN.screen?.pageInQuery
     await this.updateTranscriptionImages(pageID)
-    
+
     // Initialize activeLineIndex if not set
     if (typeof TPEN.activeLineIndex === 'undefined') {
       TPEN.activeLineIndex = 0
     }
-    
+
     this.updateLines()
   }
 
@@ -371,7 +367,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     const splitter = this.shadowRoot.querySelector('.splitter')
     const leftPane = this.shadowRoot.querySelector('.left-pane')
     const rightPane = this.shadowRoot.querySelector('.right-pane')
-    
+
     let isDragging = false
     let startX = 0
     let startLeftWidth = 0
@@ -387,13 +383,13 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
 
     document.addEventListener('mousemove', (e) => {
       if (!isDragging) return
-      
+
       const container = this.shadowRoot.querySelector('.container')
       const containerWidth = container.getBoundingClientRect().width
       const delta = e.clientX - startX
       const newLeftWidth = startLeftWidth + delta
       const leftPercent = (newLeftWidth / containerWidth) * 100
-      
+
       if (leftPercent >= 30 && leftPercent <= 80) {
         leftPane.style.width = `${leftPercent}%`
         rightPane.style.width = `${100 - leftPercent}%`
@@ -445,26 +441,26 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       if (!fetchedCanvas) return
 
       this.#canvas = fetchedCanvas
-      
+
       // Get canvas dimensions (these are the authoritative dimensions for XYWH calculations)
       this.#imgTopOriginalHeight = fetchedCanvas.height ?? 1000
       this.#imgTopOriginalWidth = fetchedCanvas.width ?? 1000
-      
+
       // Get the image resource from the canvas
       const imageResource = fetchedCanvas.items?.[0]?.items?.[0]?.body?.id
-      
+
       if (!imageResource) return
 
       // Load image to both top and bottom containers
       const imgTop = this.shadowRoot.querySelector('#imgTop img')
       const imgBottom = this.shadowRoot.querySelector('#imgBottom img')
-      
+
       if (imgTop && imgBottom) {
         const onLoad = () => {
           // Update lines once image is loaded
           this.updateLines()
         }
-        
+
         imgTop.addEventListener('load', onLoad, { once: true })
         imgTop.src = imageResource
         imgBottom.src = imageResource
@@ -508,7 +504,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
 
     this.#activeLine = line
     // Notify TPEN ecosystem (e.g., history tool) of active line changes
-    try { TPEN.activeLine = line } catch {}
+    try { TPEN.activeLine = line } catch { }
     this.adjustImages(line)
   }
 
@@ -526,31 +522,31 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
 
     // Get the line's bounding box from the target selector
     let target = line.target
-    
+
     console.log('Adjusting images for line:', line)
     console.log('Target:', target)
     console.log('Canvas dimensions:', this.#imgTopOriginalWidth, 'x', this.#imgTopOriginalHeight)
-    
+
     // Get the actual rendered dimensions of the image (after scaling to width: 100%)
     // If not yet rendered, calculate based on container width and aspect ratio
     let renderedWidth = imgBottomImg.offsetWidth || imgBottom.offsetWidth
     let renderedHeight = imgBottomImg.offsetHeight
-    
+
     // If height is still 0, calculate it based on aspect ratio
     if (!renderedHeight && renderedWidth && this.#imgTopOriginalWidth && this.#imgTopOriginalHeight) {
       const aspectRatio = this.#imgTopOriginalHeight / this.#imgTopOriginalWidth
       renderedHeight = renderedWidth * aspectRatio
     }
-    
+
     console.log('Rendered image dimensions:', renderedWidth, 'x', renderedHeight)
-    
+
     // Handle target being an object with source property
     if (typeof target === 'object' && target?.source) {
       console.log('Target is SpecificResource, selector:', target.selector)
-      
+
       // For W3C Web Annotation format with selector
       const selector = target.selector
-      
+
       if (selector?.value) {
         console.log('Selector has value:', selector.value)
         // SVG or fragment selector with value property
@@ -567,7 +563,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       } else if (typeof selector === 'object') {
         // Check if selector itself has properties we need
         console.log('Selector object properties:', Object.keys(selector))
-        
+
         // Try to find xywh in any property
         for (const key in selector) {
           const value = selector[key]
@@ -581,9 +577,9 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
         }
       }
     }
-    
+
     console.log('Processed target:', target)
-    
+
     // Extract xywh from target string
     // Handle both "xywh=x,y,w,h" and "xywh=pixel:x,y,w,h" formats
     const xywhMatch = typeof target === 'string' ? target.match(/xywh=(?:pixel:)?([^&]+)/) : null
@@ -591,104 +587,103 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       console.error('Could not extract XYWH from target. Original:', line.target, 'Processed:', target)
       return
     }
-    
+
     const [x, y, w, h] = xywhMatch[1].split(',').map(Number)
     console.log('XYWH coordinates:', { x, y, w, h })
 
     // Calculate scaled dimensions based on how the image is actually rendered
     // The image has width: 100%, so it scales proportionally
     const scaleFactor = renderedWidth / this.#imgTopOriginalWidth
-    
+
     console.log('Scale factor:', scaleFactor)
-    
-      // Calculate scaled pixel positions (where the line is on the rendered image)
+
+    // Calculate scaled pixel positions (where the line is on the rendered image)
     const scaledY = y * scaleFactor
     const scaledH = h * scaleFactor
     const scaledX = x * scaleFactor
     const scaledW = w * scaleFactor
-    
+
     console.log('Scaled pixel values:', { scaledX, scaledY, scaledW, scaledH })
-    
+
     // Add margin around the active line (in scaled pixels)
-    const marginTop = Math.min(20, scaledH * 0.3) // 30% of line height or 20px
     const marginTop = Math.min(10, scaledH * 0.3) // 30% of line height or 20px
     const marginBottom = Math.min(10, scaledH * 0.3) // 40% of line height or 30px
-      const marginLeft = Math.min(15, scaledW * 0.15) // 15% of line width or 30px
-      const marginRight = Math.min(15, scaledW * 0.15) // 15% of line width or 30px
-    
-      // Calculate what we want to show in the top viewport (line + margins)
-      const viewportContentHeight = scaledH + marginTop + marginBottom
-      const viewportContentWidth = scaledW + marginLeft + marginRight
-    
-      // Calculate the top-left corner of what we want to show
-      let cropTop = scaledY - marginTop
-      let cropLeft = scaledX - marginLeft
+    const marginLeft = Math.min(15, scaledW * 0.15) // 15% of line width or 30px
+    const marginRight = Math.min(15, scaledW * 0.15) // 15% of line width or 30px
+
+    // Calculate what we want to show in the top viewport (line + margins)
+    const viewportContentHeight = scaledH + marginTop + marginBottom
+    const viewportContentWidth = scaledW + marginLeft + marginRight
+
+    // Calculate the top-left corner of what we want to show
+    let cropTop = scaledY - marginTop
+    let cropLeft = scaledX - marginLeft
 
     // Ensure we don't go off the edges of the image
-      if (cropTop < 0) {
-        cropTop = 0
+    if (cropTop < 0) {
+      cropTop = 0
     }
-      if (cropLeft < 0) {
-        cropLeft = 0
+    if (cropLeft < 0) {
+      cropLeft = 0
     }
 
-      // Get container width to determine how much to zoom
-      // Use the actual left-pane/top container width to determine zoom
-      const containerWidth = imgTop.clientWidth || imgTop.getBoundingClientRect().width || renderedWidth
-    
-      // Calculate zoom: we want the cropped width to fill the container
-      const zoom = containerWidth / viewportContentWidth
-    
-      // The viewport height is the content height times the zoom
-      const viewportHeight = viewportContentHeight * zoom
-    
-      console.log('Zoom calculation:', { 
-        containerWidth, 
-        viewportContentWidth, 
-        zoom,
-        viewportHeight,
-        cropTop,
-        cropLeft
-      })
+    // Get container width to determine how much to zoom
+    // Use the actual left-pane/top container width to determine zoom
+    const containerWidth = imgTop.clientWidth || imgTop.getBoundingClientRect().width || renderedWidth
 
-  // Calculate the bottom image start in pre-zoom pixels, then apply zoom for visual alignment
-  const bottomPosition = cropTop + viewportContentHeight
-    
+    // Calculate zoom: we want the cropped width to fill the container
+    const zoom = containerWidth / viewportContentWidth
+
+    // The viewport height is the content height times the zoom
+    const viewportHeight = viewportContentHeight * zoom
+
+    console.log('Zoom calculation:', {
+      containerWidth,
+      viewportContentWidth,
+      zoom,
+      viewportHeight,
+      cropTop,
+      cropLeft
+    })
+
+    // Calculate the bottom image start in pre-zoom pixels, then apply zoom for visual alignment
+    const bottomPosition = cropTop + viewportContentHeight
+
     console.log('Applying styles:', {
-        imgTopHeight: `${viewportHeight}px`,
-        imgTopImgTop: `-${cropTop * zoom}px`,
-        imgTopImgLeft: `-${cropLeft * zoom}px`,
-        imgTopImgScale: zoom,
+      imgTopHeight: `${viewportHeight}px`,
+      imgTopImgTop: `-${cropTop * zoom}px`,
+      imgTopImgLeft: `-${cropLeft * zoom}px`,
+      imgTopImgScale: zoom,
       imgBottomImgTop: `-${bottomPosition}px`
     })
-    
+
     // Store positions for resize handling
-      this.#imgTopPositionRatio = cropTop / renderedHeight
+    this.#imgTopPositionRatio = cropTop / renderedHeight
     this.#imgBottomPositionRatio = bottomPosition / renderedHeight
 
-      // Apply styles with smooth animation
-      // The container shows a viewport of specific height
-      imgTop.style.height = `${viewportHeight}px`
-      // Keep width responsive to the left pane; avoid pegging to a fixed pixel width
-      imgTop.style.width = `100%`
-    
-      // The image is positioned and scaled
-      imgTopImg.style.top = `-${cropTop * zoom}px`
-      imgTopImg.style.left = `-${cropLeft * zoom}px`
-      imgTopImg.style.transform = `scale(${zoom})`
-    
-  // Bottom image stays at 100% width, but we scale and offset so it visually matches the top zoom
-  imgBottomImg.style.top = `-${bottomPosition * zoom}px`
-  imgBottomImg.style.left = `-${cropLeft * zoom}px`
-  imgBottomImg.style.transform = `scale(${zoom})`
+    // Apply styles with smooth animation
+    // The container shows a viewport of specific height
+    imgTop.style.height = `${viewportHeight}px`
+    // Keep width responsive to the left pane; avoid pegging to a fixed pixel width
+    imgTop.style.width = `100%`
+
+    // The image is positioned and scaled
+    imgTopImg.style.top = `-${cropTop * zoom}px`
+    imgTopImg.style.left = `-${cropLeft * zoom}px`
+    imgTopImg.style.transform = `scale(${zoom})`
+
+    // Bottom image stays at 100% width, but we scale and offset so it visually matches the top zoom
+    imgBottomImg.style.top = `-${bottomPosition * zoom}px`
+    imgBottomImg.style.left = `-${cropLeft * zoom}px`
+    imgBottomImg.style.transform = `scale(${zoom})`
 
     // Add a visible indicator on imgTop to show the active line
     // Position relative to the cropped/zoomed viewport
-      const overlayLeft = (scaledX - cropLeft) * zoom
-      const overlayTop = (scaledY - cropTop) * zoom
-      const overlayWidth = scaledW * zoom
-      const overlayHeight = scaledH * zoom
-    
+    const overlayLeft = (scaledX - cropLeft) * zoom
+    const overlayTop = (scaledY - cropTop) * zoom
+    const overlayWidth = scaledW * zoom
+    const overlayHeight = scaledH * zoom
+
     this.highlightActiveLine(imgTop, overlayLeft, overlayTop, overlayWidth, overlayHeight)
   }
 
@@ -700,12 +695,12 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     // Create new overlay for the active line
     const overlay = document.createElement('div')
     overlay.className = 'line-overlay active'
-    
+
     overlay.style.left = `${leftPx}px`
     overlay.style.top = `${topPx}px`
     overlay.style.width = `${widthPx}px`
     overlay.style.height = `${heightPx}px`
-    
+
     container.appendChild(overlay)
   }
 
@@ -715,7 +710,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     const imgBottomImg = this.shadowRoot.querySelector('#imgBottom img')
 
     if (imgTop && imgTopImg && imgBottomImg) {
-      imgTop.style.height = '0%'
+      imgTop.style.height = '0px'
       imgTopImg.style.top = '0px'
       imgBottomImg.style.top = '0px'
     }
@@ -735,7 +730,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
   }
 
   fetchCanvasesFromCurrentLayer() {
-    const currentLayer = TPEN.activeProject?.layers.find(layer => 
+    const currentLayer = TPEN.activeProject?.layers.find(layer =>
       layer.pages.some(page => page.id.split('/').pop() === TPEN.screen.pageInQuery)
     )
     return currentLayer?.pages.flatMap(page => ({
@@ -747,7 +742,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
   loadRightPaneContent() {
     const rightPane = this.shadowRoot.querySelector('.tools')
     const tool = this.getToolByName(this.state.activeTool)
-    
+
     if (!tool) {
       rightPane.innerHTML = `
         <p>
@@ -764,10 +759,16 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
         rightPane.innerHTML = `<${tagName}></${tagName}>`
         return
       }
-      
+
+      const scriptId = `tool-script-${tool.toolName}`
+      const existingScript = document.getElementById(scriptId)
+      if (existingScript) {
+        return
+      }
       const script = document.createElement('script')
       script.type = 'module'
       script.src = tool.url
+      script.id = scriptId
       script.onload = () => {
         rightPane.innerHTML = `<${tagName}></${tagName}>`
       }
@@ -784,7 +785,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       iframe.style.width = '100%'
       iframe.style.height = '100%'
       iframe.style.border = 'none'
-      
+
       iframe.addEventListener('load', () => {
         iframe.contentWindow?.postMessage(
           {
@@ -798,7 +799,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
         )
 
         iframe.contentWindow?.postMessage(
-          { 
+          {
             type: "CANVASES",
             canvases: this.fetchCanvasesFromCurrentLayer()
           },
@@ -806,27 +807,26 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
         )
 
         iframe.contentWindow?.postMessage(
-          { 
+          {
             type: "CURRENT_LINE_INDEX",
-            lineId: TPEN.activeLineIndex 
+            lineId: TPEN.activeLineIndex
           },
           "*"
         )
       })
-      
-      TPEN.eventDispatcher.on('tpen-transcription-previous-line', () => {
+
+      const sendLineSelection = () => {
         iframe.contentWindow?.postMessage(
           { type: "SELECT_ANNOTATION", lineId: TPEN.activeLineIndex },
           "*"
         )
-      })
-      
-      TPEN.eventDispatcher.on('tpen-transcription-next-line', () => {
-        iframe.contentWindow?.postMessage(
-          { type: "SELECT_ANNOTATION", lineId: TPEN.activeLineIndex },
-          "*"
-        )
-      })
+      }
+
+      if (!iframe.dataset.lineListenersAttached) {
+        TPEN.eventDispatcher.on('tpen-transcription-previous-line', sendLineSelection)
+        TPEN.eventDispatcher.on('tpen-transcription-next-line', sendLineSelection)
+        iframe.dataset.lineListenersAttached = 'true'
+      }
 
       iframe.src = tool.url
       rightPane.innerHTML = ''
