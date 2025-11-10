@@ -4,7 +4,7 @@ This file provides guidance to AI assistants when working with code in this repo
 
 ## Project Overview
 
-**TPEN3 Interfaces** is a JavaScript library that provides web components and API client functionality for TPEN (Transcription for Paleographical and Editorial Notation) version 3. TPEN is a web-based tool for transcribing manuscripts and historical documents.
+TPEN3 Interfaces is a JavaScript library that provides web components and API client functionality for TPEN3 (Transcription for Paleographical and Editorial Notation) version. TPEN3 is a web-based tool for transcribing manuscripts and historical documents.
 
 ### Key Capabilities
 - **Manuscript Transcription**: Tools for transcribing paleographical texts and manuscripts
@@ -378,9 +378,13 @@ try {
 
 ### External Resources
 - [IIIF Presentation API](https://iiif.io/api/presentation/)
+- [W3C Web Annotation](https://www.w3.org/TR/annotation-model/)
 - [Web Components MDN](https://developer.mozilla.org/en-US/docs/Web/Web_Components)
 - [Jest Documentation](https://jestjs.io/docs/getting-started)
-- [TPEN Project Homepage](https://t-pen.org)
+- [TPEN3 Project Homepage](https://three.t-pen.org)
+- [TPEN3 Services API](https://dev.api.t-pen.org)
+- [TPEN3 Services GitHub](https://github.com/CenterForDigitalHumanities/TPEN-services)
+- [TPEN3 Interfaces GitHub](https://github.com/CenterForDigitalHumanities/TPEN-interfaces)
 
 ## Contact & Support
 
