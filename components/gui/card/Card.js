@@ -46,8 +46,8 @@ class TPENCard extends HTMLElement {
                 display: flex;
                 justify-content: center;
                 align-items: center;
-                padding-top: 1em;
-                padding-bottom: 0;
+                padding-top: 0em;
+                padding-bottom: 0em;
                 font-size:2.5em;
             }
             ::slotted(a) {

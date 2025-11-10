@@ -1,5 +1,7 @@
 import TPEN from "../../api/TPEN.js"
-import { evaluateEntry, escapeHTML } from '../quicktype/validation.js'
+import { evaluateEntry } from '../quicktype/validation.js'
+import { escapeHtml } from "../../js/utils.js"
+
 const eventDispatcher = TPEN.eventDispatcher
 
 class QuickTypeEditorDialog extends HTMLElement {
@@ -737,7 +739,7 @@ class QuickTypeEditorDialog extends HTMLElement {
         const warningMarkup = evaluation.valid ? '' : `
                 <div class="validation-warning" role="note">
                     <span class="validation-icon" aria-hidden="true">⚠️</span>
-                    <span class="validation-text">${escapeHTML(evaluation.reason)}</span>
+                    <span class="validation-text">${escapeHtml(evaluation.reason)}</span>
                 </div>
         `
 
