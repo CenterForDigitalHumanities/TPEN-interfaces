@@ -242,9 +242,11 @@ function updateUser(element, token) {
     element.setAttribute("tpen-user-id", userId)
     const expires = decodeUserToken(element.userToken)?.exp
     element.setAttribute("tpen-token-expires", expires)
-    element.expiring = setTimeout(() => {
-        eventDispatcher.dispatch("token-expiration")
-    }, expires * 1000 - Date.now())
+    if (expires && typeof expires === 'number') {
+        element.expiring = setTimeout(() => {
+            eventDispatcher.dispatch("token-expiration")
+        }, expires * 1000 - Date.now())
+    }
     // Respect the selected RERUM store based on environment
     try {
         const rerumBase = (TPEN?.RERUMURL ?? "https://store.rerum.io/v1").replace(/\/$/, "")

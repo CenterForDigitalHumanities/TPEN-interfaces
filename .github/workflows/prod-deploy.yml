@@ -24,10 +24,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set ACTIVE_ENV=prod
-        run: |
-          sed -i "s/^export const ACTIVE_ENV = .*/export const ACTIVE_ENV = 'prod' \/\/ 'dev' | 'prod'/" api/config.js
-          echo "Configured ACTIVE_ENV to prod" && grep -n "ACTIVE_ENV" api/config.js
+      - name: Set TPEN_ENV=prod
+        run: echo "TPEN_ENV=prod" >> $GITHUB_ENV
 
       - name: Install curl and jq
         run: sudo apt-get update && sudo apt-get install -y curl jq
@@ -52,14 +50,14 @@ jobs:
   build:
     needs: smoke
     runs-on: ubuntu-latest
+    env:
+      TPEN_ENV: prod
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Ensure ACTIVE_ENV=prod
-        run: |
-          sed -i "s/^export const ACTIVE_ENV = .*/export const ACTIVE_ENV = 'prod' \/\/ 'dev' | 'prod'/" api/config.js
-          grep -n "ACTIVE_ENV" api/config.js
+      - name: Ensure TPEN_ENV=prod
+        run: echo "TPEN_ENV=prod" >> $GITHUB_ENV
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
