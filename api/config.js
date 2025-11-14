@@ -1,8 +1,8 @@
 // Central environment configuration for TPEN-interfaces
-// Set ACTIVE_ENV to 'dev' or 'prod' to switch environments.
+// ACTIVE_ENV is set via TPEN_ENV environment variable in CI/CD workflows.
+// Defaults to 'dev' for local development.
 
-// Change this line to switch environments
-export const ACTIVE_ENV = 'dev' // 'dev' | 'prod'
+export const ACTIVE_ENV = process?.env?.TPEN_ENV ?? 'dev'
 
 export const ENVIRONMENTS = {
   dev: {

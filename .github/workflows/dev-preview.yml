@@ -1,4 +1,4 @@
-name: Dev Preview (PR)
+name: Dev Preview Build (PR)
 
 on:
   pull_request:
@@ -19,10 +19,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set ACTIVE_ENV=dev
-        run: |
-          sed -i "s/^export const ACTIVE_ENV = .*/export const ACTIVE_ENV = 'dev' \/\/ 'dev' | 'prod'/" api/config.js
-          echo "Configured ACTIVE_ENV to dev" && grep -n "ACTIVE_ENV" api/config.js
+      - name: Set TPEN_ENV=dev
+        run: echo "TPEN_ENV=dev" >> $GITHUB_ENV
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
@@ -36,6 +34,8 @@ jobs:
           gem install jekyll-redirect-from
 
       - name: Build with Jekyll
+        env:
+          TPEN_ENV: dev
         run: jekyll build --source ./ --destination ./_site
 
       - name: Deploy to Netlify
