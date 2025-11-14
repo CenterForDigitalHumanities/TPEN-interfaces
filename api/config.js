@@ -1,8 +1,24 @@
 // Central environment configuration for TPEN-interfaces
-// ACTIVE_ENV is set via TPEN_ENV environment variable in CI/CD workflows.
-// Defaults to 'dev' for local development.
+// ACTIVE_ENV resolution order (browser-safe):
+// 1) globalThis.TPEN_ENV (set by config.env.js or inline script)
+// 2) <meta name="tpen-env" content="dev|prod">
+// 3) process.env.TPEN_ENV when present (e.g., SSR/build tools)
+// 4) fallback to 'dev'
 
-export const ACTIVE_ENV = (typeof process !== 'undefined' && process.env?.TPEN_ENV) || 'dev'
+const META_ENV = typeof document !== 'undefined'
+  ? document.querySelector('meta[name="tpen-env"]')?.content
+  : undefined
+
+export const ACTIVE_ENV = (
+  // Global injected by build/workflows
+  (typeof globalThis !== 'undefined' ? globalThis.TPEN_ENV : undefined)
+  // Meta tag in HTML if present
+  ?? META_ENV
+  // Node/process (SSR/tools) if available
+  ?? (typeof process !== 'undefined' ? process.env?.TPEN_ENV : undefined)
+  // Default for local dev
+  ?? 'dev'
+)
 
 export const ENVIRONMENTS = {
   dev: {

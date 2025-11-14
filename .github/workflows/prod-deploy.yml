@@ -27,6 +27,9 @@ jobs:
       - name: Set TPEN_ENV=prod
         run: echo "TPEN_ENV=prod" >> $GITHUB_ENV
 
+      - name: Generate runtime env file (prod)
+        run: echo "window.TPEN_ENV='prod'" > config.env.js
+
       - name: Install curl and jq
         run: sudo apt-get update && sudo apt-get install -y curl jq
 
