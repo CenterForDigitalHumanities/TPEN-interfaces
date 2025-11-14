@@ -53,7 +53,9 @@ export class MagnifierTool extends HTMLElement {
         if (!magnifier || !img) return
         const magnifierSize = magnifier.offsetWidth || 200
         const halfSize = magnifierSize / 2
-        magnifier.style.backgroundSize = `${img.width * zoomLevel}px ${img.height * zoomLevel}px`
+        // Use actual on-screen size (accounts for CSS transforms like scale)
+        const imgRect = img.getBoundingClientRect()
+        magnifier.style.backgroundSize = `${imgRect.width * zoomLevel}px ${imgRect.height * zoomLevel}px`
         magnifier.style.backgroundPosition = `${-centerX * zoomLevel + halfSize}px ${-centerY * zoomLevel + halfSize}px`
     }
 
@@ -101,9 +103,9 @@ export class MagnifierTool extends HTMLElement {
             y = Math.max(minY, Math.min(y, imgRect.height + this.boundsOffset - halfSize))
 
             let rightPane = null
-            const tpenInterface = document.querySelector('tpen-transcription-interface')
-            if (tpenInterface?.shadowRoot) {
-                rightPane = tpenInterface.shadowRoot.querySelector('.right-pane')
+            const iface = document.querySelector('tpen-transcription-interface') || document.querySelector('tpen-simple-transcription')
+            if (iface?.shadowRoot) {
+                rightPane = iface.shadowRoot.querySelector('.right-pane')
             }
 
             if (rightPane && rightPane.offsetParent !== null) {
@@ -137,19 +139,36 @@ export class MagnifierTool extends HTMLElement {
         const img = this.imageElem
         if (!magnifier || !img) return
 
-        const magnifierSize = magnifier.offsetWidth || 200
-        magnifier.style.width = `${magnifierSize}px`
-        magnifier.style.height = `${magnifierSize}px`
+    const baseSize = parseFloat(getComputedStyle(magnifier).width) || 200
+    magnifier.style.width = `${Math.round(baseSize)}px`
+    magnifier.style.height = `${Math.round(baseSize)}px`
 
         magnifier.style.display = 'block'
         magnifier.style.backgroundImage = `url(${img.src})`
         magnifier.style.backgroundRepeat = 'no-repeat'
-        magnifier.style.backgroundSize = `${img.width * this.zoomLevel}px ${img.height * this.zoomLevel}px`
-        const halfSize = magnifierSize / 2
+        // Use on-screen size for background sizing to match visual scale
+        const imgRect = img.getBoundingClientRect()
+        magnifier.style.backgroundSize = `${imgRect.width * this.zoomLevel}px ${imgRect.height * this.zoomLevel}px`
+    const halfSize = (parseFloat(getComputedStyle(magnifier).width) || baseSize) / 2
 
-        magnifier.style.left = `${img.offsetLeft}px`
-        magnifier.style.top = `${img.offsetTop}px`
-        magnifier.style.backgroundPosition = `-${halfSize * this.zoomLevel * img.width}px -${halfSize * this.zoomLevel}px`
+        // Determine a visible anchor area to place the magnifier initially
+        // Prefer the visible container around the image (e.g., #imgTop), fall back to the image rect
+        let anchorRect = imgRect
+        const hostContainer = img.closest('#imgTop, #imgBottom')
+        if (hostContainer) {
+            const rc = hostContainer.getBoundingClientRect()
+            // If container has no area (hidden), fallback to imgRect
+            if (rc.width > 0 && rc.height > 0) anchorRect = rc
+        }
+
+        // Clear conflicting positioning
+        magnifier.style.removeProperty('right')
+
+        // Center the magnifier within the visible container
+        const initLeft = anchorRect.left + (anchorRect.width / 2) - halfSize
+        const initTop = anchorRect.top + (anchorRect.height / 2) - halfSize
+        magnifier.style.left = `${Math.round(initLeft)}px`
+        magnifier.style.top = `${Math.round(initTop)}px`
 
         this.updateMagnifier()
         this.isMagnifierVisible = true
@@ -191,7 +210,7 @@ export class MagnifierTool extends HTMLElement {
                 pointer-events: all;
                 box-shadow: 0 0 12px rgba(0,0,0,0.3);
                 user-select: none;
-                z-index: 20;
+                z-index: 10000;
                 top: 60px;
                 right: 20px;
             }
