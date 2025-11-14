@@ -2,7 +2,7 @@
 // ACTIVE_ENV is set via TPEN_ENV environment variable in CI/CD workflows.
 // Defaults to 'dev' for local development.
 
-export const ACTIVE_ENV = process?.env?.TPEN_ENV ?? 'dev'
+export const ACTIVE_ENV = (typeof process !== 'undefined' && process.env?.TPEN_ENV) || 'dev'
 
 export const ENVIRONMENTS = {
   dev: {
