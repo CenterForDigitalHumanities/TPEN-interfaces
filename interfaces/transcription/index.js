@@ -337,20 +337,20 @@ export default class TranscriptionInterface extends HTMLElement {
 
         iframe.contentWindow?.postMessage(
           { type: "CURRENT_LINE_INDEX",
-            lineId: TPEN.activeLineIndex 
+            lineId: this.#page?.items?.[TPEN.activeLineIndex]?.id
           },
           "*"
         )
       })
       TPEN.eventDispatcher.on('tpen-transcription-previous-line', () => {
         iframe.contentWindow?.postMessage(
-          { type: "SELECT_ANNOTATION", lineId: TPEN.activeLineIndex },
+          { type: "SELECT_ANNOTATION", lineId: this.#page?.items?.[TPEN.activeLineIndex]?.id },
           "*"
         )
       })
       TPEN.eventDispatcher.on('tpen-transcription-next-line', () => {
         iframe.contentWindow?.postMessage(
-          { type: "SELECT_ANNOTATION", lineId: TPEN.activeLineIndex },
+          { type: "SELECT_ANNOTATION", lineId: this.#page?.items?.[TPEN.activeLineIndex]?.id },
           "*"
         )
       })
@@ -418,7 +418,17 @@ export default class TranscriptionInterface extends HTMLElement {
     const thisLine = this.#page.items?.[TPEN.activeLineIndex]
     if (!thisLine) return
     TPEN.activeLine = thisLine
-    const { region } = this.setCanvasAndSelector(thisLine, this.#page, TPEN.activeLineIndex)
+    const columnsInPage = TPEN.activeProject.layers.flatMap(layer => layer.pages || []).find(p => p.id.split('/').pop() === this.#page.id.split('/').pop())?.columns || []
+    const columnSelector = document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('tpen-project-header').shadowRoot.querySelector('tpen-column-selector')
+    if (columnSelector) {
+      const activeLineId = TPEN.activeLine?.id || TPEN.activeLine?.['@id']
+      const activeColumn = columnsInPage.find(column => column.lines.includes(activeLineId))
+      if (activeColumn) {
+        columnSelector.shadowRoot.querySelector('select').title = activeColumn.label
+        columnSelector.shadowRoot.querySelector('select').value = activeColumn.id
+      }
+    }
+    const { region } = this.setCanvasAndSelector(thisLine, this.#page)
     if (!region) return
     const [x, y, width, height] = region.split(',').map(Number)
     topImage.moveTo(x, y, width, height)
@@ -467,7 +477,7 @@ export default class TranscriptionInterface extends HTMLElement {
       })
   }
 
-  setCanvasAndSelector(thisLine, page, lineIndex) {
+  setCanvasAndSelector(thisLine, page) {
     let targetString, canvasID, region
     targetString = thisLine?.target?.id ?? thisLine?.target?.['@id']
     targetString ??= thisLine?.target?.selector?.value ? `${thisLine.target?.source}#${thisLine.target.selector.value}` : null
@@ -485,7 +495,7 @@ export default class TranscriptionInterface extends HTMLElement {
     let thisLine = page.items?.[0]
     thisLine = await vault.get(thisLine, 'annotation')
     if (!(thisLine?.body)) thisLine = await vault.get(thisLine, 'annotation', true)
-    const { canvasID, region } = this.setCanvasAndSelector(thisLine, page, 0)
+    const { canvasID, region } = this.setCanvasAndSelector(thisLine, page)
     const canvas = this.#canvas = await vault.get(canvasID, 'canvas')
     const regionValue = region ?? `0,0,${canvas?.width ?? 'full'},${(canvas?.height && canvas?.height / 10) ?? 120}`
     topImage.canvas = canvasID

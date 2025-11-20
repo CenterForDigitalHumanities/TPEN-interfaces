@@ -13,6 +13,7 @@ import TPEN from '../../api/TPEN.js'
 import User from '../../api/User.js'
 import { getAgentIRIFromToken } from '../iiif-tools/index.js'
 import CheckPermissions from '../check-permissions/checkPermissions.js'
+import { detectTextLinesCombined } from "./detect-lines.js"
 
 class AnnotoriousAnnotator extends HTMLElement {
   #osd 
@@ -28,6 +29,8 @@ class AnnotoriousAnnotator extends HTMLElement {
   #isLineEditing = false
   #isErasing = false
   #editType = ""
+  #canvasImageURL
+  #canvasID
 
   constructor() {
     super()
@@ -144,10 +147,10 @@ class AnnotoriousAnnotator extends HTMLElement {
         .toggleEditType {
           margin-top: 6px;
         }
-        .toggleEditType, input[type="checkbox"], #saveBtn {
+        .toggleEditType, input[type="checkbox"], #saveBtn, #createColumnsBtn {
           cursor: pointer;
         }
-        #saveBtn {
+        #saveBtn, #createColumnsBtn {
           background-color: var(--primary-color);
           text-transform: uppercase;
           outline: var(--primary-light) 1px solid;
@@ -160,11 +163,11 @@ class AnnotoriousAnnotator extends HTMLElement {
           width: 100%;
           margin-top: 1em;
         }
-        #saveBtn[disabled] {
+        #saveBtn[disabled], #createColumnsBtn[disabled] {
           background-color: gray;
           color: white;
         }
-        #saveBtn:hover {
+        #saveBtn:hover, #createColumnsBtn:hover {
           background-color: var(--primary-light);
           outline: var(--primary-color) 1px solid;
           outline-offset: -1.5px;
@@ -215,6 +218,21 @@ class AnnotoriousAnnotator extends HTMLElement {
           margin-left: 5px;
           color: var(--link);
         }
+        #autoParseBtn {
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          background-color: var(--primary-color);
+          padding: 10px 20px;
+          color: var(--white);
+          border-radius: 5px;
+          cursor: pointer;
+          transition: background-color 0.3s;
+          z-index: 10;
+        }
+        #autoParseBtn:hover {
+          background-color: var(--primary-light);
+        }
       </style>
       <div>
         <div id="tools-container" class="card">
@@ -248,18 +266,60 @@ class AnnotoriousAnnotator extends HTMLElement {
            <span>Annotation Visibility</span>
            <input type="checkbox" id="seeTool" checked> 
           </label>
+          <input id="createColumnsBtn" type="button" value="Create Columns"/>
           <input id="saveBtn" type="button" value="Save Annotations"/>
         </div>
+        <button id="autoParseBtn">Auto Parse</button>
         <div id="annotator-container"> Loading Annotorious and getting the TPEN3 Page information... </div>
         <div id="ruler"></div>
         <span id="sampleRuler"></span>
       </div>`
+
+      this.shadowRoot.querySelector("#autoParseBtn").addEventListener("click", async () => {
+        if (typeof cv === "undefined") {
+          await new Promise((resolve, reject) => {
+            const openCVScript = document.createElement("script")
+            openCVScript.src = "https://docs.opencv.org/4.x/opencv.js"
+            openCVScript.async = true
+            openCVScript.onload = () => {
+              cv['onRuntimeInitialized'] = resolve
+            }
+            openCVScript.onerror = reject
+            document.body.appendChild(openCVScript)
+          })
+        } else if (!cv['onRuntimeInitializedCalled']) {
+          await new Promise(resolve => (cv['onRuntimeInitialized'] = resolve))
+        }
+
+        const imageUrl = this.#canvasImageURL
+        const boxes = await detectTextLinesCombined(imageUrl)
+        const newAnnotations = []
+        for (const line of boxes) {
+          const { x, y, w, h } = line
+          newAnnotations.push({
+            type: "Annotation",
+            motivation: "transcribing",
+            target: {
+                source: this.#canvasID,
+                type: "SpecificResource",
+                selector: {
+                    type: "FragmentSelector",
+                    conformsTo: "http://www.w3.org/TR/media-frags/",
+                    value: `xywh=pixel:${x},${y},${w},${h}`
+                }
+            }
+          })
+        }
+        this.#annotoriousInstance.setAnnotations(newAnnotations, true)
+        this.#resolvedAnnotationPage.$isDirty = true
+    })
     this.#annotoriousContainer = this.shadowRoot.getElementById('annotator-container')
     const drawTool = this.shadowRoot.getElementById("drawTool")
     const editTool = this.shadowRoot.getElementById("editTool")
     const eraseTool = this.shadowRoot.getElementById("eraseTool")
     const seeTool = this.shadowRoot.getElementById("seeTool")
     const saveButton = this.shadowRoot.getElementById("saveBtn")
+    const createColumnsBtn = this.shadowRoot.getElementById("createColumnsBtn")
     const addLinesBtn = this.shadowRoot.getElementById("addLinesBtn")
     const mergeLinesBtn = this.shadowRoot.getElementById("mergeLinesBtn")
     const drag = this.shadowRoot.querySelectorAll(".dragMe")
@@ -270,6 +330,9 @@ class AnnotoriousAnnotator extends HTMLElement {
     editTool.addEventListener("change", (e) => this.toggleEditingMode(e))
     eraseTool.addEventListener("change", (e) => this.toggleErasingMode(e))
     seeTool.addEventListener("change", (e) => this.toggleAnnotationVisibility(e))
+    createColumnsBtn.addEventListener("click", () =>
+      window.location.href = `../../components/create-column/?annotationPage=${TPEN.RERUMURL}/id/${this.#annotationPageID}&projectID=${TPEN.activeProject._id}`
+    )
     saveButton.addEventListener("click", (e) => {
       this.#annotoriousInstance.cancelSelected()
       // Timeout required in order to allow the unfocus native functionality to complete for $isDirty.
@@ -420,6 +483,7 @@ class AnnotoriousAnnotator extends HTMLElement {
   async loadAnnotorious(resolvedCanvas) {
     this.shadowRoot.getElementById('annotator-container').innerHTML = ""
     const canvasID = resolvedCanvas["@id"] ?? resolvedCanvas.id
+    this.#canvasID = canvasID
     let fullImage = resolvedCanvas?.items?.[0]?.items?.[0]?.body?.id
     if (!fullImage) fullImage = resolvedCanvas?.images?.[0]?.resource?.["@id"]
     let imageService = resolvedCanvas?.items?.[0]?.items?.[0]?.body?.service?.id
@@ -440,6 +504,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       type: "image",
       url: fullImage
     }
+    this.#canvasImageURL = fullImage
     // Try to get the info.json.  If we can't, continue with the simple imageInfo obj.
     if (imageService) {
       const lastchar = imageService[imageService.length - 1]

@@ -144,8 +144,9 @@ export default class TranscriptionBlock extends HTMLElement {
 
         window.addEventListener("message", (event) => {
             if (event.data?.type === "RETURN_LINE_ID") {
-                if (typeof event.data.lineIndex === 'number') {
-                    this.moveToLine(event.data.lineIndex)
+                const lineIndex = this.#page.items.findIndex(item => item.id === event.data.lineid)
+                if (lineIndex !== -1) {
+                    this.moveToLine(lineIndex, 'next')
                     this.updateTranscriptionUI()
                 }
             }
