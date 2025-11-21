@@ -236,7 +236,7 @@ class TpenCreateColumn extends HTMLElement {
             let { imgUrl, annotations, imgWidth, imgHeight } = await this.fetchPageViewerData(annotationPage)
             await this.renderImage(imgUrl)
             const page = await TPEN.activeProject.layers.flatMap(layer => layer.pages || []).find(p => p.id.split('/').pop() === this.annotationPageID)
-            this.existingColumns = page?.columns || []
+            this.existingColumns = page?.columns.map(column => ({ label: column.label, lines: column.lines })) || []
             const assignedAnnotationIds = []
             this.existingColumns.forEach(column => {
                 column.lines.forEach(annoId => assignedAnnotationIds.push({
@@ -318,6 +318,7 @@ class TpenCreateColumn extends HTMLElement {
         if (columnLabels.length === 0) {
             workspaceMessage.textContent = 'No columns available to merge.'
             const workspaceToolbar = this.shadowRoot.querySelectorAll('.toolbar')[1]
+            workspaceToolbar.style.justifyContent = 'flex-start'
             workspaceToolbar.appendChild(workspaceMessage)
             return
         }
@@ -336,9 +337,15 @@ class TpenCreateColumn extends HTMLElement {
             btn.style.padding = '8px 12px'
             btn.style.cursor = 'pointer'
             btn.addEventListener('click', () => {
-                btn.style.backgroundColor = 'white'
-                btn.style.color = 'var(--primary-color)'
-                columnLabelsToMerge.push(label)
+                if(btn.style.backgroundColor !== 'white') {
+                    btn.style.backgroundColor = 'white'
+                    btn.style.color = 'var(--primary-color)'
+                    columnLabelsToMerge.push(label)
+                } else {
+                    btn.style.backgroundColor = 'var(--primary-color)'
+                    btn.style.color = 'white'
+                    columnLabelsToMerge.pop(label)
+                }
             })
             workspaceToolbar.appendChild(btn)
         })
@@ -384,7 +391,23 @@ class TpenCreateColumn extends HTMLElement {
                 TPEN.eventDispatcher.dispatch("tpen-toast", { 
                     status: "success", message: 'Columns merged successfully.' 
                 })
-                window.location.reload()
+                this.shadowRoot.querySelectorAll('.overlayBox').forEach(box => {
+                    if (columnLabelsToMerge.includes(box.textContent)) {
+                        box.classList.add('disabled')
+                        box.textContent = newLabel
+                    }
+                })
+                this.existingColumns = this.existingColumns.filter(col => !columnLabelsToMerge.includes(col.label))
+                this.existingColumns.push({ label: newLabel, lines: this.selectedBoxes.map(b => b.dataset.lineid) })
+                this.selectedBoxes = []
+                this.lastClickedIndex = null
+                this.totalIds = this.totalIds.filter(id => !this.selectedBoxes.some(b => b.dataset.lineid === id))
+                localStorage.setItem('annotationsState', JSON.stringify({ remainingIDs: this.totalIds, selectedIDs: [] }))
+                workspaceToolbar.innerHTML = `
+                    <h2 class="workspace-title">Workspace</h2>
+                    <p class="workspace-description">Use this area to merge existing columns and extending them.</p>
+                `
+                workspaceToolbar.style.justifyContent = 'flex-start'
             } catch (error) {
                 TPEN.eventDispatcher.dispatch("tpen-toast", { 
                     status: "error", message: error.message 
@@ -410,6 +433,8 @@ class TpenCreateColumn extends HTMLElement {
         workspaceMessage.style.fontSize = '1em'
         if (columnLabels.length === 0) {
             workspaceMessage.textContent = 'No columns available to extend.'
+            const workspaceToolbar = this.shadowRoot.querySelectorAll('.toolbar')[1]
+            workspaceToolbar.style.justifyContent = 'flex-start'
             workspaceToolbar.appendChild(workspaceMessage)
             return
         }
@@ -471,7 +496,19 @@ class TpenCreateColumn extends HTMLElement {
                 TPEN.eventDispatcher.dispatch("tpen-toast", { 
                     status: "success", message: 'Column extended successfully.' 
                 })
-                window.location.reload()
+                this.selectedBoxes.forEach(b => {
+                    b.classList.add('disabled')
+                    b.textContent = columnToExtend
+                })
+                this.selectedBoxes = []
+                this.lastClickedIndex = null
+                this.totalIds = this.totalIds.filter(id => !this.selectedBoxes.some(b => b.dataset.lineid === id))
+                localStorage.setItem('annotationsState', JSON.stringify({ remainingIDs: this.totalIds, selectedIDs: [] }))
+                workspaceToolbar.innerHTML = `
+                    <h2 class="workspace-title">Workspace</h2>
+                    <p class="workspace-description">Use this area to merge existing columns and extending them.</p>
+                `
+                workspaceToolbar.style.justifyContent = 'flex-start'
             } catch (error) {
                 TPEN.eventDispatcher.dispatch("tpen-toast", { 
                     status: "error", message: error.message 
@@ -725,10 +762,13 @@ class TpenCreateColumn extends HTMLElement {
 
             if (!res.ok) 
                 throw new Error(`Server error: ${res.status}`)
-            this.selectedBoxes.forEach(b => b.remove())
+            this.selectedBoxes.forEach(b => {
+                b.classList.add('disabled')
+                b.textContent = columnLabel
+            })
+            this.existingColumns.push({ label: columnLabel, lines: selectedIDs })
             this.totalIds = this.totalIds.filter(id => !this.selectedBoxes.some(b => b.dataset.lineid === id))
             localStorage.setItem('annotationsState', JSON.stringify({ remainingIDs: this.totalIds, selectedIDs: [] }))
-            window.location.reload()
 
             this.selectedBoxes = []
             this.lastClickedIndex = null
