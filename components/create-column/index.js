@@ -236,7 +236,7 @@ class TpenCreateColumn extends HTMLElement {
             let { imgUrl, annotations, imgWidth, imgHeight } = await this.fetchPageViewerData(annotationPage)
             await this.renderImage(imgUrl)
             const page = await TPEN.activeProject.layers.flatMap(layer => layer.pages || []).find(p => p.id.split('/').pop() === this.annotationPageID)
-            this.existingColumns = page?.columns.map(column => ({ label: column.label, lines: column.lines })) || []
+            this.existingColumns = page?.columns?.map(column => ({ label: column.label, lines: column.lines })) || []
             const assignedAnnotationIds = []
             this.existingColumns.forEach(column => {
                 column.lines.forEach(annoId => assignedAnnotationIds.push({
@@ -801,6 +801,7 @@ class TpenCreateColumn extends HTMLElement {
             })
             this.selectedBoxes = []
             this.lastClickedIndex = null
+            this.existingColumns = []
             const params = new URLSearchParams(window.location.search)
             const annotationPage = params.get("annotationPage")
             let { annotations } = await this.fetchPageViewerData(annotationPage)
