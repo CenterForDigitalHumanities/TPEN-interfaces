@@ -17,7 +17,7 @@ export default class ColumnSelector extends HTMLElement {
         if (TPEN.activeProject && TPEN.activeProject.layers) {
             const page = TPEN.activeProject.layers.flatMap(layer => layer.pages || []).find(p => p.id.split('/').pop() === pageId)
             this.columns = page?.columns || []
-            if (this.columns.length <= 1) {
+            if (this.columns.length < 1) {
                return this.remove()
             }
             this.render()
