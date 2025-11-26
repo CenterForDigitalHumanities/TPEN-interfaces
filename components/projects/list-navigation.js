@@ -114,7 +114,17 @@ export default class ProjectsListNavigation extends HTMLElement {
     async render() {
         let list = this.shadowRoot.getElementById('projectsListView')
         if (!this.#projects?.length) {
-            list.innerHTML = `No projects found`
+            list.innerHTML = `
+                <div style="padding: 1em; line-height: 1.6;">
+                    <p style="margin-bottom: 1em;"><strong>Welcome to TPEN!</strong></p>
+                    <p style="margin-bottom: 1em;">Get started by creating your first project or importing a manuscript.</p>
+                    <ul style="list-style: none; padding-left: 0; margin-bottom: 1em;">
+                        <li style="margin-bottom: 0.5em;">📚 <a href="https://three.t-pen.org/category/tutorials/" target="_blank" rel="noopener noreferrer" style="color: var(--tpen-color-primary); text-decoration: none;">View Tutorials</a></li>
+                        <li style="margin-bottom: 0.5em;">❓ <a href="https://three.t-pen.org/faq/" target="_blank" rel="noopener noreferrer" style="color: var(--tpen-color-primary); text-decoration: none;">Frequently Asked Questions</a></li>
+                        <li style="margin-bottom: 0.5em;">🖼️ <a href="https://iiif.io/guides/finding_resources/" target="_blank" rel="noopener noreferrer" style="color: var(--tpen-color-primary); text-decoration: none;">Find IIIF Resources</a></li>
+                    </ul>
+                </div>
+            `
             return
         }
         list.innerHTML = ""

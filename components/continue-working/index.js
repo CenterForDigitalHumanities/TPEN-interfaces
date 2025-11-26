@@ -73,6 +73,15 @@ class ContinueWorking extends HTMLElement {
                 return project ? { project, label, pageId } : null
             })
             .filter(Boolean)
+
+        // If there are no recent projects, hide the parent card
+        if (recentProjects.length === 0) {
+            const parentCard = this.closest('tpen-card')
+            if (parentCard) {
+                parentCard.style.display = 'none'
+            }
+            return
+        }
         
         const recentProjectsWithPlaceholders = recentProjects.map(a => {
             let lastEdited = stringFromDate(a.project._modifiedAt)
