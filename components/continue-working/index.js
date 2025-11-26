@@ -74,12 +74,12 @@ class ContinueWorking extends HTMLElement {
             })
             .filter(Boolean)
 
-        // If there are no recent projects, hide the parent card
+        // If there are no recent projects, notify parent via custom event
         if (recentProjects.length === 0) {
-            const parentCard = this.closest('tpen-card')
-            if (parentCard) {
-                parentCard.style.display = 'none'
-            }
+            this.dispatchEvent(new CustomEvent('tpen-no-recent-activity', {
+                bubbles: true,
+                composed: true
+            }))
             return
         }
         

@@ -138,15 +138,15 @@ export default class ProjectsListNavigation extends HTMLElement {
         let list = this.shadowRoot.getElementById('projectsListView')
         if (!this.#projects?.length) {
             list.innerHTML = `
-                <div class="welcome-message">
+                <section class="welcome-message">
                     <p><strong>Welcome to TPEN!</strong></p>
                     <p>Get started by creating your first project or importing a manuscript.</p>
                     <ul class="welcome-list">
-                        <li>📚 <a href="https://three.t-pen.org/category/tutorials/" target="_blank" rel="noopener noreferrer">View Tutorials</a></li>
-                        <li>❓ <a href="https://three.t-pen.org/faq/" target="_blank" rel="noopener noreferrer">Frequently Asked Questions</a></li>
-                        <li>🖼️ <a href="https://iiif.io/guides/finding_resources/" target="_blank" rel="noopener noreferrer">Find IIIF Resources</a></li>
+                        <li aria-label="View Tutorials"><span aria-hidden="true">📚</span> <a href="https://three.t-pen.org/category/tutorials/" target="_blank" rel="noopener noreferrer">View Tutorials</a></li>
+                        <li aria-label="Frequently Asked Questions"><span aria-hidden="true">❓</span> <a href="https://three.t-pen.org/faq/" target="_blank" rel="noopener noreferrer">Frequently Asked Questions</a></li>
+                        <li aria-label="Find IIIF Resources"><span aria-hidden="true">🖼️</span>>🖼️ <a href="https://iiif.io/guides/finding_resources/" target="_blank" rel="noopener noreferrer">Find IIIF Resources</a></li>
                     </ul>
-                </div>
+                </section>
             `
             return
         }
