@@ -76,10 +76,7 @@ class ContinueWorking extends HTMLElement {
 
         // If there are no recent projects, notify parent via custom event
         if (recentProjects.length === 0) {
-            this.dispatchEvent(new CustomEvent('tpen-no-recent-activity', {
-                bubbles: true,
-                composed: true
-            }))
+            TPEN.eventDispatcher.dispatch('tpen-no-recent-activity')
             return
         }
         
