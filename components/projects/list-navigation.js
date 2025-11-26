@@ -144,7 +144,7 @@ export default class ProjectsListNavigation extends HTMLElement {
                     <ul class="welcome-list">
                         <li aria-label="View Tutorials"><span aria-hidden="true">📚</span> <a href="https://three.t-pen.org/category/tutorials/" target="_blank" rel="noopener noreferrer">View Tutorials</a></li>
                         <li aria-label="Frequently Asked Questions"><span aria-hidden="true">❓</span> <a href="https://three.t-pen.org/faq/" target="_blank" rel="noopener noreferrer">Frequently Asked Questions</a></li>
-                        <li aria-label="Find IIIF Resources"><span aria-hidden="true">🖼️</span>>🖼️ <a href="https://iiif.io/guides/finding_resources/" target="_blank" rel="noopener noreferrer">Find IIIF Resources</a></li>
+                        <li aria-label="Find IIIF Resources"><span aria-hidden="true">🖼️</span> <a href="https://iiif.io/guides/finding_resources/" target="_blank" rel="noopener noreferrer">Find IIIF Resources</a></li>
                     </ul>
                 </section>
             `
