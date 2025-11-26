@@ -69,6 +69,29 @@ export default class ProjectsListNavigation extends HTMLElement {
                     background-color: var(--light-gray);
                 }
             }
+            .welcome-message {
+                padding: 1em;
+                line-height: 1.6;
+            }
+            .welcome-message p {
+                margin-bottom: 1em;
+            }
+            .welcome-list {
+                list-style: none;
+                padding-left: 0;
+                margin-bottom: 1em;
+            }
+            .welcome-list li {
+                margin-bottom: 0.5em;
+                background-color: transparent;
+            }
+            .welcome-list li:hover {
+                background-color: transparent;
+            }
+            .welcome-list a {
+                color: var(--tpen-color-primary);
+                text-decoration: none;
+            }
         `
         const projectList = document.createElement('ol')
         if (this.classList.contains('unbounded')) {
@@ -115,13 +138,13 @@ export default class ProjectsListNavigation extends HTMLElement {
         let list = this.shadowRoot.getElementById('projectsListView')
         if (!this.#projects?.length) {
             list.innerHTML = `
-                <section role="region" aria-label="Welcome to TPEN" style="padding: 1em; line-height: 1.6;">
-                    <p style="margin-bottom: 1em;"><strong>Welcome to TPEN!</strong></p>
-                    <p style="margin-bottom: 1em;">Get started by creating your first project or importing a manuscript.</p>
-                    <ul style="list-style: none; padding-left: 0; margin-bottom: 1em;">
-                        <li style="margin-bottom: 0.5em;" aria-label="View Tutorials"><span aria-hidden="true">📚</span> <a href="https://three.t-pen.org/category/tutorials/" target="_blank" rel="noopener noreferrer" style="color: var(--tpen-color-primary); text-decoration: none;">View Tutorials</a></li>
-                        <li style="margin-bottom: 0.5em;" aria-label="Frequently Asked Questions"><span aria-hidden="true">❓</span> <a href="https://three.t-pen.org/faq/" target="_blank" rel="noopener noreferrer" style="color: var(--tpen-color-primary); text-decoration: none;">Frequently Asked Questions</a></li>
-                        <li style="margin-bottom: 0.5em;" aria-label="Find IIIF Resources"><span aria-hidden="true">🖼️</span> <a href="https://iiif.io/guides/finding_resources/" target="_blank" rel="noopener noreferrer" style="color: var(--tpen-color-primary); text-decoration: none;">Find IIIF Resources</a></li>
+                <section class="welcome-message">
+                    <p><strong>Welcome to TPEN!</strong></p>
+                    <p>Get started by creating your first project or importing a manuscript.</p>
+                    <ul class="welcome-list">
+                        <li aria-label="View Tutorials"><span aria-hidden="true">📚</span> <a href="https://three.t-pen.org/category/tutorials/" target="_blank" rel="noopener noreferrer">View Tutorials</a></li>
+                        <li aria-label="Frequently Asked Questions"><span aria-hidden="true">❓</span> <a href="https://three.t-pen.org/faq/" target="_blank" rel="noopener noreferrer">Frequently Asked Questions</a></li>
+                        <li aria-label="Find IIIF Resources"><span aria-hidden="true">🖼️</span>>🖼️ <a href="https://iiif.io/guides/finding_resources/" target="_blank" rel="noopener noreferrer">Find IIIF Resources</a></li>
                     </ul>
                 </section>
             `
