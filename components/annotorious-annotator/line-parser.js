@@ -14,6 +14,7 @@ import User from '../../api/User.js'
 import { getAgentIRIFromToken } from '../iiif-tools/index.js'
 import CheckPermissions from '../check-permissions/checkPermissions.js'
 import { detectTextLinesCombined } from "./detect-lines.js"
+import { v4 as uuidv4 } from "https://cdn.skypack.dev/uuid@9.0.1"
 
 class AnnotoriousAnnotator extends HTMLElement {
   #osd 
@@ -31,6 +32,7 @@ class AnnotoriousAnnotator extends HTMLElement {
   #editType = ""
   #canvasImageURL
   #canvasID
+  #currentMergeSelection
 
   constructor() {
     super()
@@ -147,10 +149,10 @@ class AnnotoriousAnnotator extends HTMLElement {
         .toggleEditType {
           margin-top: 6px;
         }
-        .toggleEditType, input[type="checkbox"], #saveBtn, #createColumnsBtn {
+        .toggleEditType, input[type="checkbox"], #saveBtn, #createColumnsBtn, #deleteAllBtn {
           cursor: pointer;
         }
-        #saveBtn, #createColumnsBtn {
+        #saveBtn, #createColumnsBtn, #deleteAllBtn {
           background-color: var(--primary-color);
           text-transform: uppercase;
           outline: var(--primary-light) 1px solid;
@@ -163,11 +165,11 @@ class AnnotoriousAnnotator extends HTMLElement {
           width: 100%;
           margin-top: 1em;
         }
-        #saveBtn[disabled], #createColumnsBtn[disabled] {
+        #saveBtn[disabled], #createColumnsBtn[disabled], #deleteAllBtn[disabled] {
           background-color: gray;
           color: white;
         }
-        #saveBtn:hover, #createColumnsBtn:hover {
+        #saveBtn:hover, #createColumnsBtn:hover, #deleteAllBtn:hover {
           background-color: var(--primary-light);
           outline: var(--primary-color) 1px solid;
           outline-offset: -1.5px;
@@ -266,7 +268,8 @@ class AnnotoriousAnnotator extends HTMLElement {
            <span>Annotation Visibility</span>
            <input type="checkbox" id="seeTool" checked> 
           </label>
-          <input id="createColumnsBtn" type="button" value="Create Columns"/>
+          <input id="deleteAllBtn" type="button" value="Delete All Annotations"/>
+          <input id="createColumnsBtn" type="button" value="Manage Columns"/>
           <input id="saveBtn" type="button" value="Save Annotations"/>
         </div>
         <button id="autoParseBtn">Auto Parse</button>
@@ -319,6 +322,7 @@ class AnnotoriousAnnotator extends HTMLElement {
     const eraseTool = this.shadowRoot.getElementById("eraseTool")
     const seeTool = this.shadowRoot.getElementById("seeTool")
     const saveButton = this.shadowRoot.getElementById("saveBtn")
+    const deleteAllBtn = this.shadowRoot.getElementById("deleteAllBtn")
     const createColumnsBtn = this.shadowRoot.getElementById("createColumnsBtn")
     const addLinesBtn = this.shadowRoot.getElementById("addLinesBtn")
     const mergeLinesBtn = this.shadowRoot.getElementById("mergeLinesBtn")
@@ -338,6 +342,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       // Timeout required in order to allow the unfocus native functionality to complete for $isDirty.
       setTimeout(() => { this.saveAnnotations() }, 500)
     })
+    deleteAllBtn.addEventListener("click", (e) => this.deleteAllAnnotations(e))
     window.addEventListener('beforeunload', () => {
       if (this.#resolvedAnnotationPage?.$isDirty) {
         if (!confirm("If you leave unsaved changes will be lost.")){
@@ -957,11 +962,22 @@ class AnnotoriousAnnotator extends HTMLElement {
         saveButton.value = "ERROR"
         throw err
       })
-    page.items = page.items.map(i => ({
-      ...i,
-      ...(mod.items?.find(a => a.target === i.target) ?? {})
-    }))
-    this.#modifiedAnnotationPage = page
+      const refreshedPage = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/page/${pageID.split("/").pop()}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${TPEN.getAuthorization()}`,
+        }
+      })
+      .then(r => {
+        if (!r.ok) throw r
+        return r.json()
+      })
+      .catch(e => {
+        console.error("Could not refresh page after save.", e)
+        return page
+      })
+    this.#modifiedAnnotationPage = refreshedPage
     TPEN.eventDispatcher.dispatch("tpen-page-committed", this.#modifiedAnnotationPage)
     TPEN.eventDispatcher.dispatch("tpen-toast", {
       message: "Annotations Saved",
@@ -971,6 +987,16 @@ class AnnotoriousAnnotator extends HTMLElement {
     saveButton.value = "Save Annotations"
     this.#resolvedAnnotationPage.$isDirty = false
     return this.#modifiedAnnotationPage
+  }
+
+  /**
+   * Use Annotorious to delete all known Annotations
+   * https://annotorious.dev/api-reference/openseadragon-annotator/#clearannotations
+   */
+  deleteAllAnnotations() {
+    this.#annotoriousInstance.clearAnnotations()
+    this.#resolvedAnnotationPage.$isDirty = true
+    this.saveAnnotations()
   }
 
   /**
@@ -1285,6 +1311,7 @@ class AnnotoriousAnnotator extends HTMLElement {
     if (!this.#isLineEditing) return
     let toast
     const annoElem = event.target
+    this.#currentMergeSelection = this.#annotoriousInstance.getSelected()
     // Note that if there is no selected line, there are no DOM elements representing Annotations. 
     if (!annoElem) return
     // Then we really should be able to get the selected annotation JSON from Annotorious
@@ -1337,7 +1364,7 @@ class AnnotoriousAnnotator extends HTMLElement {
     allAnnotations.splice(origIndex + 1, 1)
     this.#annotoriousInstance.removeAnnotation(nextId)
     // Splice new Annotation data into original Annotation list
-    newAnnoObject.id = Date.now() + ""
+    newAnnoObject.id = this.#currentMergeSelection[0].id
     newAnnoObject.target.selector.value = `xywh=pixel:${newAnnoDims.join()}`
     newAnnoObject.created = new Date().toJSON()
     if (annoJsonToMergeIn.body.length) {

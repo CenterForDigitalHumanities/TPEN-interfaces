@@ -218,7 +218,6 @@ class TpenCreateColumn extends HTMLElement {
         this.clearBtn.addEventListener("click", () => this.clearAllSelections())
         this.mergeColumnsCheckbox.addEventListener("change", () => this.handleModeChange())
         this.extendColumnCheckbox.addEventListener("change", () => this.handleModeChange())
-        window.addEventListener('beforeunload', async () => await this.saveAnnotationState())
     }
 
     connectedCallback() {
@@ -243,15 +242,13 @@ class TpenCreateColumn extends HTMLElement {
                     lineid: annoId, columnLabel: column.label
                 }))
             })
-            const filteredAnnotations = assignedAnnotationIds.filter(a => a.columnLabel !== "Unordered Column")
-            this.totalIds = annotations.filter(anno => !filteredAnnotations.find(a => a.lineid === anno.lineid)).map(a => a.lineid)
-
+            this.totalIds = annotations.filter(anno => !assignedAnnotationIds.find(a => a.lineid === anno.lineid)).map(a => a.lineid)
             localStorage.setItem('annotationsState', JSON.stringify({
                 remainingIDs: this.totalIds,
                 selectedIDs: []
             }))
 
-            this.renderAnnotations(annotations, imgWidth, imgHeight, filteredAnnotations)
+            this.renderAnnotations(annotations, imgWidth, imgHeight, assignedAnnotationIds)
             this.restoreAnnotationState()
         } catch (e) {
             this.showError(e.message)
@@ -302,12 +299,7 @@ class TpenCreateColumn extends HTMLElement {
 
     mergeColumns() {
         const columnLabelsToMerge = []
-        const columnLabels = this.existingColumns.map(col => {
-            if (col.label !== "Unordered Column") {
-                return col.label
-            }
-        }).filter(label => label)
-
+        const columnLabels = this.existingColumns.map(col => col.label).filter(label => label)
         const workspaceToolbar = this.shadowRoot.querySelectorAll('.toolbar')[1]
         workspaceToolbar.innerHTML = `<h2 class="workspace-title">Workspace - Merge Columns Mode</h2>`
         const workspaceMessage = document.createElement('div')
@@ -418,12 +410,7 @@ class TpenCreateColumn extends HTMLElement {
 
     extendColumn() {
         let columnToExtend = ''
-        const columnLabels = this.existingColumns.map(col => {
-            if (col.label !== "Unordered Column") {
-                return col.label
-            }
-        }).filter(label => label)
-
+        const columnLabels = this.existingColumns.map(col => col.label).filter(label => label)
         const workspaceToolbar = this.shadowRoot.querySelectorAll('.toolbar')[1]
         workspaceToolbar.innerHTML = `<h2 class="workspace-title">Workspace - Extend Column Mode</h2>`
         const workspaceMessage = document.createElement('div')
@@ -599,29 +586,6 @@ class TpenCreateColumn extends HTMLElement {
             this.container.innerHTML = ""
             this.container.appendChild(img)
         })
-    }
-
-    async saveAnnotationState() {
-        const saved = localStorage.getItem('annotationsState')
-        if (!saved) return
-        const { remainingIDs = [] } = JSON.parse(saved)
-        try {
-            const res = await fetch(`${TPEN.servicesURL}/project/${this.projectID}/page/${this.annotationPageID}/unordered-column`, {
-                method: 'POST',
-                headers: { 
-                    "Authorization": `Bearer ${TPEN.getAuthorization()}`,
-                    'Content-Type': 'application/json' 
-                },
-                body: JSON.stringify({
-                    label: 'Unordered Column',
-                    annotations: remainingIDs,
-                    unordered: true
-                })
-            })
-            if (!res.ok) throw new Error(`Server error: ${res.status}`)
-        } catch (error) {
-            console.error("Error saving annotation state:", error)
-        }
     }
 
     restoreAnnotationState() {
