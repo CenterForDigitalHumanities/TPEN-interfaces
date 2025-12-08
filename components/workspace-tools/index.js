@@ -11,6 +11,7 @@ export default class WorkspaceTools extends HTMLElement {
     super()
     this.attachShadow({ mode: "open" })
     this.magnifierTool = null
+    this._magnifierClickHandler = null
   }
 
   connectedCallback() {
@@ -107,7 +108,14 @@ export default class WorkspaceTools extends HTMLElement {
     `
 
   this.magnifierBtn = this.shadowRoot.querySelector(".magnifier-btn")
-  this.magnifierBtn.addEventListener("click", () => {
+  
+  // Remove old event listener if it exists to prevent duplicates
+  if (this._magnifierClickHandler) {
+    this.magnifierBtn.removeEventListener("click", this._magnifierClickHandler)
+  }
+  
+  // Store the handler so we can remove it later if render() is called again
+  this._magnifierClickHandler = () => {
     const iface = document.querySelector("tpen-transcription-interface") || document.querySelector("tpen-simple-transcription")
     const transcriptionInterface = iface?.shadowRoot
 
@@ -150,7 +158,9 @@ export default class WorkspaceTools extends HTMLElement {
       }
     }
     window.addEventListener("keydown", this._magnifierEscHandler)
-  })
+  }
+  
+  this.magnifierBtn.addEventListener("click", this._magnifierClickHandler)
   }
 }
 
