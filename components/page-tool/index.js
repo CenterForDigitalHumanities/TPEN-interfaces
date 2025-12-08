@@ -118,6 +118,7 @@ export default class PageTool extends HTMLElement {
         }, 0)
     }
 
+    // Apply filters to standard transcription interface images (uses CSS classes on imageEl)
     updateMainImageFilters(imageEl) {
         if (!imageEl) return
 
@@ -131,6 +132,7 @@ export default class PageTool extends HTMLElement {
         imageEl.style.filter = filters.join(' ')
     }
 
+    // Apply filters to simple transcription interface images (uses component state)
     applyFiltersToImage(imageEl) {
         if (!imageEl) return
 
