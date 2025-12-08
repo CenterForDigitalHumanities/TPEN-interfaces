@@ -7,11 +7,13 @@ class TpenCreateColumn extends HTMLElement {
         TPEN.attachAuthentication(this)
 
         this.projectID = null
+        this.pageID = null
         this.annotationPageID = null
         this.selectedBoxes = []
         this.lastClickedIndex = null
         this.totalIds = []
         this.existingColumns = []
+        this.originalColumnLabels = []
 
         this.shadowRoot.innerHTML = `
             <style>
@@ -33,10 +35,10 @@ class TpenCreateColumn extends HTMLElement {
                     transition: box-shadow 0.15s ease, border-color 0.15s ease;
                     border-radius: 2px;
                     display: flex;
-                    align-items: center;
+                    align-items: flex-start;
                     justify-content: flex-start;
                     padding-left: 10px;
-                    font-size: 16px;
+                    font-size: 12px;
                 }
                 .overlayBox.clicked {
                     border-color: red;
@@ -174,8 +176,7 @@ class TpenCreateColumn extends HTMLElement {
                     border-radius: 5px;
                     transition: all 0.3s;
                     cursor: pointer;
-                    width: 20%;
-                    font-size: 14px;
+                    font-size: 12px;
                     font-weight: 600;
                 }
                 .merge-label-btn:hover, .extend-label-btn:hover {
@@ -223,20 +224,33 @@ class TpenCreateColumn extends HTMLElement {
     connectedCallback() {
         localStorage.removeItem('annotationsState')
         const params = new URLSearchParams(window.location.search)
-        const annotationPage = params.get("annotationPage")
+        this.pageID = `${TPEN.RERUMURL}/id/${params.get("pageID")}`
         this.projectID = params.get("projectID")
-        this.annotationPageID = annotationPage.split("/").pop()
-        TPEN.eventDispatcher.on('tpen-project-loaded', () => this.loadPage(annotationPage))
+        this.annotationPageID = this.pageID.split("/").pop()
+        TPEN.eventDispatcher.on('tpen-project-loaded', async () => await this.loadPage(this.pageID))
     }
 
-    async loadPage(annotationPage = null) {
+    async columnLabelCheck() {
+        this.originalColumnLabels = this.existingColumns.map(col => col.label)
+        this.existingColumns = this.existingColumns.map((col, index) => {
+            const { label } = col
+            const isAutoLabel = label.startsWith("Column ") && /^[a-f\d]{24}$/i.test(label.slice(7))
+            return {
+                ...col,
+                label: isAutoLabel ? `Unnamed ${index + 1}` : label
+            }
+        })
+    }
+
+    async loadPage(pageID = null) {
         try {
             this.showLoading()
-            let { imgUrl, annotations, imgWidth, imgHeight } = await this.fetchPageViewerData(annotationPage)
+            let { imgUrl, annotations, imgWidth, imgHeight } = await this.fetchPageViewerData(pageID)
             await this.renderImage(imgUrl)
             const page = await TPEN.activeProject.layers.flatMap(layer => layer.pages || []).find(p => p.id.split('/').pop() === this.annotationPageID)
             this.existingColumns = page?.columns?.map(column => ({ label: column.label, lines: column.lines })) || []
             const assignedAnnotationIds = []
+            await this.columnLabelCheck()
             this.existingColumns.forEach(column => {
                 column.lines.forEach(annoId => assignedAnnotationIds.push({
                     lineid: annoId, columnLabel: column.label
@@ -332,11 +346,11 @@ class TpenCreateColumn extends HTMLElement {
                 if(btn.style.backgroundColor !== 'white') {
                     btn.style.backgroundColor = 'white'
                     btn.style.color = 'var(--primary-color)'
-                    columnLabelsToMerge.push(label)
+                    columnLabelsToMerge.push(columnLabels.indexOf(label) !== -1 ? columnLabels.indexOf(label) : '')
                 } else {
                     btn.style.backgroundColor = 'var(--primary-color)'
                     btn.style.color = 'white'
-                    columnLabelsToMerge.pop(label)
+                    columnLabelsToMerge.pop(columnLabels.indexOf(label) !== -1 ? columnLabels.indexOf(label) : '')
                 }
             })
             workspaceToolbar.appendChild(btn)
@@ -376,30 +390,14 @@ class TpenCreateColumn extends HTMLElement {
                     },
                     body: JSON.stringify({
                         newLabel,
-                        columnLabelsToMerge
+                        columnLabelsToMerge: columnLabelsToMerge.map(index => this.originalColumnLabels[index]),
                     })
                 })
                 if (!res.ok) throw new Error(`Failed to merge columns: ${res.status}`)
                 TPEN.eventDispatcher.dispatch("tpen-toast", { 
                     status: "success", message: 'Columns merged successfully.' 
                 })
-                this.shadowRoot.querySelectorAll('.overlayBox').forEach(box => {
-                    if (columnLabelsToMerge.includes(box.textContent)) {
-                        box.classList.add('disabled')
-                        box.textContent = newLabel
-                    }
-                })
-                this.existingColumns = this.existingColumns.filter(col => !columnLabelsToMerge.includes(col.label))
-                this.existingColumns.push({ label: newLabel, lines: this.selectedBoxes.map(b => b.dataset.lineid) })
-                this.selectedBoxes = []
-                this.lastClickedIndex = null
-                this.totalIds = this.totalIds.filter(id => !this.selectedBoxes.some(b => b.dataset.lineid === id))
-                localStorage.setItem('annotationsState', JSON.stringify({ remainingIDs: this.totalIds, selectedIDs: [] }))
-                workspaceToolbar.innerHTML = `
-                    <h2 class="workspace-title">Workspace</h2>
-                    <p class="workspace-description">Use this area to merge existing columns and extending them.</p>
-                `
-                workspaceToolbar.style.justifyContent = 'flex-start'
+                window.location.reload()
             } catch (error) {
                 TPEN.eventDispatcher.dispatch("tpen-toast", { 
                     status: "error", message: error.message 
@@ -434,15 +432,22 @@ class TpenCreateColumn extends HTMLElement {
             btn.style.padding = '8px 12px'
             btn.style.cursor = 'pointer'
             btn.addEventListener('click', () => {
-                columnToExtend = label
-                Array.from(workspaceToolbar.querySelectorAll('.extend-label-btn')).forEach(otherBtn => {
-                    if (otherBtn !== btn) {
-                        otherBtn.style.backgroundColor = 'var(--primary-color)'
-                        otherBtn.style.color = 'var(--white)'
-                    }
-                })
-                btn.style.backgroundColor = 'white'
-                btn.style.color = 'var(--primary-color)'
+                if (btn.style.backgroundColor === 'white') {
+                    columnToExtend = ''
+                    btn.style.backgroundColor = 'var(--primary-color)'
+                    btn.style.color = 'var(--white)'
+                }
+                else {
+                    columnToExtend = columnLabels.indexOf(label) !== -1 ? columnLabels.indexOf(label) : ''
+                    Array.from(workspaceToolbar.querySelectorAll('.extend-label-btn')).forEach(otherBtn => {
+                        if (otherBtn !== btn) {
+                            otherBtn.style.backgroundColor = 'var(--primary-color)'
+                            otherBtn.style.color = 'var(--white)'
+                        }
+                    })
+                    btn.style.backgroundColor = 'white'
+                    btn.style.color = 'var(--primary-color)'
+                }
             })
             workspaceToolbar.appendChild(btn)
         })
@@ -454,7 +459,7 @@ class TpenCreateColumn extends HTMLElement {
         workspaceToolbar.appendChild(extendColumnBtn)
 
         extendColumnBtn.addEventListener('click', async () => {
-            if (!columnToExtend) {
+            if (!this.originalColumnLabels[columnToExtend]) {
                 return TPEN.eventDispatcher.dispatch("tpen-toast", { 
                     status: "error", message: 'Please select a column to extend.' 
                 })
@@ -475,7 +480,7 @@ class TpenCreateColumn extends HTMLElement {
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
-                        columnLabel: columnToExtend,
+                        columnLabel: this.originalColumnLabels[columnToExtend],
                         annotationIdsToAdd
                     })
                 })
@@ -483,19 +488,7 @@ class TpenCreateColumn extends HTMLElement {
                 TPEN.eventDispatcher.dispatch("tpen-toast", { 
                     status: "success", message: 'Column extended successfully.' 
                 })
-                this.selectedBoxes.forEach(b => {
-                    b.classList.add('disabled')
-                    b.textContent = columnToExtend
-                })
-                this.selectedBoxes = []
-                this.lastClickedIndex = null
-                this.totalIds = this.totalIds.filter(id => !this.selectedBoxes.some(b => b.dataset.lineid === id))
-                localStorage.setItem('annotationsState', JSON.stringify({ remainingIDs: this.totalIds, selectedIDs: [] }))
-                workspaceToolbar.innerHTML = `
-                    <h2 class="workspace-title">Workspace</h2>
-                    <p class="workspace-description">Use this area to merge existing columns and extending them.</p>
-                `
-                workspaceToolbar.style.justifyContent = 'flex-start'
+                window.location.reload()
             } catch (error) {
                 TPEN.eventDispatcher.dispatch("tpen-toast", { 
                     status: "error", message: error.message 
@@ -529,15 +522,15 @@ class TpenCreateColumn extends HTMLElement {
     async getSpecificTypeData(type) {
         if (!type) throw new Error("No IIIF resource provided")
         if (typeof type === "string" && this.isValidUrl(type)) {
-            const res = await fetch(type)
+            const res = await fetch(type, { cache: "no-store" })
             if (!res.ok) throw new Error(`Fetch failed: ${res.status}`)
             return await res.json()
         } else if (typeof type === "object" && this.isValidJSON(type)) return type
         else throw new Error("Invalid IIIF input")
     }
 
-    async fetchPageViewerData(annotationPage) {
-        const annotationPageData = annotationPage ? await this.getSpecificTypeData(annotationPage) : null
+    async fetchPageViewerData(pageID = null) {
+        const annotationPageData = pageID ? await this.getSpecificTypeData(pageID) : null
         const canvasData = await this.getSpecificTypeData(annotationPageData.target)
         return await this.processDirectCanvasData(canvasData, annotationPageData)
     }
@@ -552,7 +545,7 @@ class TpenCreateColumn extends HTMLElement {
         if (!annotationPageData?.items) return []
         const results = await Promise.all(annotationPageData.items.map(async anno => {
             try {
-                const res = await fetch(anno.id)
+                const res = await fetch(anno.id, { cache: "no-store" })
                 const data = await res.json()
                 return { target: data?.target?.selector?.value ?? data?.target, lineid: data?.id }
             } catch { return null }
@@ -726,20 +719,10 @@ class TpenCreateColumn extends HTMLElement {
 
             if (!res.ok) 
                 throw new Error(`Server error: ${res.status}`)
-            this.selectedBoxes.forEach(b => {
-                b.classList.add('disabled')
-                b.textContent = columnLabel
-            })
-            this.existingColumns.push({ label: columnLabel, lines: selectedIDs })
-            this.totalIds = this.totalIds.filter(id => !this.selectedBoxes.some(b => b.dataset.lineid === id))
-            localStorage.setItem('annotationsState', JSON.stringify({ remainingIDs: this.totalIds, selectedIDs: [] }))
-
-            this.selectedBoxes = []
-            this.lastClickedIndex = null
-            this.shadowRoot.getElementById("columnTitle").value = ""
             TPEN.eventDispatcher.dispatch("tpen-toast", { 
                 status: "info", message: 'Column created successfully.' 
             })
+            window.location.reload()
         } catch (err) {
             console.error("Column creation failed:", err)
             TPEN.eventDispatcher.dispatch("tpen-toast", { 
@@ -758,27 +741,10 @@ class TpenCreateColumn extends HTMLElement {
                 }
             })
             if (!res.ok) throw new Error(`Server error: ${res.status}`)
-            const boxes = Array.from(this.shadowRoot.querySelectorAll('.overlayBox'))
-            boxes.forEach(b => {
-                b.classList.remove('clicked','disabled')
-                b.textContent = ''
-            })
-            this.selectedBoxes = []
-            this.lastClickedIndex = null
-            this.existingColumns = []
-            const params = new URLSearchParams(window.location.search)
-            const annotationPage = params.get("annotationPage")
-            let { annotations } = await this.fetchPageViewerData(annotationPage)
-            this.totalIds = annotations.map(a => a.lineid)
-
-            localStorage.setItem('annotationsState', JSON.stringify({
-                remainingIDs: this.totalIds,
-                selectedIDs: []
-            }))
-
             TPEN.eventDispatcher.dispatch("tpen-toast", { 
                 status: "info", message: 'All columns cleared successfully.' 
             })
+            window.location.reload()
         } catch (err) {
             console.error("Failed to clear columns:", err)
             TPEN.eventDispatcher.dispatch("tpen-toast", { 

@@ -335,14 +335,14 @@ class AnnotoriousAnnotator extends HTMLElement {
     eraseTool.addEventListener("change", (e) => this.toggleErasingMode(e))
     seeTool.addEventListener("change", (e) => this.toggleAnnotationVisibility(e))
     createColumnsBtn.addEventListener("click", () =>
-      window.location.href = `../../components/create-column/?annotationPage=${TPEN.RERUMURL}/id/${this.#annotationPageID}&projectID=${TPEN.activeProject._id}`
+      window.location.href = `../../components/create-column/?projectID=${TPEN.activeProject._id}&pageID=${this.#annotationPageID}`
     )
     saveButton.addEventListener("click", (e) => {
       this.#annotoriousInstance.cancelSelected()
       // Timeout required in order to allow the unfocus native functionality to complete for $isDirty.
       setTimeout(() => { this.saveAnnotations() }, 500)
     })
-    deleteAllBtn.addEventListener("click", (e) => this.deleteAllAnnotations(e))
+    deleteAllBtn.addEventListener("click", async (e) => await this.deleteAllAnnotations(e))
     window.addEventListener('beforeunload', () => {
       if (this.#resolvedAnnotationPage?.$isDirty) {
         if (!confirm("If you leave unsaved changes will be lost.")){
@@ -993,10 +993,33 @@ class AnnotoriousAnnotator extends HTMLElement {
    * Use Annotorious to delete all known Annotations
    * https://annotorious.dev/api-reference/openseadragon-annotator/#clearannotations
    */
-  deleteAllAnnotations() {
+  async deleteAllAnnotations() {
     this.#annotoriousInstance.clearAnnotations()
     this.#resolvedAnnotationPage.$isDirty = true
-    this.saveAnnotations()
+    await this.saveAnnotations()
+    try {
+      await this.clearColumnsServerSide()
+    } catch (err) {
+      console.error("Could not clear columns server side.", err)
+    }
+  }
+
+  /**
+   * Call TPEN Services to clear all columns server side.
+   */
+  async clearColumnsServerSide() {
+    try {
+      const res = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/page/${this.#annotationPageID}/clear-columns`, {
+        method: 'DELETE',
+        headers: {
+            "Authorization": `Bearer ${TPEN.getAuthorization()}`,
+            'Content-Type': 'application/json'
+        }
+      })
+      if (!res.ok) throw new Error(`Server error: ${res.status}`)
+    } catch (err) {
+      throw err
+    }
   }
 
   /**
