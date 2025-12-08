@@ -66,8 +66,8 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
 
   #cleanupToolLineListeners() {
     if (this.#toolLineListeners) {
-      TPEN.eventDispatcher.off('tpen-transcription-previous-line', this.#toolLineListeners.sendLineSelection)
-      TPEN.eventDispatcher.off('tpen-transcription-next-line', this.#toolLineListeners.sendLineSelection)
+      TPEN.eventDispatcher.off('tpen-transcription-previous-line', this.#toolLineListeners)
+      TPEN.eventDispatcher.off('tpen-transcription-next-line', this.#toolLineListeners)
       this.#toolLineListeners = null
     }
   }
@@ -836,7 +836,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       }
 
       // Store the listener reference so we can clean it up later
-      this.#toolLineListeners = { sendLineSelection }
+      this.#toolLineListeners = sendLineSelection
       TPEN.eventDispatcher.on('tpen-transcription-previous-line', sendLineSelection)
       TPEN.eventDispatcher.on('tpen-transcription-next-line', sendLineSelection)
 
