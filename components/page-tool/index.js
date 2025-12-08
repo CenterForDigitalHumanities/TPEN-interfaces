@@ -118,6 +118,15 @@ export default class PageTool extends HTMLElement {
         }, 0)
     }
 
+    buildFilters() {
+        const filters = []
+        if (this.grayscaleActive) filters.push('grayscale(100%)')
+        if (this.invertActive) filters.push('invert(100%)')
+        filters.push(`contrast(${this.contrast}%)`)
+        filters.push(`brightness(${this.brightness}%)`)
+        return filters.join(' ')
+    }
+
     updateMainImageFilters(imageEl) {
         if (!imageEl) return
 
@@ -143,27 +152,17 @@ export default class PageTool extends HTMLElement {
         // Handle simple transcription interface - apply filters to both top and bottom images
         const imgTopImg = transcriptionInterface.querySelector('#imgTop img')
         const imgBottomImg = transcriptionInterface.querySelector('#imgBottom img')
-        
+
+        const filterString = this.buildFilters()
+
         if (imgTopImg) {
-            const filters = []
-            if (this.grayscaleActive) filters.push('grayscale(100%)')
-            if (this.invertActive) filters.push('invert(100%)')
-            filters.push(`contrast(${this.contrast}%)`)
-            filters.push(`brightness(${this.brightness}%)`)
-            
             imgTopImg.style.transition = 'filter 250ms ease'
-            imgTopImg.style.filter = filters.join(' ')
+            imgTopImg.style.filter = filterString
         }
-        
+
         if (imgBottomImg) {
-            const filters = []
-            if (this.grayscaleActive) filters.push('grayscale(100%)')
-            if (this.invertActive) filters.push('invert(100%)')
-            filters.push(`contrast(${this.contrast}%)`)
-            filters.push(`brightness(${this.brightness}%)`)
-            
             imgBottomImg.style.transition = 'filter 250ms ease'
-            imgBottomImg.style.filter = filters.join(' ')
+            imgBottomImg.style.filter = filterString
         }
 
         const canvasPanel = transcriptionInterface.querySelector('tpen-line-image')?.shadowRoot?.querySelector('canvas-panel')?.shadowRoot

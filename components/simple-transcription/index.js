@@ -11,8 +11,6 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
   #activeLine = null
   #imgTopOriginalHeight = 0
   #imgTopOriginalWidth = 0
-  #imgBottomPositionRatio = 1
-  #imgTopPositionRatio = 1
 
   constructor() {
     super()
@@ -28,38 +26,104 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     if (TPEN.activeProject?._createdAt) {
       this.authgate()
     }
-    TPEN.eventDispatcher.on('tpen-project-loaded', this.authgate.bind(this))
-    TPEN.eventDispatcher.on('tpen-transcription-previous-line', () => this.updateLines())
-    TPEN.eventDispatcher.on('tpen-transcription-next-line', () => this.updateLines())
+
+    // Store handler references for cleanup
+    this._authgateHandler = this.authgate.bind(this)
+    this._prevLineHandler = () => this.updateLines()
+    this._nextLineHandler = () => this.updateLines()
+    this._toolsDismissHandler = () => {
+      if (!this.state.isSplitscreenActive) return
+      this.state.isSplitscreenActive = false
+      this.toggleSplitscreen()
+      this.updateLines()
+    }
+
+    TPEN.eventDispatcher.on('tpen-project-loaded', this._authgateHandler)
+    TPEN.eventDispatcher.on('tpen-transcription-previous-line', this._prevLineHandler)
+    TPEN.eventDispatcher.on('tpen-transcription-next-line', this._nextLineHandler)
 
     // Handle window resize
     this.resizeHandler = this.handleResize.bind(this)
     window.addEventListener('resize', this.resizeHandler)
 
     // Handle drawer opening/closing - wait for CSS transition to complete
-    this.addEventListener('drawer-opening', () => {
-    })
+    this._drawerOpeningHandler = () => {
+    }
 
-    this.addEventListener('drawer-opened', () => {
+    this._drawerOpenedHandler = () => {
       // Wait for the 0.3s CSS transition to complete before recalculating
       setTimeout(() => {
         this.updateLines()
       }, 300)
-    })
+    }
 
-    this.addEventListener('drawer-closing', () => {
-    })
+    this._drawerClosingHandler = () => {
+    }
 
-    this.addEventListener('drawer-closed', () => {
+    this._drawerClosedHandler = () => {
       // Wait for the 0.3s CSS transition to complete before recalculating
       setTimeout(() => {
         this.updateLines()
       }, 300)
-    })
+    }
+
+    this.addEventListener('drawer-opening', this._drawerOpeningHandler)
+    this.addEventListener('drawer-opened', this._drawerOpenedHandler)
+    this.addEventListener('drawer-closing', this._drawerClosingHandler)
+    this.addEventListener('drawer-closed', this._drawerClosedHandler)
   }
 
   disconnectedCallback() {
     window.removeEventListener('resize', this.resizeHandler)
+
+    // Remove TPEN.eventDispatcher listeners
+    if (this._authgateHandler) {
+      TPEN.eventDispatcher.off('tpen-project-loaded', this._authgateHandler)
+    }
+    if (this._prevLineHandler) {
+      TPEN.eventDispatcher.off('tpen-transcription-previous-line', this._prevLineHandler)
+    }
+    if (this._nextLineHandler) {
+      TPEN.eventDispatcher.off('tpen-transcription-next-line', this._nextLineHandler)
+    }
+    if (this._toolsDismissHandler) {
+      TPEN.eventDispatcher.off('tools-dismiss', this._toolsDismissHandler)
+    }
+
+    // Remove drawer event listeners
+    if (this._drawerOpeningHandler) {
+      this.removeEventListener('drawer-opening', this._drawerOpeningHandler)
+    }
+    if (this._drawerOpenedHandler) {
+      this.removeEventListener('drawer-opened', this._drawerOpenedHandler)
+    }
+    if (this._drawerClosingHandler) {
+      this.removeEventListener('drawer-closing', this._drawerClosingHandler)
+    }
+    if (this._drawerClosedHandler) {
+      this.removeEventListener('drawer-closed', this._drawerClosedHandler)
+    }
+
+    // Remove window keydown listener if it exists
+    if (this._escapeKeyHandler) {
+      window.removeEventListener('keydown', this._escapeKeyHandler)
+    }
+
+    // Remove document listeners from setupResizableSplit
+    if (this._mouseMoveHandler) {
+      document.removeEventListener('mousemove', this._mouseMoveHandler)
+    }
+    if (this._mouseUpHandler) {
+      document.removeEventListener('mouseup', this._mouseUpHandler)
+    }
+
+    // Remove iframe event listeners
+    if (this._iframePrevLineHandler) {
+      TPEN.eventDispatcher.off('tpen-transcription-previous-line', this._iframePrevLineHandler)
+    }
+    if (this._iframeNextLineHandler) {
+      TPEN.eventDispatcher.off('tpen-transcription-next-line', this._iframeNextLineHandler)
+    }
   }
 
   disableTransitions() {
@@ -337,11 +401,14 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       if (e.target?.classList.contains('close-button')) closeSplitscreen()
     })
 
-    window.addEventListener('keydown', e => {
+    // Store escape key handler for cleanup
+    this._escapeKeyHandler = e => {
       if (e.key === 'Escape') closeSplitscreen()
-    })
+    }
+    window.addEventListener('keydown', this._escapeKeyHandler)
 
-    TPEN.eventDispatcher.on('tools-dismiss', closeSplitscreen)
+    // Store tools-dismiss handler (already created in connectedCallback)
+    TPEN.eventDispatcher.on('tools-dismiss', this._toolsDismissHandler)
   }
 
   toggleSplitscreen() {
@@ -381,7 +448,8 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       e.preventDefault()
     })
 
-    document.addEventListener('mousemove', (e) => {
+    // Store handlers for cleanup
+    this._mouseMoveHandler = (e) => {
       if (!isDragging) return
 
       const container = this.shadowRoot.querySelector('.container')
@@ -395,15 +463,18 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
         rightPane.style.width = `${100 - leftPercent}%`
         this.updateLines()
       }
-    })
+    }
 
-    document.addEventListener('mouseup', () => {
+    this._mouseUpHandler = () => {
       if (isDragging) {
         isDragging = false
         document.body.style.cursor = ''
         this.enableTransitions()
       }
-    })
+    }
+
+    document.addEventListener('mousemove', this._mouseMoveHandler)
+    document.addEventListener('mouseup', this._mouseUpHandler)
   }
 
   async updateTranscriptionImages(pageID) {
@@ -606,10 +677,10 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     console.log('Scaled pixel values:', { scaledX, scaledY, scaledW, scaledH })
 
     // Add margin around the active line (in scaled pixels)
-    const marginTop = Math.min(10, scaledH * 0.3) // 30% of line height or 20px
-    const marginBottom = Math.min(10, scaledH * 0.3) // 40% of line height or 30px
-    const marginLeft = Math.min(15, scaledW * 0.15) // 15% of line width or 30px
-    const marginRight = Math.min(15, scaledW * 0.15) // 15% of line width or 30px
+    const marginTop = Math.min(10, scaledH * 0.3) // 30% of line height or 10px
+    const marginBottom = Math.min(10, scaledH * 0.3) // 30% of line height or 10px
+    const marginLeft = Math.min(15, scaledW * 0.15) // 15% of line width or 15px
+    const marginRight = Math.min(15, scaledW * 0.15) // 15% of line width or 15px
 
     // Calculate what we want to show in the top viewport (line + margins)
     const viewportContentHeight = scaledH + marginTop + marginBottom
@@ -656,10 +727,6 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       imgTopImgScale: zoom,
       imgBottomImgTop: `-${bottomPosition}px`
     })
-
-    // Store positions for resize handling
-    this.#imgTopPositionRatio = cropTop / renderedHeight
-    this.#imgBottomPositionRatio = bottomPosition / renderedHeight
 
     // Apply styles with smooth animation
     // The container shows a viewport of specific height
@@ -712,7 +779,11 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     if (imgTop && imgTopImg && imgBottomImg) {
       imgTop.style.height = '0px'
       imgTopImg.style.top = '0px'
+      imgTopImg.style.left = '0px'
+      imgTopImg.style.transform = 'scale(1)'
       imgBottomImg.style.top = '0px'
+      imgBottomImg.style.left = '0px'
+      imgBottomImg.style.transform = 'scale(1)'
     }
   }
 
@@ -763,6 +834,8 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       const scriptId = `tool-script-${tool.toolName}`
       const existingScript = document.getElementById(scriptId)
       if (existingScript) {
+        // Script already loaded, just render the component
+        rightPane.innerHTML = `<${tagName}></${tagName}>`
         return
       }
       const script = document.createElement('script')
@@ -815,6 +888,15 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
         )
       })
 
+      // Clean up previous iframe listeners if they exist
+      if (this._iframePrevLineHandler) {
+        TPEN.eventDispatcher.off('tpen-transcription-previous-line', this._iframePrevLineHandler)
+      }
+      if (this._iframeNextLineHandler) {
+        TPEN.eventDispatcher.off('tpen-transcription-next-line', this._iframeNextLineHandler)
+      }
+
+      // Create new handlers and store references
       const sendLineSelection = () => {
         iframe.contentWindow?.postMessage(
           { type: "SELECT_ANNOTATION", lineId: TPEN.activeLineIndex },
@@ -822,11 +904,11 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
         )
       }
 
-      if (!iframe.dataset.lineListenersAttached) {
-        TPEN.eventDispatcher.on('tpen-transcription-previous-line', sendLineSelection)
-        TPEN.eventDispatcher.on('tpen-transcription-next-line', sendLineSelection)
-        iframe.dataset.lineListenersAttached = 'true'
-      }
+      this._iframePrevLineHandler = sendLineSelection
+      this._iframeNextLineHandler = sendLineSelection
+
+      TPEN.eventDispatcher.on('tpen-transcription-previous-line', this._iframePrevLineHandler)
+      TPEN.eventDispatcher.on('tpen-transcription-next-line', this._iframeNextLineHandler)
 
       iframe.src = tool.url
       rightPane.innerHTML = ''
