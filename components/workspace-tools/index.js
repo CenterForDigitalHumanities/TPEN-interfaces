@@ -110,7 +110,7 @@ export default class WorkspaceTools extends HTMLElement {
   this.magnifierBtn = this.shadowRoot.querySelector(".magnifier-btn")
   
   // Remove old event listener if it exists to prevent duplicates
-  if (this._magnifierClickHandler) {
+  if (this._magnifierClickHandler && this.magnifierBtn) {
     this.magnifierBtn.removeEventListener("click", this._magnifierClickHandler)
   }
   
@@ -160,7 +160,9 @@ export default class WorkspaceTools extends HTMLElement {
     window.addEventListener("keydown", this._magnifierEscHandler)
   }
   
-  this.magnifierBtn.addEventListener("click", this._magnifierClickHandler)
+  if (this.magnifierBtn) {
+    this.magnifierBtn.addEventListener("click", this._magnifierClickHandler)
+  }
   }
 }
 
