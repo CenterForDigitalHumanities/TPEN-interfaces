@@ -13,6 +13,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
   #imgTopOriginalWidth = 0
   #imgBottomPositionRatio = 1
   #imgTopPositionRatio = 1
+  #toolLineListeners = null
 
   constructor() {
     super()
@@ -60,6 +61,15 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
 
   disconnectedCallback() {
     window.removeEventListener('resize', this.resizeHandler)
+    this.#cleanupToolLineListeners()
+  }
+
+  #cleanupToolLineListeners() {
+    if (this.#toolLineListeners) {
+      TPEN.eventDispatcher.off('tpen-transcription-previous-line', this.#toolLineListeners.sendLineSelection)
+      TPEN.eventDispatcher.off('tpen-transcription-next-line', this.#toolLineListeners.sendLineSelection)
+      this.#toolLineListeners = null
+    }
   }
 
   disableTransitions() {
@@ -815,6 +825,9 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
         )
       })
 
+      // Clean up old listeners before adding new ones
+      this.#cleanupToolLineListeners()
+
       const sendLineSelection = () => {
         iframe.contentWindow?.postMessage(
           { type: "SELECT_ANNOTATION", lineId: TPEN.activeLineIndex },
@@ -822,11 +835,10 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
         )
       }
 
-      if (!iframe.dataset.lineListenersAttached) {
-        TPEN.eventDispatcher.on('tpen-transcription-previous-line', sendLineSelection)
-        TPEN.eventDispatcher.on('tpen-transcription-next-line', sendLineSelection)
-        iframe.dataset.lineListenersAttached = 'true'
-      }
+      // Store the listener reference so we can clean it up later
+      this.#toolLineListeners = { sendLineSelection }
+      TPEN.eventDispatcher.on('tpen-transcription-previous-line', sendLineSelection)
+      TPEN.eventDispatcher.on('tpen-transcription-next-line', sendLineSelection)
 
       iframe.src = tool.url
       rightPane.innerHTML = ''
