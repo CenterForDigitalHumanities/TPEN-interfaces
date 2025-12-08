@@ -118,12 +118,27 @@ export default class PageTool extends HTMLElement {
         }, 0)
     }
 
+    // Apply filters to standard transcription interface images (uses CSS classes on imageEl)
     updateMainImageFilters(imageEl) {
         if (!imageEl) return
 
         const filters = []
         if (imageEl.classList.contains('grayscale')) filters.push('grayscale(100%)')
         if (imageEl.classList.contains('invert')) filters.push('invert(100%)')
+        filters.push(`contrast(${this.contrast}%)`)
+        filters.push(`brightness(${this.brightness}%)`)
+
+        imageEl.style.transition = 'filter 250ms ease'
+        imageEl.style.filter = filters.join(' ')
+    }
+
+    // Apply filters to simple transcription interface images (uses component state)
+    applyFiltersToImage(imageEl) {
+        if (!imageEl) return
+
+        const filters = []
+        if (this.grayscaleActive) filters.push('grayscale(100%)')
+        if (this.invertActive) filters.push('invert(100%)')
         filters.push(`contrast(${this.contrast}%)`)
         filters.push(`brightness(${this.brightness}%)`)
 
@@ -144,27 +159,8 @@ export default class PageTool extends HTMLElement {
         const imgTopImg = transcriptionInterface.querySelector('#imgTop img')
         const imgBottomImg = transcriptionInterface.querySelector('#imgBottom img')
         
-        if (imgTopImg) {
-            const filters = []
-            if (this.grayscaleActive) filters.push('grayscale(100%)')
-            if (this.invertActive) filters.push('invert(100%)')
-            filters.push(`contrast(${this.contrast}%)`)
-            filters.push(`brightness(${this.brightness}%)`)
-            
-            imgTopImg.style.transition = 'filter 250ms ease'
-            imgTopImg.style.filter = filters.join(' ')
-        }
-        
-        if (imgBottomImg) {
-            const filters = []
-            if (this.grayscaleActive) filters.push('grayscale(100%)')
-            if (this.invertActive) filters.push('invert(100%)')
-            filters.push(`contrast(${this.contrast}%)`)
-            filters.push(`brightness(${this.brightness}%)`)
-            
-            imgBottomImg.style.transition = 'filter 250ms ease'
-            imgBottomImg.style.filter = filters.join(' ')
-        }
+        this.applyFiltersToImage(imgTopImg)
+        this.applyFiltersToImage(imgBottomImg)
 
         const canvasPanel = transcriptionInterface.querySelector('tpen-line-image')?.shadowRoot?.querySelector('canvas-panel')?.shadowRoot
         if (!canvasPanel) return
