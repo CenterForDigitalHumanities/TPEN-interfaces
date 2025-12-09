@@ -147,7 +147,7 @@ class TpenCreateColumn extends HTMLElement {
                 .disable-other {
                     pointer-events: none;
                     user-select: none;
-                    opcacity: 0.5;
+                    opacity: 0.5;
                     color: gray !important;
                 }
                 .disable-button {
@@ -247,7 +247,7 @@ class TpenCreateColumn extends HTMLElement {
             this.showLoading()
             let { imgUrl, annotations, imgWidth, imgHeight } = await this.fetchPageViewerData(pageID)
             await this.renderImage(imgUrl)
-            const page = await TPEN.activeProject.layers.flatMap(layer => layer.pages || []).find(p => p.id.split('/').pop() === this.annotationPageID)
+            const page = TPEN.activeProject.layers.flatMap(layer => layer.pages || []).find(p => p.id.split('/').pop() === this.annotationPageID)
             this.existingColumns = page?.columns?.map(column => ({ label: column.label, lines: column.lines })) || []
             const assignedAnnotationIds = []
             await this.columnLabelCheck()
@@ -350,7 +350,10 @@ class TpenCreateColumn extends HTMLElement {
                 } else {
                     btn.style.backgroundColor = 'var(--primary-color)'
                     btn.style.color = 'white'
-                    columnLabelsToMerge.pop(columnLabels.indexOf(label) !== -1 ? columnLabels.indexOf(label) : '')
+                    const index = columnLabelsToMerge.indexOf(columnLabels.indexOf(label))
+                    if (index > -1) {
+                        columnLabelsToMerge.splice(index, 1)
+                    }
                 }
             })
             workspaceToolbar.appendChild(btn)
@@ -510,14 +513,6 @@ class TpenCreateColumn extends HTMLElement {
             return false
         }
     }
-    isValidJSON(input) {
-        try {
-            (typeof input === "string") ? JSON.parse(input) : JSON.parse(JSON.stringify(input))
-            return true
-        } catch {
-            return false
-        }
-    }
 
     async getSpecificTypeData(type) {
         if (!type) throw new Error("No IIIF resource provided")
@@ -525,8 +520,7 @@ class TpenCreateColumn extends HTMLElement {
             const res = await fetch(type, { cache: "no-store" })
             if (!res.ok) throw new Error(`Fetch failed: ${res.status}`)
             return await res.json()
-        } else if (typeof type === "object" && this.isValidJSON(type)) return type
-        else throw new Error("Invalid IIIF input")
+        }
     }
 
     async fetchPageViewerData(pageID = null) {
@@ -724,7 +718,6 @@ class TpenCreateColumn extends HTMLElement {
             })
             window.location.reload()
         } catch (err) {
-            console.error("Column creation failed:", err)
             TPEN.eventDispatcher.dispatch("tpen-toast", { 
                 status: "error", message: 'Failed to create column.' 
             })
@@ -746,7 +739,6 @@ class TpenCreateColumn extends HTMLElement {
             })
             window.location.reload()
         } catch (err) {
-            console.error("Failed to clear columns:", err)
             TPEN.eventDispatcher.dispatch("tpen-toast", { 
                 status: "error", message: 'Failed to clear columns.' 
             })

@@ -761,7 +761,6 @@ class AnnotoriousAnnotator extends HTMLElement {
    */
   formatAnnotations(annotations) {
     if (!annotations || annotations.length === 0) return annotations
-    let orig_xywh, converted_xywh = []
     return annotations.map(annotation => {
       if (!annotation.hasOwnProperty("target") || !annotation.hasOwnProperty("body")) return annotation
       if (typeof annotation.target === "string") {
@@ -1037,7 +1036,7 @@ class AnnotoriousAnnotator extends HTMLElement {
     if (typeof pageTarget === "object") {
       // An embedded object, a referenced object, or a {source:"", selector:{}} object
       try {
-        JSON.parse(JSON.stringify(target))
+        JSON.parse(JSON.stringify(pageTarget))
       } catch (err) {
         throw new Error(`The AnnotationPage target is not processable.`, { "cause": "AnnotationPage.target is not JSON." })
       }
