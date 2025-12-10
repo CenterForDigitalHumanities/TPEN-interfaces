@@ -21,6 +21,13 @@ redirect_from:
     <script type="module" src="components/gui/site/index.js"></script>
     <script type="module" src="components/gui/card/Card.js"></script>
     <link href="components/gui/site/index.css" rel="stylesheet" type="text/css" />
+    <script type="module" defer>
+        const continueWorkingCard = document.querySelector('tpen-card:has(tpen-continue-working)')
+        
+        TPEN.eventDispatcher.on('tpen-no-recent-activity', () => {
+            continueWorkingCard?.remove()
+        })
+    </script>
 
 </head>
 
