@@ -69,6 +69,29 @@ export default class ProjectsListNavigation extends HTMLElement {
                     background-color: var(--light-gray);
                 }
             }
+            .welcome-message {
+                padding: 1em;
+                line-height: 1.6;
+            }
+            .welcome-message p {
+                margin-bottom: 1em;
+            }
+            .welcome-list {
+                list-style: none;
+                padding-left: 0;
+                margin-bottom: 1em;
+            }
+            .welcome-list li {
+                margin-bottom: 0.5em;
+                background-color: transparent;
+            }
+            .welcome-list li:hover {
+                background-color: transparent;
+            }
+            .welcome-list a {
+                color: var(--tpen-color-primary);
+                text-decoration: none;
+            }
         `
         const projectList = document.createElement('ol')
         if (this.classList.contains('unbounded')) {
@@ -100,6 +123,12 @@ export default class ProjectsListNavigation extends HTMLElement {
                 this.shadowRoot.getElementById('projectsListView').innerHTML = `No projects found`
             }
         })
+
+        // Handle empty recent activity signal from other components via central dispatcher
+        TPEN.eventDispatcher.on('tpen-no-recent-activity', () => {
+            // Show the welcome/empty state message
+            this.projects = []
+        })
     }
     async connectedCallback() {
         TPEN.attachAuthentication(this)
@@ -112,12 +141,39 @@ export default class ProjectsListNavigation extends HTMLElement {
         return this.#projects
     }
     async render() {
-        let list = this.shadowRoot.getElementById('projectsListView')
+        const root = this.shadowRoot
+        let list = root.getElementById('projectsListView')
         if (!this.#projects?.length) {
-            list.innerHTML = `No projects found`
+            const welcome = document.createElement('section')
+            welcome.className = 'welcome-message'
+            welcome.innerHTML = `
+                    <p><strong>Welcome to TPEN!</strong></p>
+                    <p>Get started by creating your first project or importing a manuscript.</p>
+                    <ul class="welcome-list">
+                        <li aria-label="View Tutorials"><span aria-hidden="true">📚</span> <a href="https://three.t-pen.org/category/tutorials/" target="_blank" rel="noopener noreferrer">View Tutorials</a></li>
+                        <li aria-label="Frequently Asked Questions"><span aria-hidden="true">❓</span> <a href="https://three.t-pen.org/faq/" target="_blank" rel="noopener noreferrer">Frequently Asked Questions</a></li>
+                        <li aria-label="Find IIIF Resources"><span aria-hidden="true">🖼️</span> <a href="https://iiif.io/guides/finding_resources/" target="_blank" rel="noopener noreferrer">Find IIIF Resources</a></li>
+                    </ul>
+            `
+            if (list) list.replaceWith(welcome)
+            else {
+                const existingWelcome = root.querySelector('section.welcome-message')
+                if (existingWelcome) existingWelcome.replaceWith(welcome)
+                else root.appendChild(welcome)
+            }
             return
         }
-        list.innerHTML = ""
+        // Ensure the list element exists when we have projects
+        if (!list) {
+            list = document.createElement('ol')
+            list.id = 'projectsListView'
+            if (this.classList.contains('unbounded')) list.classList.add('unbounded')
+            const existingWelcome = root.querySelector('section.welcome-message')
+            if (existingWelcome) existingWelcome.replaceWith(list)
+            else root.appendChild(list)
+        } else {
+            list.innerHTML = ""
+        }
         for (const project of this.#projects) {
             await(new Project(project._id).fetch())
             const isManageProjectPermission = await CheckPermissions.checkEditAccess('PROJECT')

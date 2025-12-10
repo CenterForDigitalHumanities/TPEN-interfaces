@@ -73,6 +73,12 @@ class ContinueWorking extends HTMLElement {
                 return project ? { project, label, pageId } : null
             })
             .filter(Boolean)
+
+        // If there are no recent projects, notify parent via custom event
+        if (recentProjects.length === 0) {
+            TPEN.eventDispatcher.dispatch('tpen-no-recent-activity')
+            return
+        }
         
         const recentProjectsWithPlaceholders = recentProjects.map(a => {
             let lastEdited = stringFromDate(a.project._modifiedAt)
