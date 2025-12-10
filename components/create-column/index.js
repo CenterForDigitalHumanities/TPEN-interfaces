@@ -740,7 +740,7 @@ class TpenCreateColumn extends HTMLElement {
             window.location.reload()
         } catch (err) {
             TPEN.eventDispatcher.dispatch("tpen-toast", { 
-                status: "error", message: 'Failed to clear columns.' 
+                status: "error", message: 'Failed to clear columns: ' + err.message 
             })
         }
     }
