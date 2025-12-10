@@ -42,7 +42,7 @@ export default class ColumnSelector extends HTMLElement {
             return Object.entries(data.label).map(([lang, values]) => `${lang != "none" ? lang + ":" : ""} ${values.join(", ")}`).join(" | ")
         }
 
-        return `Unlabeled layer: ${data["@id"]}`
+        return `Unlabeled column: ${data["id"]}`
     }
 
     async render() {
