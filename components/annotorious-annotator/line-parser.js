@@ -11,7 +11,7 @@
 
 import TPEN from '../../api/TPEN.js'
 import User from '../../api/User.js'
-import { decodeUserToken } from '../iiif-tools/index.js'
+import { getAgentIRIFromToken } from '../iiif-tools/index.js'
 import CheckPermissions from '../check-permissions/checkPermissions.js'
 
 class AnnotoriousAnnotator extends HTMLElement {
@@ -39,7 +39,7 @@ class AnnotoriousAnnotator extends HTMLElement {
   async connectedCallback() {
     // Must know the User
     if (!this.#userForAnnotorious) {
-      const agent = decodeUserToken(this.userToken)['http://store.rerum.io/agent']
+      const agent = getAgentIRIFromToken(this.userToken)
       if (!agent) {
         this.shadowRoot.innerHTML = `
             <h3>User Error</h3>
