@@ -22,6 +22,8 @@ redirect_from:
     <script type="module" src="components/gui/card/Card.js"></script>
     <link href="components/gui/site/index.css" rel="stylesheet" type="text/css" />
     <script type="module" defer>
+        import TPEN from './api/TPEN.js'
+        
         const continueWorkingCard = document.querySelector('tpen-card:has(tpen-continue-working)')
         
         TPEN.eventDispatcher.on('tpen-no-recent-activity', () => {
