@@ -10,6 +10,9 @@ export default class ColumnSelector extends HTMLElement {
         super()
         this.attachShadow({ mode: "open" })
         this.columns = []
+        this.remainingUnorderedColumn = []
+        this.allLinesInColumns = []
+        this.allLinesInPages = []
     }
 
     connectedCallback() {
@@ -20,6 +23,12 @@ export default class ColumnSelector extends HTMLElement {
             if (this.columns.length < 1) {
                return this.remove()
             }
+            const allLinesInColumns = this.columns.flatMap(column => column.lines || [])
+            this.remainingUnorderedColumn = page?.items.map(item => item.id).filter(itemId => !allLinesInColumns.includes(itemId))
+            this.allLinesInColumns = [...allLinesInColumns, ...this.remainingUnorderedColumn]
+
+            //sort page.items by this.allLinesInColumns ids and sort it in this.
+            //dont filter sort them
             this.render()
         }
 
@@ -46,11 +55,16 @@ export default class ColumnSelector extends HTMLElement {
     }
 
     async render() {
-        const optionsHtml = this.columns.map((column) => {
+        let optionsHtml = this.columns.map((column) => {
             const label = this.getLabel(column)
             return `<option value="${column["id"]}">${label}</option>`
         })
         .join("")
+
+        if (this.remainingUnorderedColumn.length > 0) {
+            optionsHtml += `<option value="unordered-column">Unordered Column</option>`
+        }
+        console.log('Rendering column selector with options:', optionsHtml)
 
         this.shadowRoot.innerHTML = `
             <style>
@@ -84,6 +98,7 @@ export default class ColumnSelector extends HTMLElement {
         `
 
         const selectEl = this.shadowRoot.querySelector("select")
+        this.selectColumn({ target: selectEl })
         selectEl.addEventListener("change", async (e) => {
             const selectedURI = e.target.value
             const selectedColumn = this.columns.find((column) => column.id === selectedURI)
@@ -145,6 +160,71 @@ export default class ColumnSelector extends HTMLElement {
                 }
             }
         })
+    }
+
+    async selectColumn(e) {
+        if (e.target.value === "unordered-column") {
+            //target the first line in the remaining unordered column
+            const firstAnnotationId = this.remainingUnorderedColumn[0]
+            const page = await vault.get(new URLSearchParams(new URL(window.location.href).search).get("pageID"), 'annotationpage', true)
+            const annotationIndex = page.items.findIndex(item => item.id === firstAnnotationId)
+            const thisLine = page.items?.[annotationIndex]
+            const previousLine = page.items?.[annotationIndex - 1]
+            const responseLine = await fetch(thisLine.id).then(res => res.json())
+            const responsePrevLine = previousLine ? await fetch(previousLine.id).then(res => res.json()) : null
+            document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('tpen-transcription-block').shadowRoot.querySelector('.transcription-input').value = responseLine?.body?.value || ''
+            document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('tpen-transcription-block').shadowRoot.querySelector('.transcription-line').textContent = responsePrevLine?.body?.value || ''
+            if (!thisLine) return
+            TPEN.activeLine = thisLine
+            TPEN.activeLineIndex = annotationIndex
+            document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('tpen-project-header').shadowRoot.querySelector('.line-indicator').textContent = `Line ${annotationIndex + 1}`
+            const topImage = document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('#topImage')
+            const { region } = new TranscriptionInterface().setCanvasAndSelector(thisLine, page)
+            if (!region) return
+            const [x, y, width, height] = region.split(',').map(Number)
+            topImage.moveTo(x, y, width, height)
+            document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('#bottomImage').moveUnder(x, y, width, height, topImage)
+            const iframe = document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('iframe')
+            iframe?.contentWindow?.postMessage({ 
+                type: "SELECT_ANNOTATION", 
+                lineId: thisLine.id.split('/').pop()
+            }, "*")
+            return
+        }
+        const selectedURI = e.target.value
+        const selectedColumn = this.columns.find((column) => column.id === selectedURI)
+        const { setCanvasAndSelector } = new TranscriptionInterface()
+        if (selectedColumn) {
+            const firstAnnotationId = selectedColumn.lines?.[0]
+            const page = await vault.get(new URLSearchParams(new URL(window.location.href).search).get("pageID"), 'annotationpage', true)
+            const annotationIndex = page.items.findIndex(item => item.id === firstAnnotationId)
+            if (annotationIndex !== -1) {
+                const { region } = setCanvasAndSelector(page.items[annotationIndex], page)
+                const topImage = document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('#topImage')
+                const internalAnnotationIndex = this.allLinesInColumns.indexOf(firstAnnotationId)
+                //tally thisLine as the id on internalAnnotationIndex and previousLine as internalAnnotationIndex - 1
+                const thisLine = page.items?.[annotationIndex]
+                const previousLine = page.items?.[annotationIndex - 1]
+                console.log(thisLine, previousLine)
+                const responseLine = await fetch(thisLine.id).then(res => res.json())
+                const responsePrevLine = previousLine ? await fetch(previousLine.id).then(res => res.json()) : null
+                document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('tpen-transcription-block').shadowRoot.querySelector('.transcription-input').value = responseLine?.body?.value || ''
+                document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('tpen-transcription-block').shadowRoot.querySelector('.transcription-line').textContent = responsePrevLine?.body?.value || ''
+                if (!thisLine) return
+                TPEN.activeLine = thisLine
+                TPEN.activeLineIndex = annotationIndex
+                document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('tpen-project-header').shadowRoot.querySelector('.line-indicator').textContent = `Line ${annotationIndex + 1}`
+                if (!region) return
+                const [x, y, width, height] = region.split(',').map(Number)
+                topImage.moveTo(x, y, width, height)
+                document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('#bottomImage').moveUnder(x, y, width, height, topImage)
+                const iframe = document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('iframe')
+                iframe?.contentWindow?.postMessage({ 
+                    type: "SELECT_ANNOTATION", 
+                    lineId: thisLine.id.split('/').pop()
+                }, "*")
+            }
+        }
     }
 }
 

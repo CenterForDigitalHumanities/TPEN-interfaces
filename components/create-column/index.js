@@ -46,7 +46,7 @@ class TpenCreateColumn extends HTMLElement {
                     box-shadow: 0 0 12px rgba(255,255,255,0.8);
                     z-index: 10;
                     background-color: rgba(255,0,0,0.8);
-                    color: white;
+                    color: rgb(255, 255, 255);
                     font-weight: bold;
                 }
                 .loading, .error-message {
@@ -96,7 +96,7 @@ class TpenCreateColumn extends HTMLElement {
                     text-transform: uppercase;
                     outline: var(--primary-light) 1px solid;
                     outline-offset: -3.5px;
-                    color: var(--white);
+                    color: rgb(255, 255, 255);
                     border-radius: 5px;
                     transition: all 0.3s;
                     padding: 10px 20px;
@@ -172,7 +172,7 @@ class TpenCreateColumn extends HTMLElement {
                     text-transform: uppercase;
                     outline: var(--primary-light) 1px solid;
                     outline-offset: -3.5px;
-                    color: var(--white);
+                    color: rgb(255, 255, 255);
                     border-radius: 5px;
                     transition: all 0.3s;
                     cursor: pointer;
@@ -343,13 +343,13 @@ class TpenCreateColumn extends HTMLElement {
             btn.style.padding = '8px 12px'
             btn.style.cursor = 'pointer'
             btn.addEventListener('click', () => {
-                if(btn.style.backgroundColor !== 'white') {
-                    btn.style.backgroundColor = 'white'
+                if(btn.style.backgroundColor !== 'rgb(255, 255, 255)') {
+                    btn.style.backgroundColor = 'rgb(255, 255, 255)'
                     btn.style.color = 'var(--primary-color)'
                     columnLabelsToMerge.push(columnLabels.indexOf(label) !== -1 ? columnLabels.indexOf(label) : '')
                 } else {
                     btn.style.backgroundColor = 'var(--primary-color)'
-                    btn.style.color = 'white'
+                    btn.style.color = 'rgb(255, 255, 255)'
                     const index = columnLabelsToMerge.indexOf(columnLabels.indexOf(label))
                     if (index > -1) {
                         columnLabelsToMerge.splice(index, 1)
@@ -374,8 +374,8 @@ class TpenCreateColumn extends HTMLElement {
             }
 
             const duplicate = this.existingColumns.some(col => {
-                const existingLabel = (col.label ?? "").toString().trim();
-                return existingLabel === newLabel;
+                const existingLabel = (col.label ?? "").toString().trim()
+                return existingLabel === newLabel
             })
             if (duplicate) {
                 return TPEN.eventDispatcher.dispatch("tpen-toast", { 
@@ -434,20 +434,20 @@ class TpenCreateColumn extends HTMLElement {
             btn.style.padding = '8px 12px'
             btn.style.cursor = 'pointer'
             btn.addEventListener('click', () => {
-                if (btn.style.backgroundColor === 'white') {
+                if (btn.style.backgroundColor === 'rgb(255, 255, 255)') {
                     columnToExtend = ''
                     btn.style.backgroundColor = 'var(--primary-color)'
-                    btn.style.color = 'var(--white)'
+                    btn.style.color = 'rgb(255, 255, 255)'
                 }
                 else {
                     columnToExtend = columnLabels.indexOf(label) !== -1 ? columnLabels.indexOf(label) : ''
                     Array.from(workspaceToolbar.querySelectorAll('.extend-label-btn')).forEach(otherBtn => {
                         if (otherBtn !== btn) {
                             otherBtn.style.backgroundColor = 'var(--primary-color)'
-                            otherBtn.style.color = 'var(--white)'
+                            otherBtn.style.color = 'rgb(255, 255, 255)'
                         }
                     })
-                    btn.style.backgroundColor = 'white'
+                    btn.style.backgroundColor = 'rgb(255, 255, 255)'
                     btn.style.color = 'var(--primary-color)'
                 }
             })
@@ -676,6 +676,7 @@ class TpenCreateColumn extends HTMLElement {
             // localStorage may be unavailable (e.g., private mode, quota exceeded)
             console.warn('Could not save annotationsState to localStorage:', e)
         }
+    }
 
     async createColumn() {
         if (!this.selectedBoxes?.length)
@@ -690,9 +691,8 @@ class TpenCreateColumn extends HTMLElement {
             })
 
         const duplicate = this.existingColumns.some(col => {
-            if (typeof col.label === "string") {
-                return col.label === columnLabel
-            }
+            const existingLabel = (col.label ?? "").toString().trim()
+            return existingLabel === columnLabel
         })
         if (duplicate) {
             return TPEN.eventDispatcher.dispatch("tpen-toast", { 
