@@ -418,7 +418,16 @@ export default class TranscriptionInterface extends HTMLElement {
     const thisLine = this.#page.items?.[TPEN.activeLineIndex]
     if (!thisLine) return
     TPEN.activeLine = thisLine
-    const columnsInPage = TPEN.activeProject.layers.flatMap(layer => layer.pages || []).find(p => p.id.split('/').pop() === this.#page.id.split('/').pop())?.columns || []
+    const page = TPEN.activeProject.layers.flatMap(layer => layer.pages || []).find(p => p.id.split('/').pop() === this.#page.id.split('/').pop())
+    const columnsInPage = page?.columns || []
+    const remainingUnorderedLines = page?.items?.map(i => i.id).filter(id => !columnsInPage.flatMap(c => c.lines || []).includes(id)) || []
+    if (remainingUnorderedLines.length > 0) {
+      columnsInPage.push({
+        id: "unordered-lines",
+        label: "Unordered Lines",
+        lines: remainingUnorderedLines
+      })
+    }
     const columnSelector = document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('tpen-project-header').shadowRoot.querySelector('tpen-column-selector')
     if (columnSelector && columnSelector.shadowRoot) {
       const activeLineId = TPEN.activeLine?.id || TPEN.activeLine?.['@id']

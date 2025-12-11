@@ -10,7 +10,7 @@ export default class ColumnSelector extends HTMLElement {
         super()
         this.attachShadow({ mode: "open" })
         this.columns = []
-        this.remainingUnorderedColumn = []
+        this.remainingUnorderedLines = []
         this.allLinesInColumns = []
         this.allLinesInPages = []
     }
@@ -40,15 +40,15 @@ export default class ColumnSelector extends HTMLElement {
 
         const allLines = this.columns.flatMap(c => c.lines || [])
         const pageItems = page?.items?.map(i => i.id) || []
-        this.remainingUnorderedColumn = pageItems.filter(id => !allLines.includes(id))
-        if (this.remainingUnorderedColumn.length > 0) {
+        this.remainingUnorderedLines = pageItems.filter(id => !allLines.includes(id))
+        if (this.remainingUnorderedLines.length > 0) {
             this.columns.push({
                 id: "unordered-lines",
                 label: "Unordered Lines",
-                lines: this.remainingUnorderedColumn
+                lines: this.remainingUnorderedLines
             })
         }
-        this.allLinesInColumns = [...allLines, ...this.remainingUnorderedColumn]
+        this.allLinesInColumns = [...allLines, ...this.remainingUnorderedLines]
         this.render()
     }
 
@@ -153,7 +153,7 @@ export default class ColumnSelector extends HTMLElement {
         const page = await this.loadPage()
 
         if (selected === "unordered-lines") {
-            const firstId = this.remainingUnorderedColumn[0]
+            const firstId = this.remainingUnorderedLines[0]
             const idx = page.items.findIndex(i => i.id === firstId)
             const thisLine = page.items[idx]
             const previousLine = page.items[idx - 1]
