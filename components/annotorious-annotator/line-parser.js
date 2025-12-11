@@ -969,7 +969,7 @@ class AnnotoriousAnnotator extends HTMLElement {
         saveButton.value = "ERROR"
         throw err
       })
-      page.items = page.items.map(i => ({
+    page.items = page.items.map(i => ({
       ...i,
       ...(mod.items?.find(a => a.target === i.target) ?? {})
     }))
