@@ -555,7 +555,7 @@ class TpenCreateColumn extends HTMLElement {
     }
 
     showError(message) { 
-        this.container.innerHTML = `<div class="error-message"><strong>Error:</strong>${message}</div>` 
+        this.container.innerHTML = `<div class="error-message"><strong>Error:</strong> ${message}</div>` 
     }
 
     showLoading(message = "Loading...") { 
