@@ -16,31 +16,40 @@ export default class ColumnSelector extends HTMLElement {
     }
 
     connectedCallback() {
-        const pageId = new URLSearchParams(new URL(window.location.href).search).get("pageID")
-        if (TPEN.activeProject && TPEN.activeProject.layers) {
-            const page = TPEN.activeProject.layers.flatMap(layer => layer.pages || []).find(p => p.id.split('/').pop() === pageId)
-            this.columns = page?.columns || []
-            if (this.columns.length < 1) {
-               return this.remove()
-            }
-            const allLinesInColumns = this.columns.flatMap(column => column.lines || [])
-            this.remainingUnorderedColumn = page?.items.map(item => item.id).filter(itemId => !allLinesInColumns.includes(itemId))
-            this.allLinesInColumns = [...allLinesInColumns, ...this.remainingUnorderedColumn]
-
-            //sort page.items by this.allLinesInColumns ids and sort it in this.
-            //dont filter sort them
-            this.render()
-        }
-
+        if (TPEN.activeProject?.layers) this.findColumnsData()
         eventDispatcher.on("tpen-project-loaded", () => {
-            if (!CheckPermissions.checkViewAccess("LAYER", "ANY")) {
-                this.remove()
-                return
-            }
-            const page = TPEN.activeProject.layers.flatMap(layer => layer.pages || []).find(p => p.id.split('/').pop() === pageId)
-            this.columns = page?.columns || []
-            this.render()
+            if (!CheckPermissions.checkViewAccess("LAYER", "ANY")) 
+                return this.remove()
+            this.findColumnsData()
         })
+    }
+
+    findColumnsData() {
+        const pageId = new URLSearchParams(location.search).get("pageID")
+        const page = TPEN.activeProject?.layers?.flatMap(layer => layer.pages || []).find(p => p.id.split('/').pop() === pageId)
+        this.columns = page?.columns || []
+
+        if (this.columns.length < 1) 
+            return this.remove()
+
+        this.columns = this.columns.map((col, i) => {
+            const isAuto = col.label.startsWith("Column ") &&
+                /^[a-f\d]{24}$/i.test(col.label.slice(7))
+            return { ...col, label: isAuto ? `Unnamed ${i + 1}` : col.label }
+        })
+
+        const allLines = this.columns.flatMap(c => c.lines || [])
+        const pageItems = page?.items?.map(i => i.id) || []
+        this.remainingUnorderedColumn = pageItems.filter(id => !allLines.includes(id))
+        if (this.remainingUnorderedColumn.length > 0) {
+            this.columns.push({
+                id: "unordered-lines",
+                label: "Unordered Lines",
+                lines: this.remainingUnorderedColumn
+            })
+        }
+        this.allLinesInColumns = [...allLines, ...this.remainingUnorderedColumn]
+        this.render()
     }
 
     getLabel(data) {
@@ -59,14 +68,7 @@ export default class ColumnSelector extends HTMLElement {
         let optionsHtml = this.columns.map((column) => {
             const label = this.getLabel(column)
             return `<option value="${column["id"]}">${label}</option>`
-        })
-        .join("")
-
-        if (this.remainingUnorderedColumn.length > 0) {
-            optionsHtml += `<option value="unordered-column">Unordered Column</option>`
-        }
-        console.log('Rendering column selector with options:', optionsHtml)
-
+        }).join("")
         this.shadowRoot.innerHTML = `
             <style>
                 :host {
@@ -81,10 +83,8 @@ export default class ColumnSelector extends HTMLElement {
                     border-radius: 5px;
                     background: var(--select-bg, #fff);
                     outline:none;
-                    /* Allow text to wrap */
                     white-space: normal;
                     word-wrap: break-word;
-                    max-width:100px;
                 }
 
                 @container (max-width: 300px) {
@@ -100,132 +100,81 @@ export default class ColumnSelector extends HTMLElement {
 
         const selectEl = this.shadowRoot.querySelector("select")
         this.selectColumn({ target: selectEl })
-        selectEl.addEventListener("change", async (e) => {
-            const selectedURI = e.target.value
-            const selectedColumn = this.columns.find((column) => column.id === selectedURI)
-            const { setCanvasAndSelector } = TranscriptionInterface
-            if (selectedColumn) {
-                const firstAnnotationId = selectedColumn.lines?.[0]
-                const page = await vault.get(new URLSearchParams(new URL(window.location.href).search).get("pageID"), 'annotationpage', true)
-                const annotationIndex = page.items.findIndex(item => item.id === firstAnnotationId)
-                if (annotationIndex !== -1) {
-                    const { region } = setCanvasAndSelector(page.items[annotationIndex], page)
-                    // Safely get tpen-transcription-interface
-                    const tpenTranscriptionInterface = document.querySelector('tpen-transcription-interface');
-                    const topImage = tpenTranscriptionInterface?.shadowRoot?.querySelector('#topImage');
-                    const thisLine = page.items?.[annotationIndex]
-                    const previousLine = page.items?.[annotationIndex - 1]
-                    const responseLine = await fetch(thisLine.id).then(res => res.json())
-                    const responsePrevLine = previousLine ? await fetch(previousLine.id).then(res => res.json()) : null
+        selectEl.addEventListener("change", (e) => this.selectColumn(e))
+    }
 
-                    // Safely get tpen-transcription-block and its shadowRoot
-                    const transcriptionBlock = tpenTranscriptionInterface?.shadowRoot?.querySelector('tpen-transcription-block');
-                    const transcriptionBlockShadow = transcriptionBlock?.shadowRoot;
-                    const transcriptionInput = transcriptionBlockShadow?.querySelector('.transcription-input');
-                    const transcriptionLine = transcriptionBlockShadow?.querySelector('.transcription-line');
-                    if (transcriptionInput) {
-                        transcriptionInput.value = responseLine?.body?.value || '';
-                    }
-                    if (transcriptionLine) {
-                        transcriptionLine.textContent = responsePrevLine?.body?.value || '';
-                    }
+    async loadPage() {
+        const pageID = new URLSearchParams(location.search).get("pageID")
+        return vault.get(pageID, "annotationpage", true)
+    }
 
-                    if (!thisLine) return
-                    TPEN.activeLine = thisLine
-                    TPEN.activeLineIndex = annotationIndex
+    getTpenNodes() {
+        const tpen = document.querySelector("tpen-transcription-interface")
+        const root = tpen?.shadowRoot
 
-                    // Safely get tpen-project-header and its shadowRoot
-                    const projectHeader = tpenTranscriptionInterface?.shadowRoot?.querySelector('tpen-project-header');
-                    const projectHeaderShadow = projectHeader?.shadowRoot;
-                    const lineIndicator = projectHeaderShadow?.querySelector('.line-indicator');
-                    if (lineIndicator) {
-                        lineIndicator.textContent = `Line ${annotationIndex + 1}`;
-                    }
+        return {
+            tpen,
+            topImage: root?.querySelector("#topImage"),
+            bottomImage: root?.querySelector("#bottomImage"),
+            iframe: root?.querySelector("iframe"),
+            input: root?.querySelector("tpen-transcription-block")?.shadowRoot?.querySelector(".transcription-input"),
+            prevLine: root?.querySelector("tpen-transcription-block")?.shadowRoot?.querySelector(".transcription-line"),
+            lineIndicator: root?.querySelector("tpen-project-header")?.shadowRoot?.querySelector(".line-indicator"),
+        }
+    }
 
-                    // Safely get iframe
-                    const iframe = tpenTranscriptionInterface?.shadowRoot?.querySelector('iframe');
-                    iframe?.contentWindow?.postMessage({ 
-                        type: "SELECT_ANNOTATION", 
-                        lineId: thisLine.id.split('/').pop()
-                    }, "*")
+    async applyLineSelection(thisLine, previousLine, annotationIndex, region) {
+        const nodes = this.getTpenNodes()
+        const responseLine = await fetch(thisLine.id).then(r => r.json())
+        const responsePrevLine = previousLine ? await fetch(previousLine.id).then(r => r.json()) : null
 
-                    if (!region) return
-                    const [x, y, width, height] = region.split(',').map(Number)
-                    if (topImage) {
-                        topImage.moveTo(x, y, width, height)
-                    }
-                    const bottomImage = tpenTranscriptionInterface?.shadowRoot?.querySelector('#bottomImage');
-                    if (bottomImage && topImage) {
-                        bottomImage.moveUnder(x, y, width, height, topImage)
-                    }
-                }
-            }
-        })
+        if (nodes.input) nodes.input.value = responseLine?.body?.value || ""
+        if (nodes.prevLine) nodes.prevLine.textContent = responsePrevLine?.body?.value || ""
+        TPEN.activeLine = thisLine
+        TPEN.activeLineIndex = annotationIndex
+
+        if (nodes.lineIndicator)
+            nodes.lineIndicator.textContent = `Line ${annotationIndex + 1}`
+
+        if (region) {
+            const [x, y, w, h] = region.split(',').map(Number)
+            nodes.topImage?.moveTo(x, y, w, h)
+            nodes.bottomImage?.moveUnder(x, y, w, h, nodes.topImage)
+        }
+
+        nodes.iframe?.contentWindow?.postMessage({
+            type: "SELECT_ANNOTATION",
+            lineId: thisLine.id.split("/").pop()
+        }, "*")
     }
 
     async selectColumn(e) {
-        if (e.target.value === "unordered-column") {
-            //target the first line in the remaining unordered column
-            const firstAnnotationId = this.remainingUnorderedColumn[0]
-            const page = await vault.get(new URLSearchParams(new URL(window.location.href).search).get("pageID"), 'annotationpage', true)
-            const annotationIndex = page.items.findIndex(item => item.id === firstAnnotationId)
-            const thisLine = page.items?.[annotationIndex]
-            const previousLine = page.items?.[annotationIndex - 1]
-            const responseLine = await fetch(thisLine.id).then(res => res.json())
-            const responsePrevLine = previousLine ? await fetch(previousLine.id).then(res => res.json()) : null
-            document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('tpen-transcription-block').shadowRoot.querySelector('.transcription-input').value = responseLine?.body?.value || ''
-            document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('tpen-transcription-block').shadowRoot.querySelector('.transcription-line').textContent = responsePrevLine?.body?.value || ''
-            if (!thisLine) return
-            TPEN.activeLine = thisLine
-            TPEN.activeLineIndex = annotationIndex
-            document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('tpen-project-header').shadowRoot.querySelector('.line-indicator').textContent = `Line ${annotationIndex + 1}`
-            const topImage = document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('#topImage')
+        const selected = e.target.value
+        const page = await this.loadPage()
+
+        if (selected === "unordered-lines") {
+            const firstId = this.remainingUnorderedColumn[0]
+            const idx = page.items.findIndex(i => i.id === firstId)
+            const thisLine = page.items[idx]
+            const previousLine = page.items[idx - 1]
             const { region } = new TranscriptionInterface().setCanvasAndSelector(thisLine, page)
-            if (!region) return
-            const [x, y, width, height] = region.split(',').map(Number)
-            topImage.moveTo(x, y, width, height)
-            document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('#bottomImage').moveUnder(x, y, width, height, topImage)
-            const iframe = document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('iframe')
-            iframe?.contentWindow?.postMessage({ 
-                type: "SELECT_ANNOTATION", 
-                lineId: thisLine.id.split('/').pop()
-            }, "*")
+            await this.applyLineSelection(thisLine, previousLine, idx, region)
             return
         }
-        const selectedURI = e.target.value
-        const selectedColumn = this.columns.find((column) => column.id === selectedURI)
+
+        const selectedColumn = this.columns.find(col => col.id === selected)
+        if (!selectedColumn) return
+
+        const firstId = selectedColumn.lines?.[0]
+        const index = page.items.findIndex(i => i.id === firstId)
+        if (index === -1) return
+
+        const thisLine = page.items[index]
+        const previousLine = page.items[index - 1]
+
         const { setCanvasAndSelector } = new TranscriptionInterface()
-        if (selectedColumn) {
-            const firstAnnotationId = selectedColumn.lines?.[0]
-            const page = await vault.get(new URLSearchParams(new URL(window.location.href).search).get("pageID"), 'annotationpage', true)
-            const annotationIndex = page.items.findIndex(item => item.id === firstAnnotationId)
-            if (annotationIndex !== -1) {
-                const { region } = setCanvasAndSelector(page.items[annotationIndex], page)
-                const topImage = document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('#topImage')
-                const internalAnnotationIndex = this.allLinesInColumns.indexOf(firstAnnotationId)
-                //tally thisLine as the id on internalAnnotationIndex and previousLine as internalAnnotationIndex - 1
-                const thisLine = page.items?.[annotationIndex]
-                const previousLine = page.items?.[annotationIndex - 1]
-                console.log(thisLine, previousLine)
-                const responseLine = await fetch(thisLine.id).then(res => res.json())
-                const responsePrevLine = previousLine ? await fetch(previousLine.id).then(res => res.json()) : null
-                document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('tpen-transcription-block').shadowRoot.querySelector('.transcription-input').value = responseLine?.body?.value || ''
-                document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('tpen-transcription-block').shadowRoot.querySelector('.transcription-line').textContent = responsePrevLine?.body?.value || ''
-                if (!thisLine) return
-                TPEN.activeLine = thisLine
-                TPEN.activeLineIndex = annotationIndex
-                document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('tpen-project-header').shadowRoot.querySelector('.line-indicator').textContent = `Line ${annotationIndex + 1}`
-                if (!region) return
-                const [x, y, width, height] = region.split(',').map(Number)
-                topImage.moveTo(x, y, width, height)
-                document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('#bottomImage').moveUnder(x, y, width, height, topImage)
-                const iframe = document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('iframe')
-                iframe?.contentWindow?.postMessage({ 
-                    type: "SELECT_ANNOTATION", 
-                    lineId: thisLine.id.split('/').pop()
-                }, "*")
-            }
-        }
+        const { region } = setCanvasAndSelector(thisLine, page)
+        await this.applyLineSelection(thisLine, previousLine, index, region)
     }
 }
 
