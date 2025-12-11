@@ -37,7 +37,8 @@ export default class ColumnSelector extends HTMLElement {
                 this.remove()
                 return
             }
-            this.columns = TPEN.activeProject.layers.find(layer => layer.pages?.some(page => page['id'].split('/').pop() === pageId))?.columns || []
+            const page = TPEN.activeProject.layers.flatMap(layer => layer.pages || []).find(p => p.id.split('/').pop() === pageId)
+            this.columns = page?.columns || []
             this.render()
         })
     }
