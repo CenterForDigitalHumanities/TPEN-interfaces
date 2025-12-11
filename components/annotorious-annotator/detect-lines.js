@@ -171,8 +171,13 @@ export async function detectTextLinesCombined(url, expandY = true) {
       cv.reduce(lineImgClosed, colSum, 0, cv.REDUCE_SUM, cv.CV_32S)
       const maxColSum = Math.max(...colSum.data32S)
       const sigCols = []
+      // Threshold ratio for considering a column "significant" in the line region.
+      // Columns with a sum greater than this ratio times the maximum column sum are included.
+      // Lowering this value makes the detection more sensitive (more columns included), raising it makes it stricter.
+      // This value was empirically chosen; adjust as needed for your images.
+      const SIGNIFICANT_COL_THRESHOLD_RATIO = 0.05
       colSum.data32S.forEach((v, idx) => {
-        if (v > 0.05 * maxColSum) sigCols.push(idx)
+        if (v > SIGNIFICANT_COL_THRESHOLD_RATIO * maxColSum) sigCols.push(idx)
       })
 
       if (sigCols.length === 0) continue
