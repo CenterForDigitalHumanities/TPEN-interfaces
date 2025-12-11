@@ -281,7 +281,7 @@ class TpenCreateColumn extends HTMLElement {
             const workspaceToolbar = this.shadowRoot.querySelectorAll('.toolbar')[1]
             workspaceToolbar.innerHTML = `
                 <h2 class="workspace-title">Workspace</h2>
-                <p class="workspace-description">Use this area to merge existing columns and extending them.</p>
+                <p class="workspace-description">Use this area to merge existing columns or extend them.</p>
             `
             workspaceToolbar.style.justifyContent = 'flex-start'
         }
