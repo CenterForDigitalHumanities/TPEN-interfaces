@@ -74,6 +74,20 @@ export default class TranscriptionBlock extends HTMLElement {
         this.addEventListeners()
         const pageID = TPEN.screen?.pageInQuery
         this.#page = await vault.get(pageID, 'annotationpage', true)
+        const projectPage = TPEN.activeProject.layers.flatMap(layer => layer.pages || []).find(p => p.id.split('/').pop() === pageID.split('/').pop())
+        if (!this.#page || !projectPage) return
+        
+        const columnsInPage = [...(projectPage?.columns || [])]
+        let allColumnLines = columnsInPage.flatMap(c => c.lines || [])
+        const remainingUnorderedLines = projectPage.items?.map(i => i.id).filter(id => !allColumnLines.includes(id)) || []
+        allColumnLines = [...allColumnLines, ...remainingUnorderedLines]
+
+        const orderedItems = []
+        allColumnLines.forEach(lineId => {
+            const line = this.#page.items.find(item => item.id === lineId)
+            if (line) orderedItems.push(line)
+        })
+        this.#page.items = orderedItems
         this.#transcriptions = await this.processTranscriptions(this.#page.items)
         this.#baseline = [...this.#transcriptions]
         this.#storageKey = this.buildStorageKey()

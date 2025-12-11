@@ -512,17 +512,49 @@ export default class TranscriptionInterface extends HTMLElement {
     const topImage = this.shadowRoot.querySelector('#topImage')
     const bottomImage = this.shadowRoot.querySelector('#bottomImage')
     topImage.manifest = bottomImage.manifest = TPEN.activeProject?.manifest[0]
-    const page = this.#page = await vault.get(pageID, 'annotationpage', true)
-    let thisLine = page.items?.[0]
-    thisLine = await vault.get(thisLine, 'annotation')
+    this.#page = await vault.get(pageID, 'annotationpage', true)
+    const projectPage = TPEN.activeProject.layers.flatMap(layer => layer.pages || []).find(p => p.id.split('/').pop() === pageID.split('/').pop())
+    if (!this.#page || !projectPage) return
+    const columnsInPage = [...(projectPage?.columns || [])]
+    let allColumnLines = columnsInPage.flatMap(c => c.lines || [])
+    const remainingUnorderedLines = projectPage.items?.map(i => i.id).filter(id => !allColumnLines.includes(id)) || []
+    if (remainingUnorderedLines.length > 0) {
+      columnsInPage.push({
+        id: "unordered-lines",
+        label: "Unordered Lines",
+        lines: remainingUnorderedLines
+      })
+    }
+    allColumnLines = [...allColumnLines, ...remainingUnorderedLines]
+    const orderedItems = []
+    allColumnLines.forEach(lineId => {
+      const line = this.#page.items.find(item => item.id === lineId)
+      if (line) orderedItems.push(line)
+    })
+    this.#page.items = orderedItems
+    let thisLine = this.#page.items?.[0]
+    if (!thisLine) return
     if (!(thisLine?.body)) thisLine = await vault.get(thisLine, 'annotation', true)
-    const { canvasID, region } = this.setCanvasAndSelector(thisLine, page)
+    const { canvasID, region } = this.setCanvasAndSelector(thisLine, this.#page)
     const canvas = this.#canvas = await vault.get(canvasID, 'canvas')
     const regionValue = region ?? `0,0,${canvas?.width ?? 'full'},${(canvas?.height && canvas?.height / 10) ?? 120}`
     topImage.canvas = canvasID
     bottomImage.canvas = canvas
     if (regionValue) {
       topImage.setAttribute('region', regionValue)
+    }
+    const columnSelector = document.querySelector('tpen-transcription-interface')?.shadowRoot?.querySelector('tpen-project-header')?.shadowRoot?.querySelector('tpen-column-selector')
+    if (columnSelector && columnSelector.shadowRoot) {
+      const activeLineId = thisLine?.id || thisLine?.['@id']
+      if (!activeLineId) return
+      const activeColumn = columnsInPage.find(column => column.lines.includes(activeLineId))
+      if (activeColumn) {
+        const selectEl = columnSelector.shadowRoot.querySelector('select')
+        if (selectEl) {
+          selectEl.title = activeColumn.label
+          selectEl.value = activeColumn.id
+        }
+      }
     }
   }
 }
