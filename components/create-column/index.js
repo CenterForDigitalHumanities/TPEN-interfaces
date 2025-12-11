@@ -671,8 +671,12 @@ class TpenCreateColumn extends HTMLElement {
 
         const selectedIDs = this.selectedBoxes.map(b => b.dataset.lineid)
         const remainingIDs = this.totalIds.filter(id => !this.selectedBoxes.some(b => b.dataset.lineid === id))
-        localStorage.setItem('annotationsState', JSON.stringify({ remainingIDs, selectedIDs }))
-    }
+        try {
+            localStorage.setItem('annotationsState', JSON.stringify({ remainingIDs, selectedIDs }))
+        } catch (e) {
+            // localStorage may be unavailable (e.g., private mode, quota exceeded)
+            console.warn('Could not save annotationsState to localStorage:', e)
+        }
 
     async createColumn() {
         if (!this.selectedBoxes?.length)
