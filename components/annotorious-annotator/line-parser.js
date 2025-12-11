@@ -961,22 +961,11 @@ class AnnotoriousAnnotator extends HTMLElement {
         saveButton.value = "ERROR"
         throw err
       })
-      const refreshedPage = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/page/${pageID.split("/").pop()}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${TPEN.getAuthorization()}`,
-        }
-      })
-      .then(r => {
-        if (!r.ok) throw r
-        return r.json()
-      })
-      .catch(e => {
-        console.error("Could not refresh page after save.", e)
-        return page
-      })
-    this.#modifiedAnnotationPage = refreshedPage
+      page.items = page.items.map(i => ({
+      ...i,
+      ...(mod.items?.find(a => a.target === i.target) ?? {})
+    }))
+    this.#modifiedAnnotationPage = page
     TPEN.eventDispatcher.dispatch("tpen-page-committed", this.#modifiedAnnotationPage)
     TPEN.eventDispatcher.dispatch("tpen-toast", {
       message: "Annotations Saved",
