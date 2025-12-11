@@ -94,26 +94,54 @@ export default class ColumnSelector extends HTMLElement {
                 const annotationIndex = page.items.findIndex(item => item.id === firstAnnotationId)
                 if (annotationIndex !== -1) {
                     const { region } = setCanvasAndSelector(page.items[annotationIndex], page)
-                    const topImage = document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('#topImage')
+                    // Safely get tpen-transcription-interface
+                    const tpenTranscriptionInterface = document.querySelector('tpen-transcription-interface');
+                    const topImage = tpenTranscriptionInterface?.shadowRoot?.querySelector('#topImage');
                     const thisLine = page.items?.[annotationIndex]
                     const previousLine = page.items?.[annotationIndex - 1]
                     const responseLine = await fetch(thisLine.id).then(res => res.json())
                     const responsePrevLine = previousLine ? await fetch(previousLine.id).then(res => res.json()) : null
-                    document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('tpen-transcription-block').shadowRoot.querySelector('.transcription-input').value = responseLine?.body?.value || ''
-                    document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('tpen-transcription-block').shadowRoot.querySelector('.transcription-line').textContent = responsePrevLine?.body?.value || ''
+
+                    // Safely get tpen-transcription-block and its shadowRoot
+                    const transcriptionBlock = tpenTranscriptionInterface?.shadowRoot?.querySelector('tpen-transcription-block');
+                    const transcriptionBlockShadow = transcriptionBlock?.shadowRoot;
+                    const transcriptionInput = transcriptionBlockShadow?.querySelector('.transcription-input');
+                    const transcriptionLine = transcriptionBlockShadow?.querySelector('.transcription-line');
+                    if (transcriptionInput) {
+                        transcriptionInput.value = responseLine?.body?.value || '';
+                    }
+                    if (transcriptionLine) {
+                        transcriptionLine.textContent = responsePrevLine?.body?.value || '';
+                    }
+
                     if (!thisLine) return
                     TPEN.activeLine = thisLine
                     TPEN.activeLineIndex = annotationIndex
-                    document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('tpen-project-header').shadowRoot.querySelector('.line-indicator').textContent = `Line ${annotationIndex + 1}`
-                    const iframe = document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('iframe')
+
+                    // Safely get tpen-project-header and its shadowRoot
+                    const projectHeader = tpenTranscriptionInterface?.shadowRoot?.querySelector('tpen-project-header');
+                    const projectHeaderShadow = projectHeader?.shadowRoot;
+                    const lineIndicator = projectHeaderShadow?.querySelector('.line-indicator');
+                    if (lineIndicator) {
+                        lineIndicator.textContent = `Line ${annotationIndex + 1}`;
+                    }
+
+                    // Safely get iframe
+                    const iframe = tpenTranscriptionInterface?.shadowRoot?.querySelector('iframe');
                     iframe?.contentWindow?.postMessage({ 
                         type: "SELECT_ANNOTATION", 
                         lineId: thisLine.id.split('/').pop()
                     }, "*")
+
                     if (!region) return
                     const [x, y, width, height] = region.split(',').map(Number)
-                    topImage.moveTo(x, y, width, height)
-                    document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('#bottomImage').moveUnder(x, y, width, height, topImage)
+                    if (topImage) {
+                        topImage.moveTo(x, y, width, height)
+                    }
+                    const bottomImage = tpenTranscriptionInterface?.shadowRoot?.querySelector('#bottomImage');
+                    if (bottomImage && topImage) {
+                        bottomImage.moveUnder(x, y, width, height, topImage)
+                    }
                 }
             }
         })
