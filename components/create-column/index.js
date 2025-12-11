@@ -374,9 +374,8 @@ class TpenCreateColumn extends HTMLElement {
             }
 
             const duplicate = this.existingColumns.some(col => {
-                if (typeof col.label === "string") {
-                    return col.label === newLabel
-                }
+                const existingLabel = (col.label ?? "").toString().trim();
+                return existingLabel === newLabel;
             })
             if (duplicate) {
                 return TPEN.eventDispatcher.dispatch("tpen-toast", { 
