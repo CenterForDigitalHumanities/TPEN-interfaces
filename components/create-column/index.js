@@ -202,7 +202,7 @@ class TpenCreateColumn extends HTMLElement {
                 <div class="container" id="container"></div>
                 <div class="toolbar toolbar-workspace">
                     <h2 class="workspace-title">Workspace</h2>
-                    <p class="workspace-description">Use this area to merge existing columns and extending them.</p>
+                    <p class="workspace-description">Use this area to merge or extend existing columns.</p>
                 </div>
             </div>
         `
