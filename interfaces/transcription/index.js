@@ -323,7 +323,8 @@ export default class TranscriptionInterface extends HTMLElement {
             manifest: TPEN.activeProject?.manifest?.[0] ?? '',
             canvas: this.#canvas?.id ?? this.#canvas?.['@id'] ?? this.#canvas ?? '',
             annotationPage: this.fetchCurrentPageId() ?? this.#page ?? '',
-            annotation: TPEN.activeLineIndex >= 0 ? this.#page?.items?.[TPEN.activeLineIndex]?.id ?? null : null
+            annotation: TPEN.activeLineIndex >= 0 ? this.#page?.items?.[TPEN.activeLineIndex]?.id ?? null : null,
+            columns: TPEN.activeProject?.layers.flatMap(layer => layer.pages || []).find(p => p.id.split('/').pop() === TPEN.screen.pageInQuery)?.columns || []
           },
           '*'
         )
