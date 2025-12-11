@@ -413,14 +413,18 @@ export default class TranscriptionInterface extends HTMLElement {
   }
 
   updateLines() {
-    if (!(TPEN.activeLineIndex >= 0) || !this.#page) return
+    if (TPEN.activeLineIndex < 0 || !this.#page) return
     const topImage = this.shadowRoot.querySelector('#topImage')
+    if (!topImage) return
     const thisLine = this.#page.items?.[TPEN.activeLineIndex]
     if (!thisLine) return
     TPEN.activeLine = thisLine
+
     const page = TPEN.activeProject.layers.flatMap(layer => layer.pages || []).find(p => p.id.split('/').pop() === this.#page.id.split('/').pop())
-    const columnsInPage = page?.columns || []
-    const remainingUnorderedLines = page?.items?.map(i => i.id).filter(id => !columnsInPage.flatMap(c => c.lines || []).includes(id)) || []
+    if (!page) return
+    const columnsInPage = [...(page?.columns || [])]
+    const allColumnLines = new Set(columnsInPage.flatMap(c => c.lines || []))
+    const remainingUnorderedLines = page.items?.map(i => i.id).filter(id => !allColumnLines.has(id)) || []
     if (remainingUnorderedLines.length > 0) {
       columnsInPage.push({
         id: "unordered-lines",
@@ -428,9 +432,11 @@ export default class TranscriptionInterface extends HTMLElement {
         lines: remainingUnorderedLines
       })
     }
-    const columnSelector = document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('tpen-project-header').shadowRoot.querySelector('tpen-column-selector')
+
+    const columnSelector = document.querySelector('tpen-transcription-interface')?.shadowRoot?.querySelector('tpen-project-header')?.shadowRoot?.querySelector('tpen-column-selector')
     if (columnSelector && columnSelector.shadowRoot) {
       const activeLineId = TPEN.activeLine?.id || TPEN.activeLine?.['@id']
+      if (!activeLineId) return
       const activeColumn = columnsInPage.find(column => column.lines.includes(activeLineId))
       if (activeColumn) {
         const selectEl = columnSelector.shadowRoot.querySelector('select')
@@ -440,11 +446,14 @@ export default class TranscriptionInterface extends HTMLElement {
         }
       }
     }
+
     const { region } = this.setCanvasAndSelector(thisLine, this.#page)
     if (!region) return
     const [x, y, width, height] = region.split(',').map(Number)
+    if ([x, y, width, height].some(isNaN)) return
     topImage.moveTo(x, y, width, height)
-    this.shadowRoot.querySelector('#bottomImage').moveUnder(x, y, width, height, topImage)
+    const bottomImage = this.shadowRoot.querySelector('#bottomImage')
+    if (bottomImage) bottomImage.moveUnder(x, y, width, height, topImage)
   }
 
   getImage(project) {
