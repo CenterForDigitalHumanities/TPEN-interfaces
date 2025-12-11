@@ -420,12 +420,15 @@ export default class TranscriptionInterface extends HTMLElement {
     TPEN.activeLine = thisLine
     const columnsInPage = TPEN.activeProject.layers.flatMap(layer => layer.pages || []).find(p => p.id.split('/').pop() === this.#page.id.split('/').pop())?.columns || []
     const columnSelector = document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('tpen-project-header').shadowRoot.querySelector('tpen-column-selector')
-    if (columnSelector) {
+    if (columnSelector && columnSelector.shadowRoot) {
       const activeLineId = TPEN.activeLine?.id || TPEN.activeLine?.['@id']
       const activeColumn = columnsInPage.find(column => column.lines.includes(activeLineId))
       if (activeColumn) {
-        columnSelector.shadowRoot.querySelector('select').title = activeColumn.label
-        columnSelector.shadowRoot.querySelector('select').value = activeColumn.id
+        const selectEl = columnSelector.shadowRoot.querySelector('select')
+        if (selectEl) {
+          selectEl.title = activeColumn.label
+          selectEl.value = activeColumn.id
+        }
       }
     }
     const { region } = this.setCanvasAndSelector(thisLine, this.#page)
