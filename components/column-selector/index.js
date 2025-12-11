@@ -87,7 +87,7 @@ export default class ColumnSelector extends HTMLElement {
         selectEl.addEventListener("change", async (e) => {
             const selectedURI = e.target.value
             const selectedColumn = this.columns.find((column) => column.id === selectedURI)
-            const { setCanvasAndSelector } = new TranscriptionInterface()
+            const { setCanvasAndSelector } = TranscriptionInterface
             if (selectedColumn) {
                 const firstAnnotationId = selectedColumn.lines?.[0]
                 const page = await vault.get(new URLSearchParams(new URL(window.location.href).search).get("pageID"), 'annotationpage', true)
