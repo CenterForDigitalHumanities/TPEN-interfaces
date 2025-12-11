@@ -285,13 +285,21 @@ class AnnotoriousAnnotator extends HTMLElement {
             openCVScript.src = "https://docs.opencv.org/4.x/opencv.js"
             openCVScript.async = true
             openCVScript.onload = () => {
-              cv['onRuntimeInitialized'] = resolve
+              cv['onRuntimeInitialized'] = () => {
+                cv['onRuntimeInitializedCalled'] = true;
+                resolve();
+              }
             }
             openCVScript.onerror = reject
             document.body.appendChild(openCVScript)
           })
         } else if (!cv['onRuntimeInitializedCalled']) {
-          await new Promise(resolve => (cv['onRuntimeInitialized'] = resolve))
+          await new Promise(resolve => {
+            cv['onRuntimeInitialized'] = () => {
+              cv['onRuntimeInitializedCalled'] = true;
+              resolve();
+            }
+          })
         }
 
         const imageUrl = this.#canvasImageURL
