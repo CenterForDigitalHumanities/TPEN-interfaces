@@ -725,7 +725,7 @@ class TpenCreateColumn extends HTMLElement {
             if (!res.ok) 
                 throw new Error(`Server error: ${res.status}`)
             TPEN.eventDispatcher.dispatch("tpen-toast", { 
-                status: "info", message: 'Column created successfully.' 
+                status: "success", message: 'Column created successfully.' 
             })
             window.location.reload()
         } catch (err) {
