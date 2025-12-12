@@ -184,6 +184,9 @@ class TpenCreateColumn extends HTMLElement {
                     outline: var(--primary-color) 1px solid;
                     outline-offset: -1.5px;
                 }
+                .merge-label-btn[data-selected="true"], .extend-label-btn[data-selected="true"] {
+                    border: 8px solid var(--primary-color);
+                }
             </style>
             <div class="columnDiv">
                 <div class="toolbar">
@@ -253,10 +256,10 @@ class TpenCreateColumn extends HTMLElement {
             await this.columnLabelCheck()
             this.existingColumns.forEach(column => {
                 column.lines.forEach(annoId => assignedAnnotationIds.push({
-                    lineid: annoId, columnLabel: column.label
+                    lineId: annoId, columnLabel: column.label
                 }))
             })
-            this.totalIds = annotations.filter(anno => !assignedAnnotationIds.find(a => a.lineid === anno.lineid)).map(a => a.lineid)
+            this.totalIds = annotations.filter(anno => !assignedAnnotationIds.find(a => a.lineId === anno.lineId)).map(a => a.lineId)
             localStorage.setItem('annotationsState', JSON.stringify({
                 remainingIDs: this.totalIds,
                 selectedIDs: []
@@ -343,11 +346,13 @@ class TpenCreateColumn extends HTMLElement {
             btn.style.padding = '8px 12px'
             btn.style.cursor = 'pointer'
             btn.addEventListener('click', () => {
-                if(btn.style.backgroundColor !== 'rgb(255, 255, 255)') {
+                if(!btn.dataset.selected) {
+                    btn.dataset.selected = 'true'
                     btn.style.backgroundColor = 'rgb(255, 255, 255)'
                     btn.style.color = 'var(--primary-color)'
                     columnLabelsToMerge.push(columnLabels.indexOf(label) !== -1 ? columnLabels.indexOf(label) : '')
                 } else {
+                    delete btn.dataset.selected
                     btn.style.backgroundColor = 'var(--primary-color)'
                     btn.style.color = 'rgb(255, 255, 255)'
                     const index = columnLabelsToMerge.indexOf(columnLabels.indexOf(label))
@@ -434,8 +439,9 @@ class TpenCreateColumn extends HTMLElement {
             btn.style.padding = '8px 12px'
             btn.style.cursor = 'pointer'
             btn.addEventListener('click', () => {
-                if (btn.style.backgroundColor === 'rgb(255, 255, 255)') {
+                if (btn.dataset.selected) {
                     columnToExtend = ''
+                    delete btn.dataset.selected
                     btn.style.backgroundColor = 'var(--primary-color)'
                     btn.style.color = 'rgb(255, 255, 255)'
                 }
@@ -443,10 +449,12 @@ class TpenCreateColumn extends HTMLElement {
                     columnToExtend = columnLabels.indexOf(label) !== -1 ? columnLabels.indexOf(label) : ''
                     Array.from(workspaceToolbar.querySelectorAll('.extend-label-btn')).forEach(otherBtn => {
                         if (otherBtn !== btn) {
+                            delete otherBtn.dataset.selected
                             otherBtn.style.backgroundColor = 'var(--primary-color)'
                             otherBtn.style.color = 'rgb(255, 255, 255)'
                         }
                     })
+                    btn.dataset.selected = 'true'
                     btn.style.backgroundColor = 'rgb(255, 255, 255)'
                     btn.style.color = 'var(--primary-color)'
                 }
@@ -474,7 +482,7 @@ class TpenCreateColumn extends HTMLElement {
             }
 
             try {
-                const annotationIdsToAdd = this.selectedBoxes.map(box => box.dataset.lineid)
+                const annotationIdsToAdd = this.selectedBoxes.map(box => box.dataset.lineId)
                 const res = await fetch(`${TPEN.servicesURL}/project/${this.projectID}/page/${this.annotationPageID}/column`, {
                     method: "PATCH",
                     headers: {
@@ -540,7 +548,7 @@ class TpenCreateColumn extends HTMLElement {
             try {
                 const res = await fetch(anno.id, { cache: "no-store" })
                 const data = await res.json()
-                return { target: data?.target?.selector?.value ?? data?.target, lineid: data?.id }
+                return { target: data?.target?.selector?.value ?? data?.target, lineId: data?.id }
             } catch { return null }
         }))
         return results.filter(r => r)
@@ -579,18 +587,18 @@ class TpenCreateColumn extends HTMLElement {
         if (!saved) return
         const { selectedIDs = [] } = JSON.parse(saved)
         const boxes = Array.from(this.shadowRoot.querySelectorAll('.overlayBox'))
-        this.selectedBoxes = boxes.filter(b => selectedIDs.includes(b.dataset.lineid))
+        this.selectedBoxes = boxes.filter(b => selectedIDs.includes(b.dataset.lineId))
         this.selectedBoxes.forEach((b, idx) => {
             b.classList.add('clicked')
             b.textContent = idx + 1
         })
         boxes.forEach(b => {
             if (b.classList.contains('disabled')) return
-            if (!selectedIDs.includes(b.dataset.lineid)) b.textContent = ''
+            if (!selectedIDs.includes(b.dataset.lineId)) b.textContent = ''
         })
         if (this.selectedBoxes.length) {
             const lastId = selectedIDs[selectedIDs.length - 1]
-            this.lastClickedIndex = boxes.findIndex(b => b.dataset.lineid === lastId)
+            this.lastClickedIndex = boxes.findIndex(b => b.dataset.lineId === lastId)
         }
     }
 
@@ -606,7 +614,7 @@ class TpenCreateColumn extends HTMLElement {
             const box = document.createElement("div")
             box.className = "overlayBox"
             box.dataset.index = i
-            box.dataset.lineid = anno.lineid
+            box.dataset.lineId = anno.lineId
 
             box.style.left   = `${(x / imgWidth) * 100}%`
             box.style.top    = `${(y / imgHeight) * 100}%`
@@ -625,7 +633,7 @@ class TpenCreateColumn extends HTMLElement {
         createdBoxes.forEach(box => {
             this.container.appendChild(box)
 
-            const filtered = filteredAnnotations.find(a => a.lineid === box.dataset.lineid)
+            const filtered = filteredAnnotations.find(a => a.lineId === box.dataset.lineId)
             if (filtered) {
                 box.textContent = filtered.columnLabel
                 box.classList.add("clicked", "disabled")
@@ -668,8 +676,8 @@ class TpenCreateColumn extends HTMLElement {
             if (!this.selectedBoxes.includes(b) && !b.classList.contains('disabled')) b.textContent = ''
         })
 
-        const selectedIDs = this.selectedBoxes.map(b => b.dataset.lineid)
-        const remainingIDs = this.totalIds.filter(id => !this.selectedBoxes.some(b => b.dataset.lineid === id))
+        const selectedIDs = this.selectedBoxes.map(b => b.dataset.lineId)
+        const remainingIDs = this.totalIds.filter(id => !this.selectedBoxes.some(b => b.dataset.lineId === id))
         try {
             localStorage.setItem('annotationsState', JSON.stringify({ remainingIDs, selectedIDs }))
         } catch (e) {
@@ -700,7 +708,7 @@ class TpenCreateColumn extends HTMLElement {
             })
         }
         
-        const selectedIDs = this.selectedBoxes.map(b => b.dataset.lineid)
+        const selectedIDs = this.selectedBoxes.map(b => b.dataset.lineId)
         try {
             const res = await fetch(`${TPEN.servicesURL}/project/${this.projectID}/page/${this.annotationPageID}/column`, {
                 method: "POST",

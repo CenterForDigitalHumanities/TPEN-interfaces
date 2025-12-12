@@ -5,6 +5,7 @@ import '../../components/transcription-block/index.js'
 import vault from '../../js/vault.js'
 import '../../components/line-image/index.js'
 import CheckPermissions from "../../components/check-permissions/checkPermissions.js"
+import { orderPageItemsByColumns } from "../../utilities/columnOrdering.js"
 export default class TranscriptionInterface extends HTMLElement {
   #page
   #canvas
@@ -423,16 +424,7 @@ export default class TranscriptionInterface extends HTMLElement {
 
     const page = TPEN.activeProject.layers.flatMap(layer => layer.pages || []).find(p => p.id.split('/').pop() === this.#page.id.split('/').pop())
     if (!page) return
-    const columnsInPage = [...(page?.columns || [])]
-    const allColumnLines = new Set(columnsInPage.flatMap(c => c.lines || []))
-    const remainingUnorderedLines = page.items?.map(i => i.id).filter(id => !allColumnLines.has(id)) || []
-    if (remainingUnorderedLines.length > 0) {
-      columnsInPage.push({
-        id: "unordered-lines",
-        label: "Unordered Lines",
-        lines: remainingUnorderedLines
-      })
-    }
+    const { columnsInPage } = orderPageItemsByColumns(page, this.#page)
 
     const columnSelector = document.querySelector('tpen-transcription-interface')?.shadowRoot?.querySelector('tpen-project-header')?.shadowRoot?.querySelector('tpen-column-selector')
     if (columnSelector && columnSelector.shadowRoot) {
@@ -516,22 +508,7 @@ export default class TranscriptionInterface extends HTMLElement {
     this.#page = await vault.get(pageID, 'annotationpage', true)
     const projectPage = TPEN.activeProject.layers.flatMap(layer => layer.pages || []).find(p => p.id.split('/').pop() === pageID.split('/').pop())
     if (!this.#page || !projectPage) return
-    const columnsInPage = [...(projectPage?.columns || [])]
-    let allColumnLines = columnsInPage.flatMap(c => c.lines || [])
-    const remainingUnorderedLines = projectPage.items?.map(i => i.id).filter(id => !allColumnLines.includes(id)) || []
-    if (remainingUnorderedLines.length > 0) {
-      columnsInPage.push({
-        id: "unordered-lines",
-        label: "Unordered Lines",
-        lines: remainingUnorderedLines
-      })
-    }
-    allColumnLines = [...allColumnLines, ...remainingUnorderedLines]
-    const orderedItems = []
-    allColumnLines.forEach(lineId => {
-      const line = this.#page.items.find(item => item.id === lineId)
-      if (line) orderedItems.push(line)
-    })
+    const { orderedItems, columnsInPage } = orderPageItemsByColumns(projectPage, this.#page)
     this.#page.items = orderedItems
     let thisLine = this.#page.items?.[0]
     if (!thisLine) return
