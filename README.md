@@ -68,3 +68,11 @@ Add descriptive key-value pairs to a project. This might be used to make a list 
 easier to filter or more discoverable from an external source. On its own, this may not mean
 much but combined with a customized project list page, it could be a powerful tool.
 
+### License
+
+Code: Apache License 2.0 — see [LICENSE](./LICENSE)
+
+Content (documentation, images, transcriptions, and other non-code assets): Creative Commons Attribution 4.0 International — see [LICENSE-CONTENT.md](./LICENSE-CONTENT.md)
+
+If you redistribute or modify this project, please include these license files and preserve copyright notices.
+
