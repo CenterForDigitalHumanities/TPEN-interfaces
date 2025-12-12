@@ -13,4 +13,4 @@ permalink: pretty
 plugins:
   - jekyll-redirect-from
 exclude:
-  - LICENSE-CONTENT
+  - LICENSE-CONTENT.md
