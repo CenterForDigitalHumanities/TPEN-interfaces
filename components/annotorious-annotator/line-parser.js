@@ -287,8 +287,8 @@ class AnnotoriousAnnotator extends HTMLElement {
               openCVScript.async = true
               openCVScript.onload = () => {
                 cv['onRuntimeInitialized'] = () => {
-                  cv['onRuntimeInitializedCalled'] = true;
-                  resolve();
+                  cv['onRuntimeInitializedCalled'] = true
+                  resolve()
                 }
               }
               openCVScript.onerror = reject
@@ -297,8 +297,8 @@ class AnnotoriousAnnotator extends HTMLElement {
           } else if (!cv['onRuntimeInitializedCalled']) {
             await new Promise(resolve => {
               cv['onRuntimeInitialized'] = () => {
-                cv['onRuntimeInitializedCalled'] = true;
-                resolve();
+                cv['onRuntimeInitializedCalled'] = true
+                resolve()
               }
             })
           }
