@@ -56,7 +56,9 @@ class QuickTypeTool extends HTMLElement {
         this.shadowRoot.querySelectorAll('.char-button').forEach(btn => {
             btn.addEventListener('click', () => {
                 const char = btn.textContent
-                let textAreaContent = document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('tpen-transcription-block').shadowRoot.querySelector('.transcription-input')
+                const iface = document.querySelector('tpen-transcription-interface') || document.querySelector('tpen-simple-transcription')
+                const block = iface?.shadowRoot?.querySelector('tpen-transcription-block')?.shadowRoot
+                let textAreaContent = block?.querySelector('.transcription-input')
 
                 if (textAreaContent && textAreaContent instanceof HTMLInputElement) {
                     const start = textAreaContent.selectionStart
@@ -307,7 +309,13 @@ class QuickTypeToolButton extends HTMLElement {
         const quicktypeBtn = this.shadowRoot.querySelector('.quicktype-btn')
 
         quicktypeBtn.addEventListener('click', () => {
-            const charPanel = document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('tpen-workspace-tools').shadowRoot.querySelector('tpen-quicktype-tool').shadowRoot.querySelector('.char-panel')
+            const iface = document.querySelector('tpen-transcription-interface') || document.querySelector('tpen-simple-transcription')
+            const charPanel = iface?.shadowRoot
+                ?.querySelector('tpen-workspace-tools')?.shadowRoot
+                ?.querySelector('tpen-quicktype-tool')?.shadowRoot
+                ?.querySelector('.char-panel')
+
+            if (!charPanel) return
 
             if (charPanel.classList.contains('show')) {
                 // Close animation

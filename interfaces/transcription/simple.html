@@ -1,0 +1,30 @@
+---
+redirect_from:
+    - /simple-transcription
+permalink: /transcribe-simple
+---
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script type="module" src="/components/simple-transcription/index.js"></script>
+    <script type="module" src="/components/feedback-button/index.js"></script>
+    <title>Simple Transcription Interface</title>
+    <style>
+        .no-margin-transcription {
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body class="no-margin-transcription">
+    <tpen-simple-transcription></tpen-simple-transcription>
+    <tpen-feedback-button></tpen-feedback-button>
+</body>
+
+</html>
