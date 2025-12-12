@@ -12,7 +12,7 @@ class UpdateMetadata extends HTMLElement {
         return ['tpen-user-id']
     }
 
-    async connectedCallback() {
+    connectedCallback() {
         this.addEventListener()
         TPEN.attachAuthentication(this)
     }
@@ -184,6 +184,8 @@ class UpdateMetadata extends HTMLElement {
             const lang = encodeURIComponent("none")
             const label = encodeURIComponent(field.querySelector("input[name='label']").value)
             const value = encodeURIComponent(field.querySelector("input[name='value']").value)
+
+            if (!label) return
 
             updatedMetadata.push({
                 label: { [lang]: [label] },

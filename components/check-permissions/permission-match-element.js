@@ -73,7 +73,7 @@ export class PermissionMatch extends HTMLElement {
         }
         // If they can edit, then they can view.
         const canView = 
-            canEdit ? true 
+            (this.#editPermission !== null && canEdit) ? true 
             : this.#viewPermission ? permissionMatch(this.#viewPermission, project, userId) 
             : true
         // Removes the element (along with everything in it, of course)

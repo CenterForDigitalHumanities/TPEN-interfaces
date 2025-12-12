@@ -11,13 +11,17 @@
 
 import TPEN from '../../api/TPEN.js'
 import User from '../../api/User.js'
-import { decodeUserToken } from '../iiif-tools/index.js'
+import { getAgentIRIFromToken } from '../iiif-tools/index.js'
+import CheckPermissions from '../check-permissions/checkPermissions.js'
+import { detectTextLinesCombined } from "./detect-lines.js"
+import { v4 as uuidv4 } from "https://cdn.skypack.dev/uuid@9.0.1"
 
 class AnnotoriousAnnotator extends HTMLElement {
   #osd 
   #annotoriousInstance
+  #annotoriousContainer
   #userForAnnotorious
-  #annotationPageURI
+  #annotationPageID
   #resolvedAnnotationPage
   #modifiedAnnotationPage
   #imageDims
@@ -26,6 +30,9 @@ class AnnotoriousAnnotator extends HTMLElement {
   #isLineEditing = false
   #isErasing = false
   #editType = ""
+  #canvasImageURL
+  #canvasID
+  #currentMergeSelection
 
   constructor() {
     super()
@@ -37,10 +44,9 @@ class AnnotoriousAnnotator extends HTMLElement {
   async connectedCallback() {
     // Must know the User
     if (!this.#userForAnnotorious) {
-      const agent = decodeUserToken(this.userToken)['http://store.rerum.io/agent']
+      const agent = getAgentIRIFromToken(this.userToken)
       if (!agent) {
         this.shadowRoot.innerHTML = `
-            <style>${this.style}</style>
             <h3>User Error</h3>
             <p>The user agent could not be detected or does not have access to this page.</p>
         `
@@ -50,10 +56,10 @@ class AnnotoriousAnnotator extends HTMLElement {
       this.#userForAnnotorious = agent
     }
     // Must know the Project
+    this.shadowRoot.innerHTML = "Loading the Annotator.  Please provide a ?projectID= in the URL."
     TPEN.eventDispatcher.on('tpen-project-loaded', (ev) => this.render())
     TPEN.eventDispatcher.on('tpen-project-load-failed', (err) => {
       this.shadowRoot.innerHTML = `
-          <style>${this.style}</style>
           <h3>Project Error</h3>
           <p>The project you are looking for does not exist or you do not have access to it.</p>
           <p> ${err.detail.status}: ${err.detail.statusText} </p>
@@ -63,33 +69,58 @@ class AnnotoriousAnnotator extends HTMLElement {
 
   // Initialize HTML after loading in a TPEN3 Project
   render() {
-    this.#annotationPageURI = TPEN.screen.pageInQuery
-    if (!this.#annotationPageURI) {
-      alert("You must provide a ?pageID=theid in the URL.  The value should be the ID of an existing TPEN3 Page.")
+    if (!CheckPermissions.checkAllAccess("line", "selector")) {
+      this.shadowRoot.innerHTML = "You do not have the proper project permissions to use this interface."
+      return
+    }
+    // Must have a Page _id to continue
+    if (!TPEN.screen.pageInQuery) {
+      const url = new URL(location.href)
+      url.searchParams.set('pageID',TPEN.activeProject.getFirstPageID().split('/').pop())
+      location.href = url.toString()
+      return
+    }
+    this.#annotationPageID = TPEN.screen.pageInQuery
+    if (!this.#annotationPageID) {
+      this.shadowRoot.innerHTML = "You must provide a '?pageID=theid' in the URL.  The value should be the ID of an existing TPEN3 Page."
       return
     }
     const osdScript = document.createElement("script")
-    osdScript.src = "https://cdn.jsdelivr.net/npm/openseadragon@latest/build/openseadragon/openseadragon.min.js"
+    osdScript.src = "../components/annotorious-annotator/OSD.min.js"
     const annotoriousScript = document.createElement("script")
-    annotoriousScript.src = "https://cdn.jsdelivr.net/npm/@annotorious/openseadragon@latest/dist/annotorious-openseadragon.js"
+    annotoriousScript.src = "../components/annotorious-annotator/AnnotoriousOSD.min.js"
 
     this.shadowRoot.innerHTML = `
       <style>
-        @import url("https://cdn.jsdelivr.net/npm/@annotorious/openseadragon@latest/dist/annotorious-openseadragon.css");
+        @import "../components/annotorious-annotator/AnnotoriousOSD.min.css";
         #annotator-container {
-          height:  100vh;
+          height: 90vh;
+          background-image: url(https://t-pen.org/TPEN/images/loading2.gif);
+          background-repeat: no-repeat;
+          background-position: center;
         }
         #tools-container {
           background-color: lightgray;
           position: absolute;
-          top: 115px;
+          top: 40px;
+          left: 5px;
           z-index: 10;
+          padding: 0px 5px 5px 5px;
+          width: 390px;
+          border: 2px solid darkgray;
+          border-radius: 5px;
+          display: none;
         }
         #tools-container label {
           display: block;
+          margin: 6px 0px;
         }
         #tools-container i {
           display: block;
+        }
+        input[type="checkbox"] {
+          width: 20px;
+          height: 20px;
         }
         input[type="button"].selected {
           background-color: green;
@@ -115,25 +146,111 @@ class AnnotoriousAnnotator extends HTMLElement {
           display: none;
           padding: 5px;
         }
-        .toggleEditType, #saveBtn {
+        .toggleEditType {
+          margin-top: 6px;
+        }
+        .toggleEditType, input[type="checkbox"], #saveBtn, #createColumnsBtn, #deleteAllBtn {
           cursor: pointer;
         }
-        #saveBtn[disabled] {
+        #saveBtn, #createColumnsBtn, #deleteAllBtn {
+          background-color: var(--primary-color);
+          text-transform: uppercase;
+          outline: var(--primary-light) 1px solid;
+          outline-offset: -3.5px;
+          color: var(--white);
+          border-radius: 5px;
+          transition: all 0.3s;
+          padding: 10px 20px;
+          cursor: pointer;
+          width: 100%;
+          margin-top: 1em;
+        }
+        #saveBtn[disabled], #createColumnsBtn[disabled], #deleteAllBtn[disabled] {
           background-color: gray;
           color: white;
         }
+        #saveBtn:hover, #createColumnsBtn:hover, #deleteAllBtn:hover {
+          background-color: var(--primary-light);
+          outline: var(--primary-color) 1px solid;
+          outline-offset: -1.5px;
+        }
+        :focus-visible {
+          outline: none !important;
+          border: none !important;
+        }
+        label span {
+          position: relative;
+          display: inline-block;
+          width: 90%;
+        }
+        .dragMe {
+          position: absolute;
+          top: -5px;
+          cursor: grab;
+          height: auto;
+          width: auto;
+        }
+        .dragMe.leftside {
+          left: 0
+        }
+        .dragMe.rightside {
+          right: 0
+        }
+        .helperHeading {
+          margin-top: 2em;
+          text-align: center;
+        }
+        .helperText {
+          font-size: 9pt;
+          font-weight: bold;
+        }
+        .a9s-annotation.selected .a9s-inner {
+          fill-opacity: 0.48 !important;
+        }
+        .transcribeLink {
+          margin-left: 2em !important;
+          cursor: pointer;
+        }
+        .transcribeLink:hover:after {
+          content: "Go Transcribe";
+          cursor: pointer;
+          position: absolute;
+          width: 105px;
+          top: 10px;
+          margin-left: 5px;
+          color: var(--link);
+        }
+        #autoParseBtn {
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          background-color: var(--primary-color);
+          padding: 10px 20px;
+          color: var(--white);
+          border-radius: 5px;
+          cursor: pointer;
+          transition: background-color 0.3s;
+          z-index: 10;
+        }
+        #autoParseBtn:hover {
+          background-color: var(--primary-light);
+        }
       </style>
       <div>
-        <div id="tools-container">
-          <p> You can zoom and pan when you are not drawing.</p>
-          <label for="drawTool">Draw Columns
+        <div id="tools-container" class="card">
+          <div class="dragMe leftside"><img draggable="false" src="../../assets/icons/grabspot.png" alt=""></div>
+          <div class="dragMe rightside"><img draggable="false" src="../../assets/icons/grabspot.png" alt=""></div>
+          <p class="helperHeading helperText"> You can zoom and pan when you are not drawing.</p>
+          <label for="drawTool">
+           <span>Draw Columns</span>
            <input type="checkbox" id="drawTool">
           </label>
-          <label for="editTool">Make/Edit Lines
+          <label for="editTool">
+           <span>Make/Edit Lines</span>
            <input type="checkbox" id="editTool">
           </label>
           <div class="editOptions">
-            <i>
+            <i class="helperText">
               * You must select a line.
               <br>
               * Splitting creates a new line under the selected line.
@@ -143,40 +260,122 @@ class AnnotoriousAnnotator extends HTMLElement {
             <input type="button" class="toggleEditType" id="addLinesBtn" value="Add Lines" />
             <input type="button" class="toggleEditType" id="mergeLinesBtn" value="Merge Lines" />
           </div>
-          <label> Remove Lines
+          <label> 
+           <span>Remove Lines</span>
            <input type="checkbox" id="eraseTool"> 
           </label>
-          <label> Annotation Visibility
+          <label style="display:none;"> 
+           <span>Annotation Visibility</span>
            <input type="checkbox" id="seeTool" checked> 
           </label>
+          <input id="deleteAllBtn" type="button" value="Delete All Annotations"/>
+          <input id="createColumnsBtn" type="button" value="Manage Columns"/>
           <input id="saveBtn" type="button" value="Save Annotations"/>
         </div>
-        <div id="annotator-container"></div>
+        <button id="autoParseBtn">Auto Parse</button>
+        <div id="annotator-container"> Loading Annotorious and getting the TPEN3 Page information... </div>
         <div id="ruler"></div>
         <span id="sampleRuler"></span>
       </div>`
+
+      this.shadowRoot.querySelector("#autoParseBtn").addEventListener("click", async () => {
+        try {
+          if (typeof cv === "undefined") {
+            await new Promise((resolve, reject) => {
+              const openCVScript = document.createElement("script")
+              openCVScript.src = "https://docs.opencv.org/4.x/opencv.js"
+              openCVScript.async = true
+              openCVScript.onload = () => {
+                cv['onRuntimeInitialized'] = () => {
+                  cv['onRuntimeInitializedCalled'] = true
+                  resolve()
+                }
+              }
+              openCVScript.onerror = reject
+              document.body.appendChild(openCVScript)
+            })
+          } else if (!cv['onRuntimeInitializedCalled']) {
+            await new Promise(resolve => {
+              cv['onRuntimeInitialized'] = () => {
+                cv['onRuntimeInitializedCalled'] = true
+                resolve()
+              }
+            })
+          }
+
+          const imageUrl = this.#canvasImageURL
+          const boxes = await detectTextLinesCombined(imageUrl)
+          const newAnnotations = []
+          for (const line of boxes) {
+            const { x, y, w, h } = line
+            newAnnotations.push({
+              type: "Annotation",
+              motivation: "transcribing",
+              target: {
+                  source: this.#canvasID,
+                  type: "SpecificResource",
+                  selector: {
+                      type: "FragmentSelector",
+                      conformsTo: "http://www.w3.org/TR/media-frags/",
+                      value: `xywh=pixel:${x},${y},${w},${h}`
+                  }
+              }
+            })
+          }
+          this.#annotoriousInstance.setAnnotations(newAnnotations, true)
+          this.#resolvedAnnotationPage.$isDirty = true
+        } catch (err) {
+          console.error("Auto Parse failed:", err)
+          TPEN.eventDispatcher.dispatch("tpen-toast", {
+            message: "Auto Parse failed. Please try again.",
+            status: "error"
+          })
+        }
+    })
+    this.#annotoriousContainer = this.shadowRoot.getElementById('annotator-container')
     const drawTool = this.shadowRoot.getElementById("drawTool")
     const editTool = this.shadowRoot.getElementById("editTool")
     const eraseTool = this.shadowRoot.getElementById("eraseTool")
     const seeTool = this.shadowRoot.getElementById("seeTool")
     const saveButton = this.shadowRoot.getElementById("saveBtn")
+    const deleteAllBtn = this.shadowRoot.getElementById("deleteAllBtn")
+    const createColumnsBtn = this.shadowRoot.getElementById("createColumnsBtn")
     const addLinesBtn = this.shadowRoot.getElementById("addLinesBtn")
     const mergeLinesBtn = this.shadowRoot.getElementById("mergeLinesBtn")
+    const drag = this.shadowRoot.querySelectorAll(".dragMe")
+    drag.forEach(elem => elem.addEventListener("mousedown", (e) => this.dragging(e)))
     addLinesBtn.addEventListener("click", (e) => this.toggleAddLines(e))
     mergeLinesBtn.addEventListener("click", (e) => this.toggleMergeLines(e))
     drawTool.addEventListener("change", (e) => this.toggleDrawingMode(e))
     editTool.addEventListener("change", (e) => this.toggleEditingMode(e))
     eraseTool.addEventListener("change", (e) => this.toggleErasingMode(e))
     seeTool.addEventListener("change", (e) => this.toggleAnnotationVisibility(e))
+    createColumnsBtn.addEventListener("click", () =>
+      window.location.href = `../../components/create-column/?projectID=${TPEN.activeProject._id}&pageID=${this.#annotationPageID}`
+    )
     saveButton.addEventListener("click", (e) => {
       this.#annotoriousInstance.cancelSelected()
       // Timeout required in order to allow the unfocus native functionality to complete for $isDirty.
       setTimeout(() => { this.saveAnnotations() }, 500)
     })
+    deleteAllBtn.addEventListener("click", async (e) => await this.deleteAllAnnotations(e))
+    window.addEventListener('beforeunload', (ev) => {
+      if (this.#resolvedAnnotationPage?.$isDirty) {
+        if (!confirm("If you leave unsaved changes will be lost.")){
+          ev.preventDefault()
+          return
+        }
+      }
+    })
+    // OSD and AnnotoriousOSD need some cycles to load, they are big files.
     this.shadowRoot.appendChild(osdScript)
-    this.shadowRoot.appendChild(annotoriousScript)
-    // Process the page to get the data required for the component UI
-    this.processPage(this.#annotationPageURI)
+    setTimeout(() => { 
+      this.shadowRoot.appendChild(annotoriousScript)
+      setTimeout(() => { 
+        // Process the page to get the data required for the component UI
+        this.processPage(this.#annotationPageID)
+      }, 200)
+    }, 200)
   }
 
   /**
@@ -207,7 +406,6 @@ class AnnotoriousAnnotator extends HTMLElement {
       })
       .catch(e => {
         this.shadowRoot.innerHTML = `
-        <style>${this.style}</style>
         <h3>Page Error</h3>
         <p>The Page you are looking for does not exist or you do not have access to it.</p>
         <p> ${e.status}: ${e.statusText} </p>
@@ -216,7 +414,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       })
     this.#resolvedAnnotationPage.$isDirty = false
     const context = this.#resolvedAnnotationPage["@context"]
-    if (!(context.includes("iiif.io/api/presentation/3/context.json") || context.includes("w3.org/ns/anno.jsonld"))) {
+    if (!(context?.includes("iiif.io/api/presentation/3/context.json") || context?.includes("w3.org/ns/anno.jsonld"))) {
       console.warn("The AnnotationPage object did not have the IIIF Presentation API 3 context and may not be parseable.")
     }
     const id = this.#resolvedAnnotationPage["@id"] ?? this.#resolvedAnnotationPage.id
@@ -249,6 +447,7 @@ class AnnotoriousAnnotator extends HTMLElement {
 
   /**
    * Fetch a Canvas URI and check that it is a Canvas object.  Pass it forward to render the Image into the interface.
+   * Be prepared to recieve presentation api 2+
    *
    * FIXME
    * Give users a path when Canvas URIs do not resolve or resolve to something unexpected.
@@ -256,24 +455,23 @@ class AnnotoriousAnnotator extends HTMLElement {
    * @param uri A String Canvas URI
    */
   async processCanvas(uri) {
-    const canvas = uri
-    if (!canvas) return
-    const resolvedCanvas = await fetch(canvas)
+    if (!uri) return
+      // TODO Vault me?
+    const resolvedCanvas = await fetch(uri)
       .then(r => {
         if (!r.ok) throw r
         return r.json()
       })
       .catch(e => {
         this.shadowRoot.innerHTML = `
-          <style>${this.style}</style>
           <h3>Canvas Error</h3>
           <p>The Canvas within this Page could not be loaded.</p>
-          <p> ${e.status}: ${e.statusText} </p>
+          <p> ${e.status ?? e.code}: ${e.statusText ?? e.message} </p>
         `
         throw e
       })
     const context = resolvedCanvas["@context"]
-    if (!context.includes("iiif.io/api/presentation/3/context.json")) {
+    if (!context?.includes("iiif.io/api/presentation/3/context.json")) {
       console.warn("The Canvas object did not have the IIIF Presentation API 3 context and may not be parseable.")
     }
     const id = resolvedCanvas["@id"] ?? resolvedCanvas.id
@@ -281,11 +479,20 @@ class AnnotoriousAnnotator extends HTMLElement {
       throw new Error("Cannot Resolve Canvas or Image", { "cause": "The Canvas is 404 or unresolvable." })
     }
     const type = resolvedCanvas["@type"] ?? resolvedCanvas.type
-    if (type !== "Canvas") {
+    if (!(type === "Canvas" || type === "sc:Canvas")) {
       throw new Error(`Provided URI did not resolve a 'Canvas'.  It resolved a '${type}'`, { "cause": "URI must point to a Canvas." })
     }
     // Use the Annotations and Image on the Canvas for inititalizing the Annotorious portion of the component.
     this.loadAnnotorious(resolvedCanvas)
+  }
+
+  async validateImageUrl(url) {
+    return new Promise((resolve, reject) => {
+      const img = new Image()
+      img.onload = () => resolve(true)
+      img.onerror = () => reject(false)
+      img.src = url
+    })
   }
 
   /**
@@ -297,15 +504,19 @@ class AnnotoriousAnnotator extends HTMLElement {
   async loadAnnotorious(resolvedCanvas) {
     this.shadowRoot.getElementById('annotator-container').innerHTML = ""
     const canvasID = resolvedCanvas["@id"] ?? resolvedCanvas.id
-    const fullImage = resolvedCanvas?.items[0]?.items[0]?.body?.id
-    const imageService = resolvedCanvas?.items[0]?.items[0]?.body?.service?.id
+    this.#canvasID = canvasID
+    let fullImage = resolvedCanvas?.items?.[0]?.items?.[0]?.body?.id
+    if (!fullImage) fullImage = resolvedCanvas?.images?.[0]?.resource?.["@id"]
+    let imageService = resolvedCanvas?.items?.[0]?.items?.[0]?.body?.service?.id
+    if (!imageService) imageService = resolvedCanvas?.images?.[0]?.resource?.service?.["@id"]
     if (!fullImage) {
       throw new Error("Cannot Resolve Canvas Image", { "cause": "The Image is 404 or unresolvable." })
     }
-    this.#imageDims = [
-      resolvedCanvas?.items[0]?.items[0]?.body?.width,
-      resolvedCanvas?.items[0]?.items[0]?.body?.height
-    ]
+    let imgx = resolvedCanvas?.items?.[0]?.items?.[0]?.body?.width
+    if (!imgx) imgx = resolvedCanvas?.images[0]?.resource?.width
+    let imgy = resolvedCanvas?.items?.[0]?.items?.[0]?.body?.height
+    if (!imgy) imgy = resolvedCanvas?.images?.[0]?.resource?.height
+    this.#imageDims = [imgx, imgy]
     this.#canvasDims = [
       resolvedCanvas?.width,
       resolvedCanvas?.height
@@ -314,12 +525,33 @@ class AnnotoriousAnnotator extends HTMLElement {
       type: "image",
       url: fullImage
     }
+    this.#canvasImageURL = fullImage
     // Try to get the info.json.  If we can't, continue with the simple imageInfo obj.
     if (imageService) {
       const lastchar = imageService[imageService.length - 1]
       if (lastchar !== "/") imageService += "/"
       const info = await fetch(imageService + "info.json").then(resp => resp.json()).catch(err => { return false })
       if (info) imageInfo = info
+    }
+    else {
+      let resolvable = false
+      try {
+        resolvable = await this.validateImageUrl(fullImage)
+      }
+      catch (err) {
+        this.shadowRoot.innerHTML = `
+          <h3>Image Error</h3>
+          <p>The Image '${fullImage}' could not be loaded</p>
+        `
+        return
+      }
+      if (!resolvable) {
+        this.shadowRoot.innerHTML = `
+          <h3>Image Error</h3>
+          <p>The Image '${fullImage}' could not be loaded</p>
+        `
+        return
+      }
     }
 
     /**
@@ -328,10 +560,12 @@ class AnnotoriousAnnotator extends HTMLElement {
      * The interface folder contains an /images/ folder with all the OpenSeaDragon icons.
      * @see https://openseadragon.github.io/docs/OpenSeadragon.html#.Options for all options and their description.
      */
+
     this.#osd = OpenSeadragon({
       element: this.shadowRoot.getElementById('annotator-container'),
       tileSources: imageInfo,
-      prefixUrl: "./interfaces/annotator/images/",
+      prefixUrl: "../interfaces/annotator/images/",
+      showFullPageControl:false,
       gestureSettingsMouse: {
         clickToZoom: false,
         dblClickToZoom: true
@@ -349,7 +583,27 @@ class AnnotoriousAnnotator extends HTMLElement {
         dblClickToZoom: true
       }
     })
-
+    // Link to transcribe if they have view permissions for it
+    if(CheckPermissions.checkViewAccess("line", "text")) {
+      let parsingRedirectButton = new OpenSeadragon.Button({
+        tooltip: "Go Transcribe",
+        srcRest: "../interfaces/annotator/images/transcribe.png",
+        srcGroup: "../interfaces/annotator/images/transcribe.png",
+        srcHover: "../interfaces/annotator/images/transcribe.png",
+        srcDown: "../interfaces/annotator/images/transcribe.png",
+        onClick: (e) => {
+            if (this.#resolvedAnnotationPage?.$isDirty) {
+              if (confirm("Stop line parsing and go transcribe?  Unsaved changes will be lost.")) 
+                location.href = `/transcribe?projectID=${TPEN.activeProject._id}&pageID=${this.#annotationPageID}`  
+            }
+            else {
+              location.href = `/transcribe?projectID=${TPEN.activeProject._id}&pageID=${this.#annotationPageID}`  
+            }
+        }
+      })
+      parsingRedirectButton.element.classList.add("transcribeLink")
+      this.#osd.addControl(parsingRedirectButton.element, { anchor: OpenSeadragon.ControlAnchor.TOP_LEFT })
+    }
     /**
      * An instance of an OpenSeaDragon Annotorious Annotation with customization options that help our desired
      * "draw new column", "chop and merge lines", "delete lines" UX.
@@ -499,13 +753,18 @@ class AnnotoriousAnnotator extends HTMLElement {
    * Annotorious will render them on screen and introduce them to the UX flow.
    */
   setInitialAnnotations() {
-    if (!this.#resolvedAnnotationPage) return
+    if (!this.#resolvedAnnotationPage) {
+      this.#annotoriousContainer.style.backgroundImage = "none"
+      return
+    }
     let allAnnotations = JSON.parse(JSON.stringify(this.#resolvedAnnotationPage.items))
     // Make sure Annotation targets and bodies are Annotorious friendly.
     allAnnotations = this.formatAnnotations(allAnnotations)
     // Convert the Annotation selectors so that they are relative to the Image dimensions
     allAnnotations = this.convertSelectors(allAnnotations, true)
     this.#annotoriousInstance.setAnnotations(allAnnotations, false)
+    this.#annotoriousContainer.style.backgroundImage = "none"
+    this.shadowRoot.getElementById("tools-container").style.display = "block"
   }
 
   /**
@@ -518,7 +777,6 @@ class AnnotoriousAnnotator extends HTMLElement {
    */
   formatAnnotations(annotations) {
     if (!annotations || annotations.length === 0) return annotations
-    let orig_xywh, converted_xywh = []
     return annotations.map(annotation => {
       if (!annotation.hasOwnProperty("target") || !annotation.hasOwnProperty("body")) return annotation
       if (typeof annotation.target === "string") {
@@ -705,7 +963,16 @@ class AnnotoriousAnnotator extends HTMLElement {
         },
         body: JSON.stringify({ "items": page.items })
       })
-      .then(res => res.json())
+      .then(res => {
+        if(!res.ok) {
+          TPEN.eventDispatcher.dispatch("tpen-toast", {
+            message: "ERROR Annotations Not Saved",
+            status: "error"
+          })
+          throw new Error("Could not save annotations", { "cause": `\n${res.status} Error from TPEN Services.  Check the Network response.` })
+        }
+        return res.json()
+      })
       .catch(err => {
         saveButton.value = "ERROR"
         throw err
@@ -722,7 +989,45 @@ class AnnotoriousAnnotator extends HTMLElement {
     })
     saveButton.removeAttribute("disabled")
     saveButton.value = "Save Annotations"
+    this.#resolvedAnnotationPage.$isDirty = false
     return this.#modifiedAnnotationPage
+  }
+
+  /**
+   * Use Annotorious to delete all known Annotations
+   * https://annotorious.dev/api-reference/openseadragon-annotator/#clearannotations
+   */
+  async deleteAllAnnotations() {
+    this.#annotoriousInstance.clearAnnotations()
+    this.#resolvedAnnotationPage.$isDirty = true
+    await this.saveAnnotations()
+    try {
+      await this.clearColumnsServerSide()
+    } catch (err) {
+      console.error("Could not clear columns server side.", err)
+      TPEN.eventDispatcher.dispatch("tpen-toast", {
+        message: "Could not clear columns. Some column data may remain.",
+        status: "error"
+      })
+    }
+  }
+
+  /**
+   * Call TPEN Services to clear all columns server side.
+   */
+  async clearColumnsServerSide() {
+    try {
+      const res = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/page/${this.#annotationPageID}/clear-columns`, {
+        method: 'DELETE',
+        headers: {
+            "Authorization": `Bearer ${TPEN.getAuthorization()}`,
+            'Content-Type': 'application/json'
+        }
+      })
+      if (!res.ok) throw new Error(`Server error: ${res.status}`)
+    } catch (err) {
+      throw err
+    }
   }
 
   /**
@@ -740,7 +1045,7 @@ class AnnotoriousAnnotator extends HTMLElement {
     if (typeof pageTarget === "object") {
       // An embedded object, a referenced object, or a {source:"", selector:{}} object
       try {
-        JSON.parse(JSON.stringify(target))
+        JSON.parse(JSON.stringify(pageTarget))
       } catch (err) {
         throw new Error(`The AnnotationPage target is not processable.`, { "cause": "AnnotationPage.target is not JSON." })
       }
@@ -821,35 +1126,35 @@ class AnnotoriousAnnotator extends HTMLElement {
    * Use Annotorious to show all known Annotations
    * https://annotorious.dev/api-reference/openseadragon-annotator/#setvisible
    */
-  showAnnotations() {
+  showAnnotations(toast_it = true) {
     this.#annotoriousInstance.setVisible(true)
     const toast = {
       message: "Annotations are visible",
       status: "info"
     }
-    TPEN.eventDispatcher.dispatch("tpen-toast", toast)
+    if (toast_it) TPEN.eventDispatcher.dispatch("tpen-toast", toast)
   }
 
   /**
    * Use Annotorious to hide all visible Annotations (except the one in focus, if any)
    * https://annotorious.dev/api-reference/openseadragon-annotator/#setvisible
    */
-  hideAnnotations() {
+  hideAnnotations(toast_it = true) {
     this.#annotoriousInstance.setVisible(false)
     const toast = {
       message: "Annotations are hidden",
       status: "info"
     }
-    TPEN.eventDispatcher.dispatch("tpen-toast", toast)
+    if (toast_it) TPEN.eventDispatcher.dispatch("tpen-toast", toast)
   }
 
   /**
    * Activate Annotorious annotation drawing mode.
    * This makes it so the user cannot zoom and pan.
    */
-  startDrawing() {
-    this.stopErasing()
-    this.stopLineEditing()
+  startDrawing(toast_it = true) {
+    this.stopErasing(false)
+    this.stopLineEditing(false)
     this.#isDrawing = true
     this.shadowRoot.getElementById("eraseTool").checked = false
     this.shadowRoot.getElementById("editTool").checked = false
@@ -858,30 +1163,30 @@ class AnnotoriousAnnotator extends HTMLElement {
       message: "You started drawing columns",
       status: "info"
     }
-    TPEN.eventDispatcher.dispatch("tpen-toast", toast)
+    if (toast_it) TPEN.eventDispatcher.dispatch("tpen-toast", toast)
   }
 
   /**
    * Deactivate Annotorious annotation drawing mode.
    * This makes it so that the user can zoom and pan.
    */
-  stopDrawing() {
+  stopDrawing(toast_it = true) {
     this.#isDrawing = false
     this.#annotoriousInstance.setDrawingEnabled(false)
     const toast = {
       message: "You stopped drawing columns",
       status: "info"
     }
-    TPEN.eventDispatcher.dispatch("tpen-toast", toast)
+    if (toast_it) TPEN.eventDispatcher.dispatch("tpen-toast", toast)
   }
 
   /**
    * Activate Annotorious annotation chopping mode.
    * Clicking on an existing annotation will prompt the user about deleting the annotation.
    */
-  startLineEditing() {
-    this.stopDrawing()
-    this.stopErasing()
+  startLineEditing(toast_it = true) {
+    this.stopDrawing(false)
+    this.stopErasing(false)
     this.#isLineEditing = true
     this.shadowRoot.getElementById("eraseTool").checked = false
     this.shadowRoot.getElementById("drawTool").checked = false
@@ -892,14 +1197,14 @@ class AnnotoriousAnnotator extends HTMLElement {
       message: "You started line editing",
       status: "info"
     }
-    TPEN.eventDispatcher.dispatch("tpen-toast", toast)
+    if (toast_it) TPEN.eventDispatcher.dispatch("tpen-toast", toast)
   }
 
   /**
    * Activate Annotorious annotation chopping mode.
    * Clicking on an existing annotation will prompt the user about deleting the annotation.
    */
-  stopLineEditing() {
+  stopLineEditing(toast_it = true) {
     this.#isLineEditing = false
     this.#editType = ""
     this.removeRuler()
@@ -909,16 +1214,16 @@ class AnnotoriousAnnotator extends HTMLElement {
       message: "You stopped line editing",
       status: "info"
     }
-    TPEN.eventDispatcher.dispatch("tpen-toast", toast)
+    if (toast_it) TPEN.eventDispatcher.dispatch("tpen-toast", toast)
   }
 
   /**
    * Activate Annotorious annotation erasing mode.
    * Clicking on an existing annotation will prompt the user about deleting the annotation.
    */
-  startErasing() {
-    this.stopDrawing()
-    this.stopLineEditing()
+  startErasing(toast_it = true) {
+    this.stopDrawing(false)
+    this.stopLineEditing(false)
     this.#isErasing = true
     this.shadowRoot.getElementById("drawTool").checked = false
     this.shadowRoot.getElementById("editTool").checked = false
@@ -927,20 +1232,44 @@ class AnnotoriousAnnotator extends HTMLElement {
       message: "You started erasing",
       status: "info"
     }
-    TPEN.eventDispatcher.dispatch("tpen-toast", toast)
+    if (toast_it) TPEN.eventDispatcher.dispatch("tpen-toast", toast)
   }
 
   /**
    * Deactivate Annotorious annotation erasing mode.
    * This allows user to zoom and pan, and select annotations to edit.
    */
-  stopErasing() {
+  stopErasing(toast_it = true) {
     this.#isErasing = false
     const toast = {
       message: "You stopped erasing",
       status: "info"
     }
-    TPEN.eventDispatcher.dispatch("tpen-toast", toast)
+    if (toast_it) TPEN.eventDispatcher.dispatch("tpen-toast", toast)
+  }
+
+  /**
+   * Get the amount the Annotorious container is offset from the top of the window, in units.
+   * This typically helps account for the space that page headers take up.
+   * Necessary to help adjust coordinates for accuracy while a user hovers or clicks during line parsing.
+   */
+  containerTopOffset() {
+    if (!this.#annotoriousContainer) return 0
+    const rect = this.#annotoriousContainer.getBoundingClientRect()
+    if (!rect?.top) return 0
+    return rect.top
+  }
+
+  /**
+   * Get the amount the Annotorious container is offset from the left of the window, in units.
+   * This helps account for any left side padding, margin, or text.
+   * Necessary to help adjust coordinates for accuracy while a user hovers or clicks during line parsing.
+   */
+  containerLeftOffset() {
+    if (!this.#annotoriousContainer) return 0
+    const rect = this.#annotoriousContainer.getBoundingClientRect()
+    if (!rect?.left) return 0
+    return rect.left
   }
 
   /**
@@ -966,7 +1295,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       return checkId === compareId
     })
     // Drawn Annotation dims represented as units, not pixels
-    const annoY_units = rect.y
+    const annoY_units = rect.y - this.containerTopOffset()
     const annoH_units = rect.height
     // Drawn Annotation dims represented as pixels, not units
     const annoY_pixels = parseFloat(annoDims[1])
@@ -1013,6 +1342,7 @@ class AnnotoriousAnnotator extends HTMLElement {
     if (!this.#isLineEditing) return
     let toast
     const annoElem = event.target
+    this.#currentMergeSelection = this.#annotoriousInstance.getSelected()
     // Note that if there is no selected line, there are no DOM elements representing Annotations. 
     if (!annoElem) return
     // Then we really should be able to get the selected annotation JSON from Annotorious
@@ -1065,7 +1395,7 @@ class AnnotoriousAnnotator extends HTMLElement {
     allAnnotations.splice(origIndex + 1, 1)
     this.#annotoriousInstance.removeAnnotation(nextId)
     // Splice new Annotation data into original Annotation list
-    newAnnoObject.id = Date.now() + ""
+    newAnnoObject.id = this.#currentMergeSelection[0].id
     newAnnoObject.target.selector.value = `xywh=pixel:${newAnnoDims.join()}`
     newAnnoObject.created = new Date().toJSON()
     if (annoJsonToMergeIn.body.length) {
@@ -1157,8 +1487,8 @@ class AnnotoriousAnnotator extends HTMLElement {
     // Position the ruler element to be with the cursor
     elem.addEventListener('mousemove', function(e) {
       const rect = elem.getBoundingClientRect()
-      ruler.style.left = rect.x + "px"
-      ruler.style.top = e.pageY + "px"
+      ruler.style.left = (rect.x - _this.containerLeftOffset()) + "px"
+      ruler.style.top = (e.pageY - _this.containerTopOffset() - window.scrollY) + "px"
       ruler.style.height = '1px'
       ruler.style.width = rect.width + "px"
     })
@@ -1181,6 +1511,42 @@ class AnnotoriousAnnotator extends HTMLElement {
     if (this.#editType === "add") this.splitLine(event)
     if (this.#editType === "merge") this.mergeLines(event)
   }
+
+  /*
+   * Make parsing options draggable
+   * https://www.w3schools.com/howto/howto_js_draggable.asp
+   */
+  dragging(ev) {
+    ev = ev || window.event
+    let pos1 = 0, pos2 = 0, pos3 =  ev.clientX, pos4 = ev.clientY
+    let containerElem = this.shadowRoot.getElementById("tools-container")
+    ev.preventDefault()
+    document.onmouseup = closeDragElement
+    document.onmousemove = elementDrag
+    let grabber = ev.target
+    grabber.style.cursor = "grabbing"
+    containerElem.style.boxShadow = "0px 0px 20px black"
+
+    function elementDrag(e) {
+      e = e || window.event
+      e.preventDefault()
+      pos1 = pos3 - e.clientX
+      pos2 = pos4 - e.clientY
+      pos3 = e.clientX
+      pos4 = e.clientY
+      containerElem.style.top = (containerElem.offsetTop - pos2) + "px"
+      containerElem.style.left = (containerElem.offsetLeft - pos1) + "px"
+    }
+
+    function closeDragElement(e) {
+      e = e || window.event
+      grabber.style.cursor = "grab"
+      containerElem.style.boxShadow = "none"
+      document.onmouseup = null
+      document.onmousemove = null
+    }
+  }
+
 }
 
 customElements.define('tpen-line-parser', AnnotoriousAnnotator)

@@ -1,15 +1,31 @@
-import "../../components/magnifier-tool/index.js"
-import "../../components/special-character-tool/index.js"
+import TPEN from "../../api/TPEN.js"
+const eventDispatcher = TPEN.eventDispatcher
+import CheckPermissions from "../check-permissions/checkPermissions.js"
+import "../../components/quicktype-tool/index.js"
 import "../../components/splitscreen-tool/index.js"
 import "../../components/page-tool/index.js"
+import { MagnifierTool, showMagnifier } from "../magnifier-tool/index.js"
 
 export default class WorkspaceTools extends HTMLElement {
   constructor() {
     super()
     this.attachShadow({ mode: "open" })
+    this.magnifierTool = null
   }
 
   connectedCallback() {
+    // If project is already loaded, run authgate immediately
+    if (TPEN.activeProject?._createdAt) {
+      this.authgate()
+    }
+    eventDispatcher.on("tpen-project-loaded", this.authgate.bind(this))
+  }
+
+  authgate() {
+    if (!CheckPermissions.checkViewAccess("TOOLS", "ANY")) {
+      this.remove()
+      return
+    }
     this.render()
   }
 
@@ -17,7 +33,6 @@ export default class WorkspaceTools extends HTMLElement {
     this.shadowRoot.innerHTML = `
     <style>
       .workspace-tools {
-        border: 1px solid rgb(254, 248, 228);
         padding: 15px 20px;
         display: flex;
         flex-direction: column;
@@ -45,17 +60,76 @@ export default class WorkspaceTools extends HTMLElement {
         width: 100%;
         flex-wrap: wrap;
       }
+
+      .tools-btn {
+        padding: 8px 16px;
+        border-radius: 25px;
+        border: 1.5px solid rgb(0, 90, 140);
+        background-color: rgb(0, 90, 140);
+        color: white;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        user-select: none;
+        transition: background-color 0.3s ease, border-color 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+      }
+      
+      .tools-btn:hover, .tools-btn:focus {
+        background-color: white;
+        border-color: rgb(0, 90, 140);
+        color: rgb(0, 90, 140);
+        outline: none;
+      }
+
+      .magnifier-btn {
+        user-select: none;
+      }
     </style>
     <div class="workspace-tools no-top-radius">
       <div class="top-bar">
         <tpen-splitscreen-tool></tpen-splitscreen-tool>
         <tpen-page-tool></tpen-page-tool>
-        <tpen-special-character-tool-button></tpen-special-character-tool-button>
-        <tpen-magnifier-tool></tpen-magnifier-tool>
+        ${
+          // TPEN.activeProject.config?.quicktype?.enabled
+          true ? `<tpen-quicktype-tool-button></tpen-quicktype-tool-button>` : ""
+        }
+        <button class="magnifier-btn tools-btn" type="button" title="Toggle Magnifier" aria-label="Toggle Magnifier">Inspect 🔍</button>
       </div>
-      <tpen-special-character-tool style="width: 100%"></tpen-special-character-tool>
-    </div>
+      ${
+        // TPEN.activeProject.config?.quicktype?.enabled
+        true ? `<tpen-quicktype-tool style="width: 100%"></tpen-quicktype-tool>` : ""
+      }
+      </div>
     `
+
+    this.magnifierBtn = this.shadowRoot.querySelector(".magnifier-btn")
+    this.magnifierBtn.addEventListener("click", () => {
+        const transcriptionInterface = document.querySelector("tpen-transcription-interface")?.shadowRoot
+
+        if (!this.magnifierTool) {
+            this.magnifierTool = new MagnifierTool()
+            document.body.appendChild(this.magnifierTool)
+        }
+
+        const img = transcriptionInterface?.querySelector("tpen-image-fragment")?.shadowRoot?.querySelector("img")
+        if (img) this.magnifierTool.imageElem = img
+
+        showMagnifier(this.magnifierTool)
+
+        transcriptionInterface?.querySelector("tpen-image-fragment").style.setProperty("z-index", "10")
+
+        window.addEventListener("keydown", (e) => {
+          if (e.key === "Escape") {
+              this.magnifierTool.hideMagnifier()
+              transcriptionInterface?.querySelector("tpen-image-fragment").style.removeProperty("z-index")
+              this.magnifierBtn.blur()
+          }
+      })
+    })
   }
 }
 

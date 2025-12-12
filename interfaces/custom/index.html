@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Project Property Demo</title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .description {
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+        .project-selector,
+        .interface-container,
+        .custom-property-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .project-selector label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        .project-selector select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        .interface-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 12px;
+        }
+        .namespace {
+            margin-bottom: 16px;
+        }
+        .namespace h3 {
+            margin: 0 0 6px;
+            color: #444;
+            font-size: 16px;
+        }
+        .kv-list {
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .kv-item {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 8px;
+            padding: 10px 12px;
+            border-bottom: 1px solid #eaeaea;
+            background-color: #fafafa;
+        }
+        .kv-item:nth-child(even) {
+            background-color: #fff;
+        }
+        .kv-item:last-child {
+            border-bottom: none;
+        }
+        .kv-key {
+            font-weight: 600;
+            color: #555;
+            word-break: break-word;
+        }
+        .kv-value {
+            color: #333;
+            word-break: break-word;
+        }
+        .empty-state {
+            color: #777;
+            font-style: italic;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        tpen-custom-property {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <h1>Custom Project Property Demo</h1>
+    <p class="description">
+        This demo allows you to add custom JSON properties to your TPEN projects. 
+        Select a project from the dropdown below and enter your custom data in JSON format.
+    </p>
+
+    <div id="error-container"></div>
+
+    <div class="project-selector">
+        <label for="project-select">Select Project:</label>
+        <select id="project-select">
+            <option value="">Loading projects...</option>
+        </select>
+    </div>
+
+    <div class="interface-container">
+        <div class="interface-header">
+            <h2>Current Project Interfaces</h2>
+            <span id="interface-status" class="empty-state">Select a project to view interfaces</span>
+        </div>
+        <div id="interface-content"></div>
+    </div>
+
+    <div class="custom-property-container">
+        <tpen-custom-property id="custom-property"></tpen-custom-property>
+    </div>
+
+    <script type="module">
+        import TPEN from '../../api/TPEN.js'
+        import './index.js'
+
+        const projectSelect = document.getElementById('project-select')
+        const customProperty = document.getElementById('custom-property')
+        const errorContainer = document.getElementById('error-container')
+        const interfaceContent = document.getElementById('interface-content')
+        const interfaceStatus = document.getElementById('interface-status')
+
+        async function loadProjects() {
+            try {
+                const token = TPEN.getAuthorization()
+                if (!token) {
+                    throw new Error('Authentication required')
+                }
+
+                const response = await fetch(`${TPEN.servicesURL}/my/projects`, {
+                    method: 'GET',
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                })
+
+                if (!response.ok) {
+                    throw new Error(`Failed to load projects: ${response.statusText}`)
+                }
+
+                const { projects } = await response.json()
+                projectSelect.innerHTML = ''
+
+                if (!projects?.length) {
+                    projectSelect.innerHTML = '<option value="">No projects found</option>'
+                    interfaceStatus.textContent = 'No interfaces to display'
+                    interfaceContent.innerHTML = ''
+                    return
+                }
+
+                const defaultProjectId = TPEN.screen?.projectInQuery ?? ''
+                projects.forEach(project => {
+                    const option = document.createElement('option')
+                    option.value = project._id ?? project.id ?? ''
+                    option.textContent = `${project.title ?? project.label ?? 'Project'} (${option.value})`
+                    if (option.value === defaultProjectId) {
+                        option.selected = true
+                    }
+                    projectSelect.appendChild(option)
+                })
+
+                if (defaultProjectId && projects.some(p => (p._id ?? p.id) === defaultProjectId)) {
+                    updateCustomProperty(defaultProjectId)
+                } else {
+                    const firstProjectId = projects[0]._id ?? projects[0].id ?? ''
+                    updateCustomProperty(firstProjectId)
+                }
+
+            } catch (error) {
+                console.error('Error loading projects:', error)
+                projectSelect.innerHTML = '<option value="">Error loading projects</option>'
+                interfaceStatus.textContent = 'Unable to load interfaces'
+                interfaceContent.innerHTML = ''
+                showError(error.message ?? 'Failed to load projects')
+            }
+        }
+
+        async function updateCustomProperty(projectId) {
+            if (!projectId) {
+                interfaceStatus.textContent = 'Select a project to view interfaces'
+                interfaceContent.innerHTML = ''
+                return
+            }
+
+            const url = new URL(window.location)
+            url.searchParams.set('projectID', projectId)
+            window.history.pushState({}, '', url)
+
+            if (TPEN.screen) {
+                TPEN.screen.projectInQuery = projectId
+            }
+
+            customProperty.render()
+            await loadProjectInterfaces(projectId)
+        }
+
+        async function loadProjectInterfaces(projectId) {
+            interfaceStatus.textContent = 'Loading interfaces...'
+            interfaceContent.innerHTML = '<div class="loading">Fetching interface namespaces...</div>'
+
+            try {
+                const token = TPEN.getAuthorization() ?? await TPEN.login()
+                if (!token) {
+                    throw new Error('Authentication required')
+                }
+
+                const response = await fetch(`${TPEN.servicesURL}/project/${projectId}`, {
+                    method: 'GET',
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                })
+
+                if (!response.ok) {
+                    throw new Error(`Failed to load interfaces: ${response.statusText}`)
+                }
+
+                const project = await response.json()
+                renderInterfaceData(project?.interfaces, projectId)
+
+            } catch (error) {
+                console.error('Error loading interfaces:', error)
+                interfaceStatus.textContent = 'Failed to load interfaces'
+                interfaceContent.innerHTML = ''
+                showError(error.message ?? 'Unable to load project interfaces')
+            }
+        }
+
+        function renderInterfaceData(interfaces, projectId) {
+            if (!interfaces || typeof interfaces !== 'object') {
+                interfaceStatus.textContent = `No interfaces for project ${projectId}`
+                interfaceContent.innerHTML = '<p class="empty-state">No namespaces found in interfaces.</p>'
+                return
+            }
+
+            const namespaces = Object.entries(interfaces).filter(([, value]) => value && typeof value === 'object')
+            if (!namespaces.length) {
+                interfaceStatus.textContent = `No interfaces for project ${projectId}`
+                interfaceContent.innerHTML = '<p class="empty-state">No namespaces found in interfaces.</p>'
+                return
+            }
+
+            interfaceStatus.textContent = `Interface namespaces (${namespaces.length})`
+            interfaceContent.innerHTML = namespaces.map(([namespace, values]) => {
+                const entries = Object.entries(values ?? {})
+                if (!entries.length) {
+                    return `
+                        <div class="namespace">
+                            <h3>${namespace}</h3>
+                            <p class="empty-state">No key-value pairs defined.</p>
+                        </div>
+                    `
+                }
+
+                const kvRows = entries.map(([key, value]) => `
+                    <div class="kv-item">
+                        <div class="kv-key">${key}</div>
+                        <div class="kv-value">${formatInterfacesValue(value)}</div>
+                    </div>
+                `).join('')
+
+                return `
+                    <div class="namespace">
+                        <h3>${namespace}</h3>
+                        <div class="kv-list">
+                            ${kvRows}
+                        </div>
+                    </div>
+                `
+            }).join('')
+        }
+
+        function formatInterfacesValue(value) {
+            if (value === null || value === undefined) {
+                return '<span class="empty-state">null</span>'
+            }
+            if (typeof value === 'object') {
+                return `<pre>${JSON.stringify(value, null, 2)}</pre>`
+            }
+            return String(value)
+        }
+
+        function showError(message) {
+            errorContainer.innerHTML = `<div class="error">${message}</div>`
+            setTimeout(() => {
+                errorContainer.innerHTML = ''
+            }, 5000)
+        }
+
+        projectSelect.addEventListener('change', e => {
+            updateCustomProperty(e.target.value)
+        })
+
+        TPEN.eventDispatcher.on('tpen-authenticated', loadProjects)
+        TPEN.eventDispatcher.on('tpen-project-interface-updated', detail => {
+            const updatedId = detail?.id ?? ''
+            if (!updatedId) return
+            const currentId = projectSelect.value
+            if (updatedId === currentId) {
+                renderInterfaceData(detail?.data?.interfaces ?? detail?.data, updatedId)
+            }
+        })
+
+        if (TPEN.getAuthorization()) {
+            loadProjects()
+        }
+    </script>
+</body>
+</html>

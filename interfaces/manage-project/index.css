@@ -1,3 +1,45 @@
-tpen-card[tpen-scope="metadata"]::part(card-body) {
+tpen-card[tpen-scope="metadata"]::part(card-body), tpen-card[tpen-entity="layer"]::part(card-body), 
+tpen-card[tpen-entity="role"]::part(card-body), tpen-card[tpen-entity="tools"]::part(card-body),
+tpen-card[tpen-entity="member"]::part(card-body), tpen-card[tpen-scope="options"]::part(card-body),
+tpen-card[tpen-entity="export"]::part(card-body) {
   margin-bottom: 3.5em;
+  height: 310px;
+}
+a.left {
+    cursor: pointer;
+    color: var(--primary-color);
+    text-decoration: inherit;
+    margin-top: 10px;
+    float: left;
+}
+a.right {
+    cursor: pointer;
+    color: var(--primary-color);
+    text-decoration: inherit;
+    margin-top: 10px;
+    float: right;
+}
+a.left span, a.right span {
+    position: relative;
+    display: inline-block;
+    top: -10px;
+    margin: 0px 5px;
+}
+a.left:hover, a.right:hover {
+    color: var(--link);
+}
+a.left img, a.right img {
+    height: 35px;
+    width: 35px
+}
+a.left img {
+    padding: 4px 0px;
+}
+.action-links {
+    height: 50px;
+    border-top: 1px solid black;
+}
+tpen-card[tpen-entity="member"] project-collaborators::part(group-title),
+tpen-card[tpen-entity="member"] project-collaborators::part(group-members-title) {
+    display: none;
 }

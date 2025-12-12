@@ -5,151 +5,7 @@ class TpenHeader extends HTMLElement {
         super();
         this.attachShadow({ mode: 'open' });
         this.shadowRoot.innerHTML = `
-            <style>
-                header {
-                    position: fixed;
-                    background-color: var(--darkest);
-                    width: 100%;
-                    height: 4em;
-                    z-index: 15;
-                    padding: 1em 1em 0 1em;
-                    top: 0;
-                    left: 0;
-                    box-sizing: border-box;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                }
-                h1 {
-                    white-space: nowrap;
-                }
-                .cube {
-                    transform-style: preserve-3d;
-                    animation: spin linear reverse;
-                    animation-timeline: scroll();
-                    position: relative;
-                    width: 20px;
-                    height: 20px;
-                    display: inline-block;
-                    margin: 0 5px;
-                }
-                .cube + .cube {
-                    animation-direction: normal;
-                    animation-iteration-count: 2;
-                }
-                .cube + .cube + .cube {
-                    animation-direction: reverse;
-                    animation-iteration-count: .62;
-                }
-                .cube div {
-                    width: 20px;
-                    height: 20px;
-                    line-height: 20px;
-                    text-align: center;
-                    box-shadow: inset 0px 0px 0px 1px var(--darkest);
-                    background: var(--primary-color);
-                    display: block;
-                    position: absolute;
-                }
-                .cube div.top {
-                    transform: rotateX(90deg);
-                    margin-top: -10px;
-                }
-                .cube div.right {
-                    transform: rotateY(90deg);
-                    margin-left: 10px;
-                }
-                .cube div.bottom {
-                    transform: rotateX(-90deg);
-                    margin-top: 10px;
-                }
-                .cube div.left {
-                    transform: rotateY(-90deg);
-                    margin-left: -10px;
-                }
-                .cube div.front {
-                    transform: translateZ(10px);
-                }
-                .cube div.back {
-                    transform: translateZ(-10px) rotateX(180deg);
-                }
-                h1 > span {
-                    color: var(--primary-color);
-                    text-transform: uppercase;
-                }
-                @keyframes spin {
-                    0% {
-                        transform: rotateX(157deg) rotateY(280deg) rotateZ(330deg);
-                    }
-                    100% {
-                        transform: rotateX(0deg) rotateY(740deg) rotateZ(900deg);
-                    }
-                }
-                nav {
-                    display: flex;
-                    justify-content: space-between;
-                }
-                ul {
-                    list-style: none;
-                    display: flex;
-                    align-items: center;
-                }
-                li {
-                    margin-right: 1em;
-                }
-                a {
-                    color: var(--primary-light);
-                    text-decoration: none;
-                }
-                a:hover {
-                    text-decoration: underline;
-                }
-                .action-button {
-                    background-color: var(--primary-color);
-                    color: var(--white);
-                    border: none;
-                    border-radius: 50%;
-                    cursor: pointer;
-                    font-size: 1.2em;
-                    box-shadow: rgba(0, 0, 0, .5) 0 0 .25em;
-                    position: relative;
-                    bottom: -1.25em;
-                    opacity: 1;
-                    visibility: visible;
-                    aspect-ratio: 1 / 1;
-                    max-width: 15vw;
-                    outline: var(--primary-light) 1px solid;
-                    outline-offset: -3.5px;
-                    transition: all .3s;
-                }
-                .action-button:focus, .action-button:hover {
-                    outline: var(--primary-color) 1px solid;
-                    outline-offset: -1.5px;
-                }
-                .hidden {
-                    visibility: hidden;
-                    opacity: 0;
-                    pointer-events: none;
-                }
-                button:hover {
-                    background-color: var(--primary-light);
-                    color: var(--darkest);
-                }
-                h1.banner {
-                    background-color: var(--white);
-                    color: var(--accent);
-                    border-radius: .125em;
-                    text-align: center;
-                    padding: .125em;
-                    margin: -.125em;
-                    position: relative;
-                    bottom: .25em;
-                    font-size: clamp(1rem, 5vw, 2rem);
-                    white-space: nowrap;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                }
-            </style>
+            <link rel="stylesheet" href="../../components/gui/site/header.css">
             <header>
                 <h1 style="margin: 0;">
                     <span>tpen</span>
@@ -215,6 +71,149 @@ class TpenHeader extends HTMLElement {
             btn.removeEventListener('click', ev.detail.callback)
         })
         this.shadowRoot.querySelector('.logout-btn').addEventListener('click', ()=>TPEN.logout())
+        this.setupDraggableButton()
+    }
+
+    setupDraggableButton() {
+        const btn = this.shadowRoot.querySelector('.action-button')
+        let isDragging = false
+        let startX = 0
+        let currentX = 0
+        let hasMoved = false
+        let dragStartTime = 0
+        let lastX = 0
+        let lastTime = 0
+        let velocityX = 0
+        let animationFrame = null
+        let initialRect = null // Store initial position
+        const DRAG_THRESHOLD = 5 // pixels
+        const TIME_THRESHOLD = 200 // milliseconds
+        const FRICTION = 0.92 // Deceleration factor
+        const MIN_VELOCITY = 0.5 // Stop animation below this velocity
+        const BOUNCE_DAMPING = 0.1 // How much velocity is retained after bounce
+
+        const getBounds = () => {
+            if (!initialRect) {
+                // Store the button's initial position on first call
+                btn.style.position = 'relative'
+                btn.style.left = '0px'
+                initialRect = btn.getBoundingClientRect()
+            }
+            
+            const header = this.shadowRoot.querySelector('header')
+            const headerRect = header.getBoundingClientRect()
+            const btnWidth = initialRect.width
+            
+            // Calculate bounds relative to initial position
+            const maxLeft = headerRect.right - initialRect.right - 20 // Space to right edge
+            const maxRight = headerRect.left - initialRect.left + 20 // Space to left edge
+            
+            return { maxLeft, maxRight }
+        }
+
+        const animate = () => {
+            if (Math.abs(velocityX) > MIN_VELOCITY) {
+                currentX += velocityX
+                velocityX *= FRICTION
+                
+                // Check boundaries and bounce
+                const bounds = getBounds()
+                if (currentX > bounds.maxLeft) {
+                    currentX = bounds.maxLeft
+                    velocityX = -Math.abs(velocityX) * BOUNCE_DAMPING // Bounce back with damping
+                } else if (currentX < bounds.maxRight) {
+                    currentX = bounds.maxRight
+                    velocityX = Math.abs(velocityX) * BOUNCE_DAMPING // Bounce back with damping
+                }
+                
+                btn.style.left = `${currentX}px`
+                animationFrame = requestAnimationFrame(animate)
+            } else {
+                animationFrame = null
+            }
+        }
+
+        const onPointerDown = (e) => {
+            // Cancel any ongoing momentum animation
+            if (animationFrame) {
+                cancelAnimationFrame(animationFrame)
+                animationFrame = null
+            }
+            
+            isDragging = true
+            hasMoved = false
+            dragStartTime = Date.now()
+            lastTime = Date.now()
+            startX = e.clientX - currentX
+            lastX = e.clientX
+            velocityX = 0
+            btn.style.cursor = 'grabbing'
+            btn.setPointerCapture(e.pointerId)
+            btn.style.transition = 'none'
+            e.preventDefault()
+        }
+
+        const onPointerMove = (e) => {
+            if (!isDragging) return
+            
+            const now = Date.now()
+            const deltaTime = now - lastTime
+            const deltaX = e.clientX - startX
+            
+            if (Math.abs(deltaX - currentX) > DRAG_THRESHOLD) {
+                hasMoved = true
+            }
+            
+            // Calculate velocity for momentum
+            if (deltaTime > 0) {
+                velocityX = (e.clientX - lastX) / deltaTime * 16 // Normalize to ~60fps
+            }
+            
+            // Constrain to viewport bounds while dragging
+            const bounds = getBounds()
+            currentX = Math.max(bounds.maxRight, Math.min(bounds.maxLeft, deltaX))
+            
+            lastX = e.clientX
+            lastTime = now
+            btn.style.position = 'relative'
+            btn.style.left = `${currentX}px`
+        }
+
+        const onPointerUp = (e) => {
+            if (!isDragging) return
+            
+            isDragging = false
+            btn.style.cursor = 'grab'
+            btn.releasePointerCapture(e.pointerId)
+            
+            const dragDuration = Date.now() - dragStartTime
+            
+            // If the button was dragged significantly (distance or time), prevent the click
+            if (hasMoved || dragDuration > TIME_THRESHOLD) {
+                e.preventDefault()
+                e.stopPropagation()
+            }
+            
+            // Apply momentum if there's velocity
+            if (Math.abs(velocityX) > MIN_VELOCITY && hasMoved) {
+                animationFrame = requestAnimationFrame(animate)
+            }
+        }
+
+        // Prevent click if drag occurred
+        btn.addEventListener('click', (e) => {
+            if (hasMoved) {
+                e.preventDefault()
+                e.stopPropagation()
+            }
+        }, true)
+
+        btn.addEventListener('pointerdown', onPointerDown)
+        btn.addEventListener('pointermove', onPointerMove)
+        btn.addEventListener('pointerup', onPointerUp)
+        btn.addEventListener('pointercancel', onPointerUp)
+        btn.style.cursor = 'grab'
+        btn.style.touchAction = 'none'
     }
 }
 

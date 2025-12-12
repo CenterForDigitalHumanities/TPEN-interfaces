@@ -33,20 +33,21 @@ class TPENCard extends HTMLElement {
             }
             .card-footer {
                 display: flex;
-                justify-content: space-between;
+                justify-content: flex-start;
                 flex-direction: row-reverse;
                 background-color: var(--gray);
                 text-align: right;
                 position: absolute;
                 bottom: 0;
                 width: 100%;
+                gap: 5px;
             }
             .card-icon {
                 display: flex;
                 justify-content: center;
                 align-items: center;
-                padding-top: 1em;
-                padding-bottom: 0;
+                padding-top: 0em;
+                padding-bottom: 0em;
                 font-size:2.5em;
             }
             ::slotted(a) {

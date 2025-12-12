@@ -2,67 +2,60 @@ import TPEN from "../../api/TPEN.js"
 
 const eventDispatcher = TPEN.eventDispatcher
 
-class TpenHotKeys extends HTMLElement {
-  #method
-
+class TpenQuickType extends HTMLElement {
   constructor() {
     super()
     this.attachShadow({ mode: 'open' })
-    this._hotkeys = []
-    this.projectId = TPEN.screen.projectInQuery
+    this._quicktype = []
     TPEN.attachAuthentication(this)
-    eventDispatcher.on("tpen-project-loaded", () => this.loadHotkeys())
+    eventDispatcher.on("tpen-project-loaded", () => this.loadQuickType())
   }
 
 
-  get hotkeys() {
-    return this._hotkeys
+  get quicktype() {
+    return this._quicktype
   }
 
-  set hotkeys(value) {
-    this._hotkeys = value
-    this.updateHotkeysDisplay()
+  set quicktype(value) {
+    this._quicktype = value
+    this.updateQuickTypeDisplay()
   }
 
-  async loadHotkeys() {
-    const incomingKeys = TPEN.activeProject.options.hotkeys ?? []
-    if (incomingKeys.length > 0) {
-      this.#method = "PUT"
-      this.hotkeys = incomingKeys
+  async loadQuickType() {
+    const project = TPEN.activeProject
+    if (!project) {
+      this.quicktype = []
       return
     }
-    this.#method = "POST"
-    this.hotkeys = []
+
+    const incomingKeys = project.interfaces?.quicktype ?? []
+    this.quicktype = Array.isArray(incomingKeys) ? [...incomingKeys] : []
   }
 
-  async saveHotkeys() {
-    if(this.hotkeys.length === 0) { this.#method = "DELETE" }
-    try {
-      const response = await fetch(`${TPEN.servicesURL}/project/${this.projectId}/hotkeys`, {
-        method : this.#method,
-        headers: {
-          Authorization: `Bearer ${TPEN.getAuthorization()}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({symbols:this.hotkeys}),
-      })
-
-      if (!response.ok) {
-        throw response
-      }
-
-      this.#method = this.hotkeys.length > 0 ? "PUT" : "POST"
-
+  async saveQuickType() {
+    const project = TPEN.activeProject
+    if (!project?.storeInterfacesCustomization) {
       eventDispatcher.dispatch("tpen-toast", {
-        message: "Hotkeys updated successfully",
-        status: "success"
-      })
-      return response
-    } catch (error) {
-      eventDispatcher.dispatch("tpen-toast", {
-        message: error.toString(),
+        message: "Project must be loaded before saving QuickType shortcuts",
         status: "error"
       })
+      return null
+    }
+
+    try {
+      const interfaces = await project.storeInterfacesCustomization({ quicktype: [...this.quicktype] })
+      this.quicktype = interfaces?.quicktype ?? project.interfaces?.quicktype ?? []
+      eventDispatcher.dispatch("tpen-toast", {
+        message: "QuickType shortcuts updated successfully",
+        status: "success"
+      })
+      return interfaces
+    } catch (error) {
+      eventDispatcher.dispatch("tpen-toast", {
+        message: error?.message ?? error?.toString() ?? "Failed to save QuickType shortcuts",
+        status: "error"
+      })
+      return null
     }
   }
 
@@ -70,12 +63,15 @@ class TpenHotKeys extends HTMLElement {
   connectedCallback() {
     this.render()
     this.setupEventListeners()
+    if (TPEN.activeProject) {
+      this.loadQuickType()
+    }
   }
 
   render() {
     this.shadowRoot.innerHTML = `
         <style>
-          .hotkeys-container {
+          .quicktype-container {
             font-family: Arial, sans-serif;
             padding: 20px;
             border-radius: 8px;
@@ -84,17 +80,17 @@ class TpenHotKeys extends HTMLElement {
             gap:20px;
             align-items:flex-start;
           }
-          .hotkeys-container h2 {
+          .quicktype-container h2 {
             margin-top: 0;
           }
-          .hotkeys-form input {
+          .quicktype-form input {
             width: 100%;
             padding: 8px;
             margin-bottom: 10px;
             border: 1px solid #ccc;
             border-radius: 4px;
           }
-          .hotkeys-form button {
+          .quicktype-form button {
             padding: 8px 16px;
             background-color: #007bff;
             color: white;
@@ -102,24 +98,24 @@ class TpenHotKeys extends HTMLElement {
             border-radius: 4px;
             cursor: pointer;
           }
-          .hotkeys-list {
+          .quicktype-list {
             margin-top: 20px;
           }
-          .hotkeys-list div {
+          .quicktype-list div {
             padding: 8px;
             border-bottom: 1px solid #eee;
           }
-          .hotkeys-list div:last-child {
+          .quicktype-list div:last-child {
             border-bottom: none;
           }
 
-          .hotkey-row{
+          .quicktype-row{
           display:flex;
           gap:10px;
           align-items:center;
           }
 
-          .hotkey{
+          .quicktype-item{
           display:flex;
           flex-direction:column;
           align-items:center;
@@ -140,7 +136,7 @@ class TpenHotKeys extends HTMLElement {
     cursor: pointer;
   }
 
-          .special-characters {
+          .quicktype-shortcuts {
             margin-top: 20px;
           }
           .accordion {
@@ -163,7 +159,7 @@ class TpenHotKeys extends HTMLElement {
           .accordion-content.open {
             display: block;
           }
-          .special-character {
+          .quicktype-shortcut {
             display: inline-block;
             margin: 5px;
             padding: 5px;
@@ -171,38 +167,38 @@ class TpenHotKeys extends HTMLElement {
             border-radius: 4px;
             cursor: pointer;
           }
-          .special-character:hover {
+          .quicktype-shortcut:hover {
             background-color: #f0f0f0;
           }
 
-            .special-characters{
+            .quicktype-shortcuts{
             width:100%
             }
         </style>
-        <div class="hotkeys-container">
+        <div class="quicktype-container">
         <section>
-          <h2>Hot Keys Manager</h2>
-          <div class="hotkeys-form">
+          <h2>QuickType Manager</h2>
+          <div class="quicktype-form">
             <input type="text" id="symbol-input" maxLength="2" placeholder="Enter a symbol (UTF-8)">
 
-            <button id="add-hotkey">Add Hotkey</button>
+            <button id="add-quicktype">Add QuickType Shortcut</button>
           </div>
-          <div class="hotkeys-list">
-            <h3>Saved Hotkeys</h3>
-            <div id="hotkeys-display">
-            ${this.hotkeys ? '<div class="loading">Loading hotkeys...</div>' : ''}</div>
+          <div class="quicktype-list">
+            <h3>Saved QuickType Shortcuts</h3>
+            <div id="quicktype-display">
+            ${this.quicktype ? '<div class="loading">Loading QuickType shortcuts...</div>' : ''}</div>
           </div>
         </section>
 
-          <div class="special-characters">
-            <h3>Special Characters for Paleography in UTF-8</h3>
-            ${this.renderSpecialCharacters()}
+          <div class="quicktype-shortcuts">
+            <h3>QuickType Characters for Paleography in UTF-8</h3>
+            ${this.renderQuickTypeCharacters()}
           </div>
         </div>
       `
   }
 
-  renderSpecialCharacters() {
+  renderQuickTypeCharacters() {
     const specialCharacters = [
       {
         title: "Medieval English and Old Norse",
@@ -292,7 +288,7 @@ class TpenHotKeys extends HTMLElement {
               ${category.characters
             .map(
               (char) => `
-                    <div class="special-character" data-symbol="${char.symbol}">
+                    <div class="quicktype-shortcut" data-symbol="${char.symbol}">
                       <span>${char.symbol}</span> - ${char.description}
                     </div>
                   `
@@ -306,8 +302,8 @@ class TpenHotKeys extends HTMLElement {
   }
 
   setupEventListeners() {
-    const addButton = this.shadowRoot.getElementById('add-hotkey')
-    addButton.addEventListener('click', () => this.addHotkey())
+    const addButton = this.shadowRoot.getElementById('add-quicktype')
+    addButton.addEventListener('click', () => this.addQuickType())
 
 
     // Event listeners for accordions
@@ -319,9 +315,9 @@ class TpenHotKeys extends HTMLElement {
       })
     })
 
-    // Add event listeners for special characters
-    const specialCharacters = this.shadowRoot.querySelectorAll('.special-character')
-    specialCharacters.forEach((char) => {
+    // Add event listeners for QuickType characters
+    const quicktypeCharacters = this.shadowRoot.querySelectorAll('.quicktype-shortcut')
+    quicktypeCharacters.forEach((char) => {
       char.addEventListener('click', () => {
         const symbol = char.getAttribute('data-symbol')
         navigator.clipboard.writeText(symbol).then(() => {
@@ -345,7 +341,7 @@ class TpenHotKeys extends HTMLElement {
     }
   }
 
-  async addHotkey() {
+  async addQuickType() {
     const symbolInput = this.shadowRoot.getElementById('symbol-input')
     const symbol = symbolInput.value.trim()
 
@@ -357,40 +353,46 @@ class TpenHotKeys extends HTMLElement {
       return
     }
     
-    if (this.hotkeys.includes(symbol)) {
+    if (this.quicktype.includes(symbol)) {
       TPEN.eventDispatcher.dispatch("tpen-toast", {
-        message: "This symbol is already in the hotkeys list.",
+        message: "This symbol is already in the QuickType shortcuts list.",
         status: "error"
       })
       return
     }
 
-    this.hotkeys = [...this.hotkeys, symbol]
-    const resp = await this.saveHotkeys()
-    if (!resp) this.hotkeys = this.hotkeys.filter(item => item !== symbol)
+    const previous = [...this.quicktype]
+    this.quicktype = [...this.quicktype, symbol]
+    const resp = await this.saveQuickType()
+    if (!resp) this.quicktype = previous
     symbolInput.value = ''
   }
 
-  updateHotkeysDisplay() {
-    const hotkeysDisplay = this.shadowRoot.getElementById('hotkeys-display')
-    hotkeysDisplay.innerHTML = this.hotkeys
+  updateQuickTypeDisplay() {
+    const quicktypeDisplay = this.shadowRoot.getElementById('quicktype-display')
+    if (!quicktypeDisplay) {
+      return
+    }
+    quicktypeDisplay.innerHTML = this.quicktype
       .map((symbol, index) => `
-          <div class="hotkey-row">
-          <div class="hotkey">
+          <div class="quicktype-row">
+          <div class="quicktype-item">
             <span class="symbol">${symbol}</span> 
             <span class="shortcut">${this.generateShortcut(index)}</span>
           </div>
-          <div onclick="this.getRootNode().host.deleteHotkey(${index})" class="delete">&#128465;</div>
+          <div onclick="this.getRootNode().host.deleteQuickType(${index})" class="delete">&#128465;</div>
           </div>
         `)
       .join('')
   }
 
-  async deleteHotkey(index) {
-    this.hotkeys = this.hotkeys.filter((_, i) => i !== index)
-    await this.saveHotkeys()
+  async deleteQuickType(index) {
+    const previous = [...this.quicktype]
+    this.quicktype = this.quicktype.filter((_, i) => i !== index)
+    const resp = await this.saveQuickType()
+    if (!resp) this.quicktype = previous
   }
 }
 
 
-customElements.define('tpen-hot-keys', TpenHotKeys)
+customElements.define('tpen-quicktype', TpenQuickType)

@@ -1,3 +1,6 @@
+import CheckPermissions from "../check-permissions/checkPermissions.js"
+import TPEN from "../../api/TPEN.js"
+const eventDispatcher = TPEN.eventDispatcher
 export default class TpenSplitScreen extends HTMLElement {
     constructor() {
         super()
@@ -8,8 +11,21 @@ export default class TpenSplitScreen extends HTMLElement {
     }
 
     connectedCallback() {
-        this.render()
-        this.addEventListeners()
+      // If project is already loaded, run authgate immediately
+      if (TPEN.activeProject?._createdAt) {
+        this.authgate()
+      }
+      eventDispatcher.on("tpen-project-loaded", this.authgate.bind(this))
+    }
+
+    authgate() {
+      if(!CheckPermissions.checkViewAccess("TOOLS", "ANY")) {
+        // No reason to get this far, but let's not risk it.
+        this.remove()
+        return
+      }
+      this.render()
+      this.addEventListeners()
     }
 
     addEventListeners() {
@@ -65,6 +81,7 @@ export default class TpenSplitScreen extends HTMLElement {
             overflow: auto;
             border-left: 1px solid #ccc;
             padding: 10px;
+            z-index: 0;
           }
           .resizer {
             width: 5px;

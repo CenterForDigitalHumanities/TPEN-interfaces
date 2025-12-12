@@ -42,11 +42,15 @@ class NewAction extends HTMLElement {
                 <span class="icon">📁</span>
                 <span>Create a New Project</span>
             </a>
-            <a href="project/import" id="import-resource">
+            <a href="project/import" id="import-manifest">
                 <span class="icon">📤</span>
                 <span>Import IIIF Manifest</span>
             </a>
-            <a id="link-tpen-2.8" href="#">
+            <a href="project/import-image" id="import-image">
+                <span class="icon">📄</span>
+                <span>Import Image</span>
+            </a>
+            <a href="#" id="link-tpen-2.8">
                 <span class="icon">🔗</span>
                 <span>Import a TPEN 2.8 Project</span>
             </a>
@@ -60,20 +64,34 @@ class NewAction extends HTMLElement {
         this.shadowRoot.getElementById("link-tpen-2.8").addEventListener("click", this.TPEN2ImportHandler.bind(this))
     }
 
-    TPEN2ImportHandler = (event) => {
+    TPEN2ImportHandler = async (event) => {
         event.preventDefault()
         const userToken = localStorage.getItem("userToken")
         let tokenDomain
-
+        let isProdTPEN
+    
         if (TPEN.TPEN28URL.includes("t-pen.org")) {
             tokenDomain = "t-pen.org"
+            isProdTPEN = true
         }
 
         if (TPEN.TPEN28URL.includes("localhost")) {
             tokenDomain = "localhost"
         }
-        
-        document.cookie = `userToken=${userToken}; path=/; domain=${tokenDomain}; secure; samesite=strict;`;    
+    
+        let cookieString = `userToken=${userToken}; domain=${tokenDomain}; path=/; SameSite=Strict;`
+    
+        if (isProdTPEN) {
+            cookieString += " Secure;"
+        }
+    
+        document.cookie = cookieString
+        await fetch(`${TPEN.servicesURL}/project/deletecookie`, {
+            method: "GET",
+            credentials: "include",
+        })
+
+        document.cookie = cookieString
         const redirectUri = encodeURIComponent(`${window.location.origin}/project/import28`)
         window.location.href = `${TPEN.TPEN28URL}/TPEN/login.jsp?redirect_uri=${redirectUri}`
     }

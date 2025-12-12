@@ -9,14 +9,21 @@ permalink: /project/import-image
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Import Project From Image</title>
+    <title>Import Image URL</title>
     <script src="/components/import-image/index.js" type="module"></script>
     <script src="/api/TPEN.js" type="module"></script>
     <script src="/components/gui/site/index.js" type="module"></script>
+    <script src="/components/explanatory-guide/fixedGuideComponent.js" type="module"></script>
 </head>
 
 <body>
     <tpen-page>
+        <tpen-fixed-explanatory-guide heading="Steps to Create a Project from Image URL">
+            <li>Enter a name for your project.</li>
+            <li>Paste the URL of the image you want to import.</li>
+            <li>Click <strong>"Create Project"</strong> to generate a project from the image.</li>
+            <li>Click <strong>"Manage"</strong> to start working on it.</li>
+        </tpen-fixed-explanatory-guide>
         <tpen-image-importer></tpen-image-importer>
     </tpen-page>
 </body>

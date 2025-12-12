@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuickType Editor Dialog Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 40px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: rgb(0, 90, 140);
+            margin-bottom: 20px;
+        }
+        .test-btn {
+            padding: 12px 24px;
+            background: rgb(0, 90, 140);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .test-btn:hover {
+            background: rgb(0, 70, 110);
+        }
+        .current-shortcuts {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .current-shortcuts h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .shortcut-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .shortcut-item {
+            padding: 6px 12px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 18px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>QuickType Editor Dialog Test</h1>
+        <p>Click the button below to open the QuickType editor dialog:</p>
+        <button class="test-btn" id="openDialog">Open QuickType Editor</button>
+        
+        <div class="current-shortcuts">
+            <h3>Current Shortcuts:</h3>
+            <div class="shortcut-list" id="shortcutList">
+                <em style="color: #999;">No shortcuts yet</em>
+            </div>
+        </div>
+    </div>
+
+    <tpen-quicktype-editor-dialog></tpen-quicktype-editor-dialog>
+
+    <script type="module">
+        import TPEN from "../../api/TPEN.js"
+        import "./quicktype-editor-dialog.js"
+
+        const eventDispatcher = TPEN.eventDispatcher
+        
+        // Mock project data for testing
+        let currentShortcuts = ['Þ', 'ð', 'Æ', 'Ȝ', '⁊']
+        
+        // Mock the active project
+        TPEN.activeProject = {
+            _id: 'test-project',
+            interfaces: {
+                quicktype: [...currentShortcuts]
+            },
+            storeInterfacesCustomization: async (data) => {
+                // Simulate API call
+                return new Promise((resolve) => {
+                    setTimeout(() => {
+                        currentShortcuts = [...data.quicktype]
+                        TPEN.activeProject.interfaces.quicktype = [...currentShortcuts]
+                        resolve({ quicktype: [...currentShortcuts] })
+                    }, 300)
+                })
+            }
+        }
+
+        const dialog = document.querySelector('tpen-quicktype-editor-dialog')
+        const openBtn = document.getElementById('openDialog')
+        const shortcutList = document.getElementById('shortcutList')
+
+        function updateShortcutDisplay() {
+            if (currentShortcuts.length === 0) {
+                shortcutList.innerHTML = '<em style="color: #999;">No shortcuts yet</em>'
+            } else {
+                shortcutList.innerHTML = currentShortcuts
+                    .map(s => `<div class="shortcut-item">${s}</div>`)
+                    .join('')
+            }
+        }
+
+        openBtn.addEventListener('click', () => {
+            dialog.open(currentShortcuts)
+        })
+
+        eventDispatcher.on("quicktype-editor-saved", (event) => {
+            currentShortcuts = [...event.detail.quicktype]
+            updateShortcutDisplay()
+        })
+
+        // Initial display
+        updateShortcutDisplay()
+    </script>
+</body>
+</html>

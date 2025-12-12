@@ -1,6 +1,8 @@
 import TPEN from "../../api/TPEN.js"
 const eventDispatcher = TPEN.eventDispatcher
 import "../layer-selector/index.js"
+import "../column-selector/index.js"
+import CheckPermissions from "../check-permissions/checkPermissions.js"
 export default class ProjectHeader extends HTMLElement {
     loadFailed = false
 
@@ -26,14 +28,6 @@ export default class ProjectHeader extends HTMLElement {
         this.content.id = 'content'
         this.shadowRoot.appendChild(this.content)
         eventDispatcher.on("tpen-user-loaded", (ev) => (this.currentUser = ev.detail))
-        eventDispatcher.on("tpen-project-loaded", () => {
-            this.loadFailed = false
-            const projectTitleElem = this.shadowRoot.querySelector('.project-title')
-            if (projectTitleElem) {
-              projectTitleElem.textContent = TPEN.activeProject?.label ?? ''
-            } 
-            this.render()
-        })
         const setLineIndicator = index => {
             const indicator = this.shadowRoot.querySelector('.line-indicator')
             if (!indicator) return
@@ -54,6 +48,23 @@ export default class ProjectHeader extends HTMLElement {
 
     connectedCallback() {
         TPEN.attachAuthentication(this)
+        if(TPEN.activeProject?._createdAt){
+            this.authgate()
+        }
+        eventDispatcher.on('tpen-project-loaded', this.authgate.bind(this))
+    }
+
+    authgate() {
+        if(!CheckPermissions.checkViewAccess("PROJECT", "ANY")) {
+            this.remove()
+            return
+        }
+        this.loadFailed = false
+        const projectTitleElem = this.shadowRoot.querySelector('.project-title')
+        if (projectTitleElem) {
+          projectTitleElem.textContent = TPEN.activeProject?.label ?? ''
+        } 
+        this.render()
     }
 
     render() {
@@ -71,17 +82,18 @@ export default class ProjectHeader extends HTMLElement {
             <section class="labels">
               <div class="project-title">${projectTitle}</div>
               <div class="canvas-label">
-                <select>
-                  <option value="" disabled selected>-- Select Canvas --</option>
-                </select>
+          <select>
+            <option value="" disabled selected>-- Select Canvas --</option>
+          </select>
               </div>
             </section>
             <tpen-layer-selector></tpen-layer-selector>
+            <tpen-column-selector></tpen-column-selector>
             <div class="line-indicator">Line indicator</div>
             <div class="control-buttons">
-              <div class="nav-icon"><img draggable="false" src="../../assets/icons/home.png" alt=""></div>
-              <div class="nav-icon"><img draggable="false" src="../../assets/icons/contact.png" alt=""></div>
-              <div class="nav-icon"><img draggable="false" src="../../assets/icons/profile.png" alt=""></div>
+              <a class="nav-icon" href="/index"><img draggable="false" src="../../assets/icons/home.png" alt="Home"></a>
+              <a class="nav-icon" href="/project/manage?projectID=${TPEN.screen.projectInQuery}"><img draggable="false" src="../../assets/icons/contact.png" alt="Manage Project"></a>
+              <a class="nav-icon" href="/profile"><img draggable="false" src="../../assets/icons/profile.png" alt="Profile"></a>
             </div>
           </nav>
         `

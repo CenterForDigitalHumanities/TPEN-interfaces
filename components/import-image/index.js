@@ -53,7 +53,7 @@ class ImageImporter extends HTMLElement {
         <label for="name">Enter Project Name:</label>
         <input type="text" id="name" placeholder="Enter Project Name..." />
         <label for="url">Image URL:</label>
-        <input type="text" id="url" placeholder="Drop an image URL here or paste..." />
+        <input type="text" id="url" placeholder="Drop an image URL here or paste comma-separated URLs..." />
         <button id="submit">Create Project</button>
         <div id="feedback" class="feedback"></div>
         <div id="page-info-container"></div>
@@ -100,25 +100,22 @@ class ImageImporter extends HTMLElement {
   }
 
   async handleImport() {
-    let url = this.urlInput.value
+    let url = this.urlInput.value.trim()
+    const urls = url.split(',').map(u => u.trim())
     const label = this.shadowRoot.querySelector('#name').value.trim()
     this.feedback.textContent = ''
     this.pageInfoContainer.innerHTML = ''
 
-    if (!url) {
-      this.feedback.textContent = 'Please provide an image URL.'
-      this.feedback.className = 'error'
-      return
-    }
-
-    if (!/^https?:\/\/.+\.(jpg|jpeg|png|tiff|webp|jp2)$/i.test(url)) {
-      this.feedback.textContent = 'Please provide a valid image URL with these extensions (jpg, jpeg, png, tiff, webp, jp2).'
+    if (!urls.length) {
+      this.feedback.textContent = 'Please provide at least one image URL.'
       this.feedback.className = 'error'
       return
     }
 
     try {
-      await this.validateImageUrl(url)
+      for (const url of urls) {
+        await this.validateImageUrl(url)
+      }
     }
     catch (error) {
       this.feedback.textContent = 'The provided URL is unreachable or does not point to a valid image.'
@@ -143,13 +140,13 @@ class ImageImporter extends HTMLElement {
 
     try {
       const AUTH_TOKEN = TPEN.getAuthorization() ?? TPEN.login()
-      const response = await fetch(`${TPEN.servicesURL}/project/import-image`, {
+      await fetch(`${TPEN.servicesURL}/project/import-image`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           "Authorization": `Bearer ${AUTH_TOKEN}`
         },
-        body: JSON.stringify({ imageUrl : url, projectLabel : label }),
+        body: JSON.stringify({ imageUrls : urls, projectLabel : label }),
       })
       .then(async(response) => {
          if (!response.ok) {

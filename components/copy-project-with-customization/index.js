@@ -7,7 +7,7 @@ class CopyExistingProjectWithCustomizations extends HTMLElement {
     #modules = {
         "Metadata": true,
         "Group Members": true,
-        "Hotkeys": true,
+        "QuickType": true,
         "Tools": true,
         "Layers": true
     }
@@ -276,6 +276,14 @@ class CopyExistingProjectWithCustomizations extends HTMLElement {
                 .hidden {
                     display: none;
                 }
+
+                .disabled {
+                    background-color: #f0f0f0;
+                    color: #999;
+                    cursor: not-allowed;
+                    border: 1px solid #ccc;
+                    pointer-events: none;
+                }
             </style>
             <h3>Copy Existing Project With Customizations</h3>
             <label class="project-select-label" for="project-select">Select a Project :</label>
@@ -311,7 +319,7 @@ class CopyExistingProjectWithCustomizations extends HTMLElement {
             const project = await new Project(projectSelect).fetch()
             const groupMembersList = Object.entries(project.collaborators).filter(([key]) => key !== userObj._id)
             .map(([key, member]) => ({ id: key, name: member.profile.displayName }))
-            const layersList = project.layers.map(layer => ({ label: layer.label, id: layer.id }))
+            const layersList = project.layers.map(layer => ({ label: layer.label, id: layer.id, hasAnnotations: layer.pages.some(page => page.items && page.items.length > 0) }))
 
             this.shadowRoot.querySelectorAll(".project-customization").forEach(customization => {
                 const index = customization.getAttribute("index")
@@ -324,7 +332,7 @@ class CopyExistingProjectWithCustomizations extends HTMLElement {
                         <div class="layer-item">
                             <span class="layer-label">${layer.label}</span>
                             <div class="layer-actions">
-                                <button class="add-with-annotations-btn" data-layer="${layer.id}">Add Layer With Annotations</button>
+                                <button class="add-with-annotations-btn ${layer.hasAnnotations ? '' : 'disabled'}" data-layer="${layer.id}">Add Layer With Annotations</button>
                                 <button class="add-without-annotations-btn" data-layer="${layer.id}">Add Layer Without Annotations</button>
                                 <button class="delete-layer-btn" data-layer="${layer.id}">Delete Layer</button>
                             </div>

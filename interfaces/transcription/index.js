@@ -4,6 +4,8 @@ import '../../components/workspace-tools/index.js'
 import '../../components/transcription-block/index.js'
 import vault from '../../js/vault.js'
 import '../../components/line-image/index.js'
+import CheckPermissions from "../../components/check-permissions/checkPermissions.js"
+import { orderPageItemsByColumns } from "../../utilities/columnOrdering.js"
 export default class TranscriptionInterface extends HTMLElement {
   #page
   #canvas
@@ -20,17 +22,25 @@ export default class TranscriptionInterface extends HTMLElement {
 
   connectedCallback() {
     TPEN.attachAuthentication(this)
+    if (TPEN.activeProject?._createdAt) {
+      this.authgate()
+    }
+    TPEN.eventDispatcher.on('tpen-project-loaded', this.authgate.bind(this))
+    TPEN.eventDispatcher.on('tpen-transcription-previous-line', this.updateLines.bind(this))
+    TPEN.eventDispatcher.on('tpen-transcription-next-line', this.updateLines.bind(this))
+  }
+
+  async authgate() {
+    if (!CheckPermissions.checkViewAccess("ANY", "CONTENT")) {
+      this.remove()
+      return
+    }
     this.render()
     this.addEventListeners()
     this.setupResizableSplit()
-    // Only set up event listeners for updates, not for re-rendering
-    TPEN.eventDispatcher.on('tpen-project-loaded', async () => {
-      const pageID = TPEN.screen?.pageInQuery
-      await this.updateTranscriptionImages(pageID)
-    })
-    TPEN.eventDispatcher.on('tpen-transcription-previous-line', this.updateLines.bind(this))
-    TPEN.eventDispatcher.on('tpen-transcription-next-line', this.updateLines.bind(this))
-
+    const pageID = TPEN.screen?.pageInQuery
+    await this.updateTranscriptionImages(pageID)
+    this.updateLines()
   }
 
   render() {
@@ -51,11 +61,13 @@ export default class TranscriptionInterface extends HTMLElement {
         .container.no-splitscreen .right-pane {
           height: 100%;
           overflow: auto;
+          z-index: 0;
         }
         .splitter {
           width: 6px;
           background-color: #ddd;
           cursor: ew-resize;
+          z-index: 1;
         }
         .container.no-splitscreen .left-pane {
           width: 100% !important;
@@ -66,11 +78,17 @@ export default class TranscriptionInterface extends HTMLElement {
         }
         .container.active-splitscreen .left-pane {
           width: 60%;
+          position: relative;
+          z-index: 1;
         }
         .container.active-splitscreen .right-pane {
           width: 40%;
           border-left: 1px solid #ddd;
           background-color: #ffffff;
+          position: relative;
+          z-index: 5;
+          box-shadow: -4px 0 12px rgba(0, 0, 0, 0.1);
+          overflow: hidden;
         }
         .splitter:hover {
           background-color: #bbb;
@@ -83,6 +101,10 @@ export default class TranscriptionInterface extends HTMLElement {
           background-color: rgb(166, 65, 41);
           border-bottom: 1px solid #ddd;
         }
+        .container.active-splitscreen {
+          position: relative;
+          z-index: 2;
+        }
         .close-button {
           background: none;
           border: none;
@@ -93,7 +115,7 @@ export default class TranscriptionInterface extends HTMLElement {
         }
         .tools {
           padding: 15px;
-          height: calc(100% - 50px);
+          height: calc(100vh - 85px);
           overflow-y: auto;
         }
         .tools p {
@@ -142,6 +164,14 @@ export default class TranscriptionInterface extends HTMLElement {
           z-index: 0;
           transform: translateY(0px);
         }
+        iframe {
+          display: block;
+          width: 100%;
+          height: 100%;
+          border: none;
+          position: relative;
+          z-index: 0;
+        }
       </style>
       <tpen-project-header></tpen-project-header>
       <div class="container no-splitscreen">
@@ -160,41 +190,57 @@ export default class TranscriptionInterface extends HTMLElement {
               />
             </div>
           </section>
-          <tpen-line-image id="bottomImage"></tpen-line-image>
+          <tpen-image-fragment id="bottomImage"></tpen-image-fragment>
         </div>
         <div class="splitter"></div>
         <div class="right-pane">
           <div class="header">
             <button class="close-button">Close ×</button>
           </div>
-          <div class="tools"></div>
+          <div class="tools">
+            <p>
+              You do not have any tools loaded. To add a tool, please 
+              <a href="/project/manage?projectId=${TPEN.screen.projectInQuery}">manage your project</a>.
+            </p>
+          </div>
         </div>
       </div>
     `
   }
 
   addEventListeners() {
-    // Listen for any splitscreen-toggle events from children (if any)
-    this.shadowRoot.addEventListener('splitscreen-toggle', (e) => {
-      this.state.activeTool = e.detail?.selectedTool || ''
+    const closeSplitscreen = () => {
+      if (!this.state.isSplitscreenActive) return
+      this.state.isSplitscreenActive = false
+      this.toggleSplitscreen()
+      this.checkMagnifierVisibility()
+      this.updateLines()
+    }
+
+    const openSplitscreen = (selectedTool = '') => {
+      this.state.activeTool = selectedTool
       this.state.isSplitscreenActive = true
       this.toggleSplitscreen()
       this.loadRightPaneContent()
+      this.updateLines()
+    }
+
+    this.shadowRoot.addEventListener('splitscreen-toggle', e => openSplitscreen(e.detail?.selectedTool))
+
+    this.shadowRoot.addEventListener('click', e => {
+      if (e.target?.classList.contains('close-button')) closeSplitscreen()
     })
 
-    // Listen for clicks on the close button within the placeholder pane.
-    this.shadowRoot.addEventListener("click", (e) => {
-      if (e.target && e.target.classList.contains("close-button")) {
-        this.state.isSplitscreenActive = false
-        this.toggleSplitscreen()
-        this.checkMagnifierVisibility()
-      }
+    window.addEventListener('keydown', e => {
+      if (e.key === 'Escape') closeSplitscreen()
     })
+
+    TPEN.eventDispatcher.on('tools-dismiss', closeSplitscreen)
   }
 
   checkMagnifierVisibility() {
     const magnifierTool = document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('tpen-workspace-tools').shadowRoot.querySelector('tpen-magnifier-tool')
-    if (magnifierTool.isMagnifierVisible) {
+    if (magnifierTool?.isMagnifierVisible) {
       magnifierTool.hideMagnifier()
       magnifierTool.showMagnifier()
     }
@@ -215,32 +261,114 @@ export default class TranscriptionInterface extends HTMLElement {
     container.classList.toggle('no-splitscreen', !this.state.isSplitscreenActive)
   }
 
+  fetchCurrentPageId() {
+    for (const layer of TPEN.activeProject?.layers) {
+      const page = layer.pages.find(
+        p => p.id.split('/').pop() === TPEN.screen.pageInQuery
+      )
+      if (page) return page.id
+    }
+  }
+
+  fetchCanvasesFromCurrentLayer() {
+    const currentLayer = TPEN.activeProject?.layers.find(layer => layer.pages.some(page => page.id.split('/').pop() === TPEN.screen.pageInQuery))
+    const canvases = currentLayer?.pages.flatMap(page => {
+      return {
+        id: page.target,
+        label: page.label
+      }
+    })
+    return canvases
+  }
+
   loadRightPaneContent() {
     const rightPane = this.shadowRoot.querySelector('.tools')
-    const tool = this.state.activeTool
-    rightPane.innerHTML = this.getToolHTML(tool)
+    const tool = this.getToolByName(this.state.activeTool)
+    if (!tool) {
+      rightPane.innerHTML = `
+      <p>
+        You do not have any tools loaded. To add a tool, please 
+        <a href="/project/manage?projectId=${TPEN.screen?.projectInQuery ?? ''}">manage your project</a>.
+      </p>
+      `
+      return
+    }
+
+    const tagName = tool.custom?.tagName
+    if (tagName && tool.url) {
+      // Dynamically load the script if not already loaded
+      if (customElements.get(tagName)) {
+        rightPane.innerHTML = `<${tagName}></${tagName}>`
+        return
+      }
+      const script = document.createElement('script')
+      script.type = 'module'
+      script.src = tool.url
+      script.onload = () => {
+        rightPane.innerHTML = `<${tagName}></${tagName}>`
+      }
+      script.onerror = () => {
+        rightPane.innerHTML = `<p>Failed to load tool: ${tagName}</p>`
+      }
+      document.head.appendChild(script)
+      return
+    }
+
+    if (tool.url && !tagName && tool.location === 'pane') {
+      const iframe = document.createElement('iframe')
+      iframe.id = tool.toolName
+      iframe.addEventListener('load', () => {
+        iframe.contentWindow?.postMessage(
+          {
+            type: "MANIFEST_CANVAS_ANNOTATIONPAGE_ANNOTATION",
+            manifest: TPEN.activeProject?.manifest?.[0] ?? '',
+            canvas: this.#canvas?.id ?? this.#canvas?.['@id'] ?? this.#canvas ?? '',
+            annotationPage: this.fetchCurrentPageId() ?? this.#page ?? '',
+            annotation: TPEN.activeLineIndex >= 0 ? this.#page?.items?.[TPEN.activeLineIndex]?.id ?? null : null,
+            columns: TPEN.activeProject?.layers.flatMap(layer => layer.pages || []).find(p => p.id.split('/').pop() === TPEN.screen.pageInQuery)?.columns || []
+          },
+          '*'
+        )
+
+        iframe.contentWindow?.postMessage(
+          { type: "CANVASES",
+            canvases: this.fetchCanvasesFromCurrentLayer()
+          },
+          '*'
+        )
+
+        iframe.contentWindow?.postMessage(
+          { type: "CURRENT_LINE_INDEX",
+            lineId: this.#page?.items?.[TPEN.activeLineIndex]?.id
+          },
+          "*"
+        )
+      })
+      TPEN.eventDispatcher.on('tpen-transcription-previous-line', () => {
+        iframe.contentWindow?.postMessage(
+          { type: "SELECT_ANNOTATION", lineId: this.#page?.items?.[TPEN.activeLineIndex]?.id },
+          "*"
+        )
+      })
+      TPEN.eventDispatcher.on('tpen-transcription-next-line', () => {
+        iframe.contentWindow?.postMessage(
+          { type: "SELECT_ANNOTATION", lineId: this.#page?.items?.[TPEN.activeLineIndex]?.id },
+          "*"
+        )
+      })
+      iframe.src = tool.url
+      rightPane.innerHTML = ''
+      rightPane.appendChild(iframe)
+      return
+    }
+
+    rightPane.innerHTML = `<p>${tool.label ?? tool.custom?.tagName ?? 'Tool'} - functionality coming soon...</p>`
     this.checkMagnifierVisibility()
   }
 
-  getToolHTML(tool) {
-    switch (tool) {
-      case 'transcription':
-        return `<p>Transcription Progress</p>`
-      case 'dictionary':
-        return `<p>Greek Dictionary</p>`
-      case 'preview':
-        return `<p>Next Page Preview</p>`
-      case 'cappelli':
-        return `<iframe src='https://centerfordigitalhumanities.github.io/cappelli/' style='width:100%;height:100%;border:none;'></iframe>`
-      case 'enigma':
-        return `<iframe src='http://enigma.huma-num.fr/' style='width:100%;height:100%;border:none;'></iframe>`
-      case 'latin-dictionary':
-        return `<iframe src='https://www.perseus.tufts.edu/hopper/resolveform?lang=latin' style='width:100%;height:100%;border:none;'></iframe>`
-      case 'latin-vulgate':
-        return `<iframe src='https://vulsearch.sourceforge.net/cgi-bin/vulsearch' style='width:100%;height:100%;border:none;'></iframe>`
-      default:
-        return `<p>No tool selected</p>`
-    }
+  getToolByName(toolName) {
+    const tools = TPEN.activeProject?.tools || []
+    return tools.find(tool => tool.toolName === toolName)
   }
 
   setupResizableSplit() {
@@ -287,24 +415,38 @@ export default class TranscriptionInterface extends HTMLElement {
   }
 
   updateLines() {
-    if (!(TPEN.activeLineIndex >= 0) || !this.#page) return
+    if (TPEN.activeLineIndex < 0 || !this.#page) return
     const topImage = this.shadowRoot.querySelector('#topImage')
+    if (!topImage) return
     const thisLine = this.#page.items?.[TPEN.activeLineIndex]
     if (!thisLine) return
+    TPEN.activeLine = thisLine
+
+    const page = TPEN.activeProject.layers.flatMap(layer => layer.pages || []).find(p => p.id.split('/').pop() === this.#page.id.split('/').pop())
+    if (!page) return
+    const { columnsInPage } = orderPageItemsByColumns(page, this.#page)
+
+    const columnSelector = document.querySelector('tpen-transcription-interface')?.shadowRoot?.querySelector('tpen-project-header')?.shadowRoot?.querySelector('tpen-column-selector')
+    if (columnSelector && columnSelector.shadowRoot) {
+      const activeLineId = TPEN.activeLine?.id || TPEN.activeLine?.['@id']
+      if (!activeLineId) return
+      const activeColumn = columnsInPage.find(column => column.lines.includes(activeLineId))
+      if (activeColumn) {
+        const selectEl = columnSelector.shadowRoot.querySelector('select')
+        if (selectEl) {
+          selectEl.title = activeColumn.label
+          selectEl.value = activeColumn.id
+        }
+      }
+    }
+
     const { region } = this.setCanvasAndSelector(thisLine, this.#page)
     if (!region) return
     const [x, y, width, height] = region.split(',').map(Number)
+    if ([x, y, width, height].some(isNaN)) return
     topImage.moveTo(x, y, width, height)
-    this.slideBottomImage(region)
-  }
-
-  slideBottomImage(region) {
     const bottomImage = this.shadowRoot.querySelector('#bottomImage')
-    if (!bottomImage || !this.#canvas || !region) return
-    const [x, y, width, height] = region.split(',').map(Number)
-    const vscale = (this.#canvas.height ?? 1) / bottomImage.clientHeight || 1
-    const hscale = (this.#canvas.width ?? 1) / bottomImage.clientWidth || 1
-    bottomImage.style.transform = `translate(-${x / hscale}px, -${(y+height) / vscale}px)`
+    if (bottomImage) bottomImage.moveUnder(x, y, width, height, topImage)
   }
 
   getImage(project) {
@@ -355,26 +497,43 @@ export default class TranscriptionInterface extends HTMLElement {
     targetString ??= thisLine?.target?.selector?.value ? `${thisLine.target?.source}#${thisLine.target.selector.value}` : null
     targetString ??= thisLine?.target
     targetString ??= page?.target?.id ?? page?.target?.['@id'] ?? page?.target
-    ;[canvasID, region] = targetString?.split?.('#xywh=')
-    return { canvasID, region : region?.split?.(':')?.pop() }
+      ;[canvasID, region] = targetString?.split?.('#xywh=')
+    return { canvasID, region: region?.split?.(':')?.pop() }
   }
 
   async updateTranscriptionImages(pageID) {
     const topImage = this.shadowRoot.querySelector('#topImage')
     const bottomImage = this.shadowRoot.querySelector('#bottomImage')
     topImage.manifest = bottomImage.manifest = TPEN.activeProject?.manifest[0]
-    const page = this.#page = await vault.get(pageID, 'annotationpage', true)
-    let thisLine = page.items?.[0]
-    thisLine = await vault.get(thisLine, 'annotation')
-    if (!thisLine.body) thisLine = await vault.get(thisLine, 'annotation', true)
-    const { canvasID, region } = this.setCanvasAndSelector(thisLine, page)
+    this.#page = await vault.get(pageID, 'annotationpage', true)
+    const projectPage = TPEN.activeProject.layers.flatMap(layer => layer.pages || []).find(p => p.id.split('/').pop() === pageID.split('/').pop())
+    if (!this.#page || !projectPage) return
+    const { orderedItems, columnsInPage } = orderPageItemsByColumns(projectPage, this.#page)
+    this.#page.items = orderedItems
+    let thisLine = this.#page.items?.[0]
+    if (!thisLine) return
+    if (!(thisLine?.body)) thisLine = await vault.get(thisLine, 'annotation', true)
+    const { canvasID, region } = this.setCanvasAndSelector(thisLine, this.#page)
     const canvas = this.#canvas = await vault.get(canvasID, 'canvas')
-    const regionValue = region ?? `0,0,${canvas.width ?? 'full'},${(canvas.height && canvas.height / 10) ?? 120}`
-    topImage.canvas = bottomImage.canvas = canvasID
+    const regionValue = region ?? `0,0,${canvas?.width ?? 'full'},${(canvas?.height && canvas?.height / 10) ?? 120}`
+    topImage.canvas = canvasID
+    bottomImage.canvas = canvas
     if (regionValue) {
       topImage.setAttribute('region', regionValue)
     }
-    this.slideBottomImage(regionValue)
+    const columnSelector = document.querySelector('tpen-transcription-interface')?.shadowRoot?.querySelector('tpen-project-header')?.shadowRoot?.querySelector('tpen-column-selector')
+    if (columnSelector && columnSelector.shadowRoot) {
+      const activeLineId = thisLine?.id || thisLine?.['@id']
+      if (!activeLineId) return
+      const activeColumn = columnsInPage.find(column => column.lines.includes(activeLineId))
+      if (activeColumn) {
+        const selectEl = columnSelector.shadowRoot.querySelector('select')
+        if (selectEl) {
+          selectEl.title = activeColumn.label
+          selectEl.value = activeColumn.id
+        }
+      }
+    }
   }
 }
 
