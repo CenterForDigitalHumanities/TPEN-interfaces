@@ -30,7 +30,6 @@ class AnnotoriousAnnotator extends HTMLElement {
   #isLineEditing = false
   #isErasing = false
   #editType = ""
-  #elementsWithListeners = new WeakSet()
   #canvasImageURL
   #canvasID
   #currentMergeSelection
@@ -1464,12 +1463,6 @@ class AnnotoriousAnnotator extends HTMLElement {
       elem.style.cursor = "move"
       cursorHandleElem.style.cursor = "move"
     }
-
-    // Check if event listeners have already been attached to this element
-    if (this.#elementsWithListeners.has(elem)) return
-
-    // Mark this element as having listeners attached
-    this.#elementsWithListeners.add(elem)
 
     // Variables for tracking mouse position during click vs drag detection
     // Declared here so they're captured in the event listener closures below
