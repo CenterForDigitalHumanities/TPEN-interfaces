@@ -279,50 +279,58 @@ class AnnotoriousAnnotator extends HTMLElement {
       </div>`
 
       this.shadowRoot.querySelector("#autoParseBtn").addEventListener("click", async () => {
-        if (typeof cv === "undefined") {
-          await new Promise((resolve, reject) => {
-            const openCVScript = document.createElement("script")
-            openCVScript.src = "https://docs.opencv.org/4.x/opencv.js"
-            openCVScript.async = true
-            openCVScript.onload = () => {
+        try {
+          if (typeof cv === "undefined") {
+            await new Promise((resolve, reject) => {
+              const openCVScript = document.createElement("script")
+              openCVScript.src = "https://docs.opencv.org/4.x/opencv.js"
+              openCVScript.async = true
+              openCVScript.onload = () => {
+                cv['onRuntimeInitialized'] = () => {
+                  cv['onRuntimeInitializedCalled'] = true;
+                  resolve();
+                }
+              }
+              openCVScript.onerror = reject
+              document.body.appendChild(openCVScript)
+            })
+          } else if (!cv['onRuntimeInitializedCalled']) {
+            await new Promise(resolve => {
               cv['onRuntimeInitialized'] = () => {
                 cv['onRuntimeInitializedCalled'] = true;
                 resolve();
               }
-            }
-            openCVScript.onerror = reject
-            document.body.appendChild(openCVScript)
-          })
-        } else if (!cv['onRuntimeInitializedCalled']) {
-          await new Promise(resolve => {
-            cv['onRuntimeInitialized'] = () => {
-              cv['onRuntimeInitializedCalled'] = true;
-              resolve();
-            }
-          })
-        }
+            })
+          }
 
-        const imageUrl = this.#canvasImageURL
-        const boxes = await detectTextLinesCombined(imageUrl)
-        const newAnnotations = []
-        for (const line of boxes) {
-          const { x, y, w, h } = line
-          newAnnotations.push({
-            type: "Annotation",
-            motivation: "transcribing",
-            target: {
-                source: this.#canvasID,
-                type: "SpecificResource",
-                selector: {
-                    type: "FragmentSelector",
-                    conformsTo: "http://www.w3.org/TR/media-frags/",
-                    value: `xywh=pixel:${x},${y},${w},${h}`
-                }
-            }
+          const imageUrl = this.#canvasImageURL
+          const boxes = await detectTextLinesCombined(imageUrl)
+          const newAnnotations = []
+          for (const line of boxes) {
+            const { x, y, w, h } = line
+            newAnnotations.push({
+              type: "Annotation",
+              motivation: "transcribing",
+              target: {
+                  source: this.#canvasID,
+                  type: "SpecificResource",
+                  selector: {
+                      type: "FragmentSelector",
+                      conformsTo: "http://www.w3.org/TR/media-frags/",
+                      value: `xywh=pixel:${x},${y},${w},${h}`
+                  }
+              }
+            })
+          }
+          this.#annotoriousInstance.setAnnotations(newAnnotations, true)
+          this.#resolvedAnnotationPage.$isDirty = true
+        } catch (err) {
+          console.error("Auto Parse failed:", err)
+          TPEN.eventDispatcher.dispatch("tpen-toast", {
+            message: "Auto Parse failed. Please try again.",
+            status: "error"
           })
         }
-        this.#annotoriousInstance.setAnnotations(newAnnotations, true)
-        this.#resolvedAnnotationPage.$isDirty = true
     })
     this.#annotoriousContainer = this.shadowRoot.getElementById('annotator-container')
     const drawTool = this.shadowRoot.getElementById("drawTool")
@@ -351,10 +359,10 @@ class AnnotoriousAnnotator extends HTMLElement {
       setTimeout(() => { this.saveAnnotations() }, 500)
     })
     deleteAllBtn.addEventListener("click", async (e) => await this.deleteAllAnnotations(e))
-    window.addEventListener('beforeunload', () => {
+    window.addEventListener('beforeunload', (ev) => {
       if (this.#resolvedAnnotationPage?.$isDirty) {
         if (!confirm("If you leave unsaved changes will be lost.")){
-          event.preventDefault()
+          ev.preventDefault()
           return
         }
       }
