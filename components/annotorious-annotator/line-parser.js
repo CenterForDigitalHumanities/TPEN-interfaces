@@ -970,6 +970,7 @@ class AnnotoriousAnnotator extends HTMLElement {
 
   toggleMergeLines(e) {
     if (!this.#isLineEditing) return
+    // Merge mode doesn't use the ruler (only add mode does)
     this.removeRuler()
     if (e.target.classList.contains("selected")) {
       e.target.classList.remove("selected")
