@@ -5,6 +5,7 @@ import '../../components/transcription-block/index.js'
 import vault from '../../js/vault.js'
 import '../../components/line-image/index.js'
 import CheckPermissions from "../../components/check-permissions/checkPermissions.js"
+import { orderPageItemsByColumns } from "../../utilities/columnOrdering.js"
 export default class TranscriptionInterface extends HTMLElement {
   #page
   #canvas
@@ -323,7 +324,8 @@ export default class TranscriptionInterface extends HTMLElement {
             manifest: TPEN.activeProject?.manifest?.[0] ?? '',
             canvas: this.#canvas?.id ?? this.#canvas?.['@id'] ?? this.#canvas ?? '',
             annotationPage: this.fetchCurrentPageId() ?? this.#page ?? '',
-            annotation: TPEN.activeLineIndex >= 0 ? this.#page?.items?.[TPEN.activeLineIndex]?.id ?? null : null
+            annotation: TPEN.activeLineIndex >= 0 ? this.#page?.items?.[TPEN.activeLineIndex]?.id ?? null : null,
+            columns: TPEN.activeProject?.layers.flatMap(layer => layer.pages || []).find(p => p.id.split('/').pop() === TPEN.screen.pageInQuery)?.columns || []
           },
           '*'
         )
@@ -337,20 +339,20 @@ export default class TranscriptionInterface extends HTMLElement {
 
         iframe.contentWindow?.postMessage(
           { type: "CURRENT_LINE_INDEX",
-            lineId: TPEN.activeLineIndex 
+            lineId: this.#page?.items?.[TPEN.activeLineIndex]?.id
           },
           "*"
         )
       })
       TPEN.eventDispatcher.on('tpen-transcription-previous-line', () => {
         iframe.contentWindow?.postMessage(
-          { type: "SELECT_ANNOTATION", lineId: TPEN.activeLineIndex },
+          { type: "SELECT_ANNOTATION", lineId: this.#page?.items?.[TPEN.activeLineIndex]?.id },
           "*"
         )
       })
       TPEN.eventDispatcher.on('tpen-transcription-next-line', () => {
         iframe.contentWindow?.postMessage(
-          { type: "SELECT_ANNOTATION", lineId: TPEN.activeLineIndex },
+          { type: "SELECT_ANNOTATION", lineId: this.#page?.items?.[TPEN.activeLineIndex]?.id },
           "*"
         )
       })
@@ -413,16 +415,38 @@ export default class TranscriptionInterface extends HTMLElement {
   }
 
   updateLines() {
-    if (!(TPEN.activeLineIndex >= 0) || !this.#page) return
+    if (TPEN.activeLineIndex < 0 || !this.#page) return
     const topImage = this.shadowRoot.querySelector('#topImage')
+    if (!topImage) return
     const thisLine = this.#page.items?.[TPEN.activeLineIndex]
     if (!thisLine) return
     TPEN.activeLine = thisLine
-    const { region } = this.setCanvasAndSelector(thisLine, this.#page, TPEN.activeLineIndex)
+
+    const page = TPEN.activeProject.layers.flatMap(layer => layer.pages || []).find(p => p.id.split('/').pop() === this.#page.id.split('/').pop())
+    if (!page) return
+    const { columnsInPage } = orderPageItemsByColumns(page, this.#page)
+
+    const columnSelector = document.querySelector('tpen-transcription-interface')?.shadowRoot?.querySelector('tpen-project-header')?.shadowRoot?.querySelector('tpen-column-selector')
+    if (columnSelector && columnSelector.shadowRoot) {
+      const activeLineId = TPEN.activeLine?.id || TPEN.activeLine?.['@id']
+      if (!activeLineId) return
+      const activeColumn = columnsInPage.find(column => column.lines.includes(activeLineId))
+      if (activeColumn) {
+        const selectEl = columnSelector.shadowRoot.querySelector('select')
+        if (selectEl) {
+          selectEl.title = activeColumn.label
+          selectEl.value = activeColumn.id
+        }
+      }
+    }
+
+    const { region } = this.setCanvasAndSelector(thisLine, this.#page)
     if (!region) return
     const [x, y, width, height] = region.split(',').map(Number)
+    if ([x, y, width, height].some(isNaN)) return
     topImage.moveTo(x, y, width, height)
-    this.shadowRoot.querySelector('#bottomImage').moveUnder(x, y, width, height, topImage)
+    const bottomImage = this.shadowRoot.querySelector('#bottomImage')
+    if (bottomImage) bottomImage.moveUnder(x, y, width, height, topImage)
   }
 
   getImage(project) {
@@ -467,7 +491,7 @@ export default class TranscriptionInterface extends HTMLElement {
       })
   }
 
-  setCanvasAndSelector(thisLine, page, lineIndex) {
+  setCanvasAndSelector(thisLine, page) {
     let targetString, canvasID, region
     targetString = thisLine?.target?.id ?? thisLine?.target?.['@id']
     targetString ??= thisLine?.target?.selector?.value ? `${thisLine.target?.source}#${thisLine.target.selector.value}` : null
@@ -481,17 +505,34 @@ export default class TranscriptionInterface extends HTMLElement {
     const topImage = this.shadowRoot.querySelector('#topImage')
     const bottomImage = this.shadowRoot.querySelector('#bottomImage')
     topImage.manifest = bottomImage.manifest = TPEN.activeProject?.manifest[0]
-    const page = this.#page = await vault.get(pageID, 'annotationpage', true)
-    let thisLine = page.items?.[0]
-    thisLine = await vault.get(thisLine, 'annotation')
+    this.#page = await vault.get(pageID, 'annotationpage', true)
+    const projectPage = TPEN.activeProject.layers.flatMap(layer => layer.pages || []).find(p => p.id.split('/').pop() === pageID.split('/').pop())
+    if (!this.#page || !projectPage) return
+    const { orderedItems, columnsInPage } = orderPageItemsByColumns(projectPage, this.#page)
+    this.#page.items = orderedItems
+    let thisLine = this.#page.items?.[0]
+    if (!thisLine) return
     if (!(thisLine?.body)) thisLine = await vault.get(thisLine, 'annotation', true)
-    const { canvasID, region } = this.setCanvasAndSelector(thisLine, page, 0)
+    const { canvasID, region } = this.setCanvasAndSelector(thisLine, this.#page)
     const canvas = this.#canvas = await vault.get(canvasID, 'canvas')
     const regionValue = region ?? `0,0,${canvas?.width ?? 'full'},${(canvas?.height && canvas?.height / 10) ?? 120}`
     topImage.canvas = canvasID
     bottomImage.canvas = canvas
     if (regionValue) {
       topImage.setAttribute('region', regionValue)
+    }
+    const columnSelector = document.querySelector('tpen-transcription-interface')?.shadowRoot?.querySelector('tpen-project-header')?.shadowRoot?.querySelector('tpen-column-selector')
+    if (columnSelector && columnSelector.shadowRoot) {
+      const activeLineId = thisLine?.id || thisLine?.['@id']
+      if (!activeLineId) return
+      const activeColumn = columnsInPage.find(column => column.lines.includes(activeLineId))
+      if (activeColumn) {
+        const selectEl = columnSelector.shadowRoot.querySelector('select')
+        if (selectEl) {
+          selectEl.title = activeColumn.label
+          selectEl.value = activeColumn.id
+        }
+      }
     }
   }
 }
