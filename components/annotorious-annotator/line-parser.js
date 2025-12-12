@@ -1347,6 +1347,8 @@ class AnnotoriousAnnotator extends HTMLElement {
     // Mark this element as having listeners attached
     this.#elementsWithListeners.add(elem)
 
+    // Variables for tracking mouse position during click vs drag detection
+    // Declared here so they're captured in the event listener closures below
     let mouseStart = 0
     let mouseFinish = 0
 
