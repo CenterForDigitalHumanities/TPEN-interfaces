@@ -184,6 +184,9 @@ class TpenCreateColumn extends HTMLElement {
                     outline: var(--primary-color) 1px solid;
                     outline-offset: -1.5px;
                 }
+                .merge-label-btn[data-selected="true"], .extend-label-btn[data-selected="true"] {
+                    border: 8px solid var(--primary-color);
+                }
             </style>
             <div class="columnDiv">
                 <div class="toolbar">

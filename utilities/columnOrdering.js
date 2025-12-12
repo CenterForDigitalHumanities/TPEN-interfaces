@@ -12,7 +12,7 @@
 export function orderPageItemsByColumns(projectPage, page) {
     const columnsInPage = [...(projectPage?.columns || [])]
     let allColumnLines = columnsInPage.flatMap(c => c.lines || [])
-    const remainingUnorderedLines = page.items?.map(i => i.id)
+    const remainingUnorderedLines = projectPage.items?.map(i => i.id)
         .filter(id => !allColumnLines.includes(id)) || []
 
     if (remainingUnorderedLines.length > 0) {
