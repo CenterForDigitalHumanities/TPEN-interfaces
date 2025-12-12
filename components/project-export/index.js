@@ -11,21 +11,20 @@ customElements.define('tpen-project-export', class extends HTMLElement {
         TPEN.attachAuthentication(this)
         TPEN.eventDispatcher.on('tpen-project-loaded', () => this.render())
     }
-    
+
     async render() {
-        const url = `https://dev.static.t-pen.org/${TPEN.activeProject._id}/manifest.json`
-        const viewTranscriptionUrl = `${TPEN.BASEURL}/project/view-transcription/?projectID=${TPEN.activeProject._id}`
+        const url = `${TPEN.staticURL}/${TPEN.activeProject._id}/manifest.json`
         const response = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/deploymentStatus`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${TPEN.getAuthorization()}`
             }
         })
-        .then(async (response) => {
-            if(response.ok) return response.json()
-            const errStatus = await response.json()
-            return errStatus
-        })
+            .then(async (response) => {
+                if (response.ok) return response.json()
+                const errStatus = await response.json()
+                return errStatus
+            })
         this.shadowRoot.innerHTML = `
             <style>
                 a, .success {
@@ -54,6 +53,20 @@ customElements.define('tpen-project-export', class extends HTMLElement {
                     color: red;
                     margin: 0;
                 }
+
+                a.iiif-drag-drop {
+                    padding: 0;
+                    margin-left: 10px;
+                    margin-right: -10px;
+                    width: 30px;
+                    background-color: transparent;
+                    box-shadow: none;
+                    vertical-align: middle;
+                }
+                
+                a.iiif-drag-drop img {
+                    width: 100%;
+                }
             </style>
         `
         let html = ''
@@ -67,30 +80,32 @@ customElements.define('tpen-project-export', class extends HTMLElement {
                 html += `<p class="error">Manifest Not Found</p>`
                 break
             case 2:
-                // This case indicates that the manifest is being generated and is recently committed
+            // This case indicates that the manifest is being generated and is recently committed
             case 5:
-                // This case indicates that the manifest is being generated and the deployment is in progress
+            // This case indicates that the manifest is being generated and the deployment is in progress
             case 8:
-                // This case indicates that the deployment is unknown
+            // This case indicates that the deployment is unknown
             case 9:
                 // This case indicates that the deployment is not found
                 html += `<p class="success">Successfully Exporting Project Manifest... Please Wait</p>`
                 break
             case 3:
-                // This case indicates that the manifest is being generated and is not recently committed
+            // This case indicates that the manifest is being generated and is not recently committed
             case 6:
-                // This case indicates that the deployment is inactive
+            // This case indicates that the deployment is inactive
             case 7:
                 // This case indicates that the deployment is failed
                 if (await checkIfUrlExists(url) && response.status !== 2) {
-                    html += `<a href="${viewTranscriptionUrl}" target="_blank">${url}</a>`
+                    html += `<a href="${url}" target="_blank">${url}</a>`
+                    html += `<a class="iiif-drag-drop" href="${url}?manifest=${url}" target="_blank"><img src="https://iiif.io/img/logo-iiif-34x30.png" alt="IIIF Drag and Drop" title="Drag and Drop IIIF Resource"></a>`
                 } else {
                     html += `<p class="error">Manifest Not Found</p>`
                 }
                 break
             case 4:
                 // This case indicates that the manifest is being generated successfully
-                html += `<a href="${viewTranscriptionUrl}" target="_blank">${url}</a>`
+                html += `<a href="${url}" target="_blank">${url}</a>`
+                html += `<a class="iiif-drag-drop" href="${url}?manifest=${url}" target="_blank"><img src="https://iiif.io/img/logo-iiif-34x30.png" alt="IIIF Drag and Drop" title="Drag and Drop IIIF Resource"></a>`
                 break
             default:
                 html += `<p class="error">Unknown Status</p>`
