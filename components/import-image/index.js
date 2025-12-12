@@ -112,14 +112,6 @@ class ImageImporter extends HTMLElement {
       return
     }
 
-    for (const url of urls) {
-      if (!/^https?:\/\/.+\.(jpg|jpeg|png|tiff|webp|jp2)$/i.test(url)) {
-        this.feedback.textContent = 'Please provide a valid image URL with these extensions (jpg, jpeg, png, tiff, webp, jp2).'
-        this.feedback.className = 'error'
-        return
-      }
-    }
-
     try {
       for (const url of urls) {
         await this.validateImageUrl(url)
