@@ -959,7 +959,11 @@ class AnnotoriousAnnotator extends HTMLElement {
       this.shadowRoot.querySelectorAll(".toggleEditType").forEach(el => { el.classList.remove("selected") })
       e.target.classList.add("selected")
       this.#editType = "add"
-      if (this.#annotoriousInstance.getSelected().length) ruler.style.display = "block"
+      if (this.#annotoriousInstance.getSelected().length) {
+        ruler.style.display = "block"
+        // Apply cursor behavior if an annotation is already selected
+        this.applyCursorBehavior()
+      }
     }
   }
 
@@ -975,8 +979,13 @@ class AnnotoriousAnnotator extends HTMLElement {
       this.shadowRoot.querySelectorAll(".toggleEditType").forEach(el => { el.classList.remove("selected") })
       e.target.classList.add("selected")
       this.#editType = "merge"
-      // Don't strictly HAVE to cancel, but it helps control the cursor.
-      this.#annotoriousInstance.cancelSelected()
+      // Apply cursor behavior if an annotation is already selected
+      if (this.#annotoriousInstance.getSelected().length) {
+        this.applyCursorBehavior()
+      } else {
+        // Don't strictly HAVE to cancel, but it helps control the cursor.
+        this.#annotoriousInstance.cancelSelected()
+      }
     }
   }
 
@@ -1071,6 +1080,10 @@ class AnnotoriousAnnotator extends HTMLElement {
     this.shadowRoot.querySelector(".editOptions").style.display = "block"
     this.shadowRoot.querySelectorAll(".toggleEditType").forEach(el => { el.classList.remove("selected") })
     this.#editType = ""
+    // If an annotation is already selected, update the cursor behavior
+    if (this.#annotoriousInstance.getSelected().length) {
+      this.applyCursorBehavior()
+    }
     const toast = {
       message: "You started line editing",
       status: "info"
@@ -1308,8 +1321,6 @@ class AnnotoriousAnnotator extends HTMLElement {
     const cursorHandleElem = this.#annotoriousInstance.viewer.element.querySelector(".a9s-shape-handle")
     const ruler = this.shadowRoot.getElementById("ruler")
     const _this = this
-    let mouseStart = 0
-    let mouseFinish = 0
 
     // Cursor support for editing options, applies when an Annotation is clicked and selected.
     if (this.#isLineEditing) {
@@ -1328,6 +1339,15 @@ class AnnotoriousAnnotator extends HTMLElement {
       elem.style.cursor = "move"
       cursorHandleElem.style.cursor = "move"
     }
+
+    // Check if event listeners have already been attached to this element
+    if (elem._tpenListenersAttached) return
+
+    // Mark this element as having listeners attached
+    elem._tpenListenersAttached = true
+
+    let mouseStart = 0
+    let mouseFinish = 0
 
     // Further cursor support when user changes edit options while an Annotation is selected.
     elem.addEventListener('mouseenter', function(e) {
