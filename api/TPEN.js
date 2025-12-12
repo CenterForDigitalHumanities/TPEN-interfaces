@@ -42,6 +42,7 @@ class Tpen {
         // Core service endpoints from centralized config
         this.tinyThingsURL = tinyThingsURL ?? CONFIG.tinyThingsURL
         this.servicesURL = CONFIG.servicesURL
+        this.staticURL = CONFIG.staticURL
         this.RERUMURL = CONFIG.RERUMURL
 
         // Application URLs
@@ -152,7 +153,7 @@ class Tpen {
     }
 
     getLastModifiedPageId() {
-        if(!this.activeProject || !this.activeProject.layers) return null
+        if (!this.activeProject || !this.activeProject.layers) return null
         return this.activeProject._lastModified
     }
 
@@ -193,13 +194,13 @@ class Tpen {
      */
     async tempUserUpgrade(projectID, inviteCode, agentID) {
         if (!(inviteCode && agentID && projectID)) return
-        if (inviteCode === agentID) return 
+        if (inviteCode === agentID) return
         let result = await fetch(`${this.servicesURL}/project/${projectID}/collaborator/${inviteCode}/agent/${agentID}`)
-        .then(response => response.text())     
-        .catch(err => { 
-            throw err 
-        })
-        return result    
+            .then(response => response.text())
+            .catch(err => {
+                throw err
+            })
+        return result
     }
 
     attachAuthentication = (element) => {
@@ -221,8 +222,8 @@ class Tpen {
             this.login()
             return
         }
-    const agentIRI = getAgentIRIFromToken(token)
-    const agentID = (agentIRI ?? '').split('/').pop()
+        const agentIRI = getAgentIRIFromToken(token)
+        const agentID = (agentIRI ?? '').split('/').pop()
         if (inviteCode && agentID && inviteCode !== agentID) {
             const projectID = this.screen.projectInQuery ?? this.activeProject._id
             if (!projectID) throw new Error("We need a project id so we can align the user with their project.")
