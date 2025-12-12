@@ -997,6 +997,10 @@ class AnnotoriousAnnotator extends HTMLElement {
       await this.clearColumnsServerSide()
     } catch (err) {
       console.error("Could not clear columns server side.", err)
+      TPEN.eventDispatcher.dispatch("tpen-toast", {
+        message: "Warning: Could not clear columns. Some column data may remain.",
+        status: "warning"
+      })
     }
   }
 

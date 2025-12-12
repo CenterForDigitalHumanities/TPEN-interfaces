@@ -2,6 +2,7 @@ import TPEN from "/api/TPEN.js"
 const eventDispatcher = TPEN.eventDispatcher
 import vault from "/js/vault.js"
 import CheckPermissions from "/components/check-permissions/checkPermissions.js"
+import { orderPageItemsByColumns } from "/utilities/columnOrdering.js"
 
 export default class TranscriptionBlock extends HTMLElement {
 
@@ -77,16 +78,7 @@ export default class TranscriptionBlock extends HTMLElement {
         const projectPage = TPEN.activeProject.layers.flatMap(layer => layer.pages || []).find(p => p.id.split('/').pop() === pageID.split('/').pop())
         if (!this.#page || !projectPage) return
         
-        const columnsInPage = [...(projectPage?.columns || [])]
-        let allColumnLines = columnsInPage.flatMap(c => c.lines || [])
-        const remainingUnorderedLines = projectPage.items?.map(i => i.id).filter(id => !allColumnLines.includes(id)) || []
-        allColumnLines = [...allColumnLines, ...remainingUnorderedLines]
-
-        const orderedItems = []
-        allColumnLines.forEach(lineId => {
-            const line = this.#page.items.find(item => item.id === lineId)
-            if (line) orderedItems.push(line)
-        })
+        const { orderedItems } = orderPageItemsByColumns(projectPage, this.#page)
         this.#page.items = orderedItems
         this.#transcriptions = await this.processTranscriptions(this.#page.items)
         this.#baseline = [...this.#transcriptions]
@@ -158,7 +150,7 @@ export default class TranscriptionBlock extends HTMLElement {
 
         window.addEventListener("message", (event) => {
             if (event.data?.type === "RETURN_LINE_ID") {
-                const lineIndex = this.#page.items.findIndex(item => item.id === event.data.lineid)
+                const lineIndex = this.#page.items.findIndex(item => item.id === event.data.lineId)
                 if (lineIndex !== -1) {
                     this.moveToLine(lineIndex, 'next')
                     this.updateTranscriptionUI()

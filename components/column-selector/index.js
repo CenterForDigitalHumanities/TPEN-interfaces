@@ -1,8 +1,8 @@
 import TPEN from "../../api/TPEN.js"
 import CheckPermissions from "../check-permissions/checkPermissions.js"
 import TranscriptionInterface from "../../interfaces/transcription/index.js"
-import TranscriptionBlock from "../../components/transcription-block/index.js"
 import vault from '../../js/vault.js'
+import { orderPageItemsByColumns } from '../../utilities/columnOrdering.js'
 const eventDispatcher = TPEN.eventDispatcher
 import "../check-permissions/permission-match.js"
 
@@ -41,22 +41,12 @@ export default class ColumnSelector extends HTMLElement {
         })
 
         this.#page = await vault.get(pageId, 'annotationpage', true)
-        const allLines = this.columns.flatMap(c => c.lines || [])
-        const pageItems = page?.items?.map(i => i.id) || []
-        this.remainingUnorderedLines = pageItems.filter(id => !allLines.includes(id))
-        if (this.remainingUnorderedLines.length > 0) {
-            this.columns.push({
-                id: "unordered-lines",
-                label: "Unordered Lines",
-                lines: this.remainingUnorderedLines
-            })
-        }
-        this.allLinesInColumns = [...allLines, ...this.remainingUnorderedLines]
-        const orderedItems = []
-        this.allLinesInColumns.forEach(lineId => {
-            const line = this.#page.items.find(item => item.id === lineId)
-            if (line) orderedItems.push(line)
-        })
+        const { orderedItems, columnsInPage, allColumnLines } = orderPageItemsByColumns(
+            { columns: this.columns, items: page?.items },
+            this.#page
+        )
+        this.columns = columnsInPage
+        this.allLinesInColumns = allColumnLines
         this.#page.items = orderedItems
         this.render()
     }
@@ -164,7 +154,7 @@ export default class ColumnSelector extends HTMLElement {
             nodes.prevPageButton?.classList.remove("hidden")
             nodes.prevButton?.classList.add("hidden")
         }
-        if (TPEN.activeLineIndex === this.#page.items.length) {
+        if (TPEN.activeLineIndex === this.#page.items.length - 1) {
             nodes.nextButton?.classList.add("hidden")
             nodes.nextPageButton?.classList.remove("hidden")
             nodes.prevPageButton?.classList.add("hidden")
