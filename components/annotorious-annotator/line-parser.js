@@ -28,6 +28,7 @@ class AnnotoriousAnnotator extends HTMLElement {
   #isLineEditing = false
   #isErasing = false
   #editType = ""
+  #elementsWithListeners = new WeakSet()
 
   constructor() {
     super()
@@ -1341,10 +1342,10 @@ class AnnotoriousAnnotator extends HTMLElement {
     }
 
     // Check if event listeners have already been attached to this element
-    if (elem._tpenListenersAttached) return
+    if (this.#elementsWithListeners.has(elem)) return
 
     // Mark this element as having listeners attached
-    elem._tpenListenersAttached = true
+    this.#elementsWithListeners.add(elem)
 
     let mouseStart = 0
     let mouseFinish = 0
