@@ -1,6 +1,7 @@
 import TPEN from "../../api/TPEN.js"
 const eventDispatcher = TPEN.eventDispatcher
 import "../layer-selector/index.js"
+import "../column-selector/index.js"
 import CheckPermissions from "../check-permissions/checkPermissions.js"
 export default class ProjectHeader extends HTMLElement {
     loadFailed = false
@@ -87,6 +88,7 @@ export default class ProjectHeader extends HTMLElement {
               </div>
             </section>
             <tpen-layer-selector></tpen-layer-selector>
+            <tpen-column-selector></tpen-column-selector>
             <div class="line-indicator">Line indicator</div>
             <div class="control-buttons">
               <a class="nav-icon" href="/index"><img draggable="false" src="../../assets/icons/home.png" alt="Home"></a>
