@@ -12,26 +12,26 @@ permalink: /404.html
         text-align: center;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     }
-    
+
     .error-image {
         max-width: 300px;
         margin: 2rem auto;
         display: block;
     }
-    
+
     .error-title {
         color: #d63031;
         font-size: 2rem;
         margin-bottom: 1rem;
     }
-    
+
     .error-message {
         color: #2d3436;
         font-size: 1.1rem;
         line-height: 1.6;
         margin-bottom: 1.5rem;
     }
-    
+
     .suggested-link {
         background-color: #00b894;
         color: white;
@@ -43,11 +43,11 @@ permalink: /404.html
         font-weight: bold;
         transition: background-color 0.3s;
     }
-    
+
     .suggested-link:hover {
         background-color: #00a383;
     }
-    
+
     .recommendation {
         background-color: #fff3cd;
         border-left: 4px solid #ffc107;
@@ -55,26 +55,26 @@ permalink: /404.html
         margin: 2rem 0;
         text-align: left;
     }
-    
+
     .navigation-section {
         margin-top: 3rem;
         padding: 2rem;
         background-color: #f8f9fa;
         border-radius: 8px;
     }
-    
+
     .navigation-section h2 {
         color: #2d3436;
         margin-bottom: 1rem;
     }
-    
+
     .nav-links {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
         gap: 0.5rem;
         margin-top: 1rem;
     }
-    
+
     .nav-link {
         color: #0984e3;
         text-decoration: none;
@@ -82,16 +82,16 @@ permalink: /404.html
         border-radius: 4px;
         transition: background-color 0.3s;
     }
-    
+
     .nav-link:hover {
         background-color: #dfe6e9;
     }
-    
+
     .trailing-slash-notice {
         display: none;
         margin-bottom: 1rem;
     }
-    
+
     .trailing-slash-notice.visible {
         display: block;
     }
@@ -109,22 +109,15 @@ permalink: /404.html
             <strong>What you probably want:</strong>
         </p>
         <a href="" id="suggestedLink" class="suggested-link">Go to the correct page</a>
-        
+
         <div class="recommendation">
-            <strong>💡 Tip:</strong> If you followed a link from another site or used a bookmark, 
+            <strong>💡 Tip:</strong> If you followed a link from another site or used a bookmark,
             you may want to update it to the correct URL shown above. This will ensure it works properly in the future.
         </div>
     </div>
-    
+
     <img src="/assets/images/hopeful404.png" alt="Friendly 404 Error" class="error-image">
-  
-    <div class="standard-404" id="standard404">
-        <h1 class="error-title">Page Not Found</h1>
-        <p class="error-message">
-            Sorry, we couldn't find the page you're looking for.
-        </p>
-    </div>
-    
+
     <div class="navigation-section">
         <h2>Helpful Links</h2>
         <p>Maybe one of these pages can help you find what you're looking for:</p>
@@ -139,12 +132,27 @@ permalink: /404.html
             <a href="/manage/quicktype" class="nav-link">⚡ Quick Type</a>
         </div>
     </div>
+
+    <div class="standard-404" id="standard404">
+        <h1 class="error-title">Page Not Found</h1>
+        <p class="error-message">
+            Sorry, we couldn't find the page you're looking for.
+        </p>
+    </div>
 </div>
 
 <script>
-    (function() {
+    (function () {
         // List of known permalink paths (without trailing slashes)
         const knownPaths = [
+            // Root-level pretty paths
+            '/about',
+            '/account',
+            '/home',
+            '/landing',
+            '/transcription',
+            '/welcome',
+            // Permalinked and interface paths
             '/annotator',
             '/components/quick-guide',
             '/interfaces',
