@@ -6,32 +6,48 @@ permalink: /404.html
 
 <style>
     .error-container {
-        max-width: 800px;
+        max-width: 1200px;
         margin: 2rem auto;
         padding: 2rem;
-        text-align: center;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     }
-
-    .error-image {
-        max-width: 300px;
-        margin: 2rem auto;
-        display: block;
+    
+    .error-layout {
+        display: flex;
+        gap: 2rem;
+        align-items: start;
     }
-
+    
+    .error-content {
+        flex: 2;
+        text-align: center;
+    }
+    
+    .error-image-wrapper {
+        flex: 1 1 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .error-image {
+        max-width: 100%;
+        height: auto;
+    }
+    
     .error-title {
         color: #d63031;
         font-size: 2rem;
         margin-bottom: 1rem;
     }
-
+    
     .error-message {
         color: #2d3436;
         font-size: 1.1rem;
         line-height: 1.6;
         margin-bottom: 1.5rem;
     }
-
+    
     .suggested-link {
         background-color: #00b894;
         color: white;
@@ -43,11 +59,11 @@ permalink: /404.html
         font-weight: bold;
         transition: background-color 0.3s;
     }
-
+    
     .suggested-link:hover {
         background-color: #00a383;
     }
-
+    
     .recommendation {
         background-color: #fff3cd;
         border-left: 4px solid #ffc107;
@@ -55,26 +71,26 @@ permalink: /404.html
         margin: 2rem 0;
         text-align: left;
     }
-
+    
     .navigation-section {
-        margin-top: 3rem;
+        margin-top: 2rem;
         padding: 2rem;
         background-color: #f8f9fa;
         border-radius: 8px;
     }
-
+    
     .navigation-section h2 {
         color: #2d3436;
         margin-bottom: 1rem;
     }
-
+    
     .nav-links {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
         gap: 0.5rem;
         margin-top: 1rem;
     }
-
+    
     .nav-link {
         color: #0984e3;
         text-decoration: none;
@@ -82,62 +98,84 @@ permalink: /404.html
         border-radius: 4px;
         transition: background-color 0.3s;
     }
-
+    
     .nav-link:hover {
         background-color: #dfe6e9;
     }
-
+    
     .trailing-slash-notice {
         display: none;
         margin-bottom: 1rem;
     }
-
+    
     .trailing-slash-notice.visible {
         display: block;
+    }
+    
+    @media (max-width: 640px) {
+        .error-layout {
+            flex-direction: column-reverse;
+        }
+        
+        .error-image-wrapper {
+            flex: 0 0 auto;
+            width: 150px;
+            margin: 0 auto;
+        }
+        
+        .nav-links {
+            grid-template-columns: 1fr;
+        }
     }
 </style>
 
 <div class="error-container">
-    <div class="trailing-slash-notice" id="trailingSlashNotice">
-        <h1 class="error-title">Almost There!</h1>
-        <p class="error-message">
-            It looks like you almost typed the correct address.
-            <span id="nearMatchReason"></span>
-        </p>
-        <p class="error-message">
-            <strong>What you tried:</strong> <code id="attemptedUrl"></code><br>
-            <strong>What you probably want:</strong>
-        </p>
-        <a href="" id="suggestedLink" class="suggested-link">Go to the correct page</a>
+    <div class="error-layout">
+        <div class="error-content">
+            <div class="trailing-slash-notice" id="trailingSlashNotice">
+                <h1 class="error-title">Almost There!</h1>
+                <p class="error-message">
+                    It looks like you almost typed the correct address.
+                    <span id="nearMatchReason"></span>
+                </p>
+                <p class="error-message">
+                    <strong>What you tried:</strong> <code id="attemptedUrl"></code><br>
+                    <strong>What you probably want:</strong>
+                    <a href="" id="suggestedLink" class="suggested-link">Go to the correct page</a>
+                </p>
+                
+                <div class="recommendation">
+                    <strong>💡 Tip:</strong> If you followed a link from another site or used a bookmark, 
+                    you may want to update it to the correct URL shown above. This will ensure it works properly in the future.
+                </div>
+            </div>
 
-        <div class="recommendation">
-            <strong>💡 Tip:</strong> If you followed a link from another site or used a bookmark,
-            you may want to update it to the correct URL shown above. This will ensure it works properly in the future.
+            <div class="standard-404" id="standard404">
+                <h1 class="error-title">Page Not Found</h1>
+                <p class="error-message">
+                    Sorry, we couldn't find the page you're looking for.
+                </p>
+            </div>
+          
+            <div class="navigation-section">
+                <h2>Helpful Links</h2>
+                <p>Maybe one of these pages can help you find what you're looking for:</p>
+                <div class="nav-links">
+                    <a href="/" class="nav-link">🏠 Home</a>
+                    <a href="/profile" class="nav-link">👤 Profile</a>
+                    <a href="/transcribe" class="nav-link">✍️ Transcribe</a>
+                    <a href="/project" class="nav-link">📁 Projects</a>
+                    <a href="/projects/all" class="nav-link">📋 All Projects</a>
+                    <a href="/project/create" class="nav-link">➕ Create Project</a>
+                    <a href="/project/import" class="nav-link">📥 Import Project</a>
+                    <a href="/manage/quicktype" class="nav-link">⚡ Quick Type</a>
+                </div>
+            </div>
         </div>
-    </div>
-
-    <img src="/assets/images/hopeful404.png" alt="Friendly 404 Error" class="error-image">
-
-    <div class="navigation-section">
-        <h2>Helpful Links</h2>
-        <p>Maybe one of these pages can help you find what you're looking for:</p>
-        <div class="nav-links">
-            <a href="/" class="nav-link">🏠 Home</a>
-            <a href="/profile" class="nav-link">👤 Profile</a>
-            <a href="/transcribe" class="nav-link">✍️ Transcribe</a>
-            <a href="/project" class="nav-link">📁 Projects</a>
-            <a href="/projects/all" class="nav-link">📋 All Projects</a>
-            <a href="/project/create" class="nav-link">➕ Create Project</a>
-            <a href="/project/import" class="nav-link">📥 Import Project</a>
-            <a href="/manage/quicktype" class="nav-link">⚡ Quick Type</a>
+        
+        <div class="error-image-wrapper">
+            <img src="/assets/images/hopeful404.png" alt="Friendly 404 Error" class="error-image">
         </div>
-    </div>
-
-    <div class="standard-404" id="standard404">
-        <h1 class="error-title">Page Not Found</h1>
-        <p class="error-message">
-            Sorry, we couldn't find the page you're looking for.
-        </p>
     </div>
 </div>
 
