@@ -661,7 +661,6 @@ class AnnotoriousAnnotator extends HTMLElement {
       if (_this.#isDrawing) _this.#annotoriousInstance.cancelSelected()
       _this.#annotoriousInstance.updateAnnotation(annotation)
       _this.#resolvedAnnotationPage.$isDirty = true
-      _this.applyCursorBehavior()
     })
 
     /**
@@ -673,7 +672,6 @@ class AnnotoriousAnnotator extends HTMLElement {
       // console.log("UPDATE ANNOTATION")
       _this.#annotoriousInstance.updateAnnotation(annotation)
       _this.#resolvedAnnotationPage.$isDirty = true
-      _this.applyCursorBehavior()
     })
 
     /**
@@ -1105,10 +1103,11 @@ class AnnotoriousAnnotator extends HTMLElement {
       // Apply cursor behavior if an annotation is already selected
       if (this.#annotoriousInstance.getSelected().length) {
         this.applyCursorBehavior()
-      } else {
-        // Don't strictly HAVE to cancel, but it helps control the cursor.
-        this.#annotoriousInstance.cancelSelected()
-      }
+      } 
+      // else {
+      //   // Don't strictly HAVE to cancel, but it helps control the cursor.
+      //   this.#annotoriousInstance.cancelSelected()
+      // }
     }
   }
 
@@ -1192,7 +1191,6 @@ class AnnotoriousAnnotator extends HTMLElement {
 
   /**
    * Activate Annotorious annotation chopping mode.
-   * Clicking on an existing annotation will prompt the user about deleting the annotation.
    */
   startLineEditing(toast_it = true) {
     this.stopDrawing(false)
@@ -1216,7 +1214,6 @@ class AnnotoriousAnnotator extends HTMLElement {
 
   /**
    * Activate Annotorious annotation chopping mode.
-   * Clicking on an existing annotation will prompt the user about deleting the annotation.
    */
   stopLineEditing(toast_it = true) {
     this.#isLineEditing = false
@@ -1441,12 +1438,56 @@ class AnnotoriousAnnotator extends HTMLElement {
    */
   applyCursorBehavior() {
     const elem = this.#annotoriousInstance.viewer.element.querySelector(".a9s-annotation.selected")
-    if (!elem) return
+    if (!elem || elem.getAttribute("behavior-registered") === "true") return
+    elem.setAttribute("behavior-registered", "true")
     const cursorHandleElem = this.#annotoriousInstance.viewer.element.querySelector(".a9s-shape-handle")
     const ruler = this.shadowRoot.getElementById("ruler")
     const _this = this
+    let mouseStart
+    let mouseFinish
 
-    // Cursor support for editing options, applies when an Annotation is clicked and selected.
+    function setMouseStart(e) {
+      mouseStart = [e.pageX, e.pageY]
+    }
+
+    function applyMouseEnter(e) {
+      if (_this.#isLineEditing) {
+        if (_this.#editType === "add") {
+          elem.style.cursor = "crosshair"
+          cursorHandleElem.style.cursor = "crosshair"
+        } else if (_this.#editType === "merge") {
+          elem.style.cursor = "cell"
+          cursorHandleElem.style.cursor = "cell"
+        } else {
+          elem.style.cursor = "move"
+          cursorHandleElem.style.cursor = "move"
+        }
+      } else {
+        elem.style.cursor = "move"
+        cursorHandleElem.style.cursor = "move"
+      }
+    }
+
+    function applyMouseUp(e) {
+      mouseFinish = [e.pageX, e.pageY]
+      if (mouseStart[0] !== mouseFinish[0] || mouseStart[1] !== mouseFinish[1]) return
+      if (e.button !== 0) return
+      console.log("Mouse Up Line Change")
+      _this.lineChange(e)
+    }
+
+    function applyMouseMove(e) {
+      const rect = elem.getBoundingClientRect()
+      ruler.style.left = (rect.x - _this.containerLeftOffset()) + "px"
+      ruler.style.top = (e.pageY - _this.containerTopOffset() - window.scrollY) + "px"
+      ruler.style.height = '1px'
+      ruler.style.width = rect.width + "px"
+    }
+
+    /**
+     * Cursor support for split line and merge line.
+     * Applys correct cursor when an Annotation is selected programmatically during split and merge.
+     */
     if (this.#isLineEditing) {
       if (this.#editType === "add") {
         elem.style.cursor = "crosshair"
@@ -1464,51 +1505,17 @@ class AnnotoriousAnnotator extends HTMLElement {
       cursorHandleElem.style.cursor = "move"
     }
 
-    // Variables for tracking mouse position during click vs drag detection
-    // Declared here so they're captured in the event listener closures below
-    let mouseStart = 0
-    let mouseFinish = 0
-
     // Further cursor support when user changes edit options while an Annotation is selected.
-    elem.addEventListener('mouseenter', function(e) {
-      if (_this.#isLineEditing) {
-        if (_this.#editType === "add") {
-          elem.style.cursor = "crosshair"
-          cursorHandleElem.style.cursor = "crosshair"
-        } else if (_this.#editType === "merge") {
-          elem.style.cursor = "cell"
-          cursorHandleElem.style.cursor = "cell"
-        } else {
-          elem.style.cursor = "move"
-          cursorHandleElem.style.cursor = "move"
-        }
-      } else {
-        elem.style.cursor = "move"
-        cursorHandleElem.style.cursor = "move"
-      }
-    })
+    elem.addEventListener('mouseenter', applyMouseEnter)
 
     // Instead of click use mousedown and mouseup to accomodate moving a column during line editing mode
-    elem.addEventListener('mousedown', function(e) {
-      mouseStart = [e.pageX, e.pageY]
-    })
+    elem.addEventListener('mousedown', setMouseStart)
 
     // A click initiates a split or merge on the active line during line editing mode
-    elem.addEventListener('mouseup', function(e) {
-      mouseFinish = [e.pageX, e.pageY]
-      if (mouseStart[0] !== mouseFinish[0] || mouseStart[1] !== mouseFinish[1]) return
-      if (e.button !== 0) return
-      _this.lineChange(e)
-    })
+    elem.addEventListener('mouseup', applyMouseUp)
 
     // Position the ruler element to be with the cursor
-    elem.addEventListener('mousemove', function(e) {
-      const rect = elem.getBoundingClientRect()
-      ruler.style.left = (rect.x - _this.containerLeftOffset()) + "px"
-      ruler.style.top = (e.pageY - _this.containerTopOffset() - window.scrollY) + "px"
-      ruler.style.height = '1px'
-      ruler.style.width = rect.width + "px"
-    })
+    elem.addEventListener('mousemove', applyMouseMove)
 
   }
 
