@@ -98,13 +98,11 @@ permalink: /404.html
 </style>
 
 <div class="error-container">
-    <img src="/assets/images/hopeful404.png" alt="Friendly 404 Error" class="error-image" onerror="this.src='/assets/images/404_PageNotFound.jpeg'">
-    
     <div class="trailing-slash-notice" id="trailingSlashNotice">
         <h1 class="error-title">Almost There!</h1>
         <p class="error-message">
-            It looks like you almost typed the correct address. The URL you tried has a trailing slash, 
-            which makes a difference in how our site routes pages.
+            It looks like you almost typed the correct address.
+            <span id="nearMatchReason"></span>
         </p>
         <p class="error-message">
             <strong>What you tried:</strong> <code id="attemptedUrl"></code><br>
@@ -118,6 +116,8 @@ permalink: /404.html
         </div>
     </div>
     
+    <img src="/assets/images/hopeful404.png" alt="Friendly 404 Error" class="error-image">
+  
     <div class="standard-404" id="standard404">
         <h1 class="error-title">Page Not Found</h1>
         <p class="error-message">
@@ -168,34 +168,126 @@ permalink: /404.html
             '/projects/all',
             '/public-profile',
             '/transcribe'
-        ];
-        
-        const currentPath = window.location.pathname;
-        const currentSearch = window.location.search;
-        const currentHash = window.location.hash;
-        
-        // Check if current path ends with a trailing slash and has more than just "/"
-        if (currentPath.endsWith('/') && currentPath.length > 1) {
-            // Remove the trailing slash to check if it matches a known path
-            const pathWithoutSlash = currentPath.slice(0, -1);
-            
-            if (knownPaths.includes(pathWithoutSlash)) {
-                // We found a match! Show the trailing slash notice
-                const trailingSlashNotice = document.getElementById('trailingSlashNotice');
-                const standard404 = document.getElementById('standard404');
-                const attemptedUrl = document.getElementById('attemptedUrl');
-                const suggestedLink = document.getElementById('suggestedLink');
-                
-                trailingSlashNotice.classList.add('visible');
-                standard404.style.display = 'none';
-                
-                // Build the correct URL with query strings and hash
-                const correctUrl = pathWithoutSlash + currentSearch + currentHash;
-                
-                attemptedUrl.textContent = currentPath + currentSearch + currentHash;
-                suggestedLink.href = correctUrl;
-                suggestedLink.textContent = correctUrl;
+        ]
+
+        const el = {
+            trailingSlashNotice: document.getElementById('trailingSlashNotice'),
+            standard404: document.getElementById('standard404'),
+            attemptedUrl: document.getElementById('attemptedUrl'),
+            suggestedLink: document.getElementById('suggestedLink'),
+            nearMatchReason: document.getElementById('nearMatchReason')
+        }
+
+        const currentPath = window.location.pathname
+        const currentSearch = window.location.search
+        const currentHash = window.location.hash
+
+        const removeTrailingSlash = path => path?.length > 1 && path.endsWith('/') ? path.slice(0, -1) : path
+
+        const segmentCharCounts = str => {
+            const counts = new Map()
+            for (const ch of str) counts.set(ch, (counts.get(ch) ?? 0) + 1)
+            return counts
+        }
+
+        const countsEqual = (a, b) => {
+            if (a.size !== b.size) return false
+            for (const [key, val] of a) {
+                if (b.get(key) !== val) return false
+            }
+            return true
+        }
+
+        const isTransposedSegmentMatch = (inputSeg, targetSeg) => {
+            if (inputSeg.length !== targetSeg.length) return false
+            if (inputSeg.length < 2) return inputSeg === targetSeg
+            if (inputSeg[0] !== targetSeg[0] || inputSeg[1] !== targetSeg[1]) return false
+            const a = segmentCharCounts(inputSeg.slice(2))
+            const b = segmentCharCounts(targetSeg.slice(2))
+            return countsEqual(a, b)
+        }
+
+        const splitSegments = path => path.split('/').filter(Boolean)
+
+        const isTransposedPathMatch = (inputPath, knownPath) => {
+            const a = splitSegments(inputPath)
+            const b = splitSegments(knownPath)
+            if (a.length !== b.length) return false
+            for (let i = 0; i < a.length; i++) {
+                if (!isTransposedSegmentMatch(a[i], b[i])) return false
+            }
+            return true
+        }
+
+        const normalizedCurrent = removeTrailingSlash(currentPath)
+        const normalizedCurrentLC = normalizedCurrent.toLowerCase()
+        const knownPathsLC = knownPaths.map(p => p.toLowerCase())
+
+        // Prefer exact path match when only a trailing slash is present
+        const hasTrailingSlash = currentPath.length > 1 && currentPath.endsWith('/')
+        if (hasTrailingSlash) {
+            const idx = knownPathsLC.indexOf(normalizedCurrentLC)
+            if (idx !== -1) {
+                const canonical = knownPaths[idx]
+                const correctUrl = canonical + currentSearch + currentHash
+                el.trailingSlashNotice?.classList.add('visible')
+                if (el.standard404) el.standard404.style.display = 'none'
+                if (el.attemptedUrl) el.attemptedUrl.textContent = currentPath + currentSearch + currentHash
+                if (el.suggestedLink) {
+                    el.suggestedLink.href = correctUrl
+                    el.suggestedLink.textContent = correctUrl
+                }
+                if (el.nearMatchReason) {
+                    el.nearMatchReason.textContent = ' The URL you tried has a trailing slash, which makes a difference in how our site routes pages.'
+                }
+                return
+            }
+            // No exact trailing-slash match; continue to case-insensitive and fuzzy checks
+        }
+
+        // Case-insensitive exact path match (no trailing slash)
+        {
+            const idxCIExact = knownPathsLC.indexOf(normalizedCurrentLC)
+            if (idxCIExact === -1) {
+                // continue to fuzzy check
+            } else {
+                const canonical = knownPaths[idxCIExact]
+                const correctUrl = canonical + currentSearch + currentHash
+                el.trailingSlashNotice?.classList.add('visible')
+                if (el.standard404) el.standard404.style.display = 'none'
+                if (el.attemptedUrl) el.attemptedUrl.textContent = currentPath + currentSearch + currentHash
+                if (el.suggestedLink) {
+                    el.suggestedLink.href = correctUrl
+                    el.suggestedLink.textContent = correctUrl
+                }
+                if (el.nearMatchReason) {
+                    el.nearMatchReason.textContent = ' The URL capitalization differs from our canonical path. Here is the correctly cased link.'
+                }
+                return
             }
         }
-    })();
+
+        // Fuzzy match: segments with same first two chars, remaining letters rearranged
+        let fuzzyMatch = null
+        for (let i = 0; i < knownPaths.length; i++) {
+            const kp = knownPaths[i]
+            const kpLC = knownPathsLC[i]
+            if (isTransposedPathMatch(normalizedCurrentLC, kpLC)) { fuzzyMatch = kp; break }
+        }
+
+        if (!fuzzyMatch) return
+        {
+            const correctUrl = fuzzyMatch + currentSearch + currentHash
+            el.trailingSlashNotice?.classList.add('visible')
+            if (el.standard404) el.standard404.style.display = 'none'
+            if (el.attemptedUrl) el.attemptedUrl.textContent = currentPath + currentSearch + currentHash
+            if (el.suggestedLink) {
+                el.suggestedLink.href = correctUrl
+                el.suggestedLink.textContent = correctUrl
+            }
+            if (el.nearMatchReason) {
+                el.nearMatchReason.textContent = ' Some letters in the URL look transposed or capitalization differs. We matched the path segments by the first two letters (case-insensitive) and treated the remaining letters as rearranged to suggest the correct page.'
+            }
+        }
+    })()
 </script>
