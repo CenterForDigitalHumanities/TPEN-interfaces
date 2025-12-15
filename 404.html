@@ -1,0 +1,339 @@
+---
+layout: default
+title: Page Not Found
+permalink: /404.html
+---
+
+<style>
+    .error-container {
+        max-width: 1200px;
+        margin: 2rem auto;
+        padding: 2rem;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+    
+    .error-layout {
+        display: flex;
+        gap: 2rem;
+        align-items: start;
+    }
+    
+    .error-content {
+        flex: 2;
+        text-align: center;
+    }
+    
+    .error-image-wrapper {
+        flex: 1 1 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .error-image {
+        max-width: 100%;
+        height: auto;
+    }
+    
+    .error-title {
+        color: #d63031;
+        font-size: 2rem;
+        margin-bottom: 1rem;
+    }
+    
+    .error-message {
+        color: #2d3436;
+        font-size: 1.1rem;
+        line-height: 1.6;
+        margin-bottom: 1.5rem;
+    }
+    
+    .suggested-link {
+        background-color: #00b894;
+        color: white;
+        padding: 1rem 2rem;
+        text-decoration: none;
+        border-radius: 5px;
+        display: inline-block;
+        margin: 1rem 0;
+        font-weight: bold;
+        transition: background-color 0.3s;
+    }
+    
+    .suggested-link:hover {
+        background-color: #00a383;
+    }
+    
+    .recommendation {
+        background-color: #fff3cd;
+        border-left: 4px solid #ffc107;
+        padding: 1rem;
+        margin: 2rem 0;
+        text-align: left;
+    }
+    
+    .navigation-section {
+        margin-top: 2rem;
+        padding: 2rem;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+    }
+    
+    .navigation-section h2 {
+        color: #2d3436;
+        margin-bottom: 1rem;
+    }
+    
+    .nav-links {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+    
+    .nav-link {
+        color: #0984e3;
+        text-decoration: none;
+        padding: 0.5rem;
+        border-radius: 4px;
+        transition: background-color 0.3s;
+    }
+    
+    .nav-link:hover {
+        background-color: #dfe6e9;
+    }
+    
+    .trailing-slash-notice {
+        display: none;
+        margin-bottom: 1rem;
+    }
+    
+    .trailing-slash-notice.visible {
+        display: block;
+    }
+    
+    @media (max-width: 640px) {
+        .error-layout {
+            flex-direction: column-reverse;
+        }
+        
+        .error-image-wrapper {
+            flex: 0 0 auto;
+            width: 150px;
+            margin: 0 auto;
+        }
+        
+        .nav-links {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="error-container">
+    <div class="error-layout">
+        <div class="error-content">
+            <div class="trailing-slash-notice" id="trailingSlashNotice">
+                <h1 class="error-title">Almost There!</h1>
+                <p class="error-message">
+                    It looks like you almost typed the correct address.
+                    <span id="nearMatchReason"></span>
+                </p>
+                <p class="error-message">
+                    <strong>What you tried:</strong> <code id="attemptedUrl"></code><br>
+                    <strong>What you probably want:</strong>
+                    <a href="" id="suggestedLink" class="suggested-link">Go to the correct page</a>
+                </p>
+                
+                <div class="recommendation">
+                    <strong>💡 Tip:</strong> If you followed a link from another site or used a bookmark, 
+                    you may want to update it to the correct URL shown above. This will ensure it works properly in the future.
+                </div>
+            </div>
+
+            <div class="standard-404" id="standard404">
+                <h1 class="error-title">Page Not Found</h1>
+                <p class="error-message">
+                    Sorry, we couldn't find the page you're looking for.
+                </p>
+            </div>
+          
+            <div class="navigation-section">
+                <h2>Helpful Links</h2>
+                <p>Maybe one of these pages can help you find what you're looking for:</p>
+                <div class="nav-links">
+                    <a href="/" class="nav-link">🏠 Home</a>
+                    <a href="/profile" class="nav-link">👤 Profile</a>
+                    <a href="/transcribe" class="nav-link">✍️ Transcribe</a>
+                    <a href="/project" class="nav-link">📁 Projects</a>
+                    <a href="/projects/all" class="nav-link">📋 All Projects</a>
+                    <a href="/project/create" class="nav-link">➕ Create Project</a>
+                    <a href="/project/import" class="nav-link">📥 Import Project</a>
+                    <a href="/manage/quicktype" class="nav-link">⚡ Quick Type</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="error-image-wrapper">
+            <img src="/assets/images/hopeful404.png" alt="Friendly 404 Error" class="error-image">
+        </div>
+    </div>
+</div>
+
+<script>
+    (function () {
+        // List of known permalink paths (without trailing slashes)
+        const knownPaths = [
+            // Root-level pretty paths
+            '/about',
+            '/account',
+            '/home',
+            '/landing',
+            '/transcription',
+            '/welcome',
+            // Permalinked and interface paths
+            '/annotator',
+            '/components/quick-guide',
+            '/interfaces',
+            '/manage/quicktype',
+            '/profile',
+            '/project',
+            '/project/copy-project',
+            '/project/copy-project-options',
+            '/project/create',
+            '/project/decline',
+            '/project/import',
+            '/project/import-image',
+            '/project/import28',
+            '/project/leave',
+            '/project/manage',
+            '/project/manage/collaborators',
+            '/project/manifest-builder',
+            '/project/options',
+            '/project/quick-guide',
+            '/project/view-transcription',
+            '/projects/all',
+            '/public-profile',
+            '/transcribe'
+        ]
+
+        const el = {
+            trailingSlashNotice: document.getElementById('trailingSlashNotice'),
+            standard404: document.getElementById('standard404'),
+            attemptedUrl: document.getElementById('attemptedUrl'),
+            suggestedLink: document.getElementById('suggestedLink'),
+            nearMatchReason: document.getElementById('nearMatchReason')
+        }
+
+        const currentPath = window.location.pathname
+        const currentSearch = window.location.search
+        const currentHash = window.location.hash
+
+        const removeTrailingSlash = path => path?.length > 1 && path.endsWith('/') ? path.slice(0, -1) : path
+
+        const segmentCharCounts = str => {
+            const counts = new Map()
+            for (const ch of str) counts.set(ch, (counts.get(ch) ?? 0) + 1)
+            return counts
+        }
+
+        const countsEqual = (a, b) => {
+            if (a.size !== b.size) return false
+            for (const [key, val] of a) {
+                if (b.get(key) !== val) return false
+            }
+            return true
+        }
+
+        const isTransposedSegmentMatch = (inputSeg, targetSeg) => {
+            if (inputSeg.length !== targetSeg.length) return false
+            if (inputSeg.length < 2) return inputSeg === targetSeg
+            if (inputSeg[0] !== targetSeg[0] || inputSeg[1] !== targetSeg[1]) return false
+            const a = segmentCharCounts(inputSeg.slice(2))
+            const b = segmentCharCounts(targetSeg.slice(2))
+            return countsEqual(a, b)
+        }
+
+        const splitSegments = path => path.split('/').filter(Boolean)
+
+        const isTransposedPathMatch = (inputPath, knownPath) => {
+            const a = splitSegments(inputPath)
+            const b = splitSegments(knownPath)
+            if (a.length !== b.length) return false
+            for (let i = 0; i < a.length; i++) {
+                if (!isTransposedSegmentMatch(a[i], b[i])) return false
+            }
+            return true
+        }
+
+        const normalizedCurrent = removeTrailingSlash(currentPath)
+        const normalizedCurrentLC = normalizedCurrent.toLowerCase()
+        const knownPathsLC = knownPaths.map(p => p.toLowerCase())
+
+        // Prefer exact path match when only a trailing slash is present
+        const hasTrailingSlash = currentPath.length > 1 && currentPath.endsWith('/')
+        if (hasTrailingSlash) {
+            const idx = knownPathsLC.indexOf(normalizedCurrentLC)
+            if (idx !== -1) {
+                const canonical = knownPaths[idx]
+                const correctUrl = canonical + currentSearch + currentHash
+                el.trailingSlashNotice?.classList.add('visible')
+                if (el.standard404) el.standard404.style.display = 'none'
+                if (el.attemptedUrl) el.attemptedUrl.textContent = currentPath + currentSearch + currentHash
+                if (el.suggestedLink) {
+                    el.suggestedLink.href = correctUrl
+                    el.suggestedLink.textContent = correctUrl
+                }
+                if (el.nearMatchReason) {
+                    el.nearMatchReason.textContent = ' The URL you tried has a trailing slash, which makes a difference in how our site routes pages.'
+                }
+                return
+            }
+            // No exact trailing-slash match; continue to case-insensitive and fuzzy checks
+        }
+
+        // Case-insensitive exact path match (no trailing slash)
+        {
+            const idxCIExact = knownPathsLC.indexOf(normalizedCurrentLC)
+            if (idxCIExact === -1) {
+                // continue to fuzzy check
+            } else {
+                const canonical = knownPaths[idxCIExact]
+                const correctUrl = canonical + currentSearch + currentHash
+                el.trailingSlashNotice?.classList.add('visible')
+                if (el.standard404) el.standard404.style.display = 'none'
+                if (el.attemptedUrl) el.attemptedUrl.textContent = currentPath + currentSearch + currentHash
+                if (el.suggestedLink) {
+                    el.suggestedLink.href = correctUrl
+                    el.suggestedLink.textContent = correctUrl
+                }
+                if (el.nearMatchReason) {
+                    el.nearMatchReason.textContent = ' The URL capitalization differs from our canonical path. Here is the correctly cased link.'
+                }
+                return
+            }
+        }
+
+        // Fuzzy match: segments with same first two chars, remaining letters rearranged
+        let fuzzyMatch = null
+        for (let i = 0; i < knownPaths.length; i++) {
+            const kp = knownPaths[i]
+            const kpLC = knownPathsLC[i]
+            if (isTransposedPathMatch(normalizedCurrentLC, kpLC)) { fuzzyMatch = kp; break }
+        }
+
+        if (!fuzzyMatch) return
+        {
+            const correctUrl = fuzzyMatch + currentSearch + currentHash
+            el.trailingSlashNotice?.classList.add('visible')
+            if (el.standard404) el.standard404.style.display = 'none'
+            if (el.attemptedUrl) el.attemptedUrl.textContent = currentPath + currentSearch + currentHash
+            if (el.suggestedLink) {
+                el.suggestedLink.href = correctUrl
+                el.suggestedLink.textContent = correctUrl
+            }
+            if (el.nearMatchReason) {
+                el.nearMatchReason.textContent = ' Some letters in the URL look transposed or capitalization differs. We matched the path segments by the first two letters (case-insensitive) and treated the remaining letters as rearranged to suggest the correct page.'
+            }
+        }
+    })()
+</script>
