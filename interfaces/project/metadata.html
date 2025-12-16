@@ -65,14 +65,25 @@ permalink: /project/metadata
             const hasEditAccess = await CheckPermissions.checkEditAccess(null, scope.toUpperCase())
             const hasDeleteAccess = await CheckPermissions.checkDeleteAccess(null, scope.toUpperCase())
             const checkCreateAccess = await CheckPermissions.checkCreateAccess(null, scope.toUpperCase())
-            divMetadata.style.display = hasEditAccess ? 'inline-block' : divMetadata.remove()
+            
             if (hasEditAccess) {
+                divMetadata.style.display = 'inline-block'
                 const deleteButton = document.querySelectorAll('.remove-field-btn')
                 deleteButton.forEach(button => {
-                    button.style.display = hasDeleteAccess ? 'inline-block' : button.remove()
+                    if (hasDeleteAccess) {
+                        button.style.display = 'inline-block'
+                    } else {
+                        button.remove()
+                    }
                 })
                 const addButton = document.querySelector('#add-field-btn')
-                addButton.style.display = checkCreateAccess ? 'inline-block' : addButton.remove()
+                if (checkCreateAccess) {
+                    addButton.style.display = 'inline-block'
+                } else {
+                    addButton.remove()
+                }
+            } else {
+                divMetadata.remove()
             }
             permissionMsg.style.display = hasEditAccess ? 'none' : 'inline-block'
         })()
