@@ -4,6 +4,7 @@ import '../../components/workspace-tools/index.js'
 import '../../components/transcription-block/index.js'
 import vault from '../../js/vault.js'
 import CheckPermissions from "../../components/check-permissions/checkPermissions.js"
+import { renderPermissionError } from "../../utilities/renderPermissionError.js"
 
 export default class SimpleTranscriptionInterface extends HTMLElement {
   #page
@@ -119,76 +120,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
   }
 
   renderPermissionError() {
-    this.shadowRoot.innerHTML = `
-      <style>
-        .error-container {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          height: 100vh;
-          padding: 2rem;
-          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-          background-color: #f8f9fa;
-        }
-        .error-content {
-          max-width: 600px;
-          text-align: center;
-          background: white;
-          padding: 3rem;
-          border-radius: 8px;
-          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-        .error-title {
-          color: #d63031;
-          font-size: 2rem;
-          margin-bottom: 1rem;
-        }
-        .error-message {
-          color: #2d3436;
-          font-size: 1.1rem;
-          line-height: 1.6;
-          margin-bottom: 1.5rem;
-        }
-        .error-link {
-          background-color: #00b894;
-          color: white;
-          padding: 0.75rem 1.5rem;
-          text-decoration: none;
-          border-radius: 5px;
-          display: inline-block;
-          margin: 0.5rem;
-          font-weight: bold;
-          transition: background-color 0.3s;
-        }
-        .error-link:hover {
-          background-color: #00a383;
-        }
-        .error-link.secondary {
-          background-color: #0984e3;
-        }
-        .error-link.secondary:hover {
-          background-color: #0770c7;
-        }
-      </style>
-      <div class="error-container">
-        <div class="error-content">
-          <h1 class="error-title">Permission Denied</h1>
-          <p class="error-message">
-            You do not have the appropriate permissions to view this transcription interface.
-            Please contact the project owner to request access.
-          </p>
-          <div>
-            <a href="/project?projectID=${TPEN.screen?.projectInQuery ?? ''}" class="error-link">
-              Back to Project
-            </a>
-            <a href="/" class="error-link secondary">
-              Go to Home
-            </a>
-          </div>
-        </div>
-      </div>
-    `
+    renderPermissionError(this.shadowRoot, TPEN.screen?.projectInQuery ?? '')
   }
 
   render() {
