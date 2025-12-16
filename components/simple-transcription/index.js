@@ -780,7 +780,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
         iframe.contentWindow?.postMessage(
           {
             type: "CURRENT_LINE_INDEX",
-            lineId: TPEN.activeLineIndex
+            lineId: this.#page?.items?.[TPEN.activeLineIndex]?.id ?? null
           },
           "*"
         )
@@ -790,8 +790,9 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       this.#cleanupToolLineListeners()
 
       const sendLineSelection = () => {
+        const activeLineId = this.#page?.items?.[TPEN.activeLineIndex]?.id ?? null
         iframe.contentWindow?.postMessage(
-          { type: "SELECT_ANNOTATION", lineId: TPEN.activeLineIndex },
+          { type: "SELECT_ANNOTATION", lineId: activeLineId },
           "*"
         )
       }
