@@ -7,6 +7,7 @@ import '../../components/line-image/index.js'
 import CheckPermissions from "../../components/check-permissions/checkPermissions.js"
 import { orderPageItemsByColumns } from "../../utilities/columnOrdering.js"
 import { renderPermissionError } from "../../utilities/renderPermissionError.js"
+import '../../components/gui/alert/AlertContainer.js'
 export default class TranscriptionInterface extends HTMLElement {
   #page
   #canvas
@@ -419,6 +420,38 @@ export default class TranscriptionInterface extends HTMLElement {
     })
   }
 
+  showNoLinesAlert() {
+    const alertContainer = document.querySelector('tpen-alert-container')
+    if (!alertContainer) return
+    
+    const alertElem = document.createElement('tpen-alert')
+    const message = document.createElement('div')
+    message.innerHTML = `
+      <p style="margin-bottom: 1em;">This page has no line annotations defined.</p>
+      <p>To add lines, visit the <a href="/interfaces/annotator?projectId=${TPEN.screen?.projectInQuery ?? ''}&pageId=${TPEN.screen?.pageInQuery ?? ''}" style="color: #4fc3f7; text-decoration: underline;">annotation interface</a>.</p>
+    `
+    
+    const okButton = document.createElement('button')
+    const buttonContainer = document.createElement('div')
+    buttonContainer.classList.add("button-container")
+    okButton.textContent = 'Got it'
+    
+    const handleOk = () => {
+      alertElem.dismiss()
+    }
+    okButton.addEventListener('click', handleOk)
+    
+    alertElem.appendChild(message)
+    buttonContainer.appendChild(okButton)
+    alertElem.appendChild(buttonContainer)
+    
+    const screenLockingSection = alertContainer.shadowRoot.querySelector('.alert-area')
+    if (screenLockingSection) {
+      screenLockingSection.appendChild(alertElem)
+      alertElem.show()
+    }
+  }
+
   updateLines() {
     if (TPEN.activeLineIndex < 0 || !this.#page) return
     const topImage = this.shadowRoot.querySelector('#topImage')
@@ -530,6 +563,8 @@ export default class TranscriptionInterface extends HTMLElement {
       topImage.canvas = canvasID
       bottomImage.canvas = canvas
       topImage.setAttribute('region', regionValue)
+      // Show alert to inform user about missing lines
+      this.showNoLinesAlert()
       return
     }
     
