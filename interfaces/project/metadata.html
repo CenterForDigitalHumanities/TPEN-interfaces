@@ -1,0 +1,82 @@
+---
+title: Manage Project Metadata
+permalink: /project/metadata
+---
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Project Metadata</title>
+    <script type="module" src="/api/TPEN.js"></script>
+    <script type="module" src="/components/gui/site/index.js"></script>
+    <script type="module" src="/components/update-metadata/index.js"></script>
+    <script type="module" src="/components/explanatory-guide/fixedGuideComponent.js"></script>
+    <link href="/components/gui/site/index.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="/components/update-metadata/index.css">
+</head>
+
+<body>
+    <tpen-page class="grid">
+        <tpen-card>
+            <h2 slot="header">Project Metadata</h2>
+            <div slot="body">
+                <tpen-fixed-explanatory-guide heading="Steps to Update Metadata">
+                    <li>Click <strong>"Add Field"</strong> to add a new metadata field by adding Label and Value.</li>
+                    <li>Select the metadata you want to update.</li>
+                    <li>Optionally, delete any unwanted field using the <strong>trash icon.</strong></li>
+                    <li>Make your changes in the form.</li>
+                    <li>Click <strong>"Save"</strong> to apply your changes.</li>
+                </tpen-fixed-explanatory-guide>
+            </div>
+            <div slot="body" class="tpen-metadata" tpen-scope="metadata">
+                <update-metadata></update-metadata>
+                <div id="container" class="metadata-modal-container">
+                    <div id="metadata-modal" class="modal hidden">
+                        <div class="modal-content">
+                            <h3>Edit Metadata</h3>
+                            <form id="metadata-form">
+                                <div id="metadata-fields"></div>
+                                <button type="button" id="add-field-btn">+ Add Field</button>
+                                <div class="modal-actions">
+                                    <button type="button" id="save-metadata-btn">Save</button>
+                                    <button type="button" id="cancel-btn">Cancel</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <p slot="body" class="permission-msg" style="display: none;">You don't have permission to create, edit or delete Metadata</p>
+        </tpen-card>
+    </tpen-page>
+    <script type="module">
+        import CheckPermissions from '../../utilities/checkPermissions.js'
+
+        (async () => {
+            const divMetadata = document.querySelector('.tpen-metadata')
+            const permissionMsg = document.querySelector('.permission-msg')
+            const scope = divMetadata.getAttribute('tpen-scope')
+            if (!scope) {
+                return
+            }
+            const hasEditAccess = await CheckPermissions.checkEditAccess(null, scope.toUpperCase())
+            const hasDeleteAccess = await CheckPermissions.checkDeleteAccess(null, scope.toUpperCase())
+            const checkCreateAccess = await CheckPermissions.checkCreateAccess(null, scope.toUpperCase())
+            divMetadata.style.display = hasEditAccess ? 'inline-block' : divMetadata.remove()
+            if (hasEditAccess) {
+                const deleteButton = document.querySelectorAll('.remove-field-btn')
+                deleteButton.forEach(button => {
+                    button.style.display = hasDeleteAccess ? 'inline-block' : button.remove()
+                })
+                const addButton = document.querySelector('#add-field-btn')
+                addButton.style.display = checkCreateAccess ? 'inline-block' : addButton.remove()
+            }
+            permissionMsg.style.display = hasEditAccess ? 'none' : 'inline-block'
+        })()
+    </script>
+</body>
+
+</html>
