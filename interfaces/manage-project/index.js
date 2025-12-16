@@ -19,7 +19,7 @@ document.getElementById('manage-collaboration-btn').addEventListener('click', ()
 })
 
 document.getElementById("update-metadata-btn").addEventListener('click', () => {  
-    window.location.href = `/components/update-metadata/index.html?projectID=${TPEN.screen.projectInQuery}`
+    window.location.href = `/project/metadata?projectID=${TPEN.screen.projectInQuery}`
 })
 
 document.getElementById('manage-layers-btn').addEventListener('click', () => {
