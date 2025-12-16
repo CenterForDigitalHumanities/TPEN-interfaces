@@ -51,7 +51,8 @@ export function detectColumns(binary, minColumnWidth = 50, spaceThreshold = 0.1)
   if (columns.length > 1) {
     const merged = []
     // Ensure columns[0] is a valid array before destructuring
-    if (!Array.isArray(columns[0]) || columns[0].length < 2) {
+    if (!Array.isArray(columns[0]) || columns[0].length < 2 || 
+        typeof columns[0][0] !== 'number' || typeof columns[0][1] !== 'number') {
       console.warn("Invalid column format detected, using default column")
       columns = [[0, binary.cols]]
     } else {
@@ -59,7 +60,8 @@ export function detectColumns(binary, minColumnWidth = 50, spaceThreshold = 0.1)
       let curEnd = columns[0][1]
       for (const col of columns.slice(1)) {
         // Validate each column element
-        if (!Array.isArray(col) || col.length < 2) {
+        if (!Array.isArray(col) || col.length < 2 || 
+            typeof col[0] !== 'number' || typeof col[1] !== 'number') {
           console.warn("Skipping invalid column element:", col)
           continue
         }
@@ -78,7 +80,8 @@ export function detectColumns(binary, minColumnWidth = 50, spaceThreshold = 0.1)
 
   // Safely calculate total width with validation
   const totalWidth = columns.reduce((sum, col) => {
-    if (Array.isArray(col) && col.length >= 2) {
+    if (Array.isArray(col) && col.length >= 2 && 
+        typeof col[0] === 'number' && typeof col[1] === 'number') {
       return sum + (col[1] - col[0])
     }
     return sum
