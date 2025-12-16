@@ -49,7 +49,7 @@ permalink: /project/metadata
                     </div>
                 </div>
             </div>
-            <p slot="body" class="permission-msg" style="display: none;">You don't have permission to create, edit or delete Metadata</p>
+            <p slot="body" class="permission-msg" style="display: none;">You don't have permission to create, edit, or delete Metadata</p>
         </tpen-card>
     </tpen-page>
     <script type="module">
@@ -68,24 +68,29 @@ permalink: /project/metadata
             
             if (hasEditAccess) {
                 divMetadata.style.display = 'inline-block'
-                const deleteButton = document.querySelectorAll('.remove-field-btn')
-                deleteButton.forEach(button => {
+                permissionMsg.style.display = 'none'
+                
+                const deleteButtons = document.querySelectorAll('.remove-field-btn')
+                deleteButtons.forEach(button => {
                     if (hasDeleteAccess) {
                         button.style.display = 'inline-block'
                     } else {
                         button.remove()
                     }
                 })
+                
                 const addButton = document.querySelector('#add-field-btn')
-                if (checkCreateAccess) {
-                    addButton.style.display = 'inline-block'
-                } else {
-                    addButton.remove()
+                if (addButton) {
+                    if (checkCreateAccess) {
+                        addButton.style.display = 'inline-block'
+                    } else {
+                        addButton.remove()
+                    }
                 }
             } else {
                 divMetadata.remove()
+                permissionMsg.style.display = 'inline-block'
             }
-            permissionMsg.style.display = hasEditAccess ? 'none' : 'inline-block'
         })()
     </script>
 </body>
