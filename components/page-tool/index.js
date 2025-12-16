@@ -12,6 +12,15 @@ export default class PageTool extends HTMLElement {
         this.drawerPosition = 'right'
         this.contrast = 100
         this.brightness = 100
+        this.grayscaleActive = false
+        this.invertActive = false
+    }
+
+    // Helper to find the transcription interface (supports both standard and simple versions)
+    getTranscriptionInterface() {
+        let iface = document.querySelector('tpen-transcription-interface')
+        if (!iface) iface = document.querySelector('tpen-simple-transcription')
+        return iface
     }
 
     get drawerContent() {
@@ -58,27 +67,58 @@ export default class PageTool extends HTMLElement {
     openDrawer() {
         const drawer = this.shadowRoot.querySelector('.drawer')
         if (!drawer) return
-        const container = document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('.container')
-        if(document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('.container.active-splitscreen .right-pane')){ 
+        
+        const iface = this.getTranscriptionInterface()
+        if (!iface?.shadowRoot) return
+        
+        const container = iface.shadowRoot.querySelector('.container')
+        if (!container) return
+        
+        if (iface.shadowRoot.querySelector('.container.active-splitscreen .right-pane')) { 
           container.classList.remove('active-splitscreen')
           container.classList.add('no-splitscreen')
         }
+        
+        // Dispatch event before changing width so interface can prepare
+        iface.dispatchEvent(new CustomEvent('drawer-opening', { bubbles: true, composed: true }))
+        
         container.style.width = 'calc(100% - 320px)'
         drawer.classList.add('open')
         this.isDrawerOpen = true
         this.drawerToggleBtn.focus()
+        
+        // Dispatch event after width change to trigger recalc
+        setTimeout(() => {
+            iface.dispatchEvent(new CustomEvent('drawer-opened', { bubbles: true, composed: true }))
+        }, 0)
     }
 
     closeDrawer() {
         const drawer = this.shadowRoot.querySelector('.drawer')
         if (!drawer) return
-        const container = document.querySelector('tpen-transcription-interface').shadowRoot.querySelector('.container')
-        container.style.width = '100%'
+        
+        const iface = this.getTranscriptionInterface()
+        if (!iface?.shadowRoot) return
+        
+        const container = iface.shadowRoot.querySelector('.container')
+        if (!container) return
+        
+        // Dispatch event before changing width
+        iface.dispatchEvent(new CustomEvent('drawer-closing', { bubbles: true, composed: true }))
+        
+        // Remove the inline width style to return to CSS defaults
+        container.style.width = ''
         drawer.classList.remove('open')
         this.isDrawerOpen = false
         this.drawerToggleBtn.blur()
+        
+        // Dispatch event after width change
+        setTimeout(() => {
+            iface.dispatchEvent(new CustomEvent('drawer-closed', { bubbles: true, composed: true }))
+        }, 0)
     }
 
+    // Apply filters to standard transcription interface images (uses CSS classes on imageEl)
     updateMainImageFilters(imageEl) {
         if (!imageEl) return
 
@@ -92,12 +132,35 @@ export default class PageTool extends HTMLElement {
         imageEl.style.filter = filters.join(' ')
     }
 
+    // Apply filters to simple transcription interface images (uses component state)
+    applyFiltersToImage(imageEl) {
+        if (!imageEl) return
+
+        const filters = []
+        if (this.grayscaleActive) filters.push('grayscale(100%)')
+        if (this.invertActive) filters.push('invert(100%)')
+        filters.push(`contrast(${this.contrast}%)`)
+        filters.push(`brightness(${this.brightness}%)`)
+
+        imageEl.style.transition = 'filter 250ms ease'
+        imageEl.style.filter = filters.join(' ')
+    }
+
     applyFilters() {
-        const transcriptionInterface = document.querySelector('tpen-transcription-interface')?.shadowRoot
+        const iface = this.getTranscriptionInterface()
+        const transcriptionInterface = iface?.shadowRoot
         if (!transcriptionInterface) return
 
+        // Handle standard transcription interface with image fragments
         const imageEl = transcriptionInterface.querySelector('tpen-image-fragment')?.shadowRoot?.querySelector('img')
         if (imageEl) this.updateMainImageFilters(imageEl)
+
+        // Handle simple transcription interface - apply filters to both top and bottom images
+        const imgTopImg = transcriptionInterface.querySelector('#imgTop img')
+        const imgBottomImg = transcriptionInterface.querySelector('#imgBottom img')
+        
+        this.applyFiltersToImage(imgTopImg)
+        this.applyFiltersToImage(imgBottomImg)
 
         const canvasPanel = transcriptionInterface.querySelector('tpen-line-image')?.shadowRoot?.querySelector('canvas-panel')?.shadowRoot
         if (!canvasPanel) return
@@ -124,15 +187,27 @@ export default class PageTool extends HTMLElement {
     }
 
     toggleFilter(type) {
-        const transcriptionInterface = document.querySelector('tpen-transcription-interface')?.shadowRoot
+        const iface = this.getTranscriptionInterface()
+        const transcriptionInterface = iface?.shadowRoot
         if (!transcriptionInterface) return
+        
+        // Track filter state
+        if (type === 'grayscale') {
+            this.grayscaleActive = !this.grayscaleActive
+        } else if (type === 'invert') {
+            this.invertActive = !this.invertActive
+        }
+        
+        // Standard interface with image fragments
         const imageFragment = transcriptionInterface.querySelector('tpen-image-fragment')?.shadowRoot
         const imageEl = imageFragment?.querySelector('img')
 
         if (imageEl) {
             imageEl.classList.toggle(type)
-            this.applyFilters()
         }
+        
+        // Apply filters (handles both standard and simple interfaces)
+        this.applyFilters()
 
         const btnClass = type === 'grayscale' ? '.grayscale-btn' : '.invert-btn'
         const btn = this.shadowRoot.querySelector(btnClass)
@@ -165,7 +240,8 @@ export default class PageTool extends HTMLElement {
       if (contrastSlider) contrastSlider.value = 100
       if (brightnessSlider) brightnessSlider.value = 100
 
-      const transcriptionInterface = document.querySelector('tpen-transcription-interface')?.shadowRoot
+      const iface = this.getTranscriptionInterface()
+      const transcriptionInterface = iface?.shadowRoot
       const imageEl = transcriptionInterface
           ?.querySelector('tpen-image-fragment')?.shadowRoot?.querySelector('img')
 

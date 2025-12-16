@@ -421,6 +421,8 @@ export default class TranscriptionInterface extends HTMLElement {
     const thisLine = this.#page.items?.[TPEN.activeLineIndex]
     if (!thisLine) return
     TPEN.activeLine = thisLine
+    // Dispatch event for line history tool
+    TPEN.eventDispatcher.dispatch('tpen-active-line-updated', thisLine)
 
     const page = TPEN.activeProject.layers.flatMap(layer => layer.pages || []).find(p => p.id.split('/').pop() === this.#page.id.split('/').pop())
     if (!page) return
