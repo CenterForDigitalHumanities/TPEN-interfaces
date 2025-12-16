@@ -6,6 +6,7 @@ import vault from '../../js/vault.js'
 import '../../components/line-image/index.js'
 import CheckPermissions from "../../components/check-permissions/checkPermissions.js"
 import { orderPageItemsByColumns } from "../../utilities/columnOrdering.js"
+import { renderPermissionError } from "../../utilities/renderPermissionError.js"
 export default class TranscriptionInterface extends HTMLElement {
   #page
   #canvas
@@ -32,7 +33,7 @@ export default class TranscriptionInterface extends HTMLElement {
 
   async authgate() {
     if (!CheckPermissions.checkViewAccess("ANY", "CONTENT")) {
-      this.remove()
+      this.renderPermissionError()
       return
     }
     this.render()
@@ -41,6 +42,10 @@ export default class TranscriptionInterface extends HTMLElement {
     const pageID = TPEN.screen?.pageInQuery
     await this.updateTranscriptionImages(pageID)
     this.updateLines()
+  }
+
+  renderPermissionError() {
+    renderPermissionError(this.shadowRoot, TPEN.screen?.projectInQuery ?? '')
   }
 
   render() {

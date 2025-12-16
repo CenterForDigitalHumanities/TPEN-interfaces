@@ -4,6 +4,7 @@ import '../../components/workspace-tools/index.js'
 import '../../components/transcription-block/index.js'
 import vault from '../../js/vault.js'
 import CheckPermissions from "../../components/check-permissions/checkPermissions.js"
+import { renderPermissionError } from "../../utilities/renderPermissionError.js"
 
 export default class SimpleTranscriptionInterface extends HTMLElement {
   #page
@@ -101,7 +102,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
 
   async authgate() {
     if (!CheckPermissions.checkViewAccess("ANY", "CONTENT")) {
-      this.remove()
+      this.renderPermissionError()
       return
     }
     this.render()
@@ -116,6 +117,10 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     }
 
     this.updateLines()
+  }
+
+  renderPermissionError() {
+    renderPermissionError(this.shadowRoot, TPEN.screen?.projectInQuery ?? '')
   }
 
   render() {
