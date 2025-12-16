@@ -50,19 +50,40 @@ export function detectColumns(binary, minColumnWidth = 50, spaceThreshold = 0.1)
 
   if (columns.length > 1) {
     const merged = []
-    let [curStart, curEnd] = columns[0]
-    for (const [s, e] of columns.slice(1)) {
-      if (s - curEnd < 3) curEnd = e
-      else {
-        merged.push([curStart, curEnd])
-        [curStart, curEnd] = [s, e]
+    // Ensure columns[0] is a valid array before destructuring
+    if (!Array.isArray(columns[0]) || columns[0].length < 2) {
+      console.warn("Invalid column format detected, using default column")
+      columns = [[0, binary.cols]]
+    } else {
+      let curStart = columns[0][0]
+      let curEnd = columns[0][1]
+      for (const col of columns.slice(1)) {
+        // Validate each column element
+        if (!Array.isArray(col) || col.length < 2) {
+          console.warn("Skipping invalid column element:", col)
+          continue
+        }
+        const [s, e] = col
+        if (s - curEnd < 3) curEnd = e
+        else {
+          merged.push([curStart, curEnd])
+          curStart = s
+          curEnd = e
+        }
       }
+      merged.push([curStart, curEnd])
+      columns = merged
     }
-    merged.push([curStart, curEnd])
-    columns = merged
   }
 
-  const totalWidth = columns.reduce((sum, [s, e]) => sum + (e - s), 0)
+  // Safely calculate total width with validation
+  const totalWidth = columns.reduce((sum, col) => {
+    if (Array.isArray(col) && col.length >= 2) {
+      return sum + (col[1] - col[0])
+    }
+    return sum
+  }, 0)
+  
   if (columns.length === 0 || totalWidth > 0.85 * binary.cols) {
     columns = [[0, binary.cols]]
   }
