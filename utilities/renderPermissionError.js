@@ -62,7 +62,6 @@ export function renderPermissionError(shadowRoot, projectInQuery = '') {
         <h1 class="error-title">Permission Denied</h1>
         <p class="error-message">
           You do not have the appropriate permissions to view this transcription interface.
-          Please contact the project owner to request access.
         </p>
         <div>
           <a href="/project?projectID=${projectInQuery}" class="error-link">
@@ -72,6 +71,7 @@ export function renderPermissionError(shadowRoot, projectInQuery = '') {
             Go to Home
           </a>
         </div>
+        <img src="/assets/logo/logo-350w.png" alt="Permission Denied Illustration" style="margin-top: 1.5rem; max-width: 100%; height: auto;" />
       </div>
     </div>
   `
