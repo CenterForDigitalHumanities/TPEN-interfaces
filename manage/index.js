@@ -47,12 +47,9 @@ function loadManageInterface(){
         const modifyTeamBtn = document.getElementById("modify-team-btn")
 
         if (modifyTeamBtn) {
-          modifyTeamBtn.addEventListener("click", () => {
-            const URLParams = new URLSearchParams(window.location.search)
-            const projectID = URLParams.get("projectID")
-            const url = `/project/manage/collaborators?projectID=${projectID}`
-            window.location.href = url
-          })
+          const URLParams = new URLSearchParams(window.location.search)
+          const projectID = URLParams.get("projectID")
+          modifyTeamBtn.href = `/project/manage/collaborators?projectID=${projectID}`
         } 
         const { projectData } = await getActiveProject()
         console.log(projectData)

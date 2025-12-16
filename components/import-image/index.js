@@ -182,12 +182,10 @@ class ImageImporter extends HTMLElement {
     const pageTitle = document.createElement('span')
     pageTitle.textContent = project.label || 'Untitled Page'
 
-    const manageButton = document.createElement('button')
+    const manageButton = document.createElement('a')
     manageButton.className = 'manage-btn'
     manageButton.textContent = 'Manage'
-    manageButton.onclick = () => {
-      window.location.href = `${TPEN.BASEURL}/project/manage?projectID=${project._id}`
-    }
+    manageButton.href = `${TPEN.BASEURL}/project/manage?projectID=${project._id}`
 
     pageInfo.appendChild(pageTitle)
     pageInfo.appendChild(manageButton)

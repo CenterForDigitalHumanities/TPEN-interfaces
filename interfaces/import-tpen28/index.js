@@ -55,9 +55,7 @@ async function importProject(selectedId) {
 
     const openBtn = document.getElementById("openProject")
     openBtn.classList.remove("hidden")
-    openBtn.addEventListener("click", () => {
-        window.location.href = `/project/manage?projectID=${project.importData._id}`
-    })
+    openBtn.href = `/project/manage?projectID=${project.importData._id}`
 
     return { projectTPEN28Data: project.parsedData, projectTPEN3Data: project.importData }
 }

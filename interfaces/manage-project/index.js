@@ -13,17 +13,34 @@ TPEN.eventDispatcher.on('tpen-project-loaded', () => render())
 const container = document.body
 TPEN.attachAuthentication(container)
 
-document.getElementById('manage-collaboration-btn').addEventListener('click', () => {
-    const url = `/project/manage/collaborators?projectID=${TPEN.screen.projectInQuery}`
-    window.location.href = url
-})
-
-document.getElementById("update-metadata-btn").addEventListener('click', () => {  
-    window.location.href = `/components/update-metadata/index.html?projectID=${TPEN.screen.projectInQuery}`
-})
-
-document.getElementById('manage-layers-btn').addEventListener('click', () => {
-    window.location.href = `/components/manage-layers/index.html?projectID=${TPEN.screen.projectInQuery}`
+// Set href for navigation links once project ID is available
+TPEN.eventDispatcher.on('tpen-project-loaded', () => {
+    const projectID = TPEN.screen.projectInQuery
+    
+    const manageCollabBtn = document.getElementById('manage-collaboration-btn')
+    if (manageCollabBtn) {
+        manageCollabBtn.href = `/project/manage/collaborators?projectID=${projectID}`
+    }
+    
+    const updateMetadataBtn = document.getElementById("update-metadata-btn")
+    if (updateMetadataBtn) {
+        updateMetadataBtn.href = `/components/update-metadata/index.html?projectID=${projectID}`
+    }
+    
+    const manageLayersBtn = document.getElementById('manage-layers-btn')
+    if (manageLayersBtn) {
+        manageLayersBtn.href = `/components/manage-layers/index.html?projectID=${projectID}`
+    }
+    
+    const manageProjectOptionsBtn = document.getElementById('manage-project-options-btn')
+    if (manageProjectOptionsBtn) {
+        manageProjectOptionsBtn.href = `/project/options?projectID=${projectID}`
+    }
+    
+    const leaveProjectBtn = document.getElementById('leave-project-btn')
+    if (leaveProjectBtn) {
+        leaveProjectBtn.href = `/project/leave?projectID=${projectID}`
+    }
 })
 
 document.getElementById('export-project-btn').addEventListener('click', async () => {
@@ -43,14 +60,6 @@ document.getElementById('export-project-btn').addEventListener('click', async ()
     })
 })
 
-document.getElementById('manage-project-options-btn').addEventListener('click', () => {
-    window.location.href = `/project/options?projectID=${TPEN.screen.projectInQuery}`
-})
-
-document.getElementById('leave-project-btn').addEventListener('click', (e) => {
-    window.location.href = `/project/leave?projectID=${TPEN.screen.projectInQuery}`
-})
-
 async function render() {
     const isManageProjectPermission = await CheckPermissions.checkEditAccess('PROJECT')
     if(!isManageProjectPermission) {
@@ -58,7 +67,9 @@ async function render() {
         document.location.href = `/project?projectID=${TPEN.screen.projectInQuery}`
     }
     document.querySelector('tpen-project-details').setAttribute('tpen-project-id', TPEN.screen.projectInQuery)
-    document.getElementById("manage-custom-role-btn").addEventListener('click', async () => {
-        window.location.href = `/components/manage-role/index.html?projectID=${TPEN.screen.projectInQuery}`  
-    })
+    
+    const manageCustomRoleBtn = document.getElementById("manage-custom-role-btn")
+    if (manageCustomRoleBtn) {
+        manageCustomRoleBtn.href = `/components/manage-role/index.html?projectID=${TPEN.screen.projectInQuery}`
+    }
 }
