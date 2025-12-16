@@ -52,7 +52,6 @@ class TpenLineImage extends HTMLElement {
         const localIiifManifest = this.#canvasPanel.closest('[iiif-manifest]')?.getAttribute('iiif-manifest') ?? this.closest('[iiif-manifest]')?.getAttribute('iiif-manifest')
         if (localIiifContent) {
             this.line = decodeContentState(localIiifContent)
-            console.log(localIiifContent)
         }
         if (localIiifManifest) {
             this.manifest = localIiifManifest

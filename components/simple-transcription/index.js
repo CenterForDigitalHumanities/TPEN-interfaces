@@ -292,6 +292,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
         }
       </style>
 
+      <tpen-project-header></tpen-project-header>
       <div class="container no-splitscreen">
         <div class="left-pane">
           <div class="image-container">
@@ -481,12 +482,10 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
   }
 
   async updateLines() {
-    console.log('updateLines called, activeLineIndex:', TPEN.activeLineIndex)
     const page = this.#page
     const activeLineIndex = TPEN.activeLineIndex ?? 0
 
     if (!page?.items || page.items.length === 0) {
-      console.warn('No page items available')
       this.#activeLine = null
       this.resetImagePositions()
       return
@@ -494,27 +493,24 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
 
     let line = page.items[activeLineIndex]
     if (!line) {
-      console.warn('No line found at index:', activeLineIndex)
       this.#activeLine = null
       this.resetImagePositions()
       return
     }
 
-    console.log('Line before fetch:', line)
-
     // If line is just a reference (string/ID), fetch the full annotation
     if (typeof line === 'string' || !line.target) {
-      console.log('Fetching full annotation for line:', line)
       line = await vault.get(line, 'annotation')
       if (!(line?.body)) {
         line = await vault.get(line, 'annotation', true)
       }
-      console.log('Fetched line:', line)
     }
 
     this.#activeLine = line
     // Notify TPEN ecosystem (e.g., history tool) of active line changes
     try { TPEN.activeLine = line } catch { }
+    // Dispatch event for line history tool
+    TPEN.eventDispatcher.dispatch('tpen-active-line-updated', line)
     this.adjustImages(line)
   }
 
@@ -526,16 +522,11 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     const workspace = this.shadowRoot.querySelector('#transWorkspace')
 
     if (!imgTop || !imgTopImg || !imgBottom || !imgBottomImg || !workspace) {
-      console.warn('Missing required elements:', { imgTop, imgTopImg, imgBottom, imgBottomImg, workspace })
       return
     }
 
     // Get the line's bounding box from the target selector
     let target = line.target
-
-    console.log('Adjusting images for line:', line)
-    console.log('Target:', target)
-    console.log('Canvas dimensions:', this.#imgTopOriginalWidth, 'x', this.#imgTopOriginalHeight)
 
     // Get the actual rendered dimensions of the image (after scaling to width: 100%)
     // If not yet rendered, calculate based on container width and aspect ratio
@@ -548,17 +539,13 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       renderedHeight = renderedWidth * aspectRatio
     }
 
-    console.log('Rendered image dimensions:', renderedWidth, 'x', renderedHeight)
-
     // Handle target being an object with source property
     if (typeof target === 'object' && target?.source) {
-      console.log('Target is SpecificResource, selector:', target.selector)
 
       // For W3C Web Annotation format with selector
       const selector = target.selector
 
       if (selector?.value) {
-        console.log('Selector has value:', selector.value)
         // SVG or fragment selector with value property
         const xywh = selector.value.split('#xywh=')[1]
         if (xywh) {
@@ -572,8 +559,6 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
         target = selector
       } else if (typeof selector === 'object') {
         // Check if selector itself has properties we need
-        console.log('Selector object properties:', Object.keys(selector))
-
         // Try to find xywh in any property
         for (const key in selector) {
           const value = selector[key]
@@ -588,8 +573,6 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       }
     }
 
-    console.log('Processed target:', target)
-
     // Extract xywh from target string
     // Handle both "xywh=x,y,w,h" and "xywh=pixel:x,y,w,h" formats
     const xywhMatch = typeof target === 'string' ? target.match(/xywh=(?:pixel:)?([^&]+)/) : null
@@ -599,21 +582,16 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     }
 
     const [x, y, w, h] = xywhMatch[1].split(',').map(Number)
-    console.log('XYWH coordinates:', { x, y, w, h })
 
     // Calculate scaled dimensions based on how the image is actually rendered
     // The image has width: 100%, so it scales proportionally
     const scaleFactor = renderedWidth / this.#imgTopOriginalWidth
-
-    console.log('Scale factor:', scaleFactor)
 
     // Calculate scaled pixel positions (where the line is on the rendered image)
     const scaledY = y * scaleFactor
     const scaledH = h * scaleFactor
     const scaledX = x * scaleFactor
     const scaledW = w * scaleFactor
-
-    console.log('Scaled pixel values:', { scaledX, scaledY, scaledW, scaledH })
 
     // Add margin around the active line (in scaled pixels)
     const marginTop = Math.min(10, scaledH * 0.3) // 30% of line height or 20px
@@ -647,25 +625,8 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     // The viewport height is the content height times the zoom
     const viewportHeight = viewportContentHeight * zoom
 
-    console.log('Zoom calculation:', {
-      containerWidth,
-      viewportContentWidth,
-      zoom,
-      viewportHeight,
-      cropTop,
-      cropLeft
-    })
-
     // Calculate the bottom image start in pre-zoom pixels, then apply zoom for visual alignment
     const bottomPosition = cropTop + viewportContentHeight
-
-    console.log('Applying styles:', {
-      imgTopHeight: `${viewportHeight}px`,
-      imgTopImgTop: `-${cropTop * zoom}px`,
-      imgTopImgLeft: `-${cropLeft * zoom}px`,
-      imgTopImgScale: zoom,
-      imgBottomImgTop: `-${bottomPosition}px`
-    })
 
     // Store positions for resize handling
     this.#imgTopPositionRatio = cropTop / renderedHeight

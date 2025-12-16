@@ -98,7 +98,7 @@ export default class TranscriptionBlock extends HTMLElement {
         }
         if (prevPageButton) {
             prevPageButton.addEventListener('click', () => {
-                eventDispatcher.dispatch('tpen-transcription-previous-line')
+                this.navigateToPage('prev')
             })
         }
         if (nextButton) {
@@ -106,7 +106,7 @@ export default class TranscriptionBlock extends HTMLElement {
         }
         if (nextPageButton) {
             nextPageButton.addEventListener('click', () => {
-                eventDispatcher.dispatch('tpen-transcription-next-line')
+                this.navigateToPage('next')
             })
         }
         if (inputField) {
@@ -133,13 +133,6 @@ export default class TranscriptionBlock extends HTMLElement {
         })
         eventDispatcher.on('tpen-transcription-next-line', () => {
             this.checkDirtyLines()
-        })
-        // Listen for prev/next page navigation events
-        eventDispatcher.on('tpen-transcription-prev-page', () => {
-            this.navigateToPage('prev')
-        })
-        eventDispatcher.on('tpen-transcription-next-page', () => {
-            this.navigateToPage('next')
         })
 
         // External control events
