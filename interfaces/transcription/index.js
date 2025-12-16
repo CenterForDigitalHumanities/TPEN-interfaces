@@ -518,7 +518,21 @@ export default class TranscriptionInterface extends HTMLElement {
     const { orderedItems, columnsInPage } = orderPageItemsByColumns(projectPage, this.#page)
     this.#page.items = orderedItems
     let thisLine = this.#page.items?.[0]
-    if (!thisLine) return
+    
+    // Handle pages with no lines - still load the canvas
+    if (!thisLine) {
+      // Get canvas from page target even when there are no lines
+      const { canvasID } = this.setCanvasAndSelector(null, this.#page)
+      if (!canvasID) return
+      const canvas = this.#canvas = await vault.get(canvasID, 'canvas')
+      // Show full page when there are no lines
+      const regionValue = `0,0,${canvas?.width ?? 'full'},${(canvas?.height && canvas?.height / 10) ?? 120}`
+      topImage.canvas = canvasID
+      bottomImage.canvas = canvas
+      topImage.setAttribute('region', regionValue)
+      return
+    }
+    
     if (!(thisLine?.body)) thisLine = await vault.get(thisLine, 'annotation', true)
     const { canvasID, region } = this.setCanvasAndSelector(thisLine, this.#page)
     const canvas = this.#canvas = await vault.get(canvasID, 'canvas')
