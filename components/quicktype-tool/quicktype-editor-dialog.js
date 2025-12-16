@@ -732,7 +732,7 @@ class QuickTypeEditorDialog extends HTMLElement {
 
     getQuicktypeItemMarkup(item, index, isNewlyAdded) {
         const evaluation = evaluateEntry(item)
-        const safeItem = escapeHTML(item)
+        const safeItem = escapeHtml(item)
         const shortcut = this.generateShortcut(index)
         const invalidClass = evaluation.valid ? '' : ' invalid'
         const ariaInvalid = evaluation.valid ? '' : ' aria-invalid="true"'
