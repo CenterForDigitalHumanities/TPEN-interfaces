@@ -128,8 +128,8 @@ button:hover {
     color: var(--darkest);
 }
 h1.banner {
-    background-color: var(--white);
-    color: var(--accent);
+    background-color: transparent;
+    color: var(--primary-color);
     border-radius: .125em;
     text-align: center;
     padding: .125em;

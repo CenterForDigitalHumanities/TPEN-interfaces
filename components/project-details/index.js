@@ -93,7 +93,9 @@ class ProjectDetails extends HTMLElement {
         const collaboratorCount = Object.keys(project.collaborators).length
 
         TPEN.screen.title = project.label ?? project.title ?? project.name
-        TPEN.eventDispatcher.dispatch('tpen-gui-title', TPEN.screen.title)
+        const isManagePage = window.location.pathname.includes('/project/manage')
+        const displayTitle = isManagePage ? `Manage Project "${TPEN.screen.title}"` : TPEN.screen.title
+        TPEN.eventDispatcher.dispatch('tpen-gui-title', displayTitle)
         const isReadAccess = await CheckPermissions.checkViewAccess('PROJECT')
         const isProjectEditor = await CheckPermissions.checkEditAccess('PROJECT', 'METADATA')
         const editTitle = isProjectEditor ? `<a id="edit-project-title" href="#">✏️</a>` : ``
