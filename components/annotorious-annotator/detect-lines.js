@@ -21,6 +21,11 @@ export function removeOutlierLines(lines, toleranceRatio = 1.5) {
   return lines.filter((_, i) => validIndices.has(i))
 }
 
+/**
+ * Validates that a column element is a properly formatted array with numeric start and end values.
+ * @param {*} col - The column element to validate
+ * @returns {boolean} True if the column is an array with at least 2 numeric elements
+ */
 function isValidColumn(col) {
   return Array.isArray(col) && col.length >= 2 && 
          typeof col[0] === 'number' && typeof col[1] === 'number'
