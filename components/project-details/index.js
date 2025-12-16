@@ -93,7 +93,7 @@ class ProjectDetails extends HTMLElement {
         const collaboratorCount = Object.keys(project.collaborators).length
 
         TPEN.screen.title = project.label ?? project.title ?? project.name
-        const isManagePage = window.location.pathname.includes('/project/manage')
+        const isManagePage = window.location.pathname === '/project/manage' || window.location.pathname.startsWith('/project/manage/')
         const displayTitle = isManagePage ? `Manage Project "${TPEN.screen.title}"` : TPEN.screen.title
         TPEN.eventDispatcher.dispatch('tpen-gui-title', displayTitle)
         const isReadAccess = await CheckPermissions.checkViewAccess('PROJECT')
