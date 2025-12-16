@@ -12,7 +12,7 @@ export default class ProjectHeader extends HTMLElement {
         const style = document.createElement('style')
         style.textContent = `
             * { padding: 0; margin: 0; }
-            nav { display: flex; justify-content: space-between; align-items: center; padding: 5px 10px; background: rgb(166, 65, 41); margin-bottom: 5px; }
+            nav { display: flex; justify-content: space-between; align-items: center; padding: 4px 10px; background: rgb(166, 65, 41); margin-bottom: 0; }
             .labels { width: 40%; display: flex; align-items: center; gap: 10px; }
             .nav-icon { width: 20px; cursor: pointer; }
             .nav-icon img { width: 100%; }
