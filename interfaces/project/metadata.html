@@ -58,6 +58,9 @@ permalink: /project/metadata
         (async () => {
             const divMetadata = document.querySelector('.tpen-metadata')
             const permissionMsg = document.querySelector('.permission-msg')
+            if (!divMetadata) {
+                return
+            }
             const scope = divMetadata.getAttribute('tpen-scope')
             if (!scope) {
                 return
