@@ -164,6 +164,10 @@ class AnnotoriousAnnotator extends HTMLElement {
           cursor: pointer;
           width: 100%;
           margin-top: 1em;
+          display: block;
+          text-align: center;
+          text-decoration: none;
+          border: none;
         }
         #saveBtn[disabled], #createColumnsBtn[disabled], #deleteAllBtn[disabled] {
           background-color: gray;
@@ -269,7 +273,7 @@ class AnnotoriousAnnotator extends HTMLElement {
            <input type="checkbox" id="seeTool" checked> 
           </label>
           <input id="deleteAllBtn" type="button" value="Delete All Annotations"/>
-          <input id="createColumnsBtn" type="button" value="Manage Columns"/>
+          <a id="createColumnsBtn" href="#">Manage Columns</a>
           <input id="saveBtn" type="button" value="Save Annotations"/>
         </div>
         <button id="autoParseBtn">Auto Parse</button>

@@ -133,12 +133,10 @@ class ProjectImporter extends HTMLElement {
     const projectTitle = document.createElement('span')
     projectTitle.textContent = project.label
 
-    const manageButton = document.createElement('button')
+    const manageButton = document.createElement('a')
     manageButton.className = 'manage-btn'
     manageButton.textContent = 'Manage'
-    manageButton.onclick = () => {
-      window.location.href = `${TPEN.BASEURL}/project/manage?projectID=${project._id}`
-    }
+    manageButton.href = `${TPEN.BASEURL}/project/manage?projectID=${project._id}`
 
     projectInfo.appendChild(projectTitle)
     projectInfo.appendChild(manageButton)

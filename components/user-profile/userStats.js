@@ -473,7 +473,9 @@ class UserStats extends HTMLElement {
                     <div class="collaborators">
                         ${collaborators.map(c => `
                             <div class="collaborator">
-                                <img src="${c.img}" alt="${c.name}" onclick="window.location.href='${TPEN.BASEURL}/public-profile?userId=${c._id}'">
+                                <a href="${TPEN.BASEURL}/public-profile?userId=${c._id}">
+                                    <img src="${c.img}" alt="${c.name}">
+                                </a>
                                 <div class="collaborator-name">${c.name}</div>
                             </div>
                         `).join('')}
