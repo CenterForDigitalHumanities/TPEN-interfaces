@@ -7,6 +7,7 @@ import '../../components/line-image/index.js'
 import CheckPermissions from "../../components/check-permissions/checkPermissions.js"
 import { orderPageItemsByColumns } from "../../utilities/columnOrdering.js"
 import { renderPermissionError } from "../../utilities/renderPermissionError.js"
+import '../../components/gui/alert/AlertContainer.js'
 export default class TranscriptionInterface extends HTMLElement {
   #page
   #canvas
@@ -419,6 +420,49 @@ export default class TranscriptionInterface extends HTMLElement {
     })
   }
 
+  showNoLinesAlert() {
+    const alertContainer = document.querySelector('tpen-alert-container')
+    if (!alertContainer) return
+    
+    const projectId = encodeURIComponent(TPEN.screen?.projectInQuery ?? '')
+    const pageId = encodeURIComponent(TPEN.screen?.pageInQuery ?? '')
+    const annotatorUrl = `/interfaces/annotator?projectID=${projectId}&pageID=${pageId}`
+    
+    const alertElem = document.createElement('tpen-alert')
+    alertElem.innerHTML = `
+      <style>
+        .no-lines-message p:first-child {
+          margin-bottom: 1em;
+        }
+        .alert-link {
+          color: var(--primary-color, #4fc3f7);
+          text-decoration: underline;
+        }
+      </style>
+      <div class="no-lines-message">
+        <p>This page has no line annotations defined.</p>
+        <p>To add lines, visit the <a href="${annotatorUrl}" class="alert-link">column and line interface</a>.</p>
+      </div>
+      <div class="button-container">
+        <button id="no-lines-ok">Got it</button>
+      </div>
+    `
+    
+    alertElem.querySelector('#no-lines-ok').addEventListener('click', () => {
+      alertElem.dismiss()
+    })
+    
+    if (typeof alertContainer.addCustomAlert === 'function') {
+      alertContainer.addCustomAlert(alertElem)
+    } else {
+      const screenLockingSection = alertContainer.shadowRoot.querySelector('.alert-area')
+      if (screenLockingSection) {
+        screenLockingSection.appendChild(alertElem)
+        alertElem.show()
+      }
+    }
+  }
+
   updateLines() {
     if (TPEN.activeLineIndex < 0 || !this.#page) return
     const topImage = this.shadowRoot.querySelector('#topImage')
@@ -518,7 +562,23 @@ export default class TranscriptionInterface extends HTMLElement {
     const { orderedItems, columnsInPage } = orderPageItemsByColumns(projectPage, this.#page)
     this.#page.items = orderedItems
     let thisLine = this.#page.items?.[0]
-    if (!thisLine) return
+    
+    // Handle pages with no lines - still load the canvas
+    if (!thisLine) {
+      // Get canvas from page target even when there are no lines
+      const { canvasID } = this.setCanvasAndSelector(null, this.#page)
+      if (!canvasID) return
+      const canvas = this.#canvas = await vault.get(canvasID, 'canvas')
+      // Show full page when there are no lines
+      const regionValue = `0,0,${canvas?.width ?? 'full'},${(canvas?.height && canvas?.height / 10) ?? 120}`
+      topImage.canvas = canvasID
+      bottomImage.canvas = canvas
+      topImage.setAttribute('region', regionValue)
+      // Show alert to inform user about missing lines
+      this.showNoLinesAlert()
+      return
+    }
+    
     if (!(thisLine?.body)) thisLine = await vault.get(thisLine, 'annotation', true)
     const { canvasID, region } = this.setCanvasAndSelector(thisLine, this.#page)
     const canvas = this.#canvas = await vault.get(canvasID, 'canvas')

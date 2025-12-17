@@ -86,6 +86,10 @@ class AlertContainer extends HTMLElement {
                 transition: all 0.3s ease-in-out;
                 font-size: 14pt;
             }
+                tpen-alert a {
+                    color: var(--primary-color);
+                    text-decoration: underline;
+                }
             .alert-area tpen-alert {
                 top: 0px;
                 right: 0px;
