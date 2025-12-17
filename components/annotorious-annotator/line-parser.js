@@ -273,7 +273,7 @@ class AnnotoriousAnnotator extends HTMLElement {
            <input type="checkbox" id="seeTool" checked> 
           </label>
           <input id="deleteAllBtn" type="button" value="Delete All Annotations"/>
-          <a id="createColumnsBtn" href="#" style="display: inline-block; padding: 4px 8px; background: #f0f0f0; border: 1px solid #ccc; text-decoration: none; color: #000; cursor: pointer; border-radius: 3px;">Manage Columns</a>
+          <a id="createColumnsBtn" href="#">Manage Columns</a>
           <input id="saveBtn" type="button" value="Save Annotations"/>
         </div>
         <button id="autoParseBtn">Auto Parse</button>
@@ -354,7 +354,9 @@ class AnnotoriousAnnotator extends HTMLElement {
     editTool.addEventListener("change", (e) => this.toggleEditingMode(e))
     eraseTool.addEventListener("change", (e) => this.toggleErasingMode(e))
     seeTool.addEventListener("change", (e) => this.toggleAnnotationVisibility(e))
-    createColumnsBtn.href = `../../components/create-column/?projectID=${TPEN.activeProject._id}&pageID=${this.#annotationPageID}`
+    createColumnsBtn.addEventListener("click", () =>
+      window.location.href = `../../components/create-column/?projectID=${TPEN.activeProject._id}&pageID=${this.#annotationPageID}`
+    )
     saveButton.addEventListener("click", (e) => {
       this.#annotoriousInstance.cancelSelected()
       // Timeout required in order to allow the unfocus native functionality to complete for $isDirty.

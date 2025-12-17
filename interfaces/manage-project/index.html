@@ -23,39 +23,39 @@ permalink: /project/manage
                 <tpen-project-details></tpen-project-details>
                 <div class="action-links">
                     <tpen-can tpen-view="*_SELECTOR_LINE"> 
-                        <a id="goParse" title="Go Parse Lines" class="left"><img src="../../assets/icons/parse-lines.svg"/>
+                        <a id="goParse" title="Go Parse Lines" class="left"><img src="../../assets/icons/parse-lines.svg" alt="icon"/>
                             <span>Parse Lines</span>
                         </a>
                     </tpen-can>
                     <tpen-can tpen-view="READ_TEXT_LINE"> 
                         <a id="goTranscribe" title="Go Transcribe" class="right">
                             <span>Transcribe Text</span>
-                            <img src="../../assets/icons/transcribe.png"/>
+                            <img src="../../assets/icons/transcribe.png" alt="icon"/>
                         </a>
                     </tpen-can>
                 </div>
             </div>
-            <a id="leave-project-btn" slot="footer" class="default-btn" href="#">LEAVE PROJECT</a>
+            <a id="leave-project-btn" slot="footer" class="default-btn" href="#" role="button">LEAVE PROJECT</a>
         </tpen-card>
         <tpen-card tpen-scope="metadata">
             <h2 slot="header">Metadata</h2>
             <tpen-project-metadata slot="body"></tpen-project-metadata>
-            <a id="update-metadata-btn" slot="footer" class="default-btn" href="#">EDIT METADATA</a>
+            <a id="update-metadata-btn" slot="footer" class="default-btn" href="#" role="button">EDIT METADATA</a>
         </tpen-card>
         <tpen-card tpen-entity="member">
             <h2 slot="header">Collaborators</h2>
             <project-collaborators slot="body"></project-collaborators>
-            <a id="manage-collaboration-btn" slot="footer" class="default-btn" href="#">MANAGE COLLABORATORS</a>
+            <a id="manage-collaboration-btn" slot="footer" class="default-btn" href="#" role="button">MANAGE COLLABORATORS</a>
         </tpen-card>
         <tpen-card tpen-entity="layer">
             <h2 slot="header">Layers & Pages</h2>
             <tpen-project-layers slot="body"></tpen-project-layers>
-            <a id="manage-layers-btn" slot="footer" class="default-btn" href="#">SEE DETAILS / MODIFY</a>
+            <a id="manage-layers-btn" slot="footer" class="default-btn" href="#" role="button">SEE DETAILS / MODIFY</a>
         </tpen-card>
         <tpen-card tpen-entity="role">
             <h2 slot="header">Project Roles</h2>
             <tpen-project-permissions slot="body"></tpen-project-permissions>
-            <a id="manage-custom-role-btn" slot="footer" class="default-btn" href="#">MANAGE ROLE</a>
+            <a id="manage-custom-role-btn" slot="footer" class="default-btn" href="#" role="button">MANAGE ROLE</a>
         </tpen-card>
         <tpen-card tpen-scope="options">
             <h2 slot="header">Project Options</h2>
@@ -64,7 +64,7 @@ permalink: /project/manage
                     Default Transcription Interface: /transcribe
                 </div>
             </tpen-project-options>
-            <a id="manage-project-options-btn" slot="footer" class="default-btn" href="#">SEE DETAILS</a>
+            <a id="manage-project-options-btn" slot="footer" class="default-btn" href="#" role="button">SEE DETAILS</a>
         </tpen-card>
         <tpen-card tpen-entity="tools">
             <h2 slot="header">Tools</h2>

@@ -134,7 +134,7 @@ class ProjectImporter extends HTMLElement {
     projectTitle.textContent = project.label
 
     const manageButton = document.createElement('a')
-    manageButton.style.cssText = 'display: inline-block; padding: 6px 12px; background: linear-gradient(to bottom, #a8d2e4, #d0f0ff); border: 1px solid #69acc9; text-decoration: none; color: #000; cursor: pointer; border-radius: 3px; margin-top: 5px;'
+    manageButton.className = 'manage-btn'
     manageButton.textContent = 'Manage'
     manageButton.href = `${TPEN.BASEURL}/project/manage?projectID=${project._id}`
 
