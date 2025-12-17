@@ -441,7 +441,7 @@ export default class TranscriptionInterface extends HTMLElement {
       </style>
       <div class="no-lines-message">
         <p>This page has no line annotations defined.</p>
-        <p>To add lines, visit the <a href="${annotatorUrl}" class="alert-link">annotation interface</a>.</p>
+        <p>To add lines, visit the <a href="${annotatorUrl}" class="alert-link">column and line interface</a>.</p>
       </div>
       <div class="button-container">
         <button id="no-lines-ok">Got it</button>
