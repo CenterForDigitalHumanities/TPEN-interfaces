@@ -424,62 +424,34 @@ export default class TranscriptionInterface extends HTMLElement {
     const alertContainer = document.querySelector('tpen-alert-container')
     if (!alertContainer) return
     
-    // Build URL with proper encoding
     const projectId = encodeURIComponent(TPEN.screen?.projectInQuery ?? '')
     const pageId = encodeURIComponent(TPEN.screen?.pageInQuery ?? '')
-    const annotatorUrl = `/interfaces/annotator?projectId=${projectId}&pageId=${pageId}`
+    const annotatorUrl = `/interfaces/annotator?projectID=${projectId}&pageID=${pageId}`
     
     const alertElem = document.createElement('tpen-alert')
-    
-    // Add styles for the alert content
-    const style = document.createElement('style')
-    style.textContent = `
-      .no-lines-message p:first-child {
-        margin-bottom: 1em;
-      }
-      .alert-link {
-        color: #4fc3f7;
-        text-decoration: underline;
-      }
+    alertElem.innerHTML = `
+      <style>
+        .no-lines-message p:first-child {
+          margin-bottom: 1em;
+        }
+        .alert-link {
+          color: var(--primary-color, #4fc3f7);
+          text-decoration: underline;
+        }
+      </style>
+      <div class="no-lines-message">
+        <p>This page has no line annotations defined.</p>
+        <p>To add lines, visit the <a href="${annotatorUrl}" class="alert-link">annotation interface</a>.</p>
+      </div>
+      <div class="button-container">
+        <button id="no-lines-ok">Got it</button>
+      </div>
     `
-    alertElem.shadowRoot.appendChild(style)
     
-    // Create message with proper DOM elements
-    const messageContainer = document.createElement('div')
-    messageContainer.classList.add('no-lines-message')
-    
-    const paragraph1 = document.createElement('p')
-    paragraph1.textContent = 'This page has no line annotations defined.'
-    
-    const paragraph2 = document.createElement('p')
-    paragraph2.textContent = 'To add lines, visit the '
-    
-    const link = document.createElement('a')
-    link.href = annotatorUrl
-    link.textContent = 'annotation interface'
-    link.classList.add('alert-link')
-    
-    paragraph2.appendChild(link)
-    paragraph2.appendChild(document.createTextNode('.'))
-    
-    messageContainer.appendChild(paragraph1)
-    messageContainer.appendChild(paragraph2)
-    
-    const okButton = document.createElement('button')
-    const buttonContainer = document.createElement('div')
-    buttonContainer.classList.add("button-container")
-    okButton.textContent = 'Got it'
-    
-    const handleOk = () => {
+    alertElem.querySelector('#no-lines-ok').addEventListener('click', () => {
       alertElem.dismiss()
-    }
-    okButton.addEventListener('click', handleOk)
+    })
     
-    alertElem.appendChild(messageContainer)
-    buttonContainer.appendChild(okButton)
-    alertElem.appendChild(buttonContainer)
-    
-    // Use the container's method if available, otherwise access shadow DOM
     if (typeof alertContainer.addCustomAlert === 'function') {
       alertContainer.addCustomAlert(alertElem)
     } else {
