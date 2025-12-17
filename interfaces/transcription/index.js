@@ -426,7 +426,7 @@ export default class TranscriptionInterface extends HTMLElement {
     
     const projectId = encodeURIComponent(TPEN.screen?.projectInQuery ?? '')
     const pageId = encodeURIComponent(TPEN.screen?.pageInQuery ?? '')
-    const annotatorUrl = `/interfaces/annotator?projectID=${projectId}&pageID=${pageId}`
+    const annotatorUrl = `/annotator?projectID=${projectId}&pageID=${pageId}`
     
     const alertElem = document.createElement('tpen-alert')
     alertElem.innerHTML = `

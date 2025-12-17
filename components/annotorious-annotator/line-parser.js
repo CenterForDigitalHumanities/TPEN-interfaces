@@ -100,14 +100,14 @@ class AnnotoriousAnnotator extends HTMLElement {
           background-position: center;
         }
         #tools-container {
-          background-color: lightgray;
+          background-color: var(--light-gray);
           position: absolute;
           top: 40px;
           left: 5px;
           z-index: 10;
           padding: 0px 5px 5px 5px;
           width: 390px;
-          border: 2px solid darkgray;
+          border: 2px solid var(--gray);
           border-radius: 5px;
           display: none;
         }
@@ -168,6 +168,7 @@ class AnnotoriousAnnotator extends HTMLElement {
           text-align: center;
           text-decoration: none;
           border: none;
+          box-sizing: border-box;
         }
         #saveBtn[disabled], #createColumnsBtn[disabled], #deleteAllBtn[disabled] {
           background-color: gray;
