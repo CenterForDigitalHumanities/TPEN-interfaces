@@ -47,7 +47,7 @@ class ProjectOptions extends HTMLElement {
         const userId = getUserFromToken(TPEN.getAuthorization())
         if (!userId) return false
         // Check if user is in the collaborators list
-        return project.collaborators && project.collaborators.hasOwnProperty(userId)
+        return project.collaborators && userId in project.collaborators
     }
 
     renderPermissionError() {
@@ -223,7 +223,7 @@ class ProjectCustomization extends HTMLElement {
         const userId = getUserFromToken(TPEN.getAuthorization())
         if (!userId) return false
         // Check if user is in the collaborators list
-        return project.collaborators && project.collaborators.hasOwnProperty(userId)
+        return project.collaborators && userId in project.collaborators
     }
 
     renderPermissionError() {
