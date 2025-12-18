@@ -258,7 +258,7 @@ class ProjectCustomization extends HTMLElement {
     getEditUrl(interfaceName, projectId) {
         // Map interface names to their edit pages
         const editPages = {
-            'quicktype': `/interfaces/quicktype?projectID=${projectId}`,
+            'quicktype': `/manage/quicktype?projectID=${projectId}`,
             'navigation': `/interfaces/navigation?projectID=${projectId}`
         }
         return editPages[interfaceName] || null

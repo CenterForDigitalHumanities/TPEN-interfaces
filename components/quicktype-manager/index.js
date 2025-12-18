@@ -349,7 +349,9 @@ class QuickTypeManager extends HTMLElement {
                 // Listen for save from dialog
                 const handler = (event) => {
                     this._shortcuts = event.detail.quicktype
-                    this.saveShortcuts()
+                    this._savedShortcuts = [...this._shortcuts]
+                    this.render()
+                    this.setupEventListeners()
                     TPEN.eventDispatcher.off('quicktype-editor-saved', handler)
                 }
                 TPEN.eventDispatcher.on('quicktype-editor-saved', handler)

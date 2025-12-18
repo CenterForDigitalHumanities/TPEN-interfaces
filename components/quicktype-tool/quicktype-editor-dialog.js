@@ -120,18 +120,19 @@ class QuickTypeEditorDialog extends HTMLElement {
             return
         }
 
+        if (this._quicktype.includes(value)) {
+            eventDispatcher.dispatch("tpen-toast", {
+                message: "This entry already exists.",
+                status: "error"
+            })
+            return
+        }
+
         const evaluation = evaluateEntry(value)
 
         if (!evaluation.valid) {
             eventDispatcher.dispatch("tpen-toast", {
-                message: `Shortcut added but needs attention: ${evaluation.reason}`,
-                status: "warning"
-            })
-        }
-
-        if (this._quicktype.includes(value)) {
-            eventDispatcher.dispatch("tpen-toast", {
-                message: "This entry already exists.",
+                message: evaluation.reason,
                 status: "error"
             })
             return
