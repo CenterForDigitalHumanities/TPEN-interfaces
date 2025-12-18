@@ -3,6 +3,8 @@ import '/components/gui/card/Card.js'
 import '/components/project-details/index.js'
 import '/components/project-tools/index.js'
 import { stringFromDate, escapeHtml } from '/js/utils.js'
+import { renderPermissionError } from '../../utilities/renderPermissionError.js'
+import { getUserFromToken } from '../iiif-tools/index.js'
 import vault from '../../js/vault.js'
 
 class ProjectOptions extends HTMLElement {
@@ -13,12 +15,12 @@ class ProjectOptions extends HTMLElement {
           Loading...
     `
         TPEN.eventDispatcher.on('tpen-project-loaded', (ev) => {
-            this.render()
-            this.updateActionLink()
+            this.authgate(ev.detail)
         })
     }
 
     connectedCallback() {
+        TPEN.attachAuthentication(this)
         if (!TPEN.screen.projectInQuery) {
             TPEN.getUserProjects(TPEN.getAuthorization())
             TPEN.eventDispatcher.on('tpen-user-projects-loaded', (ev) => {
@@ -26,7 +28,30 @@ class ProjectOptions extends HTMLElement {
                     Project.getById(TPEN.userProjects?.[0]?._id)
                 })
             })
+        } else if (TPEN.activeProject?._createdAt) {
+            this.authgate(TPEN.activeProject)
         }
+    }
+
+    authgate(project) {
+        if (!this.checkUserIsCollaborator(project)) {
+            this.renderPermissionError()
+            return
+        }
+        this.render()
+        this.updateActionLink()
+    }
+
+    checkUserIsCollaborator(project) {
+        if (!project) return false
+        const userId = getUserFromToken(TPEN.getAuthorization())
+        if (!userId) return false
+        // Check if user is in the collaborators list
+        return project.collaborators && project.collaborators.hasOwnProperty(userId)
+    }
+
+    renderPermissionError() {
+        renderPermissionError(this.shadowRoot, TPEN.screen?.projectInQuery ?? '')
     }
 
     getNavigationUrl(type, project) {
@@ -174,11 +199,36 @@ class ProjectCustomization extends HTMLElement {
           Loading...
     `
         TPEN.eventDispatcher.on('tpen-project-loaded', (ev) => {
-            this.render()
+            this.authgate(ev.detail)
         })
     }
 
-    connectedCallback() { }
+    connectedCallback() {
+        TPEN.attachAuthentication(this)
+        if (TPEN.activeProject?._createdAt) {
+            this.authgate(TPEN.activeProject)
+        }
+    }
+
+    authgate(project) {
+        if (!this.checkUserIsCollaborator(project)) {
+            this.renderPermissionError()
+            return
+        }
+        this.render()
+    }
+
+    checkUserIsCollaborator(project) {
+        if (!project) return false
+        const userId = getUserFromToken(TPEN.getAuthorization())
+        if (!userId) return false
+        // Check if user is in the collaborators list
+        return project.collaborators && project.collaborators.hasOwnProperty(userId)
+    }
+
+    renderPermissionError() {
+        renderPermissionError(this.shadowRoot, TPEN.screen?.projectInQuery ?? '')
+    }
 
     render() {
         const project = TPEN.activeProject
