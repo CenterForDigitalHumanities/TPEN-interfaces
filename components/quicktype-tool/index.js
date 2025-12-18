@@ -128,6 +128,7 @@ class QuickTypeTool extends HTMLElement {
                 display: flex;
                 opacity: 1;
                 max-height: 500px;
+                overflow-y: auto;
                 transform: translateY(0);
             }
 

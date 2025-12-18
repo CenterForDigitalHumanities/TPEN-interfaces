@@ -44,7 +44,7 @@ export function evaluateEntry(value) {
         const pairedMatch = trimmed.match(pairedPattern)
 
         if (!selfClosingMatch && !pairedMatch) {
-            return { valid: false, reason: "HTML must include a full opening and closing tag or be self-closing." }
+            return { valid: false, reason: "Invalid HTML tag. Tag names must start with a letter and contain only letters, numbers, underscores, or hyphens." }
         }
 
         const tagName = (selfClosingMatch ? selfClosingMatch[1] : pairedMatch[1]).toLowerCase()
