@@ -1,5 +1,6 @@
 import TPEN from '../../api/TPEN.js'
 import { checkIfUrlExists } from '../../utilities/checkIfUrlExists.js'
+import CheckPermissions from '../../components/check-permissions/checkPermissions.js'
 
 customElements.define('tpen-project-export', class extends HTMLElement {
     constructor() {
@@ -13,6 +14,13 @@ customElements.define('tpen-project-export', class extends HTMLElement {
     }
 
     async render() {
+        // Check if user has view permission
+        const hasViewAccess = await CheckPermissions.checkViewAccess('PROJECT', 'METADATA')
+        if (!hasViewAccess) {
+            this.shadowRoot.innerHTML = `<p>You don't have permission to view project export</p>`
+            return
+        }
+        
         const url = `${TPEN.staticURL}/${TPEN.activeProject._id}/manifest.json`
         const response = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/deploymentStatus`, {
             method: 'GET',

@@ -1,4 +1,5 @@
 import TPEN from "../../api/TPEN.js"
+import CheckPermissions from "../../components/check-permissions/checkPermissions.js"
 
 class ManagePages extends HTMLElement {
 
@@ -7,8 +8,16 @@ class ManagePages extends HTMLElement {
         this.attachShadow({ mode: "open" })
     }
 
-    connectedCallback() {
+    async connectedCallback() {
         TPEN.attachAuthentication(this)
+        
+        // Check if user has view permission
+        const hasViewAccess = await CheckPermissions.checkViewAccess('PAGE', 'METADATA')
+        if (!hasViewAccess) {
+            this.shadowRoot.innerHTML = `<p>You don't have permission to view pages</p>`
+            return
+        }
+        
         if (TPEN.activeProject?._id) {
             this.render()
         }
@@ -99,6 +108,15 @@ class ManagePages extends HTMLElement {
         const pages = layers?.pages
         this.shadowRoot.querySelectorAll(".manage-pages").forEach((button) => {
             button.addEventListener("click", async () => {
+                // Check if user has edit permission for pages
+                const hasEditAccess = await CheckPermissions.checkEditAccess('PAGE', 'METADATA')
+                if (!hasEditAccess) {
+                    TPEN.eventDispatcher.dispatch("tpen-toast", {
+                        status: "error",
+                        message: "You don't have permission to manage pages"
+                    })
+                    return
+                }
                 const buttonParent = button.getRootNode().host
                 const mainParent= buttonParent.getRootNode().host
                 const layerIndex = buttonParent.getAttribute("data-index")
@@ -174,7 +192,15 @@ class ManagePages extends HTMLElement {
                     deleteButton.innerText = "Delete Page"
                     editPageLabelButton.after(deleteButton)
 
-                    editPageLabelButton.addEventListener("click", () => {
+                    editPageLabelButton.addEventListener("click", async () => {
+                        const hasUpdateAccess = await CheckPermissions.checkEditAccess('PAGE', 'METADATA')
+                        if (!hasUpdateAccess) {
+                            TPEN.eventDispatcher.dispatch("tpen-toast", {
+                                status: "error",
+                                message: "You don't have permission to edit page labels"
+                            })
+                            return
+                        }
                         labelDiv.classList.add("hidden")
                         editPageLabelButton.classList.add("hidden")
                         const labelInput = document.createElement("input")
@@ -227,7 +253,15 @@ class ManagePages extends HTMLElement {
                         })
                     })
 
-                    deleteButton.addEventListener("click", () => {
+                    deleteButton.addEventListener("click", async () => {
+                        const hasDeleteAccess = await CheckPermissions.checkDeleteAccess('PAGE')
+                        if (!hasDeleteAccess) {
+                            TPEN.eventDispatcher.dispatch("tpen-toast", {
+                                status: "error",
+                                message: "You don't have permission to delete pages"
+                            })
+                            return
+                        }
                         if (!confirm("This Page will be removed from this layer and deleted.  This action cannot be undone.")) return
                         layerCardOuter.querySelector(".layer-pages").removeChild(el)
                         layers[layerIndex].pages.splice(el.dataset.index, 1)
@@ -255,7 +289,15 @@ class ManagePages extends HTMLElement {
                 layerActions.insertBefore(saveButton, layerActions.firstChild)
                 layerActions.removeChild(layerCardOuter.querySelector("tpen-manage-pages"))
 
-                editLayerLabelButton.addEventListener("click", () => {
+                editLayerLabelButton.addEventListener("click", async () => {
+                    const hasUpdateAccess = await CheckPermissions.checkEditAccess('LAYER', 'METADATA')
+                    if (!hasUpdateAccess) {
+                        TPEN.eventDispatcher.dispatch("tpen-toast", {
+                            status: "error",
+                            message: "You don't have permission to edit layer labels"
+                        })
+                        return
+                    }
                     labelDiv.querySelector(".layer-label").classList.add("hidden")
                     editLayerLabelButton.classList.add("hidden")
                     const labelInput = document.createElement("input")
@@ -313,7 +355,15 @@ class ManagePages extends HTMLElement {
                     })
                 })
 
-                saveButton.addEventListener("click", () => {
+                saveButton.addEventListener("click", async () => {
+                    const hasUpdateAccess = await CheckPermissions.checkEditAccess('PAGE', 'ORDER')
+                    if (!hasUpdateAccess) {
+                        TPEN.eventDispatcher.dispatch("tpen-toast", {
+                            status: "error",
+                            message: "You don't have permission to reorder pages"
+                        })
+                        return
+                    }
                     if (!layerCardOuter.querySelector(".layer-pages")?.$isDirty) {
                         TPEN.eventDispatcher.dispatch("tpen-toast", {"status":"info", "message":"No Changes to Save"})
                         return

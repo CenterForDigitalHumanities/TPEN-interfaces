@@ -1,5 +1,6 @@
 import TPEN from "../../api/TPEN.js"
 import "../../components/manage-pages/index.js"
+import CheckPermissions from "../../components/check-permissions/checkPermissions.js"
 
 class ProjectLayers extends HTMLElement {
 
@@ -9,8 +10,16 @@ class ProjectLayers extends HTMLElement {
         
     }
 
-    connectedCallback() {
+    async connectedCallback() {
         TPEN.attachAuthentication(this)
+        
+        // Check if user has view permission
+        const hasViewAccess = await CheckPermissions.checkViewAccess('LAYER', 'METADATA')
+        if (!hasViewAccess) {
+            this.shadowRoot.innerHTML = `<p>You don't have permission to view layers</p>`
+            return
+        }
+        
         if (TPEN.activeProject?._id) {
             this.render()
         }
@@ -195,7 +204,15 @@ class ProjectLayers extends HTMLElement {
             </div>
         `
         this.shadowRoot.querySelectorAll(".delete-layer").forEach((button) => {
-            button.addEventListener("click", (event) => {
+            button.addEventListener("click", async (event) => {
+                const hasDeleteAccess = await CheckPermissions.checkDeleteAccess('LAYER')
+                if (!hasDeleteAccess) {
+                    TPEN.eventDispatcher.dispatch("tpen-toast", {
+                        status: "error",
+                        message: "You don't have permission to delete layers"
+                    })
+                    return
+                }
                 if (!confirm("This Layer will be deleted and the Pages will no longer be a part of this project.  This action cannot be undone.")) return
                 const url = event.target.getAttribute("data-layer-id")
                 const layerId = url.substring(url.lastIndexOf("/") + 1)
@@ -217,7 +234,15 @@ class ProjectLayers extends HTMLElement {
             })
         })
 
-        this.shadowRoot.querySelector(".add-layer").addEventListener("click", () => {
+        this.shadowRoot.querySelector(".add-layer").addEventListener("click", async () => {
+            const hasCreateAccess = await CheckPermissions.checkCreateAccess('LAYER')
+            if (!hasCreateAccess) {
+                TPEN.eventDispatcher.dispatch("tpen-toast", {
+                    status: "error",
+                    message: "You don't have permission to create layers"
+                })
+                return
+            }
             const canvases = []
             layers.map(layer => (layer.pages).map(page => {
                 if (!canvases.includes(page.target) && page.target) {

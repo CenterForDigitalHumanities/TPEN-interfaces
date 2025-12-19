@@ -1,4 +1,5 @@
 import TPEN from "../../api/TPEN.js"
+import CheckPermissions from "../../components/check-permissions/checkPermissions.js"
 
 class ProjectLayers extends HTMLElement {
     constructor() {
@@ -11,7 +12,14 @@ class ProjectLayers extends HTMLElement {
         TPEN.eventDispatcher.on('tpen-project-loaded', () => this.render())
     }
 
-    render() {
+    async render() {
+        // Check if user has view permission
+        const hasViewAccess = await CheckPermissions.checkViewAccess('LAYER', 'METADATA')
+        if (!hasViewAccess) {
+            this.shadowRoot.innerHTML = `<p>You don't have permission to view layers</p>`
+            return
+        }
+        
         const layers = TPEN.activeProject.layers
         this.shadowRoot.innerHTML = `
             <style>
