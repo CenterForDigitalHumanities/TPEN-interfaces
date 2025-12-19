@@ -4,6 +4,10 @@
     box-sizing: border-box;
 }
 
+tpen-card {
+    grid-column: span 2;
+}
+
 project-collaborators::part(group-title) {
     background-color: var(--white);
     padding: 10px;
