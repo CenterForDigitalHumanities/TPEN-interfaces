@@ -1,0 +1,35 @@
+---
+title: Manage Collaborators
+permalink: /project/manage/collaborators
+---
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Manage Collaborators</title>
+    <script type="module" src="/components/gui/site/index.js" defer></script>
+    <script type="module" src="/components/gui/card/Card.js" defer></script>
+    <script type="module" src="/components/member-invitation/index.js" defer></script>
+    <script type="module" src="/components/project-collaborators/index.js" defer></script>
+    <script type="module" src="/components/roles-handler/index.js" defer></script>
+    <script type="module" src="/components/feedback-button/index.js" defer></script>
+    <link rel="stylesheet" href="/css/collaborators/index.css">
+    <link href="/components/gui/site/index.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+    <tpen-page class="grid">
+        <tpen-card>
+            <h2 slot="header">Manage Collaborators</h2>
+            <div slot="body">
+                <project-collaborators></project-collaborators>
+                <roles-handler></roles-handler>
+                <invite-member></invite-member>
+            </div>
+        </tpen-card>
+    </tpen-page>
+    <tpen-feedback-button></tpen-feedback-button>
+</body>
+</html>
