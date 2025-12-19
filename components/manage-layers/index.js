@@ -107,7 +107,7 @@ class ProjectLayers extends HTMLElement {
                     width: 20%;
                 }
                 .delete-layer:hover {
-                    background: #c82333;
+                    filter: brightness(0.85);
                 }
                 .manage-pages {
                     background: var(--interface-primary);
@@ -123,7 +123,7 @@ class ProjectLayers extends HTMLElement {
                     width: 20%;
                 }
                 .add-layer:hover {
-                    background: #1e7e34;
+                    filter: brightness(0.85);
                 }
                 .edit-pages {
                     background: var(--warning-color);
