@@ -8,6 +8,11 @@ class EventDispatcher extends EventTarget {
         this.addEventListener(event, listener)
     }
 
+    // Method to add a one-time event listener that auto-removes after first execution
+    one(event, listener) {
+        this.addEventListener(event, listener, { once: true })
+    }
+
     // Method to remove an event listener
     off(event, listener) {
         this.removeEventListener(event, listener)
@@ -21,4 +26,4 @@ class EventDispatcher extends EventTarget {
 
 // Export a shared instance of EventDispatcher
 const eventDispatcher = new EventDispatcher()
-export { eventDispatcher }
+export { eventDispatcher, EventDispatcher }
