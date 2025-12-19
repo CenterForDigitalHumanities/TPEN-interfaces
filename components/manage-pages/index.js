@@ -254,7 +254,7 @@ class ManagePages extends HTMLElement {
                     })
 
                     deleteButton.addEventListener("click", async () => {
-                        const hasDeleteAccess = await CheckPermissions.checkDeleteAccess('PAGE')
+                        const hasDeleteAccess = await CheckPermissions.checkDeleteAccess('PAGE', '*')
                         if (!hasDeleteAccess) {
                             TPEN.eventDispatcher.dispatch("tpen-toast", {
                                 status: "error",

@@ -14,7 +14,7 @@ class ProjectPermissions extends HTMLElement {
 
     async render() {
         // Check if user has view permission
-        const hasViewAccess = await CheckPermissions.checkViewAccess('PERMISSION')
+        const hasViewAccess = await CheckPermissions.checkViewAccess('PERMISSION', '*')
         if (!hasViewAccess) {
             this.shadowRoot.innerHTML = `<p>You don't have permission to view project permissions</p>`
             return
