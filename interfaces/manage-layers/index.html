@@ -1,0 +1,35 @@
+---
+title: Manage Layers and Pages
+permalink: /project/manage/layers
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Layers and Pages</title>
+    <script type="module" src="../../components/gui/site/index.js"></script>
+    <script type="module" src="../../components/gui/card/Card.js"></script>
+    <script type="module" src="../../components/manage-layers/index.js"></script>
+    <script type="module" src="../../components/manage-pages/index.js"></script>
+    <script type="module" src="/components/check-permissions/permission-match-element.js"></script>
+    <script src="/components/explanatory-guide/fixedGuideComponent.js" type="module"></script>
+    <link rel="stylesheet" href="../../interfaces/manage-layers/index.css">
+</head>
+<body>
+    <tpen-page>
+        <tpen-fixed-explanatory-guide heading="Manage Layers and Pages">
+            <li>TODO: Re-order layers by dragging and dropping to swap positions.</li>
+            <li>CANDO: Re-order the Pages of a Layer by dragging and dropping to swap positions.</li>
+            <li>You can also change the label of any page or layer. Click 'manage pages' on a layer to start.</li>
+        </tpen-fixed-explanatory-guide>
+        <tpen-card>
+            <h2 slot="header">Layers and Pages</h2>
+            <div slot="body">
+                <tpen-manage-layers></tpen-manage-layers>
+            </div>
+        </tpen-card>
+    </tpen-page>
+</body>
+</html>
