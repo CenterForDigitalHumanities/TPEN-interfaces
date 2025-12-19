@@ -1,6 +1,7 @@
 import TPEN from "../../api/TPEN.js"
 import User from "../../api/User.js"
 import { eventDispatcher } from "../../api/events.js"
+import CheckPermissions from "../../components/check-permissions/checkPermissions.js"
 
 class UpdateMetadata extends HTMLElement {
     constructor() {
@@ -12,7 +13,14 @@ class UpdateMetadata extends HTMLElement {
         return ['tpen-user-id']
     }
 
-    connectedCallback() {
+    async connectedCallback() {
+        // Check if user has view permission
+        const hasViewAccess = await CheckPermissions.checkViewAccess('PROJECT', 'METADATA')
+        if (!hasViewAccess) {
+            this.shadowRoot.innerHTML = `<p>You don't have permission to view project metadata</p>`
+            return
+        }
+        
         this.addEventListener()
         TPEN.attachAuthentication(this)
     }
@@ -177,6 +185,15 @@ class UpdateMetadata extends HTMLElement {
     }
 
     async updateMetadata() {
+        // Check if user has edit permission
+        const hasEditAccess = await CheckPermissions.checkEditAccess('PROJECT', 'METADATA')
+        if (!hasEditAccess) {
+            return TPEN.eventDispatcher.dispatch("tpen-toast", {
+                status: "error",
+                message: "You don't have permission to update project metadata"
+            })
+        }
+        
         const fields = document.querySelectorAll(".metadata-field")
         const updatedMetadata = []
 

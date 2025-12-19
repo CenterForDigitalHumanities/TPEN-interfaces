@@ -1,4 +1,5 @@
 import TPEN from "../../api/TPEN.js"
+import CheckPermissions from "../../components/check-permissions/checkPermissions.js"
 
 class ProjectMetadata extends HTMLElement {
     constructor() {
@@ -68,7 +69,15 @@ class ProjectMetadata extends HTMLElement {
         TPEN.eventDispatcher.on("tpen-project-loaded", () => this.loadMetadata(TPEN.activeProject))
     }
 
-    loadMetadata(project) {
+    async loadMetadata(project) {
+        // Check if user has view permission
+        const hasViewAccess = await CheckPermissions.checkViewAccess('PROJECT', 'METADATA')
+        if (!hasViewAccess) {
+            const projectMetadata = this.shadowRoot.querySelector(".metadata")
+            projectMetadata.innerHTML = `<p>You don't have permission to view project metadata</p>`
+            return
+        }
+        
         let projectMetada = this.shadowRoot.querySelector(".metadata")
         const metadata = project.metadata 
         projectMetada.innerHTML = ""
