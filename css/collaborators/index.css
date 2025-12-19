@@ -4,90 +4,8 @@
     box-sizing: border-box;
 }
 
-body {
-    font-family: Arial, sans-serif;
-    background: #69ACC9 url(https://t-pen.org/TPEN/images/tpen_badgeEmergeClear.png) bottom right no-repeat fixed;
-    color: #333;
-    margin: 0;
-    padding: 0;
-    width: 100%;
-}
-
-.tagline {
-    text-align: center;
-    font-size: 1.25rem;
-    color: black;
-    margin: 0 auto;
-    margin-top: 20px;
-    width: 70%;
-}
-
-.manage-interface {
-    width: 70%;
-    margin: 10px auto;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 15px;
-    background-color: #ffebb9;
-    border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-
-.title h1 {
-    font-size: 2rem;
-    margin: 0;
-    color: #b14628;
-    text-align: center;
-}
-
-.title p {
-    font-size: 1.025rem;
-    color: #555;
-    text-align: center;
-    margin-top: 10px;
-}
-
-#content{
-    width: 100%;
-    border-radius: 8px;
-    padding: 20px;
-}
-
-.collaborators-container .member {
-    width: 100%;
-}      
-
-.default-btn.return-btn {
-    background: none;
-    background-color: #69acc9;
-    color: white;
-    padding: 12px 25px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 50%;
-    margin: auto;
-}
-
-.default-btn.return-btn .btn-icon {
-    margin-left: 10px;
-}
-
-.default-btn.return-btn:hover {
-    background-color: #0056b3;
-}
-
-.return-btn {
-    position: relative;
-}
-
 project-collaborators::part(group-title) {
-    background-color: white;
+    background-color: var(--white);
     padding: 10px;
     border-radius: 5px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
@@ -95,20 +13,20 @@ project-collaborators::part(group-title) {
 
 project-collaborators::part(project-title-h1) {
     font-size: 1.75rem;
-    color: #333;
+    color: var(--text-primary);
     margin: 0;
 }
 
 project-collaborators::part(project-title) {
     font-weight: bold;
-    color: #007BFF;
+    color: var(--primary-color);
 }
 
 project-collaborators::part(group-members-title) {
     font-size: 20px;
     margin: 20px 0;
     font-weight: 500;
-    color : #b14628;
+    color: var(--accent);
     padding: 0 20px;
 }
 
@@ -120,7 +38,7 @@ project-collaborators::part(group-members) {
 }
 
 project-collaborators::part(member) {
-    background-color: #f9f9f9;
+    background-color: var(--light-gray);
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     margin: auto;
     margin-bottom: 10px;
@@ -134,7 +52,7 @@ project-collaborators::part(member) {
 
 project-collaborators::part(member-info) {
     font-size: 1rem;
-    color: #333;
+    color: var(--text-primary);
     display: flex;
     justify-content: flex-start;
     align-items: center;
@@ -143,7 +61,7 @@ project-collaborators::part(member-info) {
 
 project-collaborators::part(role) {
     font-weight: bold;
-    color: #555;
+    color: var(--text-secondary);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -151,44 +69,44 @@ project-collaborators::part(role) {
 }
 
 project-collaborators::part(leader) {
-    color: white;
+    color: var(--white);
     padding: 5px;
-    background-color: #28a745;
+    background-color: var(--success-color);
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    border: 1px solid #28a745;
+    border: 1px solid var(--success-color);
     border-radius: 5px;
 }
 
 project-collaborators::part(owner) {
-    color: white;
+    color: var(--white);
     padding: 5px;
-    background-color: #007BFF;
+    background-color: var(--primary-color);
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    border: 1px solid #007BFF;
+    border: 1px solid var(--primary-color);
     border-radius: 5px;
 }
 
 project-collaborators::part(default-roles) {
-    color: white;
+    color: var(--white);
     padding: 5px;
-    background-color: #6c757d;
+    background-color: var(--gray);
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    border: 1px solid #6c757d;
+    border: 1px solid var(--gray);
     border-radius: 5px;
 }
 
 project-collaborators::part(custom-role) {
-    color: white;
+    color: var(--white);
     padding: 5px;
-    background-color: #6c757d;
+    background-color: var(--gray);
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    border: 1px solid #6c757d;
+    border: 1px solid var(--gray);
     border-radius: 5px;
 }
 
 project-collaborators::part(manage-roles-button) {
-    background-color: #007BFF;
-    color: white;
+    background-color: var(--primary-color);
+    color: var(--white);
     border: none;
     padding: 8px 15px;
     border-radius: 4px;
@@ -199,7 +117,7 @@ project-collaborators::part(manage-roles-button) {
 }
 
 project-collaborators::part(manage-roles-button:hover) {
-    background-color: #0056b3;
+    background-color: var(--primary-light);
 } 
 
 project-collaborators::part(role-management-buttons){
@@ -210,60 +128,60 @@ project-collaborators::part(role-management-buttons){
 }
 
 project-collaborators::part(transfer-ownership-button){
-    background-color: #28a745;
+    background-color: var(--success-color);
     padding: 8px;
     font-size: 0.875rem;
-    color: white;
+    color: var(--white);
     border: none;
     border-radius: 4px;
     cursor: pointer;
 }
 
 project-collaborators::part(make-leader-button){
-    background-color: #007BFF;
+    background-color: var(--primary-color);
     padding: 8px;
     font-size: 0.875rem;
-    color: white;
+    color: var(--white);
     border: none;
     border-radius: 4px;
     cursor: pointer;
 }
 
 project-collaborators::part(demote-leader-button){
-    background-color: #17a2b8;
+    background-color: var(--primary-light);
     padding: 8px;
     font-size: 0.875rem;
-    color: white;
+    color: var(--white);
     border: none;
     border-radius: 4px;
     cursor: pointer;
 }
 
 project-collaborators::part(set-to-viewer-button){
-    background-color:#0056b3;
+    background-color: var(--interface-primary);
     padding: 8px;
     font-size: 0.875rem;
-    color: white;
+    color: var(--white);
     border: none;
     border-radius: 4px;
     cursor: pointer;
 }
 
 project-collaborators::part(set-role-button){
-    background-color: #6c757d;
+    background-color: var(--gray);
     padding: 8px;
     font-size: 0.875rem;
-    color: white;
+    color: var(--white);
     border: none;
     border-radius: 4px;
     cursor: pointer;
 }
 
 project-collaborators::part(remove-button){
-    background-color: #dc3545;
+    background-color: var(--error-color);
     padding: 8px;
     font-size: 0.875rem;
-    color: white;
+    color: var(--white);
     border: none;
     border-radius: 4px;
     cursor: pointer;
@@ -272,26 +190,24 @@ project-collaborators::part(remove-button){
 
 invite-member::part(invite-section-container) {
     padding: 20px;
-    /* background-color: #ffebb9; */
     border-radius: 5px;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: flex-start;
     margin: 0 auto;
-    /* box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); */
 }
 
 invite-member::part(title) {
     font-size: 20px;
     margin: 10px 0 20px;
     font-weight: 500;
-    color : #b14628;
+    color: var(--accent);
 }
 
 invite-member::part(description) {
     font-size: 0.875rem;
-    color: #333;
+    color: var(--text-primary);
 }
 
 invite-member::part(invite-form) {
@@ -304,13 +220,13 @@ invite-member::part(invite-form) {
 
 invite-member::part(email-label) {
     font-size: 0.9rem;
-    color: black;
+    color: var(--text-primary);
 }
 
 invite-member::part(email-input) {
     padding: 8px;
     font-size: 1rem;
-    border: 1px solid #ccc;
+    border: 1px solid var(--gray);
     border-radius: 4px;
     width: 30%;
 }
@@ -318,27 +234,27 @@ invite-member::part(email-input) {
 invite-member::part(submit-button) {
     padding: 10px 15px;
     font-size: 1rem;
-    background-color: #69acc9;
-    color: white;
+    background-color: var(--primary-color);
+    color: var(--white);
     border: none;
     border-radius: 4px;
     cursor: pointer;
 }
 
 invite-member::part(submit-button):hover {
-    background-color: #0056b3;
+    background-color: var(--primary-light);
 }
 
 invite-member::part(error-message) {
-    color: red;
+    color: var(--error-color);
     font-size: 0.875rem;
     display: none;
 }
 
 invite-member::part(error) {
-    color: white;
+    color: var(--white);
     font-size: 0.9rem;
-    background-color: #f87563;
+    background-color: var(--error-color);
     border-radius: 5px;
     margin: auto;
     margin-bottom: 10px;
@@ -347,7 +263,7 @@ invite-member::part(error) {
 }
 
 roles-handler::part(modal-content) {
-    background: #fff;
+    background: var(--white);
     padding: 20px;
     border-radius: 8px;
     max-width: 500px;
@@ -362,8 +278,8 @@ roles-handler::part(modal-actions) {
 }
 
 roles-handler::part(modal-buttons-confirm) {
-    background-color: #28a745;
-    color: white;
+    background-color: var(--success-color);
+    color: var(--white);
     padding: 10px 20px;
     border: none;
     border-radius: 4px;
@@ -371,8 +287,8 @@ roles-handler::part(modal-buttons-confirm) {
 }
 
 roles-handler::part(modal-buttons-cancel) {
-    background-color: #dc3545;
-    color: white;
+    background-color: var(--error-color);
+    color: var(--white);
     padding: 10px 20px;
     border: none;
     border-radius: 4px;
