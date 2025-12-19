@@ -10,11 +10,7 @@ class EventDispatcher extends EventTarget {
 
     // Method to add a one-time event listener that auto-removes after first execution
     one(event, listener) {
-        const onceListener = (e) => {
-            listener(e)
-            this.removeEventListener(event, onceListener)
-        }
-        this.addEventListener(event, onceListener)
+        this.addEventListener(event, listener, { once: true })
     }
 
     // Method to remove an event listener

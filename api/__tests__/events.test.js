@@ -130,6 +130,21 @@ describe("EventDispatcher", () => {
             assert.equal(onCount, 3)
             assert.equal(oneCount, 1)
         })
+
+        it("should allow removing a one-time listener with off() before it fires", () => {
+            const dispatcher = new EventDispatcher()
+            let count = 0
+            
+            const listener = () => {
+                count++
+            }
+            
+            dispatcher.one('test-event', listener)
+            dispatcher.off('test-event', listener)
+            
+            dispatcher.dispatch('test-event')
+            assert.equal(count, 0)
+        })
     })
 
     describe("off()", () => {
