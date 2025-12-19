@@ -236,10 +236,14 @@ class TpenManageColumns extends HTMLElement {
     }
 
     async columnLabelCheck() {
+        const AUTO_COLUMN_PREFIX = "Column "
+        const AUTO_LABEL_ID_LENGTH = 24
         this.originalColumnLabels = this.existingColumns.map(col => col.label)
         this.existingColumns = this.existingColumns.map((col, index) => {
             const { label } = col
-            const isAutoLabel = label.startsWith("Column ") && /^[a-f\d]{24}$/i.test(label.slice(7))
+            const idPart = label.slice(AUTO_COLUMN_PREFIX.length)
+            const isAutoLabel = label.startsWith(AUTO_COLUMN_PREFIX) && 
+                               new RegExp(`^[a-f\\d]{${AUTO_LABEL_ID_LENGTH}}$`, 'i').test(idPart)
             return {
                 ...col,
                 label: isAutoLabel ? `Unnamed ${index + 1}` : label
@@ -340,7 +344,7 @@ class TpenManageColumns extends HTMLElement {
         input.classList.add('merge-column-input')
         workspaceToolbar.appendChild(input)
 
-        columnLabels.forEach(label => {
+        columnLabels.forEach((label, labelIndex) => {
             const btn = document.createElement('button')
             btn.classList.add('merge-label-btn')
             btn.textContent = label
@@ -352,12 +356,12 @@ class TpenManageColumns extends HTMLElement {
                     btn.dataset.selected = 'true'
                     btn.style.backgroundColor = 'var(--white)'
                     btn.style.color = 'var(--primary-color)'
-                    columnLabelsToMerge.push(columnLabels.indexOf(label) !== -1 ? columnLabels.indexOf(label) : '')
+                    columnLabelsToMerge.push(labelIndex)
                 } else {
                     delete btn.dataset.selected
                     btn.style.backgroundColor = 'var(--primary-color)'
                     btn.style.color = 'var(--white)'
-                    const index = columnLabelsToMerge.indexOf(columnLabels.indexOf(label))
+                    const index = columnLabelsToMerge.indexOf(labelIndex)
                     if (index > -1) {
                         columnLabelsToMerge.splice(index, 1)
                     }
@@ -433,7 +437,7 @@ class TpenManageColumns extends HTMLElement {
             return
         }
 
-        columnLabels.forEach(label => {
+        columnLabels.forEach((label, labelIndex) => {
             const btn = document.createElement('button')
             btn.classList.add('extend-label-btn')
             btn.textContent = label
@@ -448,7 +452,7 @@ class TpenManageColumns extends HTMLElement {
                     btn.style.color = 'var(--white)'
                 }
                 else {
-                    columnToExtend = columnLabels.indexOf(label) !== -1 ? columnLabels.indexOf(label) : ''
+                    columnToExtend = labelIndex
                     Array.from(workspaceToolbar.querySelectorAll('.extend-label-btn')).forEach(otherBtn => {
                         if (otherBtn !== btn) {
                             delete otherBtn.dataset.selected
@@ -684,7 +688,7 @@ class TpenManageColumns extends HTMLElement {
             localStorage.setItem('annotationsState', JSON.stringify({ remainingIDs, selectedIDs }))
         } catch (e) {
             // localStorage may be unavailable (e.g., private mode, quota exceeded)
-            console.warn('Could not save annotationsState to localStorage:', e)
+            // Silent fail as this is just a convenience feature
         }
     }
 
