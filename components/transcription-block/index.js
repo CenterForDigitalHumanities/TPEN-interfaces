@@ -77,7 +77,7 @@ export default class TranscriptionBlock extends HTMLElement {
         this.#page = await vault.get(pageID, 'annotationpage', true)
         const projectPage = TPEN.activeProject.layers.flatMap(layer => layer.pages || []).find(p => p.id.split('/').pop() === pageID.split('/').pop())
         if (!this.#page || !projectPage) return
-        
+
         const { orderedItems } = orderPageItemsByColumns(projectPage, this.#page)
         this.#page.items = orderedItems
         this.#transcriptions = await this.processTranscriptions(this.#page.items)
@@ -292,8 +292,8 @@ export default class TranscriptionBlock extends HTMLElement {
         // Wait until project and page are loaded
         if (!this.#storageKey || !TPEN.activeProject || !this.#page?.items) return
         let stored = localStorage.getItem(this.#storageKey) ?? '{}'
-        try { stored = JSON.parse(stored) } catch (err) { 
-            console.error(`Failed to parse drafts from localStorage key "${this.#storageKey}":`, err); 
+        try { stored = JSON.parse(stored) } catch (err) {
+            console.error(`Failed to parse drafts from localStorage key "${this.#storageKey}":`, err)
             stored = {}
         }
         if (typeof stored !== 'object' || Object.keys(stored).length === 0) return
@@ -337,7 +337,7 @@ export default class TranscriptionBlock extends HTMLElement {
     removeDraft(index) {
         if (!this.#storageKey) return
         let stored = localStorage.getItem(this.#storageKey) ?? '{}'
-        try { stored = JSON.parse(stored)} catch { stored = {} }
+        try { stored = JSON.parse(stored) } catch { stored = {} }
         if (stored && stored[index]) {
             delete stored[index]
             try { localStorage.setItem(this.#storageKey, JSON.stringify(stored)) } catch { /* ignore */ }
@@ -459,13 +459,13 @@ export default class TranscriptionBlock extends HTMLElement {
             inputElem.setSelectionRange?.(inputElem.value.length, inputElem.value.length)
         }
         // Swap Prev/Prev Page button if on first line
-        let prevAction = TPEN.activeLineIndex === 0 ? ['add','remove'] : ['remove','add']
+        let prevAction = TPEN.activeLineIndex === 0 ? ['add', 'remove'] : ['remove', 'add']
         let prevBtn = this.shadowRoot?.querySelector('.prev-button')
         let prevPageBtn = this.shadowRoot?.querySelector('.prev-page-button')
         prevBtn.classList[prevAction[0]]('hidden')
         prevPageBtn.classList[prevAction[1]]('hidden')
         // Swap Next/Next Page button if on last line
-        let nextAction = TPEN.activeLineIndex === this.#transcriptions.length - 1 ? ['add','remove'] : ['remove','add']
+        let nextAction = TPEN.activeLineIndex === this.#transcriptions.length - 1 ? ['add', 'remove'] : ['remove', 'add']
         let nextBtn = this.shadowRoot?.querySelector('.next-button')
         let nextPageBtn = this.shadowRoot?.querySelector('.next-page-button')
         nextBtn.classList[nextAction[0]]('hidden')
