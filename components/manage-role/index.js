@@ -32,7 +32,7 @@ class ManageRole extends HTMLElement {
                 h3 {
                     margin-bottom: 20px;
                     font-size: 24px;
-                    color: #333;
+                    color: var(--text-primary);
                     margin-left: 10px;
                 }
 
@@ -44,7 +44,7 @@ class ManageRole extends HTMLElement {
 
                 .abc {
                     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                    background-color: #fff;
+                    background-color: var(--white);
                     padding: 2rem;
                     border-radius: 12px;
                     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -56,7 +56,7 @@ class ManageRole extends HTMLElement {
 
                 .tpen-project-manage-permissions {
                     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                    background-color: #fff;
+                    background-color: var(--white);
                     padding: 2rem;
                     border-radius: 12px;
                     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -79,7 +79,7 @@ class ManageRole extends HTMLElement {
 
                 .text-input::placeholder {
                     font-size: 15px;
-                    color: #999;
+                    color: var(--text-muted);
                     font-style: italic;
                 }
 
@@ -90,7 +90,7 @@ class ManageRole extends HTMLElement {
 
                 .text-input {
                     padding: 0.5rem;
-                    border: 1px solid #ccc;
+                    border: 1px solid var(--light-gray);
                     border-radius: 6px;
                     width: 100%;
                     font-size: 1rem;
@@ -108,12 +108,12 @@ class ManageRole extends HTMLElement {
 
                 .radio-btn {
                     padding: 0.2rem 0.5rem;
-                    border: 0.2px solid #ccc;
+                    border: 0.2px solid var(--light-gray);
                     border-radius: 8px;
                     cursor: pointer;
                     transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
                     font-size: 15px;
-                    background-color: #fff;
+                    background-color: var(--white);
                     color: var(--primary-color);
                     user-select: none;
                     box-shadow: 0 2px 7px rgba(0, 0, 0, 0.1);
@@ -121,7 +121,7 @@ class ManageRole extends HTMLElement {
 
                 .radio-permission:checked + .radio-btn {
                     background-color: var(--primary-color);
-                    color: #fff;
+                    color: var(--white);
                     border-color: var(--primary-color);
                 }
 
@@ -130,14 +130,14 @@ class ManageRole extends HTMLElement {
                     border: none;
                     border-radius: 8px;
                     background-color: var(--primary-color);
-                    color: #fff;
+                    color: var(--white);
                     cursor: pointer;
                     transition: background-color 0.3s ease;
                     font-size: 1rem;
                 }
 
                 .role-btn:disabled {
-                    background-color: #a5b4fc;
+                    background-color: var(--gray);
                     cursor: not-allowed;
                 }
 
@@ -154,8 +154,8 @@ class ManageRole extends HTMLElement {
 
                 #permissions {
                     padding: 1rem;
-                    background-color: #f9fafb;
-                    border: 1px solid #e5e7eb;
+                    background-color: var(--light-color);
+                    border: 1px solid var(--light-gray);
                     border-radius: 6px;
                     font-size: 0.9rem;
                     margin: 1rem 0;
@@ -212,8 +212,8 @@ class ManageRole extends HTMLElement {
                 }
                 
                 .remove-field-btn {
-                    background-color: #ff4d4d;
-                    color: white;
+                    background-color: var(--error-color);
+                    color: var(--white);
                     border: none;
                     cursor: pointer;
                     border-radius: 4px;
@@ -226,7 +226,7 @@ class ManageRole extends HTMLElement {
                 }
 
                 .remove-field-btn:hover {
-                    background-color: #ff1a1a;
+                    background-color: var(--accent);
                 }
 
                 .icon {

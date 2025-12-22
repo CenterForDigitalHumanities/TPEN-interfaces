@@ -70,6 +70,6 @@ async function render() {
     
     const manageCustomRoleBtn = document.getElementById("manage-custom-role-btn")
     if (manageCustomRoleBtn) {
-        manageCustomRoleBtn.href = `/components/manage-role/index.html?projectID=${TPEN.screen.projectInQuery}`
+        manageCustomRoleBtn.href = `/role/manage?projectID=${TPEN.screen.projectInQuery}`
     }
 }
