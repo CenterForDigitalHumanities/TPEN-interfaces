@@ -37,11 +37,11 @@ class ManagePages extends HTMLElement {
                     margin: 0 auto;
                 }
                 .layer-card, .layer-card-outer {
-                    background: #fff;
+                    background: var(--white);
                     border-radius: 8px;
                     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
                     padding: 15px;
-                    border-left: 5px solid #007bff;
+                    border-left: 5px solid var(--interface-primary);
                     cursor: move;
                     user-select: none;
                     margin: 0 auto;
@@ -51,7 +51,7 @@ class ManagePages extends HTMLElement {
                 .label-input {
                     width: 70%;
                     padding: 5px;
-                    border: 1px solid #ccc;
+                    border: 1px solid var(--gray);
                     border-radius: 4px;
                 }
                 .layer-page {
@@ -83,20 +83,20 @@ class ManagePages extends HTMLElement {
                     cursor: default;
                 }
                 .manage-pages {
-                    background: #007bff;
-                    color: white;
+                    background: var(--interface-primary);
+                    color: var(--white);
                     width: 100%;
                 }
                 .manage-pages:hover {
-                    background: #0069d9;
+                    background: var(--interface-primary-hover);
                 }
                 .edit-pages {
-                    background: #ffc107;
-                    color: white;
+                    background: var(--warning-color);
+                    color: var(--white);
                 }
                 .save-label {
-                    background: #007bff;
-                    color: white;
+                    background: var(--interface-primary);
+                    color: var(--white);
                 }
                 .hidden {
                     display: none;
@@ -173,7 +173,7 @@ class ManagePages extends HTMLElement {
                                 el.style.borderLeft = "none"
                             }
                             else{
-                                el.style.borderLeft = "5px solid #007bff"
+                                el.style.borderLeft = "5px solid var(--interface-primary)"
                             }
                         })
                     })
@@ -403,7 +403,7 @@ class ManagePages extends HTMLElement {
                                     // Set the current element's new index property
                                     el.dataset.index = i
                                 }
-                                el.style.borderLeft = "5px solid #007bff"
+                                el.style.borderLeft = "5px solid var(--interface-primary)"
                             })
                             layerCardOuter.querySelectorAll("button").forEach(button => button.removeAttribute("disabled"))
                             saveButton.innerText = "Save Pages"

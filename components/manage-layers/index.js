@@ -34,7 +34,7 @@ class ProjectLayers extends HTMLElement {
                     text-align: center;
                     margin: 10px 0;
                     font-size: 20px;
-                    color: #007bff;
+                    color: var(--interface-primary);
                     font-weight: bold;
                     text-transform: uppercase;
                     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
@@ -50,11 +50,11 @@ class ProjectLayers extends HTMLElement {
                     margin: 0 auto;
                 }
                 .layer-card, .layer-card-outer {
-                    background: #fff;
+                    background: var(--white);
                     border-radius: 8px;
                     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
                     padding: 15px;
-                    border-left: 5px solid #007bff;
+                    border-left: 5px solid var(--interface-primary);
                     cursor: move;
                     user-select: none;
                     margin: 0 auto;
@@ -64,7 +64,7 @@ class ProjectLayers extends HTMLElement {
                 .label-input {
                     width: 70%;
                     padding: 5px;
-                    border: 1px solid #ccc;
+                    border: 1px solid var(--gray);
                     border-radius: 4px;
                 }
                 .layer-page {
@@ -89,7 +89,7 @@ class ProjectLayers extends HTMLElement {
                 .layer-div input {
                     width: 70%;
                     padding: 5px;
-                    border: 1px solid #ccc;
+                    border: 1px solid var(--gray);
                     border-radius: 4px;
                 }
                 .layer-label-div {
@@ -111,36 +111,36 @@ class ProjectLayers extends HTMLElement {
                     cursor: default;
                 }
                 .delete-layer {
-                    background: #dc3545;
-                    color: white;
+                    background: var(--error-color);
+                    color: var(--white);
                     width: 20%;
                 }
                 .delete-layer:hover {
-                    background: #c82333;
+                    filter: brightness(0.85);
                 }
                 .manage-pages {
-                    background: #007bff;
-                    color: white;
+                    background: var(--interface-primary);
+                    color: var(--white);
                     width: 20%;
                 }
                 .manage-pages:hover {
-                    background: #0069d9;
+                    background: var(--interface-primary-hover);
                 }
                 .add-layer {
-                    background: #28a745;
-                    color: white;
+                    background: var(--success-color);
+                    color: var(--white);
                     width: 20%;
                 }
                 .add-layer:hover {
-                    background: #1e7e34;
+                    filter: brightness(0.85);
                 }
                 .edit-pages {
-                    background: #ffc107;
-                    color: white;
+                    background: var(--warning-color);
+                    color: var(--white);
                 }
                 .save-label {
-                    background: #007bff;
-                    color: white;
+                    background: var(--interface-primary);
+                    color: var(--white);
                 }
                 .page-id {
                     margin: 0 auto;
@@ -153,8 +153,8 @@ class ProjectLayers extends HTMLElement {
                 }
                 .delete-page {
                     margin-top: 0;
-                    background: #dc3545;
-                    color: white;
+                    background: var(--error-color);
+                    color: var(--white);
                 }
                 .layer-actions-margin {
                     margin-top: 20px;

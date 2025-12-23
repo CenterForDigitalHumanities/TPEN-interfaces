@@ -29,7 +29,7 @@ TPEN.eventDispatcher.on('tpen-project-loaded', () => {
     
     const manageLayersBtn = document.getElementById('manage-layers-btn')
     if (manageLayersBtn) {
-        manageLayersBtn.href = `/components/manage-layers/index.html?projectID=${projectID}`
+        manageLayersBtn.href = `/project/manage/layers?projectID=${projectID}`
     }
     
     const manageProjectOptionsBtn = document.getElementById('manage-project-options-btn')
