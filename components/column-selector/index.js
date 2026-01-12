@@ -179,8 +179,17 @@ export default class ColumnSelector extends HTMLElement {
         if (selected === "unordered-lines") {
             const firstId = this.remainingUnorderedLines[0]
             const idx = this.#page.items.findIndex(i => i.id === firstId)
-            const thisLine = this.#page.items[idx]
-            await this.applyLineSelection(thisLine)
+            if (idx !== -1) {
+                // Dispatch event for transcription interface to handle
+                eventDispatcher.dispatch("tpen-column-selected", {
+                    lineIndex: idx,
+                    columnId: selected,
+                    lineId: firstId
+                })
+                // Legacy support for old transcription interface
+                const thisLine = this.#page.items[idx]
+                await this.applyLineSelection(thisLine)
+            }
             return
         }
 
@@ -191,6 +200,14 @@ export default class ColumnSelector extends HTMLElement {
         const index = this.#page.items.findIndex(i => i.id === firstId)
         if (index === -1) return
 
+        // Dispatch event for transcription interface to handle
+        eventDispatcher.dispatch("tpen-column-selected", {
+            lineIndex: index,
+            columnId: selected,
+            lineId: firstId
+        })
+        
+        // Legacy support for old transcription interface
         const thisLine = this.#page.items[index]
         await this.applyLineSelection(thisLine)
     }

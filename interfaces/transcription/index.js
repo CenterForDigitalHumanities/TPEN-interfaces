@@ -248,6 +248,14 @@ export default class TranscriptionInterface extends HTMLElement {
     TPEN.eventDispatcher.on('tpen-layer-changed', (layerData) => {
       this.updateLines()
     })
+    
+    // Listen for column selection changes
+    TPEN.eventDispatcher.on('tpen-column-selected', (columnData) => {
+      if (typeof columnData.lineIndex === 'number') {
+        TPEN.activeLineIndex = columnData.lineIndex
+        this.updateLines()
+      }
+    })
   }
 
   checkMagnifierVisibility() {

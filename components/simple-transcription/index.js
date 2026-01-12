@@ -366,6 +366,14 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       TPEN.activeLineIndex = 0
       this.updateLines()
     })
+    
+    // Listen for column selection changes
+    TPEN.eventDispatcher.on('tpen-column-selected', (columnData) => {
+      if (typeof columnData.lineIndex === 'number') {
+        TPEN.activeLineIndex = columnData.lineIndex
+        this.updateLines()
+      }
+    })
   }
 
   toggleSplitscreen() {
