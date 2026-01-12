@@ -88,13 +88,13 @@ export default class LayerSelector extends HTMLElement {
             const selectedURI = e.target.value
             const selectedLayer = this.layers.find((layer) => layer.URI === selectedURI)
             if (selectedLayer) {
-                // Update TPEN.activeLayer and dispatch the change event.
+                // Dispatch layer change event for transcription interfaces to consume
+                eventDispatcher.dispatch("tpen-layer-changed", {
+                    layer: selectedLayer,
+                    layerURI: selectedLayer["@id"],
+                })
+                // Also update TPEN.activeLayer for backward compatibility
                 TPEN.activeLayer = selectedLayer
-                eventDispatcher.dispatch(new CustomEvent("tpen-active-layer", {
-                    detail: selectedLayer,
-                    bubbles: true,
-                    composed: true,
-                }))
             }
         })
     }

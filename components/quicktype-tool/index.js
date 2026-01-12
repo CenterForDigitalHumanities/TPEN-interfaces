@@ -56,7 +56,7 @@ class QuickTypeTool extends HTMLElement {
         this.shadowRoot.querySelectorAll('.char-button').forEach(btn => {
             btn.addEventListener('click', () => {
                 const char = btn.textContent
-                const iface = document.querySelector('tpen-transcription-interface') || document.querySelector('tpen-simple-transcription')
+                const iface = document.querySelector('[data-interface-type="transcription"]')
                 const block = iface?.shadowRoot?.querySelector('tpen-transcription-block')?.shadowRoot
                 let textAreaContent = block?.querySelector('.transcription-input')
 
@@ -310,7 +310,7 @@ class QuickTypeToolButton extends HTMLElement {
         const quicktypeBtn = this.shadowRoot.querySelector('.quicktype-btn')
 
         quicktypeBtn.addEventListener('click', () => {
-            const iface = document.querySelector('tpen-transcription-interface') || document.querySelector('tpen-simple-transcription')
+            const iface = document.querySelector('[data-interface-type="transcription"]')
             const charPanel = iface?.shadowRoot
                 ?.querySelector('tpen-workspace-tools')?.shadowRoot
                 ?.querySelector('tpen-quicktype-tool')?.shadowRoot

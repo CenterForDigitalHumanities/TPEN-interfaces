@@ -23,6 +23,7 @@ export default class TranscriptionInterface extends HTMLElement {
   }
 
   connectedCallback() {
+    this.setAttribute('data-interface-type', 'transcription')
     TPEN.attachAuthentication(this)
     if (TPEN.activeProject?._createdAt) {
       this.authgate()
@@ -242,6 +243,11 @@ export default class TranscriptionInterface extends HTMLElement {
     })
 
     TPEN.eventDispatcher.on('tools-dismiss', closeSplitscreen)
+    
+    // Listen for layer changes from layer-selector
+    TPEN.eventDispatcher.on('tpen-layer-changed', (layerData) => {
+      this.updateLines()
+    })
   }
 
   checkMagnifierVisibility() {

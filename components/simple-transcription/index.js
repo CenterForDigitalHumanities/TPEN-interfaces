@@ -5,6 +5,7 @@ import '../../components/transcription-block/index.js'
 import vault from '../../js/vault.js'
 import CheckPermissions from "../../components/check-permissions/checkPermissions.js"
 import { renderPermissionError } from "../../utilities/renderPermissionError.js"
+import { orderPageItemsByColumns } from "../../utilities/columnOrdering.js"
 
 export default class SimpleTranscriptionInterface extends HTMLElement {
   #page
@@ -26,6 +27,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
   }
 
   connectedCallback() {
+    this.setAttribute('data-interface-type', 'transcription')
     TPEN.attachAuthentication(this)
     if (TPEN.activeProject?._createdAt) {
       this.authgate()
@@ -358,6 +360,12 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     })
 
     TPEN.eventDispatcher.on('tools-dismiss', closeSplitscreen)
+    
+    // Listen for layer changes from layer-selector
+    TPEN.eventDispatcher.on('tpen-layer-changed', (layerData) => {
+      TPEN.activeLineIndex = 0
+      this.updateLines()
+    })
   }
 
   toggleSplitscreen() {
@@ -430,12 +438,22 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
 
       // Use vault.get to fetch the page properly
       const fetchedPage = await vault.get(pageID, 'annotationpage', true)
-      if (!fetchedPage) return
+      if (!fetchedPage) {
+        TPEN.eventDispatcher.dispatch("tpen-toast", {
+          message: "Failed to load page. Please try again.",
+          status: "error"
+        })
+        return
+      }
 
-      this.#page = fetchedPage
+      // Apply column ordering if project has columns
+      const projectPage = TPEN.activeProject?.layers?.flatMap(layer => layer.pages || []).find(p => p.id.split('/').pop() === pageID.split('/').pop())
+      this.#page = projectPage && fetchedPage.items?.length > 0
+        ? { ...fetchedPage, items: orderPageItemsByColumns(projectPage, fetchedPage).orderedItems }
+        : fetchedPage
 
       // Get the first line to extract canvas info
-      let firstLine = fetchedPage.items?.[0]
+      let firstLine = this.#page.items?.[0]
       if (!firstLine) return
 
       // Get the full line annotation
@@ -454,7 +472,13 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       }
 
       const fetchedCanvas = await vault.get(canvasID, 'canvas')
-      if (!fetchedCanvas) return
+      if (!fetchedCanvas) {
+        TPEN.eventDispatcher.dispatch("tpen-toast", {
+          message: "Could not load canvas. Please try again.",
+          status: "error"
+        })
+        return
+      }
 
       this.#canvas = fetchedCanvas
 
@@ -465,7 +489,13 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       // Get the image resource from the canvas
       const imageResource = fetchedCanvas.items?.[0]?.items?.[0]?.body?.id
 
-      if (!imageResource) return
+      if (!imageResource) {
+        TPEN.eventDispatcher.dispatch("tpen-toast", {
+          message: "Could not find image. Please check the canvas configuration.",
+          status: "error"
+        })
+        return
+      }
 
       // Load image to both top and bottom containers
       const imgTop = this.shadowRoot.querySelector('#imgTop img')
@@ -483,6 +513,10 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       }
     } catch (err) {
       console.error("Failed to load transcription images:", err)
+      TPEN.eventDispatcher.dispatch("tpen-toast", {
+        message: "Error loading transcription interface. Please refresh and try again.",
+        status: "error"
+      })
     }
   }
 
@@ -493,6 +527,10 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     if (!page?.items || page.items.length === 0) {
       this.#activeLine = null
       this.resetImagePositions()
+      TPEN.eventDispatcher.dispatch("tpen-toast", {
+        message: "This page has no line annotations. Visit the annotation interface to add lines.",
+        status: "info"
+      })
       return
     }
 
