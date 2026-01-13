@@ -40,6 +40,10 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     this.resizeHandler = this.handleResize.bind(this)
     window.addEventListener('resize', this.resizeHandler)
 
+    // Listen for navigation events from tools
+    this.messageHandler = this.#handleToolMessages.bind(this)
+    window.addEventListener('message', this.messageHandler)
+
     // Handle drawer opening/closing - wait for CSS transition to complete
     this.addEventListener('drawer-opening', () => {
     })
@@ -64,6 +68,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
 
   disconnectedCallback() {
     window.removeEventListener('resize', this.resizeHandler)
+    window.removeEventListener('message', this.messageHandler)
     this.#cleanupToolLineListeners()
   }
 
@@ -871,6 +876,36 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     // Fallback message for tools that don't have proper configuration
     rightPane.innerHTML = `<p>${tool.label ?? tool.custom?.tagName ?? 'Tool'} - functionality coming soon...</p>`
     this.checkMagnifierVisibility?.()
+  }
+
+  #handleToolMessages(event) {
+    // Handle incoming messages from tools
+    if (event.data?.type === "CURRENT_LINE_INDEX" && event.data.lineId) {
+      // Tool is telling us to navigate to a specific line
+      const lineIndex = this.#page?.items?.findIndex(item => item.id === event.data.lineId)
+      if (lineIndex !== undefined && lineIndex !== -1) {
+        TPEN.activeLineIndex = lineIndex
+        this.updateLines()
+      }
+    }
+
+    if (event.data?.type === "RETURN_LINE_ID" && event.data.lineId) {
+      // Tool is returning a line ID - navigate to it
+      const lineIndex = this.#page?.items?.findIndex(item => item.id === event.data.lineId)
+      if (lineIndex !== undefined && lineIndex !== -1) {
+        TPEN.activeLineIndex = lineIndex
+        this.updateLines()
+      }
+    }
+
+    if (event.data?.type === "SELECT_ANNOTATION" && event.data.lineId) {
+      // Tool is selecting an annotation - navigate to it
+      const lineIndex = this.#page?.items?.findIndex(item => item.id === event.data.lineId)
+      if (lineIndex !== undefined && lineIndex !== -1) {
+        TPEN.activeLineIndex = lineIndex
+        this.updateLines()
+      }
+    }
   }
 }
 
