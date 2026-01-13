@@ -495,7 +495,8 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       this.#imgTopOriginalWidth = fetchedCanvas.width ?? 1000
 
       // Get the image resource from the canvas
-      const imageResource = fetchedCanvas.items?.[0]?.items?.[0]?.body?.id
+      // Handle both Presentation API v3 (items) and v2 (images) formats
+      const imageResource = fetchedCanvas.items?.[0]?.items?.[0]?.body?.id ?? fetchedCanvas.images?.[0]?.resource?.id
 
       if (!imageResource) {
         TPEN.eventDispatcher.dispatch("tpen-toast", {
