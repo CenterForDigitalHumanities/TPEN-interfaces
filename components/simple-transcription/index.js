@@ -373,7 +373,8 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     })
     
     // Listen for column selection changes
-    TPEN.eventDispatcher.on('tpen-column-selected', ({detail: columnData}) => {
+    TPEN.eventDispatcher.on('tpen-column-selected', (ev) => {
+      const columnData = ev.detail
       if (typeof columnData.lineIndex === 'number') {
         TPEN.activeLineIndex = columnData.lineIndex
         this.updateLines()

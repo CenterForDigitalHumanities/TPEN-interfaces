@@ -243,19 +243,32 @@ export default class TranscriptionInterface extends HTMLElement {
     })
 
     TPEN.eventDispatcher.on('tools-dismiss', closeSplitscreen)
-    
-    // Listen for layer changes from layer-selector
-    TPEN.eventDispatcher.on('tpen-layer-changed', (layerData) => {
+
+    // Listen for layer changes from layer-selector, store handler for cleanup
+    this._layerChangeHandler = (layerData) => {
       this.updateLines()
-    })
-    
-    // Listen for column selection changes
-    TPEN.eventDispatcher.on('tpen-column-selected', (columnData) => {
-      if (typeof columnData.lineIndex === 'number') {
+    }
+    TPEN.eventDispatcher.on('tpen-layer-changed', this._layerChangeHandler)
+
+    // Listen for column selection changes, store handler for cleanup
+    this._columnSelectedHandler = (event) => {
+      const columnData = event?.detail ?? event
+      if (typeof columnData?.lineIndex === 'number') {
         TPEN.activeLineIndex = columnData.lineIndex
         this.updateLines()
       }
-    })
+    }
+    TPEN.eventDispatcher.on('tpen-column-selected', this._columnSelectedHandler)
+  }
+
+  disconnectedCallback() {
+    // Remove event dispatcher handlers to avoid leaks when element is detached
+    if (this._layerChangeHandler) {
+      TPEN.eventDispatcher.off('tpen-layer-changed', this._layerChangeHandler)
+    }
+    if (this._columnSelectedHandler) {
+      TPEN.eventDispatcher.off('tpen-column-selected', this._columnSelectedHandler)
+    }
   }
 
   checkMagnifierVisibility() {
