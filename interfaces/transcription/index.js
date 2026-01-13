@@ -20,6 +20,8 @@ export default class TranscriptionInterface extends HTMLElement {
       isSplitscreenActive: false,
       activeTool: '',
     }
+    // Track alert state to avoid repeated 'no lines' alerts per page
+    this._noLinesAlertShownForPageId = null
   }
 
   connectedCallback() {
@@ -252,7 +254,7 @@ export default class TranscriptionInterface extends HTMLElement {
 
     // Listen for column selection changes, store handler for cleanup
     this._columnSelectedHandler = (event) => {
-      const columnData = event?.detail ?? event
+      const columnData = event?.detail
       if (typeof columnData?.lineIndex === 'number') {
         TPEN.activeLineIndex = columnData.lineIndex
         this.updateLines()
@@ -341,9 +343,15 @@ export default class TranscriptionInterface extends HTMLElement {
         rightPane.innerHTML = `<${tagName}></${tagName}>`
         return
       }
+      const scriptId = `tool-script-${tool.toolName}`
+      const existingScript = document.getElementById(scriptId)
+      if (existingScript) {
+        return
+      }
       const script = document.createElement('script')
       script.type = 'module'
       script.src = tool.url
+      script.id = scriptId
       script.onload = () => {
         rightPane.innerHTML = `<${tagName}></${tagName}>`
       }
@@ -609,8 +617,12 @@ export default class TranscriptionInterface extends HTMLElement {
       topImage.canvas = canvasID
       bottomImage.canvas = canvas
       topImage.setAttribute('region', regionValue)
-      // Show alert to inform user about missing lines
-      this.showNoLinesAlert()
+      // Show alert once per page to inform user about missing lines
+      const currentPageKey = this.#page?.id ?? pageID ?? TPEN.screen?.pageInQuery
+      if (this._noLinesAlertShownForPageId !== currentPageKey) {
+        this.showNoLinesAlert()
+        this._noLinesAlertShownForPageId = currentPageKey
+      }
       return
     }
     
@@ -623,6 +635,8 @@ export default class TranscriptionInterface extends HTMLElement {
     if (regionValue) {
       topImage.setAttribute('region', regionValue)
     }
+    // Clear alert state once page has items
+    this._noLinesAlertShownForPageId = null
     const columnSelector = document.querySelector('tpen-transcription-interface')?.shadowRoot?.querySelector('tpen-project-header')?.shadowRoot?.querySelector('tpen-column-selector')
     if (columnSelector && columnSelector.shadowRoot) {
       const activeLineId = thisLine?.id || thisLine?.['@id']

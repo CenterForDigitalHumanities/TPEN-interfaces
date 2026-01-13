@@ -24,6 +24,8 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       isSplitscreenActive: false,
       activeTool: '',
     }
+    // Track toast state to avoid repeated notifications on empty pages
+    this._noLinesToastShownForPageId = null
   }
 
   connectedCallback() {
@@ -367,8 +369,12 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     TPEN.eventDispatcher.on('tools-dismiss', closeSplitscreen)
     
     // Listen for layer changes from layer-selector
-    TPEN.eventDispatcher.on('tpen-layer-changed', (layerData) => {
-      TPEN.activeLineIndex = 0
+    TPEN.eventDispatcher.on('tpen-layer-changed', (event) => {
+      // Prefer event.detail for consistency; guard against empty pages
+      const layerData = event?.detail
+      if (this.#page?.items?.length > 0) {
+        TPEN.activeLineIndex = 0
+      }
       this.updateLines()
     })
     
@@ -539,15 +545,30 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     const page = this.#page
     const activeLineIndex = TPEN.activeLineIndex ?? 0
 
-    if (!page?.items || page.items.length === 0) {
+    // If the page hasn't loaded yet, quietly bail without a toast
+    if (!page) {
       this.#activeLine = null
       this.resetImagePositions()
-      TPEN.eventDispatcher.dispatch("tpen-toast", {
-        message: "This page has no line annotations. Visit the annotation interface to add lines.",
-        status: "info"
-      })
       return
     }
+
+    // Only show the toast when a page is loaded and has zero items
+    if (!Array.isArray(page.items) || page.items.length === 0) {
+      this.#activeLine = null
+      this.resetImagePositions()
+      // Avoid firing the same toast repeatedly for the same page
+      if (this._noLinesToastShownForPageId !== (page?.id ?? TPEN.screen?.pageInQuery ?? 'unknown')) {
+        TPEN.eventDispatcher.dispatch("tpen-toast", {
+          message: "This page has no line annotations. Visit the annotation interface to add lines.",
+          status: "info"
+        })
+        this._noLinesToastShownForPageId = page?.id ?? TPEN.screen?.pageInQuery ?? 'unknown'
+      }
+      return
+    }
+
+    // Clear toast state once page has items
+    this._noLinesToastShownForPageId = null
 
     let line = page.items[activeLineIndex]
     if (!line) {
@@ -788,7 +809,6 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       return
     }
 
-    console.debug('Loading tool:', { tool, tagName: tool.custom?.tagName, url: tool.url, location: tool.location })
 
     const tagName = tool.custom?.tagName
     if (tagName && tool.url) {
