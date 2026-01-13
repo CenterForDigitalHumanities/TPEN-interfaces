@@ -781,6 +781,8 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       return
     }
 
+    console.debug('Loading tool:', { tool, tagName: tool.custom?.tagName, url: tool.url, location: tool.location })
+
     const tagName = tool.custom?.tagName
     if (tagName && tool.url) {
       if (customElements.get(tagName)) {
@@ -862,7 +864,12 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       iframe.src = tool.url
       rightPane.innerHTML = ''
       rightPane.appendChild(iframe)
+      return
     }
+
+    // Fallback message for tools that don't have proper configuration
+    rightPane.innerHTML = `<p>${tool.label ?? tool.custom?.tagName ?? 'Tool'} - functionality coming soon...</p>`
+    this.checkMagnifierVisibility?.()
   }
 }
 
