@@ -303,7 +303,14 @@ export default class TranscriptionInterface extends HTMLElement {
 
   loadRightPaneContent() {
     const rightPane = this.shadowRoot.querySelector('.tools')
-    const tool = this.getToolByName(this.state.activeTool)
+    let tool = this.getToolByName(this.state.activeTool)
+    
+    // If no active tool is selected, use the first available tool
+    if (!tool && TPEN.activeProject?.tools?.length > 0) {
+      tool = TPEN.activeProject.tools[0]
+      this.state.activeTool = tool.toolName
+    }
+    
     if (!tool) {
       rightPane.innerHTML = `
       <p>
