@@ -880,27 +880,29 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
 
   #handleToolMessages(event) {
     // Handle incoming messages from tools
-    if (event.data?.type === "CURRENT_LINE_INDEX" && event.data.lineId) {
+    const lineId = event.data?.lineId ?? event.data?.lineid // handle different casing
+
+    if (event.data?.type === "CURRENT_LINE_INDEX" && lineId) {
       // Tool is telling us to navigate to a specific line
-      const lineIndex = this.#page?.items?.findIndex(item => item.id === event.data.lineId)
+      const lineIndex = this.#page?.items?.findIndex(item => item.id === lineId)
       if (lineIndex !== undefined && lineIndex !== -1) {
         TPEN.activeLineIndex = lineIndex
         this.updateLines()
       }
     }
 
-    if (event.data?.type === "RETURN_LINE_ID" && event.data.lineId) {
+    if (event.data?.type === "RETURN_LINE_ID" && lineId) {
       // Tool is returning a line ID - navigate to it
-      const lineIndex = this.#page?.items?.findIndex(item => item.id === event.data.lineId)
+      const lineIndex = this.#page?.items?.findIndex(item => item.id === lineId)
       if (lineIndex !== undefined && lineIndex !== -1) {
         TPEN.activeLineIndex = lineIndex
         this.updateLines()
       }
     }
 
-    if (event.data?.type === "SELECT_ANNOTATION" && event.data.lineId) {
+    if (event.data?.type === "SELECT_ANNOTATION" && lineId) {
       // Tool is selecting an annotation - navigate to it
-      const lineIndex = this.#page?.items?.findIndex(item => item.id === event.data.lineId)
+      const lineIndex = this.#page?.items?.findIndex(item => item.id === lineId)
       if (lineIndex !== undefined && lineIndex !== -1) {
         TPEN.activeLineIndex = lineIndex
         this.updateLines()
