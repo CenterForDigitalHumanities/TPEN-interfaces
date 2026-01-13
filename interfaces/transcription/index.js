@@ -207,7 +207,7 @@ export default class TranscriptionInterface extends HTMLElement {
           <div class="tools">
             <p>
               You do not have any tools loaded. To add a tool, please 
-              <a href="/project/manage?projectId=${TPEN.screen.projectInQuery}">manage your project</a>.
+              <a href="/project/manage?projectID=${TPEN.screen.projectInQuery}">manage your project</a>.
             </p>
           </div>
         </div>
@@ -308,7 +308,7 @@ export default class TranscriptionInterface extends HTMLElement {
       rightPane.innerHTML = `
       <p>
         You do not have any tools loaded. To add a tool, please 
-        <a href="/project/manage?projectId=${TPEN.screen?.projectInQuery ?? ''}">manage your project</a>.
+        <a href="/project/manage?projectID=${TPEN.screen?.projectInQuery ?? ''}">manage your project</a>.
       </p>
       `
       return
