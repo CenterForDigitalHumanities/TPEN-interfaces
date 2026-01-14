@@ -33,6 +33,10 @@ export default class TranscriptionInterface extends HTMLElement {
     TPEN.eventDispatcher.on('tpen-project-loaded', this.authgate.bind(this))
     TPEN.eventDispatcher.on('tpen-transcription-previous-line', this.updateLines.bind(this))
     TPEN.eventDispatcher.on('tpen-transcription-next-line', this.updateLines.bind(this))
+    
+    // Listen for navigation messages from tools
+    this.messageHandler = this.#handleToolMessages.bind(this)
+    window.addEventListener('message', this.messageHandler)
   }
 
   async authgate() {
@@ -271,6 +275,9 @@ export default class TranscriptionInterface extends HTMLElement {
     if (this._columnSelectedHandler) {
       TPEN.eventDispatcher.off('tpen-column-selected', this._columnSelectedHandler)
     }
+    if (this.messageHandler) {
+      window.removeEventListener('message', this.messageHandler)
+    }
   }
 
   checkMagnifierVisibility() {
@@ -417,6 +424,32 @@ export default class TranscriptionInterface extends HTMLElement {
   getToolByName(toolName) {
     const tools = TPEN.activeProject?.tools || []
     return tools.find(tool => tool.toolName === toolName)
+  }
+
+  #handleToolMessages(event) {
+    // Handle incoming messages from tools
+    const lineId = event.data?.lineId ?? event.data?.lineid ?? event.data?.annotation
+
+    if (!lineId) return
+
+    // Handle all line navigation message types
+    if (event.data?.type === "CURRENT_LINE_INDEX" || 
+        event.data?.type === "RETURN_LINE_ID" || 
+        event.data?.type === "SELECT_ANNOTATION" ||
+        event.data?.type === "NAVIGATE_TO_LINE") {
+      // Tool is telling us to navigate to a specific line
+      // Line ID might be full URI or just the ID part
+      const lineIndex = this.#page?.items?.findIndex(item => {
+        const itemId = item.id ?? item['@id']
+        // Match either full ID or just the last part after the last slash
+        return itemId === lineId || itemId?.endsWith?.(`/${lineId}`) || itemId?.split?.('/').pop() === lineId
+      })
+      
+      if (lineIndex !== undefined && lineIndex !== -1) {
+        TPEN.activeLineIndex = lineIndex
+        this.updateLines()
+      }
+    }
   }
 
   setupResizableSplit() {

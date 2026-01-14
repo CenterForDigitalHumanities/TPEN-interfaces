@@ -49,7 +49,9 @@ export default class SplitscreenTool extends HTMLElement {
 
     render() {
       const tools = TPEN.activeProject?.tools.filter(t=>{
-        return t.custom?.enabled && (t.location === "sidebar" || t.location === "pane")
+        // Tool should have either custom.enabled=true OR no custom.enabled property (defaults to enabled)
+        // Also ensure location is sidebar or pane
+        return (t.custom?.enabled !== false) && (t.location === "sidebar" || t.location === "pane")
       }) || []
 
       if(tools.length === 0) { this.remove() }

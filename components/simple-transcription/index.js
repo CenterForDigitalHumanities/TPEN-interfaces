@@ -901,29 +901,23 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
 
   #handleToolMessages(event) {
     // Handle incoming messages from tools
-    const lineId = event.data?.lineId ?? event.data?.lineid // handle different casing
+    const lineId = event.data?.lineId ?? event.data?.lineid ?? event.data?.annotation // handle different casing and properties
 
-    if (event.data?.type === "CURRENT_LINE_INDEX" && lineId) {
+    if (!lineId) return
+
+    // Handle all line navigation message types
+    if (event.data?.type === "CURRENT_LINE_INDEX" || 
+        event.data?.type === "RETURN_LINE_ID" || 
+        event.data?.type === "SELECT_ANNOTATION" ||
+        event.data?.type === "NAVIGATE_TO_LINE") {
       // Tool is telling us to navigate to a specific line
-      const lineIndex = this.#page?.items?.findIndex(item => item.id === lineId)
-      if (lineIndex !== undefined && lineIndex !== -1) {
-        TPEN.activeLineIndex = lineIndex
-        this.updateLines()
-      }
-    }
-
-    if (event.data?.type === "RETURN_LINE_ID" && lineId) {
-      // Tool is returning a line ID - navigate to it
-      const lineIndex = this.#page?.items?.findIndex(item => item.id === lineId)
-      if (lineIndex !== undefined && lineIndex !== -1) {
-        TPEN.activeLineIndex = lineIndex
-        this.updateLines()
-      }
-    }
-
-    if (event.data?.type === "SELECT_ANNOTATION" && lineId) {
-      // Tool is selecting an annotation - navigate to it
-      const lineIndex = this.#page?.items?.findIndex(item => item.id === lineId)
+      // Line ID might be full URI or just the ID part
+      const lineIndex = this.#page?.items?.findIndex(item => {
+        const itemId = item.id ?? item['@id']
+        // Match either full ID or just the last part after the last slash
+        return itemId === lineId || itemId?.endsWith?.(`/${lineId}`) || itemId?.split?.('/').pop() === lineId
+      })
+      
       if (lineIndex !== undefined && lineIndex !== -1) {
         TPEN.activeLineIndex = lineIndex
         this.updateLines()
