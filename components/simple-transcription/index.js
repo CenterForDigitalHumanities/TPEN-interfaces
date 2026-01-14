@@ -844,13 +844,20 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       iframe.style.border = 'none'
 
       iframe.addEventListener('load', () => {
+        // Get the current page configuration for columns
+        const currentPageId = TPEN.screen?.pageInQuery
+        const projectPage = TPEN.activeProject?.layers
+          ?.flatMap(layer => layer.pages || [])
+          .find(p => p.id.split('/').pop() === currentPageId)
+        
         iframe.contentWindow?.postMessage(
           {
             type: "MANIFEST_CANVAS_ANNOTATIONPAGE_ANNOTATION",
             manifest: TPEN.activeProject?.manifest?.[0] ?? '',
             canvas: this.#canvas?.id ?? this.#canvas?.['@id'] ?? this.#canvas ?? '',
-            annotationPage: this.fetchCurrentPageId() ?? this.#page ?? '',
-            annotation: TPEN.activeLineIndex >= 0 ? this.#page?.items?.[TPEN.activeLineIndex]?.id ?? null : null
+            annotationPage: this.fetchCurrentPageId() ?? this.#page?.id ?? '',
+            annotation: TPEN.activeLineIndex >= 0 ? this.#page?.items?.[TPEN.activeLineIndex]?.id ?? null : null,
+            columns: projectPage?.columns || []
           },
           '*'
         )
