@@ -11,6 +11,13 @@ import '../../components/gui/alert/AlertContainer.js'
 export default class TranscriptionInterface extends HTMLElement {
   #page
   #canvas
+  #toolLineListeners = null
+  // Handler references for cleanup
+  _activePagePreviousHandler = null
+  _activePageNextHandler = null
+  _closeSplitscreenHandler = null
+  _escapeHandler = null
+  _iframeOrigin = null
 
   constructor() {
     super()
@@ -31,8 +38,11 @@ export default class TranscriptionInterface extends HTMLElement {
       this.authgate()
     }
     TPEN.eventDispatcher.on('tpen-project-loaded', this.authgate.bind(this))
-    TPEN.eventDispatcher.on('tpen-transcription-previous-line', this.updateLines.bind(this))
-    TPEN.eventDispatcher.on('tpen-transcription-next-line', this.updateLines.bind(this))
+    
+    this._activePagePreviousHandler = this.updateLines.bind(this)
+    this._activePageNextHandler = this.updateLines.bind(this)
+    TPEN.eventDispatcher.on('tpen-transcription-previous-line', this._activePagePreviousHandler)
+    TPEN.eventDispatcher.on('tpen-transcription-next-line', this._activePageNextHandler)
     
     // Listen for navigation messages from tools
     this.messageHandler = this.#handleToolMessages.bind(this)
@@ -243,12 +253,14 @@ export default class TranscriptionInterface extends HTMLElement {
     this.shadowRoot.addEventListener('click', e => {
       if (e.target?.classList.contains('close-button')) closeSplitscreen()
     })
-
-    window.addEventListener('keydown', e => {
+    
+    this._escapeHandler = (e) => {
       if (e.key === 'Escape') closeSplitscreen()
-    })
-
-    TPEN.eventDispatcher.on('tools-dismiss', closeSplitscreen)
+    }
+    window.addEventListener('keydown', this._escapeHandler)
+    
+    this._closeSplitscreenHandler = closeSplitscreen
+    TPEN.eventDispatcher.on('tools-dismiss', this._closeSplitscreenHandler)
 
     // Listen for layer changes from layer-selector, store handler for cleanup
     this._layerChangeHandler = (layerData) => {
@@ -268,6 +280,14 @@ export default class TranscriptionInterface extends HTMLElement {
   }
 
   disconnectedCallback() {
+    // Clean up connectedCallback listeners
+    if (this._activePagePreviousHandler) {
+      TPEN.eventDispatcher.off('tpen-transcription-previous-line', this._activePagePreviousHandler)
+    }
+    if (this._activePageNextHandler) {
+      TPEN.eventDispatcher.off('tpen-transcription-next-line', this._activePageNextHandler)
+    }
+    
     // Remove event dispatcher handlers to avoid leaks when element is detached
     if (this._layerChangeHandler) {
       TPEN.eventDispatcher.off('tpen-layer-changed', this._layerChangeHandler)
@@ -275,8 +295,26 @@ export default class TranscriptionInterface extends HTMLElement {
     if (this._columnSelectedHandler) {
       TPEN.eventDispatcher.off('tpen-column-selected', this._columnSelectedHandler)
     }
+    if (this._closeSplitscreenHandler) {
+      TPEN.eventDispatcher.off('tools-dismiss', this._closeSplitscreenHandler)
+    }
+    if (this._escapeHandler) {
+      window.removeEventListener('keydown', this._escapeHandler)
+    }
+    
     if (this.messageHandler) {
       window.removeEventListener('message', this.messageHandler)
+    }
+    
+    // Clean up tool line listeners
+    this.#cleanupToolLineListeners()
+  }
+
+  #cleanupToolLineListeners() {
+    if (this.#toolLineListeners) {
+      TPEN.eventDispatcher.off('tpen-transcription-previous-line', this.#toolLineListeners)
+      TPEN.eventDispatcher.off('tpen-transcription-next-line', this.#toolLineListeners)
+      this.#toolLineListeners = null
     }
   }
 
@@ -320,7 +358,7 @@ export default class TranscriptionInterface extends HTMLElement {
         label: page.label
       }
     })
-    return canvases
+    return canvases ?? []
   }
 
   loadRightPaneContent() {
@@ -372,6 +410,10 @@ export default class TranscriptionInterface extends HTMLElement {
     if (tool.url && !tagName && tool.location === 'pane') {
       const iframe = document.createElement('iframe')
       iframe.id = tool.toolName
+      
+        // Extract and store iframe origin for secure postMessage
+        this._iframeOrigin = new URL(tool.url).origin
+      
       iframe.addEventListener('load', () => {
         iframe.contentWindow?.postMessage(
           {
@@ -382,35 +424,40 @@ export default class TranscriptionInterface extends HTMLElement {
             annotation: TPEN.activeLineIndex >= 0 ? this.#page?.items?.[TPEN.activeLineIndex]?.id ?? null : null,
             columns: TPEN.activeProject?.layers.flatMap(layer => layer.pages || []).find(p => p.id.split('/').pop() === TPEN.screen.pageInQuery)?.columns || []
           },
-          '*'
+          this._iframeOrigin
         )
 
         iframe.contentWindow?.postMessage(
           { type: "CANVASES",
             canvases: this.fetchCanvasesFromCurrentLayer()
           },
-          '*'
+          this._iframeOrigin
         )
 
         iframe.contentWindow?.postMessage(
           { type: "CURRENT_LINE_INDEX",
             lineId: this.#page?.items?.[TPEN.activeLineIndex]?.id
           },
-          "*"
+          this._iframeOrigin
         )
       })
-      TPEN.eventDispatcher.on('tpen-transcription-previous-line', () => {
+      
+      // Clean up old listeners before adding new ones
+      this.#cleanupToolLineListeners()
+      
+      const sendLineSelection = () => {
+        const activeLineId = this.#page?.items?.[TPEN.activeLineIndex]?.id ?? null
         iframe.contentWindow?.postMessage(
-          { type: "SELECT_ANNOTATION", lineId: this.#page?.items?.[TPEN.activeLineIndex]?.id },
-          "*"
+          { type: "SELECT_ANNOTATION", lineId: activeLineId },
+          this._iframeOrigin
         )
-      })
-      TPEN.eventDispatcher.on('tpen-transcription-next-line', () => {
-        iframe.contentWindow?.postMessage(
-          { type: "SELECT_ANNOTATION", lineId: this.#page?.items?.[TPEN.activeLineIndex]?.id },
-          "*"
-        )
-      })
+      }
+      
+      // Store the listener reference so we can clean it up later
+      this.#toolLineListeners = sendLineSelection
+      TPEN.eventDispatcher.on('tpen-transcription-previous-line', sendLineSelection)
+      TPEN.eventDispatcher.on('tpen-transcription-next-line', sendLineSelection)
+      
       iframe.src = tool.url
       rightPane.innerHTML = ''
       rightPane.appendChild(iframe)
@@ -427,6 +474,11 @@ export default class TranscriptionInterface extends HTMLElement {
   }
 
   #handleToolMessages(event) {
+        // Validate message origin if iframe origin is set
+        if (this._iframeOrigin && event.origin !== this._iframeOrigin) {
+          return
+        }
+    
     // Handle incoming messages from tools
     const lineId = event.data?.lineId ?? event.data?.lineid ?? event.data?.annotation
 

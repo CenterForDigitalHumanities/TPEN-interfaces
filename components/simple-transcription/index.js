@@ -16,6 +16,15 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
   #imgBottomPositionRatio = 1
   #imgTopPositionRatio = 1
   #toolLineListeners = null
+  // Handler references for cleanup
+  _activePageHandler = null
+  _activeToolHandler = null
+  _activeLayerHandler = null
+  _closeSplitscreenHandler = null
+  _layerChangeHandler = null
+  _columnSelectedHandler = null
+  _escapeHandler = null
+  _iframeOrigin = null
 
   constructor() {
     super()
@@ -35,8 +44,10 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       this.authgate()
     }
     TPEN.eventDispatcher.on('tpen-project-loaded', this.authgate.bind(this))
-    TPEN.eventDispatcher.on('tpen-transcription-previous-line', () => this.updateLines())
-    TPEN.eventDispatcher.on('tpen-transcription-next-line', () => this.updateLines())
+    
+    this._activePageHandler = () => this.updateLines()
+    TPEN.eventDispatcher.on('tpen-transcription-previous-line', this._activePageHandler)
+    TPEN.eventDispatcher.on('tpen-transcription-next-line', this._activePageHandler)
 
     // Handle window resize
     this.resizeHandler = this.handleResize.bind(this)
@@ -46,18 +57,11 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     this.messageHandler = this.#handleToolMessages.bind(this)
     window.addEventListener('message', this.messageHandler)
 
-    // Handle drawer opening/closing - wait for CSS transition to complete
-    this.addEventListener('drawer-opening', () => {
-    })
-
     this.addEventListener('drawer-opened', () => {
       // Wait for the 0.3s CSS transition to complete before recalculating
       setTimeout(() => {
         this.updateLines()
       }, 300)
-    })
-
-    this.addEventListener('drawer-closing', () => {
     })
 
     this.addEventListener('drawer-closed', () => {
@@ -69,8 +73,35 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
   }
 
   disconnectedCallback() {
+      // Clean up window listeners
     window.removeEventListener('resize', this.resizeHandler)
     window.removeEventListener('message', this.messageHandler)
+    
+        // Clean up TPEN event dispatcher listeners
+        if (this._activePageHandler) {
+          TPEN.eventDispatcher.off('tpen-transcription-previous-line', this._activePageHandler)
+          TPEN.eventDispatcher.off('tpen-transcription-next-line', this._activePageHandler)
+        }
+        if (this._activeToolHandler) {
+          TPEN.eventDispatcher.off('tpen-active-tool-changed', this._activeToolHandler)
+        }
+        if (this._activeLayerHandler) {
+          TPEN.eventDispatcher.off('tpen-active-layer-changed', this._activeLayerHandler)
+        }
+        if (this._closeSplitscreenHandler) {
+          TPEN.eventDispatcher.off('tools-dismiss', this._closeSplitscreenHandler)
+        }
+        if (this._layerChangeHandler) {
+          TPEN.eventDispatcher.off('tpen-layer-changed', this._layerChangeHandler)
+        }
+        if (this._columnSelectedHandler) {
+          TPEN.eventDispatcher.off('tpen-column-selected', this._columnSelectedHandler)
+        }
+        if (this._escapeHandler) {
+          window.removeEventListener('keydown', this._escapeHandler)
+        }
+    
+        // Clean up tool line listeners
     this.#cleanupToolLineListeners()
   }
 
@@ -361,31 +392,33 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     this.shadowRoot.addEventListener('click', e => {
       if (e.target?.classList.contains('close-button')) closeSplitscreen()
     })
-
-    window.addEventListener('keydown', e => {
+    
+    this._escapeHandler = (e) => {
       if (e.key === 'Escape') closeSplitscreen()
-    })
-
-    TPEN.eventDispatcher.on('tools-dismiss', closeSplitscreen)
+    }
+    window.addEventListener('keydown', this._escapeHandler)
+    
+    this._closeSplitscreenHandler = closeSplitscreen
+    TPEN.eventDispatcher.on('tools-dismiss', this._closeSplitscreenHandler)
     
     // Listen for layer changes from layer-selector
-    TPEN.eventDispatcher.on('tpen-layer-changed', (event) => {
-      // Prefer event.detail for consistency; guard against empty pages
-      const layerData = event?.detail
+    this._layerChangeHandler = (event) => {
       if (this.#page?.items?.length > 0) {
         TPEN.activeLineIndex = 0
       }
       this.updateLines()
-    })
+    }
+    TPEN.eventDispatcher.on('tpen-layer-changed', this._layerChangeHandler)
     
     // Listen for column selection changes
-    TPEN.eventDispatcher.on('tpen-column-selected', (ev) => {
+    this._columnSelectedHandler = (ev) => {
       const columnData = ev.detail
       if (typeof columnData.lineIndex === 'number') {
         TPEN.activeLineIndex = columnData.lineIndex
         this.updateLines()
       }
-    })
+    }
+    TPEN.eventDispatcher.on('tpen-column-selected', this._columnSelectedHandler)
   }
 
   toggleSplitscreen() {
@@ -842,6 +875,9 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       iframe.style.width = '100%'
       iframe.style.height = '100%'
       iframe.style.border = 'none'
+      
+  // Extract and store iframe origin for secure postMessage
+  this._iframeOrigin = new URL(tool.url).origin
 
       iframe.addEventListener('load', () => {
         // Get the current page configuration for columns
@@ -859,7 +895,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
             annotation: TPEN.activeLineIndex >= 0 ? this.#page?.items?.[TPEN.activeLineIndex]?.id ?? null : null,
             columns: projectPage?.columns || []
           },
-          '*'
+          this._iframeOrigin
         )
 
         iframe.contentWindow?.postMessage(
@@ -867,7 +903,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
             type: "CANVASES",
             canvases: this.fetchCanvasesFromCurrentLayer()
           },
-          '*'
+          this._iframeOrigin
         )
 
         iframe.contentWindow?.postMessage(
@@ -875,7 +911,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
             type: "CURRENT_LINE_INDEX",
             lineId: this.#page?.items?.[TPEN.activeLineIndex]?.id ?? null
           },
-          "*"
+          this._iframeOrigin
         )
       })
 
@@ -886,7 +922,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
         const activeLineId = this.#page?.items?.[TPEN.activeLineIndex]?.id ?? null
         iframe.contentWindow?.postMessage(
           { type: "SELECT_ANNOTATION", lineId: activeLineId },
-          "*"
+          this._iframeOrigin
         )
       }
 
@@ -907,6 +943,11 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
   }
 
   #handleToolMessages(event) {
+        // Validate message origin if iframe origin is set
+        if (this._iframeOrigin && event.origin !== this._iframeOrigin) {
+          return
+        }
+    
     // Handle incoming messages from tools
     const lineId = event.data?.lineId ?? event.data?.lineid ?? event.data?.annotation // handle different casing and properties
 
