@@ -12,6 +12,7 @@ export default class TranscriptionBlock extends HTMLElement {
     #saveTimers = new Map() // lineIndex -> timeout id
     #pendingSaves = new Map() // lineIndex -> Promise
     #unloadHandlerBound
+    _activeLineUpdatedHandler = null
     #storageKey // localStorage key for drafts
 
     constructor() {
@@ -64,6 +65,10 @@ export default class TranscriptionBlock extends HTMLElement {
         TPEN.eventDispatcher.on('tpen-transcription-next-line', _ev => {
             this.updateTranscriptionUI()
         })
+        this._activeLineUpdatedHandler = (_line) => {
+            this.updateTranscriptionUI()
+        }
+        TPEN.eventDispatcher.on('tpen-active-line-updated', this._activeLineUpdatedHandler)
     }
 
     async authgate() {
@@ -279,6 +284,9 @@ export default class TranscriptionBlock extends HTMLElement {
 
     disconnectedCallback() {
         window.removeEventListener('beforeunload', this.#unloadHandlerBound)
+        if (this._activeLineUpdatedHandler) {
+            TPEN.eventDispatcher.off('tpen-active-line-updated', this._activeLineUpdatedHandler)
+        }
         eventDispatcher.dispatch('tpen-transcription-block-disconnected')
     }
 

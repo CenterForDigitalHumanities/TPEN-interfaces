@@ -116,7 +116,7 @@ export default class WorkspaceTools extends HTMLElement {
   
   // Store the handler so we can remove it later if render() is called again
   this._magnifierClickHandler = () => {
-    const iface = document.querySelector("tpen-transcription-interface") || document.querySelector("tpen-simple-transcription")
+    const iface = document.querySelector('[data-interface-type="transcription"]')
     const transcriptionInterface = iface?.shadowRoot
 
     if (!this.magnifierTool) {

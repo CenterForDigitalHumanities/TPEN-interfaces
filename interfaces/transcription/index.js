@@ -11,6 +11,13 @@ import '../../components/gui/alert/AlertContainer.js'
 export default class TranscriptionInterface extends HTMLElement {
   #page
   #canvas
+  #toolLineListeners = null
+  // Handler references for cleanup
+  _activePagePreviousHandler = null
+  _activePageNextHandler = null
+  _closeSplitscreenHandler = null
+  _escapeHandler = null
+  _iframeOrigin = null
 
   constructor() {
     super()
@@ -20,16 +27,26 @@ export default class TranscriptionInterface extends HTMLElement {
       isSplitscreenActive: false,
       activeTool: '',
     }
+    // Track alert state to avoid repeated 'no lines' alerts per page
+    this._noLinesAlertShownForPageId = null
   }
 
   connectedCallback() {
+    this.setAttribute('data-interface-type', 'transcription')
     TPEN.attachAuthentication(this)
     if (TPEN.activeProject?._createdAt) {
       this.authgate()
     }
     TPEN.eventDispatcher.on('tpen-project-loaded', this.authgate.bind(this))
-    TPEN.eventDispatcher.on('tpen-transcription-previous-line', this.updateLines.bind(this))
-    TPEN.eventDispatcher.on('tpen-transcription-next-line', this.updateLines.bind(this))
+    
+    this._activePagePreviousHandler = this.updateLines.bind(this)
+    this._activePageNextHandler = this.updateLines.bind(this)
+    TPEN.eventDispatcher.on('tpen-transcription-previous-line', this._activePagePreviousHandler)
+    TPEN.eventDispatcher.on('tpen-transcription-next-line', this._activePageNextHandler)
+    
+    // Listen for navigation messages from tools
+    this.messageHandler = this.#handleToolMessages.bind(this)
+    window.addEventListener('message', this.messageHandler)
   }
 
   async authgate() {
@@ -206,7 +223,7 @@ export default class TranscriptionInterface extends HTMLElement {
           <div class="tools">
             <p>
               You do not have any tools loaded. To add a tool, please 
-              <a href="/project/manage?projectId=${TPEN.screen.projectInQuery}">manage your project</a>.
+              <a href="/project/manage?projectID=${TPEN.screen.projectInQuery}">manage your project</a>.
             </p>
           </div>
         </div>
@@ -236,12 +253,69 @@ export default class TranscriptionInterface extends HTMLElement {
     this.shadowRoot.addEventListener('click', e => {
       if (e.target?.classList.contains('close-button')) closeSplitscreen()
     })
-
-    window.addEventListener('keydown', e => {
+    
+    this._escapeHandler = (e) => {
       if (e.key === 'Escape') closeSplitscreen()
-    })
+    }
+    window.addEventListener('keydown', this._escapeHandler)
+    
+    this._closeSplitscreenHandler = closeSplitscreen
+    TPEN.eventDispatcher.on('tools-dismiss', this._closeSplitscreenHandler)
 
-    TPEN.eventDispatcher.on('tools-dismiss', closeSplitscreen)
+    // Listen for layer changes from layer-selector, store handler for cleanup
+    this._layerChangeHandler = (layerData) => {
+      this.updateLines()
+    }
+    TPEN.eventDispatcher.on('tpen-layer-changed', this._layerChangeHandler)
+
+    // Listen for column selection changes, store handler for cleanup
+    this._columnSelectedHandler = (event) => {
+      const columnData = event?.detail
+      if (typeof columnData?.lineIndex === 'number') {
+        TPEN.activeLineIndex = columnData.lineIndex
+        this.updateLines()
+      }
+    }
+    TPEN.eventDispatcher.on('tpen-column-selected', this._columnSelectedHandler)
+  }
+
+  disconnectedCallback() {
+    // Clean up connectedCallback listeners
+    if (this._activePagePreviousHandler) {
+      TPEN.eventDispatcher.off('tpen-transcription-previous-line', this._activePagePreviousHandler)
+    }
+    if (this._activePageNextHandler) {
+      TPEN.eventDispatcher.off('tpen-transcription-next-line', this._activePageNextHandler)
+    }
+    
+    // Remove event dispatcher handlers to avoid leaks when element is detached
+    if (this._layerChangeHandler) {
+      TPEN.eventDispatcher.off('tpen-layer-changed', this._layerChangeHandler)
+    }
+    if (this._columnSelectedHandler) {
+      TPEN.eventDispatcher.off('tpen-column-selected', this._columnSelectedHandler)
+    }
+    if (this._closeSplitscreenHandler) {
+      TPEN.eventDispatcher.off('tools-dismiss', this._closeSplitscreenHandler)
+    }
+    if (this._escapeHandler) {
+      window.removeEventListener('keydown', this._escapeHandler)
+    }
+    
+    if (this.messageHandler) {
+      window.removeEventListener('message', this.messageHandler)
+    }
+    
+    // Clean up tool line listeners
+    this.#cleanupToolLineListeners()
+  }
+
+  #cleanupToolLineListeners() {
+    if (this.#toolLineListeners) {
+      TPEN.eventDispatcher.off('tpen-transcription-previous-line', this.#toolLineListeners)
+      TPEN.eventDispatcher.off('tpen-transcription-next-line', this.#toolLineListeners)
+      this.#toolLineListeners = null
+    }
   }
 
   checkMagnifierVisibility() {
@@ -284,17 +358,24 @@ export default class TranscriptionInterface extends HTMLElement {
         label: page.label
       }
     })
-    return canvases
+    return canvases ?? []
   }
 
   loadRightPaneContent() {
     const rightPane = this.shadowRoot.querySelector('.tools')
-    const tool = this.getToolByName(this.state.activeTool)
+    let tool = this.getToolByName(this.state.activeTool)
+    
+    // If no active tool is selected, use the first available tool
+    if (!tool && TPEN.activeProject?.tools?.length > 0) {
+      tool = TPEN.activeProject.tools[0]
+      this.state.activeTool = tool.toolName
+    }
+    
     if (!tool) {
       rightPane.innerHTML = `
       <p>
         You do not have any tools loaded. To add a tool, please 
-        <a href="/project/manage?projectId=${TPEN.screen?.projectInQuery ?? ''}">manage your project</a>.
+        <a href="/project/manage?projectID=${TPEN.screen?.projectInQuery ?? ''}">manage your project</a>.
       </p>
       `
       return
@@ -307,9 +388,15 @@ export default class TranscriptionInterface extends HTMLElement {
         rightPane.innerHTML = `<${tagName}></${tagName}>`
         return
       }
+      const scriptId = `tool-script-${tool.toolName}`
+      const existingScript = document.getElementById(scriptId)
+      if (existingScript) {
+        return
+      }
       const script = document.createElement('script')
       script.type = 'module'
       script.src = tool.url
+      script.id = scriptId
       script.onload = () => {
         rightPane.innerHTML = `<${tagName}></${tagName}>`
       }
@@ -323,45 +410,54 @@ export default class TranscriptionInterface extends HTMLElement {
     if (tool.url && !tagName && tool.location === 'pane') {
       const iframe = document.createElement('iframe')
       iframe.id = tool.toolName
+      
+        // Extract and store iframe origin for secure postMessage
+        this._iframeOrigin = new URL(tool.url).origin
+      
       iframe.addEventListener('load', () => {
         iframe.contentWindow?.postMessage(
           {
             type: "MANIFEST_CANVAS_ANNOTATIONPAGE_ANNOTATION",
             manifest: TPEN.activeProject?.manifest?.[0] ?? '',
             canvas: this.#canvas?.id ?? this.#canvas?.['@id'] ?? this.#canvas ?? '',
-            annotationPage: this.fetchCurrentPageId() ?? this.#page ?? '',
+            annotationPage: this.fetchCurrentPageId() ?? this.#page?.id ?? '',
             annotation: TPEN.activeLineIndex >= 0 ? this.#page?.items?.[TPEN.activeLineIndex]?.id ?? null : null,
             columns: TPEN.activeProject?.layers.flatMap(layer => layer.pages || []).find(p => p.id.split('/').pop() === TPEN.screen.pageInQuery)?.columns || []
           },
-          '*'
+          this._iframeOrigin
         )
 
         iframe.contentWindow?.postMessage(
           { type: "CANVASES",
             canvases: this.fetchCanvasesFromCurrentLayer()
           },
-          '*'
+          this._iframeOrigin
         )
 
         iframe.contentWindow?.postMessage(
           { type: "CURRENT_LINE_INDEX",
             lineId: this.#page?.items?.[TPEN.activeLineIndex]?.id
           },
-          "*"
+          this._iframeOrigin
         )
       })
-      TPEN.eventDispatcher.on('tpen-transcription-previous-line', () => {
+      
+      // Clean up old listeners before adding new ones
+      this.#cleanupToolLineListeners()
+      
+      const sendLineSelection = () => {
+        const activeLineId = this.#page?.items?.[TPEN.activeLineIndex]?.id ?? null
         iframe.contentWindow?.postMessage(
-          { type: "SELECT_ANNOTATION", lineId: this.#page?.items?.[TPEN.activeLineIndex]?.id },
-          "*"
+          { type: "SELECT_ANNOTATION", lineId: activeLineId },
+          this._iframeOrigin
         )
-      })
-      TPEN.eventDispatcher.on('tpen-transcription-next-line', () => {
-        iframe.contentWindow?.postMessage(
-          { type: "SELECT_ANNOTATION", lineId: this.#page?.items?.[TPEN.activeLineIndex]?.id },
-          "*"
-        )
-      })
+      }
+      
+      // Store the listener reference so we can clean it up later
+      this.#toolLineListeners = sendLineSelection
+      TPEN.eventDispatcher.on('tpen-transcription-previous-line', sendLineSelection)
+      TPEN.eventDispatcher.on('tpen-transcription-next-line', sendLineSelection)
+      
       iframe.src = tool.url
       rightPane.innerHTML = ''
       rightPane.appendChild(iframe)
@@ -375,6 +471,37 @@ export default class TranscriptionInterface extends HTMLElement {
   getToolByName(toolName) {
     const tools = TPEN.activeProject?.tools || []
     return tools.find(tool => tool.toolName === toolName)
+  }
+
+  #handleToolMessages(event) {
+        // Validate message origin if iframe origin is set
+        if (this._iframeOrigin && event.origin !== this._iframeOrigin) {
+          return
+        }
+    
+    // Handle incoming messages from tools
+    const lineId = event.data?.lineId ?? event.data?.lineid ?? event.data?.annotation
+
+    if (!lineId) return
+
+    // Handle all line navigation message types
+    if (event.data?.type === "CURRENT_LINE_INDEX" || 
+        event.data?.type === "RETURN_LINE_ID" || 
+        event.data?.type === "SELECT_ANNOTATION" ||
+        event.data?.type === "NAVIGATE_TO_LINE") {
+      // Tool is telling us to navigate to a specific line
+      // Line ID might be full URI or just the ID part
+      const lineIndex = this.#page?.items?.findIndex(item => {
+        const itemId = item.id ?? item['@id']
+        // Match either full ID or just the last part after the last slash
+        return itemId === lineId || itemId?.endsWith?.(`/${lineId}`) || itemId?.split?.('/').pop() === lineId
+      })
+      
+      if (lineIndex !== undefined && lineIndex !== -1) {
+        TPEN.activeLineIndex = lineIndex
+        this.updateLines()
+      }
+    }
   }
 
   setupResizableSplit() {
@@ -523,7 +650,8 @@ export default class TranscriptionInterface extends HTMLElement {
         return response.json()
       })
       .then(canvas => {
-        const imageId = canvas.items?.[0]?.items?.[0]?.body?.id
+        // Handle both Presentation API v3 (items) and v2 (images) formats
+        const imageId = canvas.items?.[0]?.items?.[0]?.body?.id ?? canvas.images?.[0]?.resource?.id
         if (imageId) {
           imageCanvas.src = imageId
         }
@@ -574,8 +702,12 @@ export default class TranscriptionInterface extends HTMLElement {
       topImage.canvas = canvasID
       bottomImage.canvas = canvas
       topImage.setAttribute('region', regionValue)
-      // Show alert to inform user about missing lines
-      this.showNoLinesAlert()
+      // Show alert once per page to inform user about missing lines
+      const currentPageKey = this.#page?.id ?? pageID ?? TPEN.screen?.pageInQuery
+      if (this._noLinesAlertShownForPageId !== currentPageKey) {
+        this.showNoLinesAlert()
+        this._noLinesAlertShownForPageId = currentPageKey
+      }
       return
     }
     
@@ -588,6 +720,8 @@ export default class TranscriptionInterface extends HTMLElement {
     if (regionValue) {
       topImage.setAttribute('region', regionValue)
     }
+    // Clear alert state once page has items
+    this._noLinesAlertShownForPageId = null
     const columnSelector = document.querySelector('tpen-transcription-interface')?.shadowRoot?.querySelector('tpen-project-header')?.shadowRoot?.querySelector('tpen-column-selector')
     if (columnSelector && columnSelector.shadowRoot) {
       const activeLineId = thisLine?.id || thisLine?.['@id']

@@ -103,7 +103,7 @@ export class MagnifierTool extends HTMLElement {
             y = Math.max(minY, Math.min(y, imgRect.height + this.boundsOffset - halfSize))
 
             let rightPane = null
-            const iface = document.querySelector('tpen-transcription-interface') || document.querySelector('tpen-simple-transcription')
+            const iface = document.querySelector('[data-interface-type="transcription"]')
             if (iface?.shadowRoot) {
                 rightPane = iface.shadowRoot.querySelector('.right-pane')
             }

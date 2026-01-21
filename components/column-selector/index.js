@@ -1,6 +1,5 @@
 import TPEN from "../../api/TPEN.js"
 import CheckPermissions from "../check-permissions/checkPermissions.js"
-import TranscriptionInterface from "../../interfaces/transcription/index.js"
 import vault from '../../js/vault.js'
 import { orderPageItemsByColumns } from '../../utilities/columnOrdering.js'
 const eventDispatcher = TPEN.eventDispatcher
@@ -102,85 +101,20 @@ export default class ColumnSelector extends HTMLElement {
         selectEl.addEventListener("change", (e) => this.selectColumn(e))
     }
 
-    getTpenNodes() {
-        const tpen = document.querySelector("tpen-transcription-interface")
-        const root = tpen?.shadowRoot
-
-        return {
-            tpen,
-            topImage: root?.querySelector("#topImage"),
-            bottomImage: root?.querySelector("#bottomImage"),
-            iframe: root?.querySelector("iframe"),
-            input: root?.querySelector("tpen-transcription-block")?.shadowRoot?.querySelector(".transcription-input"),
-            prevLine: root?.querySelector("tpen-transcription-block")?.shadowRoot?.querySelector(".transcription-line"),
-            lineIndicator: root?.querySelector("tpen-project-header")?.shadowRoot?.querySelector(".line-indicator"),
-            nextPageButton: root?.querySelector("tpen-transcription-block")?.shadowRoot?.querySelector(".next-page-button"),
-            prevPageButton: root?.querySelector("tpen-transcription-block")?.shadowRoot?.querySelector(".prev-page-button"),
-            nextButton: root?.querySelector("tpen-transcription-block")?.shadowRoot?.querySelector(".next-button"),
-            prevButton: root?.querySelector("tpen-transcription-block")?.shadowRoot?.querySelector(".prev-button"),
-        }
-    }
-
-    async applyLineSelection(thisLine) {
-        const nodes = this.getTpenNodes()
-        TPEN.activeLine = thisLine
-        TPEN.activeLineIndex = this.#page.items.findIndex(i => i.id === thisLine.id)
-
-        const transcription = new TranscriptionInterface()
-        const { region } = transcription.setCanvasAndSelector(thisLine, this.#page)
-
-        if (region) {
-            const [x, y, w, h] = region.split(',').map(Number)
-            nodes.topImage?.moveTo(x, y, w, h)
-            nodes.bottomImage?.moveUnder(x, y, w, h, nodes.topImage)
-        }
-
-        thisLine = await vault.get(thisLine, 'annotation', true)
-        const previousLine = await vault.get(this.#page.items[TPEN.activeLineIndex - 1], 'annotation', true)
-
-        nodes.input.value = thisLine?.body?.value || ''
-        nodes.prevLine.textContent = previousLine?.body?.value || 'No previous line'
-        nodes.lineIndicator.textContent = `Line ${TPEN.activeLineIndex + 1}`
-
-        if (this.#page.items.length <= 1) {
-            nodes.nextButton?.classList.add("hidden")
-            nodes.nextPageButton?.classList.remove("hidden")
-            nodes.prevPageButton?.classList.remove("hidden")
-            nodes.prevButton?.classList.add("hidden")
-        }
-        if (TPEN.activeLineIndex === 0) {
-            nodes.nextButton?.classList.remove("hidden")
-            nodes.nextPageButton?.classList.add("hidden")
-            nodes.prevPageButton?.classList.remove("hidden")
-            nodes.prevButton?.classList.add("hidden")
-        }
-        if (TPEN.activeLineIndex === this.#page.items.length - 1) {
-            nodes.nextButton?.classList.add("hidden")
-            nodes.nextPageButton?.classList.remove("hidden")
-            nodes.prevPageButton?.classList.add("hidden")
-            nodes.prevButton?.classList.remove("hidden")
-        }
-        if (TPEN.activeLineIndex > 0 && TPEN.activeLineIndex < this.#page.items.length) {
-            nodes.nextButton?.classList.remove("hidden")
-            nodes.nextPageButton?.classList.add("hidden")
-            nodes.prevPageButton?.classList.add("hidden")
-            nodes.prevButton?.classList.remove("hidden")
-        }
-        
-        nodes.iframe?.contentWindow?.postMessage({
-            type: "SELECT_ANNOTATION",
-            lineId: thisLine.id.split("/").pop()
-        }, "*")
-    }
-
     async selectColumn(e) {
         const selected = e.target.value
 
         if (selected === "unordered-lines") {
             const firstId = this.remainingUnorderedLines[0]
             const idx = this.#page.items.findIndex(i => i.id === firstId)
-            const thisLine = this.#page.items[idx]
-            await this.applyLineSelection(thisLine)
+            if (idx !== -1) {
+                // Dispatch event for transcription interface to handle
+                eventDispatcher.dispatch("tpen-column-selected", {
+                    lineIndex: idx,
+                    columnId: selected,
+                    lineId: firstId
+                })
+            }
             return
         }
 
@@ -191,8 +125,12 @@ export default class ColumnSelector extends HTMLElement {
         const index = this.#page.items.findIndex(i => i.id === firstId)
         if (index === -1) return
 
-        const thisLine = this.#page.items[index]
-        await this.applyLineSelection(thisLine)
+        // Dispatch event for transcription interface to handle
+        eventDispatcher.dispatch("tpen-column-selected", {
+            lineIndex: index,
+            columnId: selected,
+            lineId: firstId
+        })
     }
 }
 
