@@ -60,7 +60,7 @@ class LeaveProject extends HTMLElement {
         }
         this.shadowRoot.innerHTML = `
             <style>
-                #leaveBtn {
+                #leaveBtn, #noLeaveBtn {
                     background-color: var(--primary-color);
                     padding: 10px 20px;
                     cursor: pointer;
@@ -86,6 +86,7 @@ class LeaveProject extends HTMLElement {
                 longer appear as a collaborator and the project will not appear in your projects 
                 list.  To restore access you will have to be invited into the project again.
             </p>
+            <button id="noLeaveBtn">I Am Not Ready To Leave!</button>
             <button id="leaveBtn">I Am Ready To Leave This Project</button>
         `
         this.attachEventListeners()
@@ -93,7 +94,9 @@ class LeaveProject extends HTMLElement {
 
     attachEventListeners() {
         const leaveBtn = this.shadowRoot.getElementById("leaveBtn")
+        const noLeaveBtn = this.shadowRoot.getElementById("noLeaveBtn")
         leaveBtn.addEventListener('click', (ev) => this.leaveProject())
+        noLeaveBtn.addEventListener('click', (ev) => document.location.href=`/project?projectID=${TPEN.activeProject._id}`)
     }
 
     leaveProject() {

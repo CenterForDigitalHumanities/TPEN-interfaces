@@ -14,6 +14,34 @@ permalink: /project/options
     <script type="module" src="/components/gui/site/index.js"></script>
     <script type="module" src="/components/project-options/index.js"></script>
     <link href="/components/gui/site/index.css" rel="stylesheet" type="text/css" />
+    <style>
+        #projectManagementBtn {
+            position: absolute;
+            top:  4.85em;
+            display: none;
+            background-color: var(--primary-color);
+            padding: 10px 20px;
+            color: var(--white);
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        #projectManagementBtn:hover {
+          background-color: var(--primary-light);
+        }
+
+        #projectManagementBtn span {
+          position: relative;
+          left: -10px;
+          display: inline-block;
+          transform: rotate(180deg);
+          -webkit-transform: rotate(180deg);
+          -moz-transform: rotate(180deg);
+          -o-transform: rotate(180deg);
+          -ms-transform: rotate(180deg);
+        }
+    </style>
 </head>
 
 <body>
@@ -26,7 +54,24 @@ permalink: /project/options
             <h2 slot="header">Project Configuration</h2>
             <tpen-project-customization slot="body">  </tpen-project-customization>
         </tpen-card>
+        <button id="projectManagementBtn"><span>↪</span> Go to Project Management</button>
     </tpen-page>
 </body>
+
+<script type="module">
+    import TPEN from '../../api/TPEN.js'
+    import CheckPermissions from '../../components/check-permissions/checkPermissions.js'
+
+    TPEN.eventDispatcher.on('tpen-project-loaded', async (ev) => {
+        if (await CheckPermissions.checkEditAccess('PROJECT')) {
+            const goManage = document.getElementById("projectManagementBtn")
+            if (goManage) {
+                goManage.href = `/project/manage?projectID=${ev.detail._id}`
+                goManage.style.display = "block"
+            }
+        }
+    })
+    
+</script>
 
 </html>

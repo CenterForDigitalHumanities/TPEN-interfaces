@@ -245,6 +245,32 @@ class ManageRole extends HTMLElement {
                         width: 60%;
                     }
                 }
+
+                #projectManagementBtn {
+                    position: absolute;
+                    display: none;
+                    background-color: var(--primary-color);
+                    padding: 10px 20px;
+                    color: var(--white);
+                    border-radius: 5px;
+                    cursor: pointer;
+                    transition: background-color 0.3s;
+                }
+
+                #projectManagementBtn:hover {
+                  background-color: var(--primary-light);
+                }
+
+                #projectManagementBtn span {
+                  position: relative;
+                  left: -10px;
+                  display: inline-block;
+                  transform: rotate(180deg);
+                  -webkit-transform: rotate(180deg);
+                  -moz-transform: rotate(180deg);
+                  -o-transform: rotate(180deg);
+                  -ms-transform: rotate(180deg);
+                }
             </style>
             <h3>Edit Roles & Permissions</h3>
             <div class="xyz">
@@ -352,6 +378,7 @@ class ManageRole extends HTMLElement {
                     </div>
                 </div>
             </div>
+            <button id="projectManagementBtn"><span>↪</span> Go to Project Management</button>
         `
 
         this.shadowRoot.getElementById("add-permissions").addEventListener('click', () => this.addPermissions(group))
@@ -359,6 +386,9 @@ class ManageRole extends HTMLElement {
         this.shadowRoot.getElementById("edit-role-name").addEventListener('click', () => this.editRoleName())
         this.shadowRoot.getElementById("save-role").addEventListener('click', () => this.addRole(group))
         this.shadowRoot.getElementById("update-role").addEventListener('click', () => this.updateRole(group))
+        if (await CheckPermissions.checkEditAccess("project")) {
+            this.shadowRoot.getElementById("projectManagementBtn").addEventListener('click', () => document.location.href = `/project/manage?projectID=${TPEN.screen.projectInQuery}`)
+        }
 
         const rolesList = this.shadowRoot.querySelector(".roles-list")
         Object.entries(group || {}).map(([key, value]) => ({ id: key, name: value }))

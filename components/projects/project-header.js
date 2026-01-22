@@ -91,9 +91,10 @@ export default class ProjectHeader extends HTMLElement {
             <tpen-column-selector></tpen-column-selector>
             <div class="line-indicator">Line indicator</div>
             <div class="control-buttons">
-              <a class="nav-icon" href="/index"><img draggable="false" src="../../assets/icons/home.png" alt="Home"></a>
-              <a class="nav-icon" href="/project/manage?projectID=${TPEN.screen.projectInQuery}"><img draggable="false" src="../../assets/icons/contact.png" alt="Manage Project"></a>
-              <a class="nav-icon" href="/profile"><img draggable="false" src="../../assets/icons/profile.png" alt="Profile"></a>
+              <a title="Home" class="nav-icon" href="/index"><img draggable="false" src="../../assets/icons/home.png" alt="Home"></a>
+              <a title="Identify Lines" class="nav-icon" href="/annotator?projectID=${TPEN.screen.projectInQuery}&pageID=${TPEN.screen.pageInQuery}"><img draggable="false" src="../../assets/icons/parse-lines.svg" alt="Lines">
+              <a title="Project Settings" class="nav-icon" href="/project/manage?projectID=${TPEN.screen.projectInQuery}"><img draggable="false" src="../../assets/icons/contact.png" alt="Manage Project"></a>
+              <a title="My Profile" class="nav-icon" href="/profile"><img draggable="false" src="../../assets/icons/profile.png" alt="Profile"></a>
             </div>
           </nav>
         `

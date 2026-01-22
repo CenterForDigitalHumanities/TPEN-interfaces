@@ -235,10 +235,36 @@ class AnnotoriousAnnotator extends HTMLElement {
           border-radius: 5px;
           cursor: pointer;
           transition: background-color 0.3s;
-          z-index: 10;
+          z-index: 9;
         }
         #autoParseBtn:hover {
           background-color: var(--primary-light);
+        }
+        #projectManagementBtn {
+          position: absolute;
+          display: none;
+          bottom: 10px;
+          left: 5px;
+          background-color: var(--primary-color);
+          padding: 10px 20px;
+          color: var(--white);
+          border-radius: 5px;
+          cursor: pointer;
+          transition: background-color 0.3s;
+          z-index: 9;
+        }
+        #projectManagementBtn:hover {
+          background-color: var(--primary-light);
+        }
+        #projectManagementBtn span {
+          position: relative;
+          left: -10px;
+          display: inline-block;
+          transform: rotate(180deg);
+          -webkit-transform: rotate(180deg);
+          -moz-transform: rotate(180deg);
+          -o-transform: rotate(180deg);
+          -ms-transform: rotate(180deg);
         }
       </style>
       <div>
@@ -278,6 +304,7 @@ class AnnotoriousAnnotator extends HTMLElement {
           <input id="saveBtn" type="button" value="Save Annotations"/>
         </div>
         <button id="autoParseBtn">Auto Parse</button>
+        <button id="projectManagementBtn"><span>&rarrhk;</span> Go to Project Management</button>
         <div id="annotator-container"> Loading Annotorious and getting the TPEN3 Page information... </div>
         <div id="ruler"></div>
         <span id="sampleRuler"></span>
@@ -348,6 +375,12 @@ class AnnotoriousAnnotator extends HTMLElement {
     const addLinesBtn = this.shadowRoot.getElementById("addLinesBtn")
     const mergeLinesBtn = this.shadowRoot.getElementById("mergeLinesBtn")
     const drag = this.shadowRoot.querySelectorAll(".dragMe")
+    if (await CheckPermissions.checkEditAccess("project")) {
+      const manageProjectBtn = this.shadowRoot.querySelector("#projectManagementBtn")
+      manageProjectBtn.style.display = "block"
+      manageProjectBtn.addEventListener("click", (e) => document.location.href = `/project/manage?projectID=${TPEN.activeProject._id}`)
+    }
+
     drag.forEach(elem => elem.addEventListener("mousedown", (e) => this.dragging(e)))
     addLinesBtn.addEventListener("click", (e) => this.toggleAddLines(e))
     mergeLinesBtn.addEventListener("click", (e) => this.toggleMergeLines(e))
