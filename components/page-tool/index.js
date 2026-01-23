@@ -375,13 +375,13 @@ export default class PageTool extends HTMLElement {
               width: fit-content;
             }
 
-            .lines-btn {
+            .lines-btn, .columns-btn {
               margin: 10px auto;
               display: none;
               width: fit-content;
             }
 
-            .grayscale-btn, .invert-btn, .reset-btn, .lines-btn {
+            .grayscale-btn, .invert-btn, .reset-btn, .lines-btn, .columns-btn {
               min-width: 220px;
               padding: 10px 18px;
               border: 2px solid rgb(0, 90, 140);
@@ -393,8 +393,8 @@ export default class PageTool extends HTMLElement {
               transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
             }
 
-            .grayscale-btn:hover, .invert-btn:hover, .reset-btn:hover, .lines-btn:hover,
-            .grayscale-btn:focus, .invert-btn:focus, .reset-btn:focus, .lines-btn:focus {
+            .grayscale-btn:hover, .invert-btn:hover, .reset-btn:hover, .lines-btn:hover, .columns-btn:hover,
+            .grayscale-btn:focus, .invert-btn:focus, .reset-btn:focus, .lines-btn:focus, .columns-btn:hover {
               background-color: rgb(0, 90, 140);
               color: white;
             }
@@ -453,9 +453,9 @@ export default class PageTool extends HTMLElement {
                 <button class="drawer-close-btn" type="button" title="Close" aria-label="Close">×</button>
             </div>
             <div class="drawer-content">
-                <button type="button" class="reset-btn">RESET TO DEFAULTS</button>
                 <div class="tool-section">
                   <h4 class="tool-section-title">IMAGE CONTROLS</h4>
+                  <button type="button" class="reset-btn">RESET TO DEFAULTS</button>
                   <button type="button" class="grayscale-btn">GRAYSCALE</button>
                   <button type="button" class="invert-btn">INVERT</button>
                   <div class="tool-sliders">
@@ -468,8 +468,9 @@ export default class PageTool extends HTMLElement {
                   </div>
                 </div>
                 <div class="tool-section parsing-section">
-                    <h4 class="tool-section-title">LINE PARSING</h4>
+                    <h4 class="tool-section-title">LINES & COLUMNS</h4>
                     <button type="button" class="lines-btn">IDENTIFY LINES</button>
+                    <button type="button" class="columns-btn">IDENTIFY COLUMNS</button>
                 </div>
             </div>
         </div>
@@ -482,10 +483,14 @@ export default class PageTool extends HTMLElement {
         this.shadowRoot.querySelector('.reset-btn')?.addEventListener('click', () => this.resetFilters())
         if (CheckPermissions.checkEditAccess("LINE", "SELECTOR")) {
             const linesBtn = this.shadowRoot.querySelector('.lines-btn')
+            const columnsBtn = this.shadowRoot.querySelector('.columns-btn')
             this.shadowRoot.querySelector('.parsing-section').style.display = "block"
             linesBtn.style.display = "block"
+            columnsBtn.style.display = "block"
             linesBtn.addEventListener('click', () => 
                 document.location.href = `/annotator?projectID=${TPEN.activeProject._id}&pageID=${TPEN.screen.pageInQuery}`)
+            columnsBtn.addEventListener('click', () => 
+                document.location.href = `/manage-columns?projectID=${TPEN.activeProject._id}&pageID=${TPEN.screen.pageInQuery}`)
         }
     }
 }

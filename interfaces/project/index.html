@@ -91,7 +91,7 @@ permalink: /project
     import TPEN from '../../api/TPEN.js'
     import CheckPermissions from '../../components/check-permissions/checkPermissions.js'
 
-    TPEN.eventDispatcher.on('tpen-project-loaded', async (ev) => {
+    TPEN.eventDispatcher.on('tpen-project-loaded', (ev) => {
         const goParse = document.getElementById("goParse")
         const goTranscribe = document.getElementById("goTranscribe")
         const leaveProject = document.getElementById("leaveProject")

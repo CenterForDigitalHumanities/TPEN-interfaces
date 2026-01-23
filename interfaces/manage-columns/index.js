@@ -243,9 +243,9 @@ class TpenManageColumns extends HTMLElement {
                     <button id="clearSelectionBtn">Clear All</button>
                     <hr>
                     <div class="inter-links">
-                        <button class="goBtn" id="identifyLinesBtn"><span aria-hidden="true">↪</span>Go Identify Lines</button>
-                        <button class="goBtn" id="transcribeBtn"><span aria-hidden="true">↪</span>Go Transcribe</button>
-                        <button class="goBtn" id="projectManagementBtn"><span aria-hidden="true">↪</span>Go to Project Management</button>
+                        <button type="button" class="goBtn" id="identifyLinesBtn"><span aria-hidden="true">↪</span>Go Identify Lines</button>
+                        <button type="button" class="goBtn" id="transcribeBtn"><span aria-hidden="true">↪</span>Go Transcribe</button>
+                        <button type="button" class="goBtn" id="projectManagementBtn"><span aria-hidden="true">↪</span>Go to Project Management</button>
                     </div>
                 </div>
                 <div class="container" id="container"></div>

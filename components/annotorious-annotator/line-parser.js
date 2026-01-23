@@ -300,7 +300,7 @@ class AnnotoriousAnnotator extends HTMLElement {
           <a id="createColumnsBtn" href="#">Manage Columns</a>
           <input id="saveBtn" type="button" value="Save Annotations"/>
         </div>
-        <button id="autoParseBtn">Auto Parse</button>
+        <button type="button" id="autoParseBtn">Auto Parse</button>
         <button type="button" id="projectManagementBtn"><span aria-hidden="true">↪</span> Go to Project Management</button>
         <div id="annotator-container"> Loading Annotorious and getting the TPEN3 Page information... </div>
         <div id="ruler"></div>
@@ -623,7 +623,7 @@ class AnnotoriousAnnotator extends HTMLElement {
         srcDown: "../interfaces/annotator/images/transcribe.png",
         onClick: (e) => {
             if (this.#resolvedAnnotationPage?.$isDirty) {
-              if (confirm("Stop line parsing and go transcribe?  Unsaved changes will be lost.")) 
+              if (confirm("Stop identifying lines and go transcribe?  Unsaved changes will be lost.")) 
                 location.href = `/transcribe?projectID=${TPEN.activeProject._id}&pageID=${this.#annotationPageID}`  
             }
             else {

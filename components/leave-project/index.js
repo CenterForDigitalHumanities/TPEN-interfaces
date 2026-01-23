@@ -86,8 +86,8 @@ class LeaveProject extends HTMLElement {
                 longer appear as a collaborator and the project will not appear in your projects 
                 list.  To restore access you will have to be invited into the project again.
             </p>
-            <button id="noLeaveBtn">I Am Not Ready To Leave!</button>
-            <button id="leaveBtn">I Am Ready To Leave This Project</button>
+            <button type="button" id="noLeaveBtn">I Am Not Ready To Leave!</button>
+            <button type="button" id="leaveBtn">I Am Ready To Leave This Project</button>
         `
         this.attachEventListeners()
     }
