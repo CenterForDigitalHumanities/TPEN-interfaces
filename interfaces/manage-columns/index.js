@@ -243,9 +243,9 @@ class TpenManageColumns extends HTMLElement {
                     <button id="clearSelectionBtn">Clear All</button>
                     <hr>
                     <div class="inter-links">
-                        <button class="goBtn" id="identifyLinesBtn"><span>↪</span>Go Identify Lines</button>
-                        <button class="goBtn" id="transcribeBtn"><span>↪</span>Go Transcribe</button>
-                        <button class="goBtn" id="projectManagementBtn"><span>↪</span>Go to Project Management</button>
+                        <button class="goBtn" id="identifyLinesBtn"><span aria-hidden="true">↪</span>Go Identify Lines</button>
+                        <button class="goBtn" id="transcribeBtn"><span aria-hidden="true">↪</span>Go Transcribe</button>
+                        <button class="goBtn" id="projectManagementBtn"><span aria-hidden="true">↪</span>Go to Project Management</button>
                     </div>
                 </div>
                 <div class="container" id="container"></div>
@@ -307,7 +307,7 @@ class TpenManageColumns extends HTMLElement {
             this.identifyLinesBtn.style.display = "block"
             this.identifyLinesBtn.addEventListener("click", (ev) => 
                 document.location.href = `/annotator?projectID=${TPEN.activeProject._id}&pageID=${TPEN.screen.pageInQuery}`)
-            if (CheckPermissions.checkEditAccess("project")) {
+            if (CheckPermissions.checkEditAccess("PROJECT")) {
               this.projectManagementBtn.style.display = "block"
               this.projectManagementBtn.addEventListener("click", (ev) => 
                 document.location.href = `/project/manage?projectID=${TPEN.activeProject._id}`)

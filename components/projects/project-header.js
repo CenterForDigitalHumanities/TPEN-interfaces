@@ -115,7 +115,7 @@ export default class ProjectHeader extends HTMLElement {
         if (CheckPermissions.checkEditAccess("PROJECT")) {
             const projectManagementBtn = this.shadowRoot.querySelector('.manage-project')
             projectManagementBtn.style.display = "inline-block"
-            projectManagementBtn.href = `/manage/project?projectID=${TPEN.activeProject._id}`
+            projectManagementBtn.href = `/project/manage?projectID=${TPEN.activeProject._id}`
         }
         const CanvasSelectOptions = projectCanvasLabels.map((canvasLabel, index) => {
             const option = document.createElement('option')

@@ -100,7 +100,7 @@ permalink: /project
         }
         if (goParse) goParse.setAttribute("href", `/annotator?projectID=${ev.detail._id}`)
         if (goTranscribe) goTranscribe.setAttribute("href", `/transcribe?projectID=${ev.detail._id}`)
-        if (await CheckPermissions.checkEditAccess('PROJECT')) {
+        if (CheckPermissions.checkEditAccess('PROJECT')) {
             const goManage = document.getElementById("projectManagementBtn")
             if (goManage) {
                 goManage.href = `/project/manage?projectID=${ev.detail._id}`

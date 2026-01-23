@@ -480,7 +480,7 @@ export default class PageTool extends HTMLElement {
         this.shadowRoot.querySelector('.contrast-slider')?.addEventListener('input', (e) => this.setContrast(e))
         this.shadowRoot.querySelector('.brightness-slider')?.addEventListener('input', (e) => this.setBrightness(e))
         this.shadowRoot.querySelector('.reset-btn')?.addEventListener('click', () => this.resetFilters())
-        if (CheckPermissions.checkEditAccess("PROJECT", "SELECTOR")) {
+        if (CheckPermissions.checkEditAccess("LINE", "SELECTOR")) {
             const linesBtn = this.shadowRoot.querySelector('.lines-btn')
             this.shadowRoot.querySelector('.parsing-section').style.display = "block"
             linesBtn.style.display = "block"

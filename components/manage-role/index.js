@@ -374,7 +374,7 @@ class ManageRole extends HTMLElement {
                     </div>
                 </div>
             </div>
-            <button id="projectManagementBtn"><span>↪</span> Go to Project Management</button>
+            <button id="projectManagementBtn"><span aria-hidden="true">↪</span> Go to Project Management</button>
         `
 
         this.shadowRoot.getElementById("add-permissions").addEventListener('click', () => this.addPermissions(group))
@@ -382,7 +382,7 @@ class ManageRole extends HTMLElement {
         this.shadowRoot.getElementById("edit-role-name").addEventListener('click', () => this.editRoleName())
         this.shadowRoot.getElementById("save-role").addEventListener('click', () => this.addRole(group))
         this.shadowRoot.getElementById("update-role").addEventListener('click', () => this.updateRole(group))
-        if (await CheckPermissions.checkEditAccess("PROJECT")) {
+        if (CheckPermissions.checkEditAccess("PROJECT")) {
             const manageBtn = this.shadowRoot.getElementById("projectManagementBtn")
             manageBtn.style.display = "block"
             manageBtn.addEventListener('click', () => document.location.href = `/project/manage?projectID=${TPEN.activeProject._id}`)

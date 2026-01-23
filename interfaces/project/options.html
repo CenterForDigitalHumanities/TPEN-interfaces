@@ -50,7 +50,7 @@ permalink: /project/options
             <h2 slot="header">Project Configuration</h2>
             <tpen-project-customization slot="body">  </tpen-project-customization>
         </tpen-card>
-        <button id="projectManagementBtn"><span>↪</span> Go to Project Management</button>
+        <button id="projectManagementBtn"><span aria-hidden="true">↪</span> Go to Project Management</button>
     </tpen-page>
 </body>
 
@@ -58,8 +58,8 @@ permalink: /project/options
     import TPEN from '../../api/TPEN.js'
     import CheckPermissions from '../../components/check-permissions/checkPermissions.js'
 
-    TPEN.eventDispatcher.on('tpen-project-loaded', async (ev) => {
-        if (await CheckPermissions.checkEditAccess('PROJECT')) {
+    TPEN.eventDispatcher.on('tpen-project-loaded', (ev) => {
+        if (CheckPermissions.checkEditAccess('PROJECT')) {
             const goManage = document.getElementById("projectManagementBtn")
             if (goManage) {
                 goManage.style.display = "block"
