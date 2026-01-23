@@ -371,11 +371,13 @@ class AnnotoriousAnnotator extends HTMLElement {
     const addLinesBtn = this.shadowRoot.getElementById("addLinesBtn")
     const mergeLinesBtn = this.shadowRoot.getElementById("mergeLinesBtn")
     const drag = this.shadowRoot.querySelectorAll(".dragMe")
-    if (await CheckPermissions.checkEditAccess("PROJECT")) {
-      const manageProjectBtn = this.shadowRoot.querySelector("#projectManagementBtn")
-      manageProjectBtn.style.display = "block"
-      manageProjectBtn.addEventListener("click", (e) => document.location.href = `/project/manage?projectID=${TPEN.activeProject._id}`)
-    }
+    CheckPermissions.checkEditAccess("PROJECT").then(hasAccess => {
+      if (hasAccess) {
+        const manageProjectBtn = this.shadowRoot.querySelector("#projectManagementBtn")
+        manageProjectBtn.style.display = "block"
+        manageProjectBtn.addEventListener("click", (e) => document.location.href = `/project/manage?projectID=${TPEN.activeProject._id}`)
+      }
+    })
 
     drag.forEach(elem => elem.addEventListener("mousedown", (e) => this.dragging(e)))
     addLinesBtn.addEventListener("click", (e) => this.toggleAddLines(e))
