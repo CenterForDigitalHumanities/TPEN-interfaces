@@ -96,7 +96,7 @@ class LeaveProject extends HTMLElement {
         const leaveBtn = this.shadowRoot.getElementById("leaveBtn")
         const noLeaveBtn = this.shadowRoot.getElementById("noLeaveBtn")
         leaveBtn.addEventListener('click', (ev) => this.leaveProject())
-        noLeaveBtn.addEventListener('click', (ev) => document.location.href=`/project?projectID=${TPEN.activeProject._id}`)
+        noLeaveBtn.addEventListener('click', (ev) => document.location.href = `/project?projectID=${TPEN.activeProject._id}`)
     }
 
     leaveProject() {
