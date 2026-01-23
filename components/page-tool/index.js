@@ -394,7 +394,7 @@ export default class PageTool extends HTMLElement {
             }
 
             .grayscale-btn:hover, .invert-btn:hover, .reset-btn:hover, .lines-btn:hover, .columns-btn:hover,
-            .grayscale-btn:focus, .invert-btn:focus, .reset-btn:focus, .lines-btn:focus, .columns-btn:hover {
+            .grayscale-btn:focus, .invert-btn:focus, .reset-btn:focus, .lines-btn:focus, .columns-btn:focus {
               background-color: rgb(0, 90, 140);
               color: white;
             }
