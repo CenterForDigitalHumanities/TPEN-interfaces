@@ -386,8 +386,10 @@ class ManageRole extends HTMLElement {
         this.shadowRoot.getElementById("edit-role-name").addEventListener('click', () => this.editRoleName())
         this.shadowRoot.getElementById("save-role").addEventListener('click', () => this.addRole(group))
         this.shadowRoot.getElementById("update-role").addEventListener('click', () => this.updateRole(group))
-        if (await CheckPermissions.checkEditAccess("project")) {
-            this.shadowRoot.getElementById("projectManagementBtn").addEventListener('click', () => document.location.href = `/project/manage?projectID=${TPEN.screen.projectInQuery}`)
+        if (await CheckPermissions.checkEditAccess("PROJECT")) {
+            const manageBtn = this.shadowRoot.getElementById("projectManagementBtn")
+            manageBtn.style.display = "block"
+            manageBtn.addEventListener('click', () => document.location.href = `/project/manage?projectID=${TPEN.screen.projectInQuery}`)
         }
 
         const rolesList = this.shadowRoot.querySelector(".roles-list")

@@ -59,8 +59,10 @@ permalink: /manage/quicktype
         if (await CheckPermissions.checkEditAccess('PROJECT')) {
             const goManage = document.getElementById("projectManagementBtn")
             if (goManage) {
-                goManage.href = `/project/manage?projectID=${ev.detail._id}`
                 goManage.style.display = "block"
+                goManage.addEventListener('click', () => {
+                    document.location.href = `/project/manage?projectID=${ev.detail._id}`
+                })
             }
         }
     })
