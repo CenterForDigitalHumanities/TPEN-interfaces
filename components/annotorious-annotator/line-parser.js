@@ -69,7 +69,7 @@ class AnnotoriousAnnotator extends HTMLElement {
 
   // Initialize HTML after loading in a TPEN3 Project
   render() {
-    if (!CheckPermissions.checkAllAccess("line", "selector")) {
+    if (!CheckPermissions.checkAllAccess("LINE", "SELECTOR")) {
       this.shadowRoot.innerHTML = "You do not have the proper project permissions to use this interface."
       return
     }
@@ -301,7 +301,7 @@ class AnnotoriousAnnotator extends HTMLElement {
           <input id="saveBtn" type="button" value="Save Annotations"/>
         </div>
         <button id="autoParseBtn">Auto Parse</button>
-        <button id="projectManagementBtn"><span aria-hidden="true">↪</span> Go to Project Management</button>
+        <button type="button" id="projectManagementBtn"><span aria-hidden="true">↪</span> Go to Project Management</button>
         <div id="annotator-container"> Loading Annotorious and getting the TPEN3 Page information... </div>
         <div id="ruler"></div>
         <span id="sampleRuler"></span>
@@ -614,7 +614,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       }
     })
     // Link to transcribe if they have view permissions for it
-    if (CheckPermissions.checkViewAccess("line", "text") || CheckPermissions.checkEditAccess("line", "text")) {
+    if (CheckPermissions.checkViewAccess("LINE", "TEXT") || CheckPermissions.checkEditAccess("LINE", "TEXT")) {
       let parsingRedirectButton = new OpenSeadragon.Button({
         tooltip: "Go Transcribe",
         srcRest: "../interfaces/annotator/images/transcribe.png",

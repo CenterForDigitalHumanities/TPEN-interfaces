@@ -374,7 +374,7 @@ class ManageRole extends HTMLElement {
                     </div>
                 </div>
             </div>
-            <button id="projectManagementBtn"><span aria-hidden="true">↪</span> Go to Project Management</button>
+            <button type="button" id="projectManagementBtn"><span aria-hidden="true">↪</span> Go to Project Management</button>
         `
 
         this.shadowRoot.getElementById("add-permissions").addEventListener('click', () => this.addPermissions(group))

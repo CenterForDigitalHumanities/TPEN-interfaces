@@ -279,7 +279,26 @@ class TpenManageColumns extends HTMLElement {
         this.pageID = `${TPEN.RERUMURL}/id/${params.get("pageID")}`
         this.projectID = params.get("projectID")
         this.annotationPageID = this.pageID.split("/").pop()
-        TPEN.eventDispatcher.on('tpen-project-loaded', async () => await this.loadPage(this.pageID))
+        TPEN.eventDispatcher.on('tpen-project-loaded', async () => {
+            if (!CheckPermissions.checkAllAccess("LINE", "SELECTOR")) {
+              this.shadowRoot.innerHTML = "You do not have the proper project permissions to use this interface."
+              return
+            }
+            this.identifyLinesBtn.style.display = "block"
+            this.identifyLinesBtn.addEventListener("click", (ev) => 
+                document.location.href = `/annotator?projectID=${TPEN.activeProject._id}&pageID=${TPEN.screen.pageInQuery}`)
+            if (CheckPermissions.checkEditAccess("PROJECT")) {
+              this.projectManagementBtn.style.display = "block"
+              this.projectManagementBtn.addEventListener("click", (ev) => 
+                document.location.href = `/project/manage?projectID=${TPEN.activeProject._id}`)
+            }
+            if (CheckPermissions.checkViewAccess("LINE", "TEXT") || CheckPermissions.checkEditAccess("LINE", "TEXT")) {
+              this.transcribeBtn.style.display = "block"
+              this.transcribeBtn.addEventListener("click", (ev) => 
+                document.location.href = `/transcribe?projectID=${TPEN.activeProject._id}&pageID=${TPEN.screen.pageInQuery}`)
+            }
+            await this.loadPage(this.pageID)
+        })
     }
 
     async columnLabelCheck() {
@@ -300,23 +319,6 @@ class TpenManageColumns extends HTMLElement {
 
     async loadPage(pageID = null) {
         try {
-            if (!CheckPermissions.checkAllAccess("line", "selector")) {
-              this.shadowRoot.innerHTML = "You do not have the proper project permissions to use this interface."
-              return
-            }
-            this.identifyLinesBtn.style.display = "block"
-            this.identifyLinesBtn.addEventListener("click", (ev) => 
-                document.location.href = `/annotator?projectID=${TPEN.activeProject._id}&pageID=${TPEN.screen.pageInQuery}`)
-            if (CheckPermissions.checkEditAccess("PROJECT")) {
-              this.projectManagementBtn.style.display = "block"
-              this.projectManagementBtn.addEventListener("click", (ev) => 
-                document.location.href = `/project/manage?projectID=${TPEN.activeProject._id}`)
-            }
-            if (CheckPermissions.checkViewAccess("line", "text") || CheckPermissions.checkEditAccess("line", "text")) {
-              this.transcribeBtn.style.display = "block"
-              this.transcribeBtn.addEventListener("click", (ev) => 
-                document.location.href = `/transcribe?projectID=${TPEN.activeProject._id}&pageID=${TPEN.screen.pageInQuery}`)
-            }
             this.showLoading()
             let { imgUrl, annotations, imgWidth, imgHeight } = await this.fetchPageViewerData(pageID)
             await this.renderImage(imgUrl)
