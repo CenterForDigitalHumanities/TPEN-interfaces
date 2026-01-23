@@ -227,6 +227,7 @@ class AnnotoriousAnnotator extends HTMLElement {
         }
         #autoParseBtn {
           position: absolute;
+          display: none;
           top: 10px;
           right: 10px;
           background-color: var(--primary-color);
@@ -371,11 +372,6 @@ class AnnotoriousAnnotator extends HTMLElement {
     const addLinesBtn = this.shadowRoot.getElementById("addLinesBtn")
     const mergeLinesBtn = this.shadowRoot.getElementById("mergeLinesBtn")
     const drag = this.shadowRoot.querySelectorAll(".dragMe")
-    if (CheckPermissions.checkEditAccess("PROJECT")) {
-      const manageProjectBtn = this.shadowRoot.querySelector("#projectManagementBtn")
-      manageProjectBtn.style.display = "block"
-      manageProjectBtn.addEventListener("click", (e) => document.location.href = `/project/manage?projectID=${TPEN.activeProject._id}`)
-    }
 
     drag.forEach(elem => elem.addEventListener("mousedown", (e) => this.dragging(e)))
     addLinesBtn.addEventListener("click", (e) => this.toggleAddLines(e))
@@ -618,7 +614,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       }
     })
     // Link to transcribe if they have view permissions for it
-    if(CheckPermissions.checkViewAccess("line", "text")) {
+    if (CheckPermissions.checkViewAccess("line", "text") || CheckPermissions.checkEditAccess("line", "text")) {
       let parsingRedirectButton = new OpenSeadragon.Button({
         tooltip: "Go Transcribe",
         srcRest: "../interfaces/annotator/images/transcribe.png",
@@ -797,6 +793,12 @@ class AnnotoriousAnnotator extends HTMLElement {
     this.#annotoriousInstance.setAnnotations(allAnnotations, false)
     this.#annotoriousContainer.style.backgroundImage = "none"
     this.shadowRoot.getElementById("tools-container").style.display = "block"
+    this.shadowRoot.querySelector("#autoParseBtn").style.display = "block"
+    if (CheckPermissions.checkEditAccess("PROJECT")) {
+      const manageProjectBtn = this.shadowRoot.querySelector("#projectManagementBtn")
+      manageProjectBtn.style.display = "block"
+      manageProjectBtn.addEventListener("click", (e) => document.location.href = `/project/manage?projectID=${TPEN.activeProject._id}`)
+    }
   }
 
   /**

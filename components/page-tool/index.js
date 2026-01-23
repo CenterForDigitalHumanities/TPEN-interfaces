@@ -1,3 +1,4 @@
+import TPEN from '../../api/TPEN.js'
 import CheckPermissions from "../check-permissions/checkPermissions.js"
 import { onProjectReady } from "../../utilities/projectReady.js"
 
@@ -351,6 +352,10 @@ export default class PageTool extends HTMLElement {
               margin-bottom: 20px;
             }
 
+            .parsing-section {
+                display: none;
+            }
+
             .tool-section-title {
               font-size: 0.95rem;
               font-weight: 700;
@@ -370,7 +375,13 @@ export default class PageTool extends HTMLElement {
               width: fit-content;
             }
 
-            .grayscale-btn, .invert-btn, .reset-btn {
+            .lines-btn {
+              margin: 10px auto;
+              display: none;
+              width: fit-content;
+            }
+
+            .grayscale-btn, .invert-btn, .reset-btn, .lines-btn {
               min-width: 220px;
               padding: 10px 18px;
               border: 2px solid rgb(0, 90, 140);
@@ -382,8 +393,8 @@ export default class PageTool extends HTMLElement {
               transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
             }
 
-            .grayscale-btn:hover, .invert-btn:hover, .reset-btn:hover,
-            .grayscale-btn:focus, .invert-btn:focus, .reset-btn:focus {
+            .grayscale-btn:hover, .invert-btn:hover, .reset-btn:hover, .lines-btn:hover,
+            .grayscale-btn:focus, .invert-btn:focus, .reset-btn:focus, .lines-btn:focus {
               background-color: rgb(0, 90, 140);
               color: white;
             }
@@ -456,6 +467,10 @@ export default class PageTool extends HTMLElement {
                     <input type="range" class="brightness-slider" min="0" max="200" value="100">
                   </div>
                 </div>
+                <div class="tool-section parsing-section">
+                    <h4 class="tool-section-title">LINE PARSING</h4>
+                    <button type="button" class="lines-btn">IDENTIFY LINES</button>
+                </div>
             </div>
         </div>
         `
@@ -465,6 +480,13 @@ export default class PageTool extends HTMLElement {
         this.shadowRoot.querySelector('.contrast-slider')?.addEventListener('input', (e) => this.setContrast(e))
         this.shadowRoot.querySelector('.brightness-slider')?.addEventListener('input', (e) => this.setBrightness(e))
         this.shadowRoot.querySelector('.reset-btn')?.addEventListener('click', () => this.resetFilters())
+        if (CheckPermissions.checkEditAccess("PROJECT", "SELECTOR")) {
+            const linesBtn = this.shadowRoot.querySelector('.lines-btn')
+            this.shadowRoot.querySelector('.parsing-section').style.display = "block"
+            linesBtn.style.display = "block"
+            linesBtn.addEventListener('click', () => 
+                document.location.href = `/annotator?projectID=${TPEN.activeProject._id}&pageID=${TPEN.screen.pageInQuery}`)
+        }
     }
 }
 

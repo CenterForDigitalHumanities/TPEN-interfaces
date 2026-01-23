@@ -385,7 +385,7 @@ class ManageRole extends HTMLElement {
         if (await CheckPermissions.checkEditAccess("PROJECT")) {
             const manageBtn = this.shadowRoot.getElementById("projectManagementBtn")
             manageBtn.style.display = "block"
-            manageBtn.addEventListener('click', () => document.location.href = `/project/manage?projectID=${TPEN.screen.projectInQuery}`)
+            manageBtn.addEventListener('click', () => document.location.href = `/project/manage?projectID=${TPEN.activeProject._id}`)
         }
 
         const rolesList = this.shadowRoot.querySelector(".roles-list")
