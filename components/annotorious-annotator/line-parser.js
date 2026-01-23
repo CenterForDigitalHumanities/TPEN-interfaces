@@ -261,10 +261,6 @@ class AnnotoriousAnnotator extends HTMLElement {
           left: -10px;
           display: inline-block;
           transform: rotate(180deg);
-          -webkit-transform: rotate(180deg);
-          -moz-transform: rotate(180deg);
-          -o-transform: rotate(180deg);
-          -ms-transform: rotate(180deg);
         }
       </style>
       <div>
@@ -304,7 +300,7 @@ class AnnotoriousAnnotator extends HTMLElement {
           <input id="saveBtn" type="button" value="Save Annotations"/>
         </div>
         <button id="autoParseBtn">Auto Parse</button>
-        <button id="projectManagementBtn"><span>&rarrhk;</span> Go to Project Management</button>
+        <button id="projectManagementBtn"><span>↪</span> Go to Project Management</button>
         <div id="annotator-container"> Loading Annotorious and getting the TPEN3 Page information... </div>
         <div id="ruler"></div>
         <span id="sampleRuler"></span>

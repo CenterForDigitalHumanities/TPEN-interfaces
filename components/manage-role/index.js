@@ -266,10 +266,6 @@ class ManageRole extends HTMLElement {
                   left: -10px;
                   display: inline-block;
                   transform: rotate(180deg);
-                  -webkit-transform: rotate(180deg);
-                  -moz-transform: rotate(180deg);
-                  -o-transform: rotate(180deg);
-                  -ms-transform: rotate(180deg);
                 }
             </style>
             <h3>Edit Roles & Permissions</h3>
