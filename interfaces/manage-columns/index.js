@@ -207,7 +207,6 @@ class TpenManageColumns extends HTMLElement {
                     outline: var(--primary-light) 1px solid;
                     outline-offset: -3.5px;
                     color: var(--white);
-                    border-radius: 5px;
                     transition: all 0.3s;
                     padding: 10px 20px;
                     cursor: pointer;
