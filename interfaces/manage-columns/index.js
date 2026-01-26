@@ -214,8 +214,11 @@ class TpenManageColumns extends HTMLElement {
                     margin-top: 1em;
                     border: none;
                 }
-                .goBtn:hover {
+                .goBtn:hover,
+                .goBtn:focus-visible {
                     background-color: var(--primary-light);
+                    outline: 2px solid var(--primary-color);
+                    outline-offset: 2px;
                 }
                 .goBtn span {
                     position: relative;

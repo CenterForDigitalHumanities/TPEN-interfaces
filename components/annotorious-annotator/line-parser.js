@@ -238,8 +238,11 @@ class AnnotoriousAnnotator extends HTMLElement {
           transition: background-color 0.3s;
           z-index: 9;
         }
-        #autoParseBtn:hover {
+        #autoParseBtn:hover,
+        #autoParseBtn:focus-visible {
           background-color: var(--primary-light);
+          outline: 2px solid var(--primary-color);
+          outline-offset: 2px;
         }
         #projectManagementBtn {
           position: absolute;
@@ -254,8 +257,11 @@ class AnnotoriousAnnotator extends HTMLElement {
           transition: background-color 0.3s;
           z-index: 9;
         }
-        #projectManagementBtn:hover {
+        #projectManagementBtn:hover,
+        #projectManagementBtn:focus-visible {
           background-color: var(--primary-light);
+          outline: 2px solid var(--primary-color);
+          outline-offset: 2px;
         }
         #projectManagementBtn span {
           position: relative;

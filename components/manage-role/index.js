@@ -257,8 +257,11 @@ class ManageRole extends HTMLElement {
                     transition: background-color 0.3s;
                 }
 
-                #projectManagementBtn:hover {
+                #projectManagementBtn:hover,
+                #projectManagementBtn:focus-visible {
                   background-color: var(--primary-light);
+                  outline: 2px solid var(--primary-color);
+                  outline-offset: 2px;
                 }
 
                 #projectManagementBtn span {
