@@ -79,19 +79,19 @@ permalink: /project/metadata
     </tpen-page>
     <script type="module">
         import TPEN from '../../api/TPEN.js'
-        import CheckPermissions from '../../utilities/checkPermissions.js'
+        import CheckPermissions from '../../components/check-permissions/checkPermissions.js'
 
         TPEN.eventDispatcher.on('tpen-project-loaded', (ev) => {
-            const goManage = document.getElementById("projectManagementBtn")
-            if (goManage) {
-                goManage.style.display = "block"
-                goManage.addEventListener('click', () => {
-                    document.location.href = `/project/manage?projectID=${ev.detail._id}`
-                })
+            if (CheckPermissions.checkEditAccess('PROJECT')) {
+                const goManage = document.getElementById("projectManagementBtn")
+                if (goManage) {
+                    goManage.style.display = "block"
+                    goManage.addEventListener('click', () => {
+                        document.location.href = `/project/manage?projectID=${ev.detail._id}`
+                    })
+                }
             }
-        })
 
-        ;(async () => {
             const divMetadata = document.querySelector('.tpen-metadata')
             const permissionMsg = document.querySelector('.permission-msg')
             if (!divMetadata) {
@@ -101,9 +101,9 @@ permalink: /project/metadata
             if (!scope) {
                 return
             }
-            const hasEditAccess = await CheckPermissions.checkEditAccess(null, scope.toUpperCase())
-            const hasDeleteAccess = await CheckPermissions.checkDeleteAccess(null, scope.toUpperCase())
-            const checkCreateAccess = await CheckPermissions.checkCreateAccess(null, scope.toUpperCase())
+            const hasEditAccess = CheckPermissions.checkEditAccess('*', scope.toUpperCase())
+            const hasDeleteAccess = CheckPermissions.checkDeleteAccess('*', scope.toUpperCase())
+            const checkCreateAccess = CheckPermissions.checkCreateAccess('*', scope.toUpperCase())
             
             if (hasEditAccess) {
                 divMetadata.style.display = 'inline-block'
@@ -130,7 +130,7 @@ permalink: /project/metadata
                 divMetadata.remove()
                 permissionMsg.style.display = 'inline-block'
             }
-        })()
+        })
     </script>
 </body>
 

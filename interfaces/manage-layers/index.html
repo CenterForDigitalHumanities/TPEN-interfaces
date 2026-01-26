@@ -60,14 +60,17 @@ permalink: /project/manage/layers
 </body>
 <script type="module">
     import TPEN from '../../api/TPEN.js'
+    import CheckPermissions from '../../components/check-permissions/checkPermissions.js'
 
     TPEN.eventDispatcher.on('tpen-project-loaded', (ev) => {
-        const goManage = document.getElementById("projectManagementBtn")
-        if (goManage) {
-            goManage.style.display = "block"
-            goManage.addEventListener('click', () => {
-                document.location.href = `/project/manage?projectID=${ev.detail._id}`
-            })
+        if (CheckPermissions.checkEditAccess('PROJECT')) {
+            const goManage = document.getElementById("projectManagementBtn")
+            if (goManage) {
+                goManage.style.display = "block"
+                goManage.addEventListener('click', () => {
+                    document.location.href = `/project/manage?projectID=${ev.detail._id}`
+                })
+            }
         }
     })
 </script>
