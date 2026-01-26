@@ -10,16 +10,9 @@ class ProjectLayers extends HTMLElement {
         
     }
 
-    async connectedCallback() {
+    connectedCallback() {
         TPEN.attachAuthentication(this)
-        
-        // Check if user has view permission
-        const hasViewAccess = await CheckPermissions.checkViewAccess('LAYER', 'METADATA')
-        if (!hasViewAccess) {
-            this.shadowRoot.innerHTML = `<p>You don't have permission to view layers</p>`
-            return
-        }
-        
+
         if (TPEN.activeProject?._id) {
             this.render()
         }
@@ -27,6 +20,13 @@ class ProjectLayers extends HTMLElement {
     }
 
     render() {
+        // Check if user has view permission (safe - project is loaded)
+        const hasViewAccess = CheckPermissions.checkViewAccess('LAYER', 'METADATA')
+        if (!hasViewAccess) {
+            this.shadowRoot.innerHTML = `<p>You don't have permission to view layers</p>`
+            return
+        }
+
         const layers = TPEN.activeProject.layers
         this.shadowRoot.innerHTML = `
             <style>

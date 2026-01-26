@@ -8,16 +8,9 @@ class ManagePages extends HTMLElement {
         this.attachShadow({ mode: "open" })
     }
 
-    async connectedCallback() {
+    connectedCallback() {
         TPEN.attachAuthentication(this)
-        
-        // Check if user has view permission
-        const hasViewAccess = await CheckPermissions.checkViewAccess('PAGE', 'METADATA')
-        if (!hasViewAccess) {
-            this.shadowRoot.innerHTML = `<p>You don't have permission to view pages</p>`
-            return
-        }
-        
+
         if (TPEN.activeProject?._id) {
             this.render()
         }
@@ -25,6 +18,13 @@ class ManagePages extends HTMLElement {
     }
 
     render() {
+        // Check if user has view permission (safe - project is loaded)
+        const hasViewAccess = CheckPermissions.checkViewAccess('PAGE', 'METADATA')
+        if (!hasViewAccess) {
+            this.shadowRoot.innerHTML = `<p>You don't have permission to view pages</p>`
+            return
+        }
+
         this.shadowRoot.innerHTML = `
             <style>
                 .layer-container {

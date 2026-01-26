@@ -13,16 +13,9 @@ class UpdateMetadata extends HTMLElement {
         return ['tpen-user-id']
     }
 
-    async connectedCallback() {
-        // Check if user has view permission
-        const hasViewAccess = await CheckPermissions.checkViewAccess('PROJECT', 'METADATA')
-        if (!hasViewAccess) {
-            this.shadowRoot.innerHTML = `<p>You don't have permission to view project metadata</p>`
-            return
-        }
-        
-        this.addEventListener()
+    connectedCallback() {
         TPEN.attachAuthentication(this)
+        this.setupEventListeners()
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
@@ -35,18 +28,25 @@ class UpdateMetadata extends HTMLElement {
         }
     }
 
-    addEventListener() { 
-            eventDispatcher.on("tpen-project-loaded", () => this.openModal())
-        document.getElementById("add-field-btn").addEventListener("click", () => {
+    setupEventListeners() {
+        eventDispatcher.on("tpen-project-loaded", () => this.openModal())
+        document.getElementById("add-field-btn")?.addEventListener("click", () => {
             this.addMetadataField()
         })
 
-        document.getElementById("save-metadata-btn").addEventListener("click", () => {
+        document.getElementById("save-metadata-btn")?.addEventListener("click", () => {
             this.updateMetadata()
         })
     }
 
     openModal() {
+        // Check if user has view permission (safe - project is loaded)
+        const hasViewAccess = CheckPermissions.checkViewAccess('PROJECT', 'METADATA')
+        if (!hasViewAccess) {
+            this.shadowRoot.innerHTML = `<p>You don't have permission to view project metadata</p>`
+            return
+        }
+
         const modal = document.getElementById("metadata-modal")
         const fieldsContainer = document.getElementById("metadata-fields")
         fieldsContainer.innerHTML = ""
