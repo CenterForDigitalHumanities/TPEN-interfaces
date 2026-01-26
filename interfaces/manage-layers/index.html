@@ -16,6 +16,31 @@ permalink: /project/manage/layers
     <script type="module" src="../../components/check-permissions/permission-match-element.js"></script>
     <script type="module" src="../../components/explanatory-guide/fixedGuideComponent.js"></script>
     <link rel="stylesheet" href="../../interfaces/manage-layers/index.css">
+    <style>
+        #projectManagementBtn {
+            position: absolute;
+            display: none;
+            background-color: var(--primary-color);
+            padding: 10px 20px;
+            color: var(--white);
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            border: none;
+        }
+        #projectManagementBtn:hover,
+        #projectManagementBtn:focus-visible {
+            background-color: var(--primary-light);
+            outline: 2px solid var(--primary-color);
+            outline-offset: 2px;
+        }
+        #projectManagementBtn span {
+            position: relative;
+            left: -10px;
+            display: inline-block;
+            transform: rotate(180deg);
+        }
+    </style>
 </head>
 <body>
     <tpen-page>
@@ -30,6 +55,20 @@ permalink: /project/manage/layers
                 <tpen-manage-layers></tpen-manage-layers>
             </div>
         </tpen-card>
+        <button type="button" id="projectManagementBtn"><span aria-hidden="true">↪</span> Go to Project Management</button>
     </tpen-page>
 </body>
+<script type="module">
+    import TPEN from '../../api/TPEN.js'
+
+    TPEN.eventDispatcher.on('tpen-project-loaded', (ev) => {
+        const goManage = document.getElementById("projectManagementBtn")
+        if (goManage) {
+            goManage.style.display = "block"
+            goManage.addEventListener('click', () => {
+                document.location.href = `/project/manage?projectID=${ev.detail._id}`
+            })
+        }
+    })
+</script>
 </html>

@@ -24,7 +24,7 @@ TPEN.eventDispatcher.on('tpen-project-loaded', () => {
     
     const updateMetadataBtn = document.getElementById("update-metadata-btn")
     if (updateMetadataBtn) {
-        updateMetadataBtn.href = `/components/update-metadata/index.html?projectID=${projectID}`
+        updateMetadataBtn.href = `/project/metadata?projectID=${projectID}`
     }
     
     const manageLayersBtn = document.getElementById('manage-layers-btn')

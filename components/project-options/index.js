@@ -93,7 +93,7 @@ class ProjectOptions extends HTMLElement {
             </style>
             <p>
             ${project.description ?? 'No description provided.'}
-            <a href="/components/update-metadata/index.html?projectID=${project._id}">✏️</a>
+            <a href="/project/metadata?projectID=${project._id}">✏️</a>
             </p>
             <ul style="padding-left:1em;">
             <li><b>Label:</b> ${project.getLabel()}</li>
