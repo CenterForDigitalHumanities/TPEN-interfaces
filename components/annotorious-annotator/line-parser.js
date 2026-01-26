@@ -388,7 +388,7 @@ class AnnotoriousAnnotator extends HTMLElement {
     eraseTool.addEventListener("change", (e) => this.toggleErasingMode(e))
     seeTool.addEventListener("change", (e) => this.toggleAnnotationVisibility(e))
     createColumnsBtn.addEventListener("click", () =>
-      window.location.href = `../../components/create-column/?projectID=${TPEN.activeProject._id}&pageID=${this.#annotationPageID}`
+      window.location.href = `/manage-columns?projectID=${TPEN.activeProject._id}&pageID=${this.#annotationPageID}`
     )
     saveButton.addEventListener("click", (e) => {
       this.#annotoriousInstance.cancelSelected()
