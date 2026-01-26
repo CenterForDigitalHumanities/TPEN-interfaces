@@ -256,6 +256,7 @@ class AnnotoriousAnnotator extends HTMLElement {
           cursor: pointer;
           transition: background-color 0.3s;
           z-index: 9;
+          border: none;
         }
         #projectManagementBtn:hover,
         #projectManagementBtn:focus-visible {

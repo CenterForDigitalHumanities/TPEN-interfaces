@@ -255,6 +255,7 @@ class ManageRole extends HTMLElement {
                     border-radius: 5px;
                     cursor: pointer;
                     transition: background-color 0.3s;
+                    border: none;
                 }
 
                 #projectManagementBtn:hover,
