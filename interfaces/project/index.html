@@ -49,13 +49,23 @@ permalink: /project
             height: 50px;
             border-top: 1px solid black;
         }
+        a[part="project-opt"] {
+            position: absolute;
+            display: none;
+            text-decoration: none;
+            color: var(--accent);
+            font-weight: 600;
+            top: 3px;
+            right: 0.35em;
+        }
     </style>
 </head>
 <body>
     <tpen-page>
         <div style="display: flex; justify-content: center;">
             <tpen-card>
-                <h2 slot="header">Project Details</h2>
+                <h2 slot="header">Project Details <a id="projectManagementBtn" title="Manage Project" part="project-opt">⚙</a></h2>
+                
                 <div slot="body">
                     <tpen-project-details class="card"></tpen-project-details>
                     <div class="action-links">
@@ -79,15 +89,25 @@ permalink: /project
 </body>
 <script type="module">
     import TPEN from '../../api/TPEN.js'
-    TPEN.eventDispatcher.on('tpen-project-loaded', ev => {
+    import CheckPermissions from '../../components/check-permissions/checkPermissions.js'
+
+    TPEN.eventDispatcher.on('tpen-project-loaded', (ev) => {
         const goParse = document.getElementById("goParse")
         const goTranscribe = document.getElementById("goTranscribe")
         const leaveProject = document.getElementById("leaveProject")
         if (leaveProject) {
             leaveProject.href = `/project/leave?projectID=${ev.detail._id}`
         }
-        if(goParse) goParse.setAttribute("href", `/annotator?projectID=${ev.detail._id}`)
-        if(goTranscribe) goTranscribe.setAttribute("href", `/transcribe?projectID=${ev.detail._id}`)
+        if (goParse) goParse.setAttribute("href", `/annotator?projectID=${ev.detail._id}`)
+        if (goTranscribe) goTranscribe.setAttribute("href", `/transcribe?projectID=${ev.detail._id}`)
+        if (CheckPermissions.checkEditAccess('PROJECT')) {
+            const goManage = document.getElementById("projectManagementBtn")
+            if (goManage) {
+                goManage.href = `/project/manage?projectID=${ev.detail._id}`
+                goManage.style.display = "inline-block"
+            }
+        }
     })
+    
 </script>
 </html>

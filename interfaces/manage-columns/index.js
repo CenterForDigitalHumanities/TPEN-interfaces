@@ -1,4 +1,5 @@
 import TPEN from "../../api/TPEN.js"
+import CheckPermissions from "../../components/check-permissions/checkPermissions.js"
 
 class TpenManageColumns extends HTMLElement {
     constructor() {
@@ -82,6 +83,9 @@ class TpenManageColumns extends HTMLElement {
                     align-items: center;
                     justify-content: flex-start;
                     gap: 8px;
+                }
+                .toolbar hr {
+                    width: 100%;
                 }
                 #columnTitle, .merge-column-input {
                     padding: 10px 20px;
@@ -189,6 +193,42 @@ class TpenManageColumns extends HTMLElement {
                 .merge-label-btn[data-selected="true"], .extend-label-btn[data-selected="true"] {
                     border: 8px solid var(--primary-color);
                 }
+                .inter-links {
+                    width: 100%;
+                }
+                .goBtn {
+                    position: relative;
+                    display: none;
+                    border-radius: 5px;
+                    cursor: pointer;
+                    transition: background-color 0.3s;
+                    background-color: var(--primary-color);
+                    text-transform: uppercase;
+                    outline: var(--primary-light) 1px solid;
+                    outline-offset: -3.5px;
+                    color: var(--white);
+                    transition: all 0.3s;
+                    padding: 10px 20px;
+                    cursor: pointer;
+                    width: 100%;
+                    margin-top: 1em;
+                    border: none;
+                }
+                .goBtn:hover,
+                .goBtn:focus-visible {
+                    background-color: var(--primary-light);
+                    outline: 2px solid var(--primary-color);
+                    outline-offset: 2px;
+                }
+                .goBtn span {
+                    position: relative;
+                    left: -10px;
+                    display: inline-block;
+                    transform: rotate(180deg);
+                }
+                #identifyLinesBtn {
+                    margin-top: 0em;
+                }
             </style>
             <div class="columnDiv">
                 <div class="toolbar">
@@ -203,6 +243,12 @@ class TpenManageColumns extends HTMLElement {
                     </div>
                     <button id="createColumnBtn">Create Column</button>
                     <button id="clearSelectionBtn">Clear All</button>
+                    <hr>
+                    <div class="inter-links">
+                        <button type="button" class="goBtn" id="identifyLinesBtn"><span aria-hidden="true">↪</span>Go Identify Lines</button>
+                        <button type="button" class="goBtn" id="transcribeBtn"><span aria-hidden="true">↪</span>Go Transcribe</button>
+                        <button type="button" class="goBtn" id="projectManagementBtn"><span aria-hidden="true">↪</span>Go to Project Management</button>
+                    </div>
                 </div>
                 <div class="container" id="container"></div>
                 <div class="toolbar toolbar-workspace">
@@ -220,6 +266,9 @@ class TpenManageColumns extends HTMLElement {
         this.mergeColumnsLabel = this.shadowRoot.querySelector("#mergeColumnsLabel")
         this.extendColumnLabel = this.shadowRoot.querySelector("#extendColumnLabel")
         this.columnTitleInput = this.shadowRoot.querySelector("#columnTitle")
+        this.identifyLinesBtn = this.shadowRoot.querySelector("#identifyLinesBtn")
+        this.transcribeBtn = this.shadowRoot.querySelector("#transcribeBtn")
+        this.projectManagementBtn = this.shadowRoot.querySelector("#projectManagementBtn")
         this.createBtn.addEventListener("click", () => this.createColumn())
         this.clearBtn.addEventListener("click", () => this.clearAllSelections())
         this.mergeColumnsCheckbox.addEventListener("change", () => this.handleModeChange())
@@ -232,7 +281,26 @@ class TpenManageColumns extends HTMLElement {
         this.pageID = `${TPEN.RERUMURL}/id/${params.get("pageID")}`
         this.projectID = params.get("projectID")
         this.annotationPageID = this.pageID.split("/").pop()
-        TPEN.eventDispatcher.on('tpen-project-loaded', async () => await this.loadPage(this.pageID))
+        TPEN.eventDispatcher.on('tpen-project-loaded', async () => {
+            if (!CheckPermissions.checkAllAccess("LINE", "SELECTOR")) {
+              this.shadowRoot.innerHTML = "You do not have the proper project permissions to use this interface."
+              return
+            }
+            this.identifyLinesBtn.style.display = "block"
+            this.identifyLinesBtn.addEventListener("click", (ev) => 
+                document.location.href = `/annotator?projectID=${TPEN.activeProject._id}&pageID=${TPEN.screen.pageInQuery}`)
+            if (CheckPermissions.checkEditAccess("PROJECT")) {
+              this.projectManagementBtn.style.display = "block"
+              this.projectManagementBtn.addEventListener("click", (ev) => 
+                document.location.href = `/project/manage?projectID=${TPEN.activeProject._id}`)
+            }
+            if (CheckPermissions.checkViewAccess("LINE", "TEXT") || CheckPermissions.checkEditAccess("LINE", "TEXT")) {
+              this.transcribeBtn.style.display = "block"
+              this.transcribeBtn.addEventListener("click", (ev) => 
+                document.location.href = `/transcribe?projectID=${TPEN.activeProject._id}&pageID=${TPEN.screen.pageInQuery}`)
+            }
+            await this.loadPage(this.pageID)
+        })
     }
 
     async columnLabelCheck() {
@@ -270,7 +338,6 @@ class TpenManageColumns extends HTMLElement {
                 remainingIDs: this.totalIds,
                 selectedIDs: []
             }))
-
             this.renderAnnotations(annotations, imgWidth, imgHeight, assignedAnnotationIds)
             this.restoreAnnotationState()
         } catch (e) {

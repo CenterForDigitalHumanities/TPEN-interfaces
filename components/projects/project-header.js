@@ -22,6 +22,7 @@ export default class ProjectHeader extends HTMLElement {
             @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
             .title-placeholder { width: 7.2rem; height: 1.5em; background-color: #ccc; border-radius: 4px; animation: blink 1s infinite; }
             .canvas-label select { padding: 5px; border-radius: 5px; border: none; background-color: white; color: rgb(166, 65, 41); cursor: pointer; }
+            .manage-project { display:none }
         `
         this.shadowRoot.appendChild(style)
         this.content = document.createElement('div')
@@ -91,9 +92,9 @@ export default class ProjectHeader extends HTMLElement {
             <tpen-column-selector></tpen-column-selector>
             <div class="line-indicator">Line indicator</div>
             <div class="control-buttons">
-              <a class="nav-icon" href="/index"><img draggable="false" src="../../assets/icons/home.png" alt="Home"></a>
-              <a class="nav-icon" href="/project/manage?projectID=${TPEN.screen.projectInQuery}"><img draggable="false" src="../../assets/icons/contact.png" alt="Manage Project"></a>
-              <a class="nav-icon" href="/profile"><img draggable="false" src="../../assets/icons/profile.png" alt="Profile"></a>
+              <a title="Home" class="nav-icon" href="/index"><img draggable="false" src="../../assets/icons/home.png" alt="Home"></a>
+              <a title="Manage Project" class="nav-icon manage-project"><img draggable="false" src="../../assets/icons/contact.png" alt="Manage Project"></a>
+              <a title="My Profile" class="nav-icon" href="/profile"><img draggable="false" src="../../assets/icons/profile.png" alt="Profile"></a>
             </div>
           </nav>
         `
@@ -110,6 +111,11 @@ export default class ProjectHeader extends HTMLElement {
           url.searchParams.set('pageID',TPEN.activeProject.getFirstPageID().split('/').pop())
           location.href = url.toString()
           return
+        }
+        if (CheckPermissions.checkEditAccess("PROJECT")) {
+            const projectManagementBtn = this.shadowRoot.querySelector('.manage-project')
+            projectManagementBtn.style.display = "inline-block"
+            projectManagementBtn.href = `/project/manage?projectID=${TPEN.activeProject._id}`
         }
         const CanvasSelectOptions = projectCanvasLabels.map((canvasLabel, index) => {
             const option = document.createElement('option')

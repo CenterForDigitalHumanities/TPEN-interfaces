@@ -69,7 +69,7 @@ class AnnotoriousAnnotator extends HTMLElement {
 
   // Initialize HTML after loading in a TPEN3 Project
   render() {
-    if (!CheckPermissions.checkAllAccess("line", "selector")) {
+    if (!CheckPermissions.checkAllAccess("LINE", "SELECTOR")) {
       this.shadowRoot.innerHTML = "You do not have the proper project permissions to use this interface."
       return
     }
@@ -227,6 +227,7 @@ class AnnotoriousAnnotator extends HTMLElement {
         }
         #autoParseBtn {
           position: absolute;
+          display: none;
           top: 10px;
           right: 10px;
           background-color: var(--primary-color);
@@ -235,10 +236,39 @@ class AnnotoriousAnnotator extends HTMLElement {
           border-radius: 5px;
           cursor: pointer;
           transition: background-color 0.3s;
-          z-index: 10;
+          z-index: 9;
         }
-        #autoParseBtn:hover {
+        #autoParseBtn:hover,
+        #autoParseBtn:focus-visible {
           background-color: var(--primary-light);
+          outline: 2px solid var(--primary-color);
+          outline-offset: 2px;
+        }
+        #projectManagementBtn {
+          position: absolute;
+          display: none;
+          bottom: 10px;
+          left: 5px;
+          background-color: var(--primary-color);
+          padding: 10px 20px;
+          color: var(--white);
+          border-radius: 5px;
+          cursor: pointer;
+          transition: background-color 0.3s;
+          z-index: 9;
+          border: none;
+        }
+        #projectManagementBtn:hover,
+        #projectManagementBtn:focus-visible {
+          background-color: var(--primary-light);
+          outline: 2px solid var(--primary-color);
+          outline-offset: 2px;
+        }
+        #projectManagementBtn span {
+          position: relative;
+          left: -10px;
+          display: inline-block;
+          transform: rotate(180deg);
         }
       </style>
       <div>
@@ -277,7 +307,8 @@ class AnnotoriousAnnotator extends HTMLElement {
           <a id="createColumnsBtn" href="#">Manage Columns</a>
           <input id="saveBtn" type="button" value="Save Annotations"/>
         </div>
-        <button id="autoParseBtn">Auto Parse</button>
+        <button type="button" id="autoParseBtn">Auto Parse</button>
+        <button type="button" id="projectManagementBtn"><span aria-hidden="true">↪</span> Go to Project Management</button>
         <div id="annotator-container"> Loading Annotorious and getting the TPEN3 Page information... </div>
         <div id="ruler"></div>
         <span id="sampleRuler"></span>
@@ -348,6 +379,7 @@ class AnnotoriousAnnotator extends HTMLElement {
     const addLinesBtn = this.shadowRoot.getElementById("addLinesBtn")
     const mergeLinesBtn = this.shadowRoot.getElementById("mergeLinesBtn")
     const drag = this.shadowRoot.querySelectorAll(".dragMe")
+
     drag.forEach(elem => elem.addEventListener("mousedown", (e) => this.dragging(e)))
     addLinesBtn.addEventListener("click", (e) => this.toggleAddLines(e))
     mergeLinesBtn.addEventListener("click", (e) => this.toggleMergeLines(e))
@@ -356,7 +388,7 @@ class AnnotoriousAnnotator extends HTMLElement {
     eraseTool.addEventListener("change", (e) => this.toggleErasingMode(e))
     seeTool.addEventListener("change", (e) => this.toggleAnnotationVisibility(e))
     createColumnsBtn.addEventListener("click", () =>
-      window.location.href = `../../components/create-column/?projectID=${TPEN.activeProject._id}&pageID=${this.#annotationPageID}`
+      window.location.href = `/manage-columns?projectID=${TPEN.activeProject._id}&pageID=${this.#annotationPageID}`
     )
     saveButton.addEventListener("click", (e) => {
       this.#annotoriousInstance.cancelSelected()
@@ -589,7 +621,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       }
     })
     // Link to transcribe if they have view permissions for it
-    if(CheckPermissions.checkViewAccess("line", "text")) {
+    if (CheckPermissions.checkViewAccess("LINE", "TEXT") || CheckPermissions.checkEditAccess("LINE", "TEXT")) {
       let parsingRedirectButton = new OpenSeadragon.Button({
         tooltip: "Go Transcribe",
         srcRest: "../interfaces/annotator/images/transcribe.png",
@@ -598,7 +630,7 @@ class AnnotoriousAnnotator extends HTMLElement {
         srcDown: "../interfaces/annotator/images/transcribe.png",
         onClick: (e) => {
             if (this.#resolvedAnnotationPage?.$isDirty) {
-              if (confirm("Stop line parsing and go transcribe?  Unsaved changes will be lost.")) 
+              if (confirm("Stop identifying lines and go transcribe?  Unsaved changes will be lost.")) 
                 location.href = `/transcribe?projectID=${TPEN.activeProject._id}&pageID=${this.#annotationPageID}`  
             }
             else {
@@ -768,6 +800,12 @@ class AnnotoriousAnnotator extends HTMLElement {
     this.#annotoriousInstance.setAnnotations(allAnnotations, false)
     this.#annotoriousContainer.style.backgroundImage = "none"
     this.shadowRoot.getElementById("tools-container").style.display = "block"
+    this.shadowRoot.querySelector("#autoParseBtn").style.display = "block"
+    if (CheckPermissions.checkEditAccess("PROJECT")) {
+      const manageProjectBtn = this.shadowRoot.querySelector("#projectManagementBtn")
+      manageProjectBtn.style.display = "block"
+      manageProjectBtn.addEventListener("click", (e) => document.location.href = `/project/manage?projectID=${TPEN.activeProject._id}`)
+    }
   }
 
   /**
