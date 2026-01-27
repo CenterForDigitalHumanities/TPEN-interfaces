@@ -204,7 +204,7 @@ class ProjectLayers extends HTMLElement {
             </div>
         `
         this.shadowRoot.querySelectorAll(".delete-layer").forEach((button) => {
-            button.addEventListener("click", async (event) => {
+            button.addEventListener("click", (event) => {
                 const hasDeleteAccess = CheckPermissions.checkDeleteAccess('LAYER', '*')
                 if (!hasDeleteAccess) {
                     TPEN.eventDispatcher.dispatch("tpen-toast", {
@@ -234,7 +234,7 @@ class ProjectLayers extends HTMLElement {
             })
         })
 
-        this.shadowRoot.querySelector(".add-layer").addEventListener("click", async () => {
+        this.shadowRoot.querySelector(".add-layer").addEventListener("click", () => {
             const hasCreateAccess = CheckPermissions.checkCreateAccess('LAYER', '*')
             if (!hasCreateAccess) {
                 TPEN.eventDispatcher.dispatch("tpen-toast", {
