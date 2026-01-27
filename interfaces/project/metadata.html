@@ -16,12 +16,36 @@ permalink: /project/metadata
     <script type="module" src="/components/explanatory-guide/fixedGuideComponent.js"></script>
     <link href="/components/gui/site/index.css" rel="stylesheet" type="text/css" />
     <link rel="stylesheet" href="/components/update-metadata/index.css">
+    <style>
+        #projectManagementBtn {
+            position: absolute;
+            display: none;
+            background-color: var(--primary-color);
+            padding: 10px 20px;
+            color: var(--white);
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            border: none;
+        }
+        #projectManagementBtn:hover,
+        #projectManagementBtn:focus-visible {
+            background-color: var(--primary-light);
+            outline: 2px solid var(--primary-color);
+            outline-offset: 2px;
+        }
+        #projectManagementBtn span {
+            position: relative;
+            left: -10px;
+            display: inline-block;
+            transform: rotate(180deg);
+        }
+    </style>
 </head>
 
 <body>
     <tpen-page class="grid">
         <tpen-card>
-            <h2 slot="header">Project Metadata</h2>
             <div slot="body">
                 <tpen-fixed-explanatory-guide heading="Steps to Update Metadata">
                     <li>Click <strong>"Add Field"</strong> to add a new metadata field by adding Label and Value.</li>
@@ -36,7 +60,7 @@ permalink: /project/metadata
                 <div id="container" class="metadata-modal-container">
                     <div id="metadata-modal" class="modal hidden">
                         <div class="modal-content">
-                            <h3>Edit Metadata</h3>
+                            <h3>Edit Project Metadata</h3>
                             <form id="metadata-form">
                                 <div id="metadata-fields"></div>
                                 <button type="button" id="add-field-btn">+ Add Field</button>
@@ -51,11 +75,23 @@ permalink: /project/metadata
             </div>
             <p slot="body" class="permission-msg" style="display: none;">You don't have permission to create, edit, or delete Metadata</p>
         </tpen-card>
+        <button type="button" id="projectManagementBtn"><span aria-hidden="true">↪</span> Go to Project Management</button>
     </tpen-page>
     <script type="module">
-        import CheckPermissions from '../../utilities/checkPermissions.js'
+        import TPEN from '../../api/TPEN.js'
+        import CheckPermissions from '../../components/check-permissions/checkPermissions.js'
 
-        (async () => {
+        TPEN.eventDispatcher.on('tpen-project-loaded', (ev) => {
+            if (CheckPermissions.checkEditAccess('PROJECT')) {
+                const goManage = document.getElementById("projectManagementBtn")
+                if (goManage) {
+                    goManage.style.display = "block"
+                    goManage.addEventListener('click', () => {
+                        document.location.href = `/project/manage?projectID=${ev.detail._id}`
+                    })
+                }
+            }
+
             const divMetadata = document.querySelector('.tpen-metadata')
             const permissionMsg = document.querySelector('.permission-msg')
             if (!divMetadata) {
@@ -65,9 +101,9 @@ permalink: /project/metadata
             if (!scope) {
                 return
             }
-            const hasEditAccess = await CheckPermissions.checkEditAccess(null, scope.toUpperCase())
-            const hasDeleteAccess = await CheckPermissions.checkDeleteAccess(null, scope.toUpperCase())
-            const checkCreateAccess = await CheckPermissions.checkCreateAccess(null, scope.toUpperCase())
+            const hasEditAccess = CheckPermissions.checkEditAccess('*', scope.toUpperCase())
+            const hasDeleteAccess = CheckPermissions.checkDeleteAccess('*', scope.toUpperCase())
+            const checkCreateAccess = CheckPermissions.checkCreateAccess('*', scope.toUpperCase())
             
             if (hasEditAccess) {
                 divMetadata.style.display = 'inline-block'
@@ -94,7 +130,7 @@ permalink: /project/metadata
                 divMetadata.remove()
                 permissionMsg.style.display = 'inline-block'
             }
-        })()
+        })
     </script>
 </body>
 
