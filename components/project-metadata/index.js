@@ -71,7 +71,7 @@ class ProjectMetadata extends HTMLElement {
 
     async loadMetadata(project) {
         // Check if user has view permission
-        const hasViewAccess = await CheckPermissions.checkViewAccess('PROJECT', 'METADATA')
+        const hasViewAccess = CheckPermissions.checkViewAccess('PROJECT', 'METADATA')
         if (!hasViewAccess) {
             const projectMetadata = this.shadowRoot.querySelector(".metadata")
             projectMetadata.innerHTML = `<p>You don't have permission to view project metadata</p>`

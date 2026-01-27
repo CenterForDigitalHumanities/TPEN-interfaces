@@ -78,41 +78,40 @@ permalink: /project/manage
         </tpen-card>
     </tpen-page>
     <script type="module">
-        import CheckPermissions from '../../utilities/checkPermissions.js'
+        import CheckPermissions from '../../components/check-permissions/checkPermissions.js'
         import TPEN from '../../api/TPEN.js'
 
-        (async () => {
-            TPEN.eventDispatcher.on('tpen-project-loaded', ev => {
-                const goParse = document.getElementById("goParse")
-                const goTranscribe = document.getElementById("goTranscribe")
-                if(goParse) goParse.setAttribute("href", `/annotator?projectID=${ev.detail._id}`)
-                if(goTranscribe) goTranscribe.setAttribute("href", `/transcribe?projectID=${ev.detail._id}`)
-            })
+        TPEN.eventDispatcher.on('tpen-project-loaded', ev => {
+            const goParse = document.getElementById("goParse")
+            const goTranscribe = document.getElementById("goTranscribe")
+            if(goParse) goParse.setAttribute("href", `/annotator?projectID=${ev.detail._id}`)
+            if(goTranscribe) goTranscribe.setAttribute("href", `/transcribe?projectID=${ev.detail._id}`)
+
             const cards = document.querySelectorAll('tpen-card')
             for (const card of cards) {
                 const entity = card.getAttribute('tpen-entity')
                 const scope = card.getAttribute('tpen-scope')
                 if (entity) {
 
-                    const hasViewAccess = await CheckPermissions.checkViewAccess(entity.toUpperCase())
+                    const hasViewAccess = CheckPermissions.checkViewAccess(entity.toUpperCase())
                     card.style.display = hasViewAccess ? 'inline-block' : card.remove()
 
                     if (hasViewAccess) {
                         const cardButton = card.querySelector('button')
 
                         if (cardButton) {
-                            const hasEditAccess = await CheckPermissions.checkEditAccess(entity.toUpperCase())
+                            const hasEditAccess = CheckPermissions.checkEditAccess(entity.toUpperCase())
 
                             if(hasEditAccess && entity !== 'role')
                                 cardButton.style.display = hasEditAccess ? 'inline-block' : cardButton.remove()
-                            
+
                             else if (entity === 'role') {
-                                const hasCreateRoleAccess = await CheckPermissions.checkCreateAccess('ROLE')
+                                const hasCreateRoleAccess = CheckPermissions.checkCreateAccess('ROLE')
                                 cardButton.style.display = hasCreateRoleAccess ? 'inline-block' : cardButton.remove()
                             }
 
                             else if (entity === 'project') {
-                                const hasEditProjectAccess = await CheckPermissions.checkEditAccess('PROJECT')
+                                const hasEditProjectAccess = CheckPermissions.checkEditAccess('PROJECT')
                                 cardButton.style.display = hasEditProjectAccess ? 'inline-block' : cardButton.remove()
                             }
 
@@ -124,21 +123,21 @@ permalink: /project/manage
                 }
 
                 if(scope) {
-                    const hasViewAccess = await CheckPermissions.checkViewAccess(null, scope.toUpperCase())
+                    const hasViewAccess = CheckPermissions.checkViewAccess('*', scope.toUpperCase())
                     card.style.display = hasViewAccess ? 'inline-block' : card.remove()
 
                     if (hasViewAccess) {
                         const cardButton = card.querySelector('button')
-                        
+
                         if (cardButton) {
-                            const hasEditAccess = await CheckPermissions.checkEditAccess(null, scope.toUpperCase())
+                            const hasEditAccess = CheckPermissions.checkEditAccess('*', scope.toUpperCase())
                             cardButton.style.display = hasEditAccess ? 'inline-block' : cardButton.remove()
                         }
                     }
                 }
-                
+
             }
-        })()
+        })
     </script>
 </body>
 </html>

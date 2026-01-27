@@ -14,7 +14,7 @@ class ProjectLayers extends HTMLElement {
 
     async render() {
         // Check if user has view permission
-        const hasViewAccess = await CheckPermissions.checkViewAccess('LAYER', 'METADATA')
+        const hasViewAccess = CheckPermissions.checkViewAccess('LAYER', 'METADATA')
         if (!hasViewAccess) {
             this.shadowRoot.innerHTML = `<p>You don't have permission to view layers</p>`
             return

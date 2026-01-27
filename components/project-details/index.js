@@ -1,7 +1,7 @@
 import TPEN from "../../api/TPEN.js"
 import Project from "../../api/Project.js"
 import "../../components/line-image/index.js"
-import CheckPermissions from "../../utilities/checkPermissions.js"
+import CheckPermissions from "../check-permissions/checkPermissions.js"
 
 class ProjectDetails extends HTMLElement {
 
@@ -96,8 +96,8 @@ class ProjectDetails extends HTMLElement {
         const isManagePage = window.location.pathname === '/project/manage' || window.location.pathname.startsWith('/project/manage/')
         const displayTitle = isManagePage ? `Manage Project "${TPEN.screen.title}"` : TPEN.screen.title
         TPEN.eventDispatcher.dispatch('tpen-gui-title', displayTitle)
-        const isReadAccess = await CheckPermissions.checkViewAccess('PROJECT')
-        const isProjectEditor = await CheckPermissions.checkEditAccess('PROJECT', 'METADATA')
+        const isReadAccess = CheckPermissions.checkViewAccess('PROJECT')
+        const isProjectEditor = CheckPermissions.checkEditAccess('PROJECT', 'METADATA')
         const editTitle = isProjectEditor ? `<a id="edit-project-title" href="#">✏️</a>` : ``
         
         isReadAccess ? 

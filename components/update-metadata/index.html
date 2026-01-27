@@ -39,18 +39,19 @@
     <p class="permission-msg" style="display: none;">You don't have permission to create,edit or delete Metadata</p>
   </tpen-page>
     <script type="module">
-      import CheckPermissions from '../../utilities/checkPermissions.js'
+      import CheckPermissions from '../check-permissions/checkPermissions.js'
+      import TPEN from '../../api/TPEN.js'
 
-      (async () => {
+      TPEN.eventDispatcher.on('tpen-project-loaded', () => {
         const divMetadata = document.querySelector('.tpen-metadata')
         const permissionMsg = document.querySelector('.permission-msg')
         const scope = divMetadata.getAttribute('tpen-scope')
           if (!scope) {
               return
           }
-          const hasEditAccess = await CheckPermissions.checkEditAccess(null, scope.toUpperCase())
-          const hasDeleteAccess = await CheckPermissions.checkDeleteAccess(null, scope.toUpperCase())
-          const checkCreateAccess = await CheckPermissions.checkCreateAccess(null, scope.toUpperCase())
+          const hasEditAccess = CheckPermissions.checkEditAccess('*', scope.toUpperCase())
+          const hasDeleteAccess = CheckPermissions.checkDeleteAccess('*', scope.toUpperCase())
+          const checkCreateAccess = CheckPermissions.checkCreateAccess('*', scope.toUpperCase())
           divMetadata.style.display = hasEditAccess ? 'inline-block' : divMetadata.remove()
           if (hasEditAccess) {
             const deleteButton = document.querySelectorAll('.remove-field-btn')
@@ -61,7 +62,7 @@
             addButton.style.display = checkCreateAccess ? 'inline-block' : addButton.remove()
           }
           permissionMsg.style.display = hasEditAccess ? 'none' : 'inline-block'
-      })()
+      })
     </script>
 </body>
 </html>

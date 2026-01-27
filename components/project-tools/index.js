@@ -1,6 +1,6 @@
 import TPEN from "../../api/TPEN.js"
 import { onProjectReady } from "../../utilities/projectReady.js"
-import CheckPermissions from "../../utilities/checkPermissions.js"
+import CheckPermissions from "../check-permissions/checkPermissions.js"
 
 class ProjectTools extends HTMLElement {
     constructor() {
@@ -19,7 +19,7 @@ class ProjectTools extends HTMLElement {
 
     async render() {
         const tools = TPEN.activeProject.tools
-        const isToolsEditAccess = !this.getAttribute("readonly") && await CheckPermissions.checkEditAccess("TOOL")
+        const isToolsEditAccess = !this.getAttribute("readonly") && CheckPermissions.checkEditAccess("TOOL")
         this.shadowRoot.innerHTML = `
             <style>
                 .container {
