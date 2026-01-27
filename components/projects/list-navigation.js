@@ -184,7 +184,7 @@ export default class ProjectsListNavigation extends HTMLElement {
                 console.warn(`Failed to check permissions for project ${project._id}:`, error)
             }
             list.innerHTML += `
-                <li tpen-project-id="${project._id}"">
+                <li tpen-project-id="${project._id}">
                     <a title="See Project Details" class="static" href="/project?projectID=${project._id}" part="project-link">
                         ${project.label ?? project.title}
                     </a>
