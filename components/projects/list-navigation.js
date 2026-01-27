@@ -1,5 +1,5 @@
 import TPEN from "../../api/TPEN.js"
-import CheckPermissions from "../../utilities/checkPermissions.js"
+import CheckPermissions from "../check-permissions/checkPermissions.js"
 import Project from "../../api/Project.js"
 
 export default class ProjectsListNavigation extends HTMLElement {
@@ -176,7 +176,7 @@ export default class ProjectsListNavigation extends HTMLElement {
         }
         for (const project of this.#projects) {
             await(new Project(project._id).fetch())
-            const isManageProjectPermission = await CheckPermissions.checkEditAccess('PROJECT')
+            const isManageProjectPermission = CheckPermissions.checkEditAccess('PROJECT')
             let manageLink = isManageProjectPermission ? `<a title="Manage Project" part="project-opt" href="/project/manage?projectID=${project._id}">⚙</a>` : ``
             list.innerHTML += `
                 <li tpen-project-id="${project._id}"">

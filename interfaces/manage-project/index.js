@@ -7,7 +7,7 @@ import "../../components/project-permissions/index.js"
 import "../../components/project-export/index.js"
 import "../../components/project-layers/index.js"
 import "../../components/project-tools/index.js"
-import CheckPermissions from "../../utilities/checkPermissions.js"
+import CheckPermissions from "../../components/check-permissions/checkPermissions.js"
 
 TPEN.eventDispatcher.on('tpen-project-loaded', () => render())
 const container = document.body
@@ -60,8 +60,8 @@ document.getElementById('export-project-btn').addEventListener('click', async ()
     })
 })
 
-async function render() {
-    const isManageProjectPermission = await CheckPermissions.checkEditAccess('PROJECT')
+function render() {
+    const isManageProjectPermission = CheckPermissions.checkEditAccess('PROJECT')
     if(!isManageProjectPermission) {
         alert("You do not have permissions to use this page.")
         document.location.href = `/project?projectID=${TPEN.screen.projectInQuery}`
