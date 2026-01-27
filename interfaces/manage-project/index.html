@@ -123,14 +123,14 @@ permalink: /project/manage
                 }
 
                 if(scope) {
-                    const hasViewAccess = CheckPermissions.checkViewAccess(null, scope.toUpperCase())
+                    const hasViewAccess = CheckPermissions.checkViewAccess('*', scope.toUpperCase())
                     card.style.display = hasViewAccess ? 'inline-block' : card.remove()
 
                     if (hasViewAccess) {
                         const cardButton = card.querySelector('button')
 
                         if (cardButton) {
-                            const hasEditAccess = CheckPermissions.checkEditAccess(null, scope.toUpperCase())
+                            const hasEditAccess = CheckPermissions.checkEditAccess('*', scope.toUpperCase())
                             cardButton.style.display = hasEditAccess ? 'inline-block' : cardButton.remove()
                         }
                     }

@@ -109,7 +109,7 @@ class ManagePages extends HTMLElement {
         this.shadowRoot.querySelectorAll(".manage-pages").forEach((button) => {
             button.addEventListener("click", async () => {
                 // Check if user has edit permission for pages
-                const hasEditAccess = await CheckPermissions.checkEditAccess('PAGE', 'METADATA')
+                const hasEditAccess = CheckPermissions.checkEditAccess('PAGE', 'METADATA')
                 if (!hasEditAccess) {
                     TPEN.eventDispatcher.dispatch("tpen-toast", {
                         status: "error",
@@ -193,7 +193,7 @@ class ManagePages extends HTMLElement {
                     editPageLabelButton.after(deleteButton)
 
                     editPageLabelButton.addEventListener("click", async () => {
-                        const hasUpdateAccess = await CheckPermissions.checkEditAccess('PAGE', 'METADATA')
+                        const hasUpdateAccess = CheckPermissions.checkEditAccess('PAGE', 'METADATA')
                         if (!hasUpdateAccess) {
                             TPEN.eventDispatcher.dispatch("tpen-toast", {
                                 status: "error",
@@ -254,7 +254,7 @@ class ManagePages extends HTMLElement {
                     })
 
                     deleteButton.addEventListener("click", async () => {
-                        const hasDeleteAccess = await CheckPermissions.checkDeleteAccess('PAGE', '*')
+                        const hasDeleteAccess = CheckPermissions.checkDeleteAccess('PAGE', '*')
                         if (!hasDeleteAccess) {
                             TPEN.eventDispatcher.dispatch("tpen-toast", {
                                 status: "error",
@@ -290,7 +290,7 @@ class ManagePages extends HTMLElement {
                 layerActions.removeChild(layerCardOuter.querySelector("tpen-manage-pages"))
 
                 editLayerLabelButton.addEventListener("click", async () => {
-                    const hasUpdateAccess = await CheckPermissions.checkEditAccess('LAYER', 'METADATA')
+                    const hasUpdateAccess = CheckPermissions.checkEditAccess('LAYER', 'METADATA')
                     if (!hasUpdateAccess) {
                         TPEN.eventDispatcher.dispatch("tpen-toast", {
                             status: "error",
@@ -356,7 +356,7 @@ class ManagePages extends HTMLElement {
                 })
 
                 saveButton.addEventListener("click", async () => {
-                    const hasUpdateAccess = await CheckPermissions.checkEditAccess('PAGE', 'ORDER')
+                    const hasUpdateAccess = CheckPermissions.checkEditAccess('PAGE', 'ORDER')
                     if (!hasUpdateAccess) {
                         TPEN.eventDispatcher.dispatch("tpen-toast", {
                             status: "error",

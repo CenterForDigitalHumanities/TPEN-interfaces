@@ -186,7 +186,7 @@ class UpdateMetadata extends HTMLElement {
 
     async updateMetadata() {
         // Check if user has edit permission
-        const hasEditAccess = await CheckPermissions.checkEditAccess('PROJECT', 'METADATA')
+        const hasEditAccess = CheckPermissions.checkEditAccess('PROJECT', 'METADATA')
         if (!hasEditAccess) {
             return TPEN.eventDispatcher.dispatch("tpen-toast", {
                 status: "error",
