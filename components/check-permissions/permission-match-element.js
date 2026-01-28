@@ -24,7 +24,7 @@
 import TPEN from '../../api/TPEN.js'
 import { getUserFromToken } from "../../components/iiif-tools/index.js"
 import { permissionMatch } from "../../components/check-permissions/permission-match.js"
-import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
+import { onProjectReady } from "../../utilities/projectReady.js"
 
 export class PermissionMatch extends HTMLElement {
     // TODO use these from a central location, such as a Permission Class.
@@ -43,8 +43,8 @@ export class PermissionMatch extends HTMLElement {
     #viewPermission = null
     #editPermission = null
 
-    /** @type {CleanupRegistry} Registry for cleanup handlers */
-    cleanup = new CleanupRegistry()
+    /** @type {Function|null} Unsubscribe function for project ready listener */
+    _unsubProject = null
 
     constructor() {
         super()
@@ -54,11 +54,12 @@ export class PermissionMatch extends HTMLElement {
 
     connectedCallback() {
         TPEN.attachAuthentication(this)
-        this.cleanup.onEvent(TPEN.eventDispatcher, "tpen-project-loaded", ev => this.render(ev.detail))
+        // Use onProjectReady to handle both already-loaded and future project loads
+        this._unsubProject = onProjectReady(this, (project) => this.render(project))
     }
 
     disconnectedCallback() {
-        this.cleanup.run()
+        try { this._unsubProject?.() } catch {}
     }
 
     render(project) {

@@ -17,6 +17,8 @@ class AuthButton extends HTMLElement {
   }
 
   connectedCallback() {
+    // Clear shadowRoot to prevent duplicate buttons on reconnection
+    this.shadowRoot.innerHTML = ''
     const button = document.createElement("button")
     button.innerText = "LOGIN"
     this._authHandler = () => {

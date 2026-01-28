@@ -1,5 +1,3 @@
-import TPEN from '../api/TPEN.js'
-
 /**
  * CleanupRegistry - A lightweight helper for managing event listener cleanup in web components.
  * Tracks all registered event listeners and provides a single cleanup method.

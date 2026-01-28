@@ -73,7 +73,7 @@ class ProjectDetails extends HTMLElement {
     async attributeChangedCallback(name, oldValue, newValue) {
         if (name === 'tpen-project-id' && oldValue !== newValue) {
             if (newValue === null) return
-            this.Project = (newValue === TPEN.activeProject._id)
+            this.Project = (newValue === TPEN.activeProject?._id)
                 ? TPEN.activeProject
                 : await (new Project(newValue).fetch())
             this.render()

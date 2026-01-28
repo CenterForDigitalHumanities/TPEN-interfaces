@@ -12,8 +12,10 @@ import "./quicktype-editor-dialog.js"
  * @element tpen-quicktype-tool
  */
 class QuickTypeTool extends HTMLElement {
-    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    /** @type {CleanupRegistry} Registry for persistent cleanup handlers */
     cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers (cleared on re-render) */
+    renderCleanup = new CleanupRegistry()
 
     constructor() {
         super()
@@ -32,6 +34,7 @@ class QuickTypeTool extends HTMLElement {
 
     disconnectedCallback() {
         try { this._unsubProject?.() } catch { }
+        this.renderCleanup.run()
         this.cleanup.run()
     }
 
@@ -46,6 +49,8 @@ class QuickTypeTool extends HTMLElement {
         this.cleanup.onEvent(eventDispatcher, "quicktype-editor-saved", (event) => {
             // Refresh the tool panel with updated shortcuts
             TPEN.activeProject.interfaces.quicktype = event.detail.quicktype
+            // Clear render-specific handlers before re-rendering
+            this.renderCleanup.run()
             this.render()
             this.addEventListeners()
         })
@@ -55,7 +60,7 @@ class QuickTypeTool extends HTMLElement {
         const editCharBtn = this.shadowRoot.querySelector('.edit-char-btn')
 
         if (editCharBtn) {
-            this.cleanup.onElement(editCharBtn, 'click', () => {
+            this.renderCleanup.onElement(editCharBtn, 'click', () => {
                 const dialog = document.querySelector('tpen-quicktype-editor-dialog')
                 if (dialog) {
                     const quicktype = TPEN.activeProject?.interfaces?.quicktype ?? []
@@ -65,7 +70,7 @@ class QuickTypeTool extends HTMLElement {
         }
 
         this.shadowRoot.querySelectorAll('.char-button').forEach(btn => {
-            this.cleanup.onElement(btn, 'click', () => {
+            this.renderCleanup.onElement(btn, 'click', () => {
                 const char = btn.textContent
                 const iface = document.querySelector('[data-interface-type="transcription"]')
                 const block = iface?.shadowRoot?.querySelector('tpen-transcription-block')?.shadowRoot
