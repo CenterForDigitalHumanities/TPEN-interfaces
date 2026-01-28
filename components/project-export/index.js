@@ -39,6 +39,7 @@ customElements.define('tpen-project-export', class extends HTMLElement {
     }
 
     async loadDeploymentStatus() {
+        const url = `${TPEN.staticURL}/${TPEN.activeProject._id}/manifest.json`
         const response = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/deploymentStatus`, {
             method: 'GET',
             headers: {
@@ -50,11 +51,15 @@ customElements.define('tpen-project-export', class extends HTMLElement {
                 const errStatus = await response.json()
                 return errStatus
             })
-        this.render(response)
+        // Pre-check URL existence for statuses that need it
+        let urlExists = false
+        if ([3, 6, 7].includes(response)) {
+            urlExists = await checkIfUrlExists(url)
+        }
+        this.render(response, url, urlExists)
     }
 
-    render(response) {
-        const url = `${TPEN.staticURL}/${TPEN.activeProject._id}/manifest.json`
+    render(response, url, urlExists = false) {
         this.shadowRoot.innerHTML = `
             <style>
                 a, .success {
@@ -93,7 +98,7 @@ customElements.define('tpen-project-export', class extends HTMLElement {
                     box-shadow: none;
                     vertical-align: middle;
                 }
-                
+
                 a.iiif-drag-drop img {
                     width: 100%;
                 }
@@ -125,7 +130,7 @@ customElements.define('tpen-project-export', class extends HTMLElement {
             // This case indicates that the deployment is inactive
             case 7:
                 // This case indicates that the deployment is failed
-                if (await checkIfUrlExists(url) && response.status !== 2) {
+                if (urlExists && response.status !== 2) {
                     html += `<a href="${url}" target="_blank">${url}</a>`
                     html += `<a class="iiif-drag-drop" href="${url}?manifest=${url}" target="_blank"><img src="https://iiif.io/img/logo-iiif-34x30.png" alt="IIIF Drag and Drop" title="Drag and Drop IIIF Resource"></a>`
                 } else {
