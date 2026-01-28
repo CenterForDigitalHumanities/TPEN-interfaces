@@ -18,10 +18,16 @@ export default class ProjectsManager extends HTMLElement {
         this.attachShadow({mode:"open"})
     }
 
-    async connectedCallback() {
+    connectedCallback() {
         TPEN.attachAuthentication(this)
         this.cleanup.onEvent(eventDispatcher, "tpen-user-loaded", ev => this.currentUser = ev.detail)
+        this.initialize()
+    }
 
+    /**
+     * Initializes the component by loading projects if user is authenticated.
+     */
+    async initialize() {
         if (this.currentUser && this.currentUser._id) {
             try {
                 await this.getProjects()

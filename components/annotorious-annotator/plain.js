@@ -39,11 +39,11 @@ class AnnotoriousAnnotator extends HTMLElement {
       this.attachShadow({ mode: 'open' })
     }
 
-    async connectedCallback() {
+    connectedCallback() {
       TPEN.attachAuthentication(this)
       this.render()
       this.addEventListeners()
-      await this.initAnnotator()
+      this.initAnnotator()
     }
 
     render() {
@@ -133,7 +133,11 @@ class AnnotoriousAnnotator extends HTMLElement {
       }
     }
 
-    async render(resolvedCanvas) {
+    /**
+     * Renders the canvas with OpenSeadragon and Annotorious.
+     * @param {Object} resolvedCanvas - The resolved Canvas object
+     */
+    async renderCanvas(resolvedCanvas) {
       this.shadowRoot.getElementById('annotator-container').innerHTML = ""
       const canvasID = resolvedCanvas["@id"] ?? resolvedCanvas.id
       const fullImage = resolvedCanvas?.items[0]?.items[0]?.body?.id
@@ -343,7 +347,7 @@ class AnnotoriousAnnotator extends HTMLElement {
           throw new Error(`Provided URI did not resolve a 'Canvas'.  It resolved a '${type}'`, 
             {"cause":"URI must point to a Canvas."})
       }
-      this.render(resolvedCanvas)
+      this.renderCanvas(resolvedCanvas)
     }
 
     /**

@@ -40,7 +40,16 @@ class ReadOnlyViewTranscribe extends HTMLElement {
         this.#currentPage = index
     }
 
-    async connectedCallback() {
+    connectedCallback() {
+        this.render()
+        this.addEventListeners()
+        this.initialize()
+    }
+
+    /**
+     * Renders the component template.
+     */
+    render() {
         this.shadowRoot.innerHTML = `
             <style>
                 @import "../../components/annotorious-annotator/AnnotoriousOSD.min.css";
@@ -215,7 +224,12 @@ class ReadOnlyViewTranscribe extends HTMLElement {
                 <button id="nextPage">Next Page</button>
             </div>
         `
+    }
 
+    /**
+     * Sets up event listeners for the component.
+     */
+    addEventListeners() {
         this.cleanup.onElement(this.shadowRoot.getElementById("nextPage"), "click", () => this.openPage(this.currentPage + 1))
         this.cleanup.onElement(this.shadowRoot.getElementById("prevPage"), "click", () => this.openPage(this.currentPage - 1))
 
@@ -229,7 +243,12 @@ class ReadOnlyViewTranscribe extends HTMLElement {
             const canvasIndex = this.pages.indexOf(e.target.value)
             if (canvasIndex !== -1) this.openPage(canvasIndex)
         })
+    }
 
+    /**
+     * Initializes the component by loading annotations and scripts.
+     */
+    async initialize() {
         await this.loadAnnotations()
         await this.loadExternalScripts()
 

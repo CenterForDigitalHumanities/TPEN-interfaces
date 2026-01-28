@@ -148,12 +148,16 @@ export default class ProjectsListNavigation extends HTMLElement {
     }
     set projects(projects) {
         this.#projects = projects
-        this.render()
+        this.updateList()
     }
     get projects() {
         return this.#projects
     }
-    async render() {
+
+    /**
+     * Updates the project list in the DOM. Handles async permission checks.
+     */
+    async updateList() {
         const root = this.shadowRoot
         let list = root.getElementById('projectsListView')
         if (!this.#projects?.length) {

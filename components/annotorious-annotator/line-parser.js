@@ -45,8 +45,15 @@ class AnnotoriousAnnotator extends HTMLElement {
   }
 
   // Custom component setup
-  async connectedCallback() {
+  connectedCallback() {
     TPEN.attachAuthentication(this)
+    this.initialize()
+  }
+
+  /**
+   * Initializes the annotator component.
+   */
+  initialize() {
     // Must know the User
     if (!this.#userForAnnotorious) {
       const agent = getAgentIRIFromToken(this.userToken)

@@ -20,6 +20,7 @@ class LegacyAnnotator extends HTMLElement {
     #startY
     #creatorURI
     #knownAnnotationPage
+    #mouseMoveHandler = null
 
     /** @type {CleanupRegistry} Registry for cleanup handlers */
     cleanup = new CleanupRegistry()
@@ -33,10 +34,17 @@ class LegacyAnnotator extends HTMLElement {
         this.attachShadow({ mode: 'open' })
     }
 
-    async connectedCallback() {
+    connectedCallback() {
         TPEN.attachAuthentication(this)
         this.render()
         this.addEventListeners()
+        this.initialize()
+    }
+
+    /**
+     * Initializes the annotator with user profile and annotation page.
+     */
+    async initialize() {
         if(!this.#creatorURI) {
           const tpenUserProfile = await User.fromToken(this.userToken).getProfile()
           this.#creatorURI = tpenUserProfile.agent.replace("http://", "https://")
@@ -149,7 +157,7 @@ class LegacyAnnotator extends HTMLElement {
         }
     }
 
-    startDrawing(event) { 
+    startDrawing(event) {
         this.#isDrawing = true
         const imageContainer = this.shadowRoot.getElementById("imageContainer")
         const rect = imageContainer.getBoundingClientRect()
@@ -163,9 +171,11 @@ class LegacyAnnotator extends HTMLElement {
         this.#startX = ((event.clientX - rect.left) / rect.width) * 100
         this.#startY = ((event.clientY - rect.top) / rect.height) * 100
         this.#currentRectangle = document.createElement("div")
-        this.#currentRectangle.classList.add("rectangle") 
-        imageContainer.appendChild(this.#currentRectangle) 
-        imageContainer.addEventListener("mousemove", (ev) => this.drawRectangle(ev))
+        this.#currentRectangle.classList.add("rectangle")
+        imageContainer.appendChild(this.#currentRectangle)
+        // Store handler reference for cleanup
+        this.#mouseMoveHandler = (ev) => this.drawRectangle(ev)
+        imageContainer.addEventListener("mousemove", this.#mouseMoveHandler)
     }
 
     updateRectangleSize(event) {
@@ -199,6 +209,12 @@ class LegacyAnnotator extends HTMLElement {
     endDrawing() {
         if (!this.#currentRectangle) return
         this.#isDrawing = false
+        // Remove the mousemove handler to prevent memory leaks
+        if (this.#mouseMoveHandler) {
+            const imageContainer = this.shadowRoot.getElementById("imageContainer")
+            imageContainer?.removeEventListener("mousemove", this.#mouseMoveHandler)
+            this.#mouseMoveHandler = null
+        }
         this.#currentRectangle.classList.add("drawn-shape")
         this.generateAnnotationFromShape(this.#currentRectangle)
     }

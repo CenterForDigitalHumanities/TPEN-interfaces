@@ -21,10 +21,16 @@ class ContributionActivity extends HTMLElement {
     }
 
     connectedCallback() {
-        this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-user-loaded', async ev => {
-            await this.render(await TPEN.getUserProjects(TPEN.getAuthorization()))
-        })
         TPEN.attachAuthentication(this)
+        this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-user-loaded', () => this.loadAndRender())
+    }
+
+    /**
+     * Loads user projects and renders the contribution activity.
+     */
+    async loadAndRender() {
+        const projects = await TPEN.getUserProjects(TPEN.getAuthorization())
+        await this.processAndRender(projects)
     }
 
     disconnectedCallback() {
@@ -43,7 +49,11 @@ class ContributionActivity extends HTMLElement {
         }
     }
 
-    async render(projects) {
+    /**
+     * Processes project data and renders the contribution activity.
+     * @param {Array} projects - Array of project data
+     */
+    async processAndRender(projects) {
         const contributionsMap = new Map()
 
         for (const project of projects) {
