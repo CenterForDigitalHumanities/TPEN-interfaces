@@ -1,8 +1,17 @@
 import TPEN from '../../api/TPEN.js'
 import { checkIfUrlExists } from '../../utilities/checkIfUrlExists.js'
 import CheckPermissions from '../../components/check-permissions/checkPermissions.js'
+import { onProjectReady } from "../../utilities/projectReady.js"
 
+/**
+ * ProjectExport - Displays project manifest export status and links.
+ * Requires PROJECT METADATA view access.
+ * @element tpen-project-export
+ */
 customElements.define('tpen-project-export', class extends HTMLElement {
+    /** @type {Function|null} Unsubscribe function for project ready listener */
+    _unsubProject = null
+
     constructor() {
         super()
         this.attachShadow({ mode: 'open' })
@@ -10,16 +19,26 @@ customElements.define('tpen-project-export', class extends HTMLElement {
 
     connectedCallback() {
         TPEN.attachAuthentication(this)
-        TPEN.eventDispatcher.on('tpen-project-loaded', () => this.render())
+        this._unsubProject = onProjectReady(this, this.authgate)
     }
 
-    async render() {
-        // Check if user has view permission
-        const hasViewAccess = CheckPermissions.checkViewAccess('PROJECT', 'METADATA')
-        if (!hasViewAccess) {
+    /**
+     * Authorization gate - checks permissions before rendering.
+     * Shows permission message if user lacks PROJECT METADATA view access.
+     */
+    authgate() {
+        if (!CheckPermissions.checkViewAccess('PROJECT', 'METADATA')) {
             this.shadowRoot.innerHTML = `<p>You don't have permission to view project export</p>`
             return
         }
+        this.render()
+    }
+
+    disconnectedCallback() {
+        try { this._unsubProject?.() } catch {}
+    }
+
+    async render() {
         
         const url = `${TPEN.staticURL}/${TPEN.activeProject._id}/manifest.json`
         const response = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/deploymentStatus`, {

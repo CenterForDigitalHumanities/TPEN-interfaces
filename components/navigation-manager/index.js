@@ -1,7 +1,17 @@
 import TPEN from '../../api/TPEN.js'
 import { escapeHtml } from '/js/utils.js'
+import CheckPermissions from '../check-permissions/checkPermissions.js'
+import { onProjectReady } from "../../utilities/projectReady.js"
 
+/**
+ * NavigationManager - Interface for customizing project navigation URLs.
+ * Requires PROJECT OPTIONS edit access.
+ * @element tpen-navigation-manager
+ */
 class NavigationManager extends HTMLElement {
+    /** @type {Function|null} Unsubscribe function for project ready listener */
+    _unsubProject = null
+
     constructor() {
         super()
         this.attachShadow({ mode: 'open' })
@@ -15,11 +25,25 @@ class NavigationManager extends HTMLElement {
 
     connectedCallback() {
         TPEN.attachAuthentication(this)
-        TPEN.eventDispatcher.on('tpen-project-loaded', () => {
-            this.loadNavigation()
-            this.render()
-            this.setupEventListeners()
-        })
+        this._unsubProject = onProjectReady(this, this.authgate)
+    }
+
+    /**
+     * Authorization gate - checks permissions before rendering.
+     * Removes component if user lacks PROJECT OPTIONS edit access.
+     */
+    authgate() {
+        if (!CheckPermissions.checkEditAccess("PROJECT", "OPTIONS")) {
+            this.remove()
+            return
+        }
+        this.loadNavigation()
+        this.render()
+        this.addEventListeners()
+    }
+
+    disconnectedCallback() {
+        try { this._unsubProject?.() } catch {}
     }
 
     loadNavigation() {
@@ -59,7 +83,7 @@ class NavigationManager extends HTMLElement {
                 message: 'Navigation URLs saved successfully' 
             })
             this.render()
-            this.setupEventListeners()
+            this.addEventListeners()
         } catch (error) {
             TPEN.eventDispatcher.dispatch('tpen-toast', { 
                 status: 'error', 
@@ -77,7 +101,7 @@ class NavigationManager extends HTMLElement {
                 manageProject: ''
             }
             this.render()
-            this.setupEventListeners()
+            this.addEventListeners()
         }
     }
 
@@ -307,7 +331,7 @@ class NavigationManager extends HTMLElement {
         `
     }
 
-    setupEventListeners() {
+    addEventListeners() {
         // Input change handlers
         const transcribeInput = this.shadowRoot.querySelector('#transcribe-url')
         const defineLinesInput = this.shadowRoot.querySelector('#define-lines-url')
@@ -318,7 +342,7 @@ class NavigationManager extends HTMLElement {
             this._navigation.defineLines = defineLinesInput.value
             this._navigation.manageProject = manageProjectInput.value
             this.render()
-            this.setupEventListeners()
+            this.addEventListeners()
         }
 
         transcribeInput?.addEventListener('input', updateNav)

@@ -1,23 +1,43 @@
 import TPEN from "../../api/TPEN.js"
 import CheckPermissions from '../../components/check-permissions/checkPermissions.js'
+import { onProjectReady } from "../../utilities/projectReady.js"
 
+/**
+ * RolesHandler - Manages role assignment UI for project collaborators.
+ * Requires MEMBER view access.
+ * @element roles-handler
+ */
 class RolesHandler extends HTMLElement {
+    /** @type {Function|null} Unsubscribe function for project ready listener */
+    _unsubProject = null
+
     constructor() {
         super()
-        TPEN.attachAuthentication(this)
         this.attachShadow({ mode: 'open' })
     }
 
     connectedCallback() {
-        TPEN.eventDispatcher.on('tpen-project-loaded', () => this.render())
+        TPEN.attachAuthentication(this)
+        this._unsubProject = onProjectReady(this, this.authgate)
     }
 
-    render() {
-        const permitted = CheckPermissions.checkViewAccess("member", "*")
-        if(!permitted) {
+    /**
+     * Authorization gate - checks permissions before rendering.
+     * Shows permission message if user lacks MEMBER view access.
+     */
+    authgate() {
+        if (!CheckPermissions.checkViewAccess("MEMBER", "*")) {
             this.shadowRoot.innerHTML = "<div>You do not have permissions to see group member roles.</div>"
             return
         }
+        this.render()
+    }
+
+    disconnectedCallback() {
+        try { this._unsubProject?.() } catch {}
+    }
+
+    render() {
         this.shadowRoot.innerHTML = `
         <style>
         #rolesListContainer {

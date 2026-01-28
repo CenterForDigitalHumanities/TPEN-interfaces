@@ -1,10 +1,17 @@
 import TPEN from "../../api/TPEN.js"
+
+/**
+ * ProjectsList - Displays a list of user's projects with optional management controls.
+ * @element tpen-projects-list
+ */
 export default class ProjectsList extends HTMLElement {
     static get observedAttributes() {
         return ['show-metadata', 'manage-project']
     }
 
     #projects = []
+    /** @type {Function|null} Handler for authentication events */
+    _authHandler = null
 
     get projects() {
         return this.#projects
@@ -15,27 +22,30 @@ export default class ProjectsList extends HTMLElement {
         this.render()
         return this
     }
-    
+
     constructor() {
         super()
-        TPEN.eventDispatcher.on("tpen-authenticated", async (ev) => {
+    }
+
+    connectedCallback() {
+        TPEN.attachAuthentication(this)
+        this._authHandler = async (ev) => {
             try {
                 this.projects = await TPEN.getUserProjects(ev.detail)
             } catch (error) {
-                // Toast error message
-                const toast = new CustomEvent('tpen-toast', {
-                    detail: {
-                        message: `Error fetching projects: ${error.message}`,
-                        status: error.status
-                    }
+                TPEN.eventDispatcher.dispatch('tpen-toast', {
+                    message: `Error fetching projects: ${error.message}`,
+                    status: error.status
                 })
-                TPEN.eventDispatcher.dispatch(toast)
             }
-        })
+        }
+        TPEN.eventDispatcher.on("tpen-authenticated", this._authHandler)
     }
 
-    async connectedCallback() {
-        TPEN.attachAuthentication(this)
+    disconnectedCallback() {
+        if (this._authHandler) {
+            TPEN.eventDispatcher.off("tpen-authenticated", this._authHandler)
+        }
     }
 
     attributeChangedCallback(name, oldValue, newValue) {

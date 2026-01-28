@@ -1,5 +1,6 @@
 /**
- * @module AuthButton Adds custom element for login/logout of TPEN3 Centralized Login
+ * AuthButton - Login/logout button for TPEN3 Centralized Login.
+ * @element auth-button
  * @author thehabes, cubap
  */
 
@@ -7,19 +8,31 @@ import TPEN from "../../api/TPEN.js"
 import { eventDispatcher } from "../../api/events.js"
 
 class AuthButton extends HTMLElement {
+  /** @type {Function|null} Handler for authentication events */
+  _authHandler = null
 
   constructor() {
     super()
     this.attachShadow({ mode: "open" })
+  }
+
+  connectedCallback() {
     const button = document.createElement("button")
     button.innerText = "LOGIN"
-    eventDispatcher.on("tpen-authenticated", ev => {
+    this._authHandler = () => {
       button.setAttribute("loggedIn", true)
       button.innerText = "LOGOUT"
-    })
+    }
+    eventDispatcher.on("tpen-authenticated", this._authHandler)
     button.addEventListener('click', () => this[button.getAttribute("loggedIn") ? 'logout' : 'login']())
     TPEN.attachAuthentication(this)
     this.shadowRoot.append(button)
+  }
+
+  disconnectedCallback() {
+    if (this._authHandler) {
+      eventDispatcher.off("tpen-authenticated", this._authHandler)
+    }
   }
 
   /**

@@ -1,25 +1,46 @@
 import TPEN from "../../api/TPEN.js"
 import CheckPermissions from '../../components/check-permissions/checkPermissions.js'
+import { onProjectReady } from "../../utilities/projectReady.js"
 
+/**
+ * ManageRole - Interface for creating and managing custom project roles.
+ * Requires ROLE ALL access.
+ * @element tpen-manage-role
+ */
 class ManageRole extends HTMLElement {
+    /** @type {Function|null} Unsubscribe function for project ready listener */
+    _unsubProject = null
+
     permissions = []
     isExistingRole = false
+
     constructor() {
         super()
-        this.attachShadow({ mode : "open" })
+        this.attachShadow({ mode: "open" })
     }
 
     connectedCallback() {
         TPEN.attachAuthentication(this)
-        TPEN.eventDispatcher.on("tpen-project-loaded", () => this.render())
+        this._unsubProject = onProjectReady(this, this.authgate)
     }
 
-    async render() {
-        const permitted = CheckPermissions.checkAllAccess("role", "*")
-        if(!permitted) {
+    /**
+     * Authorization gate - checks permissions before rendering.
+     * Shows permission message if user lacks ROLE ALL access.
+     */
+    authgate() {
+        if (!CheckPermissions.checkAllAccess("ROLE", "*")) {
             this.shadowRoot.innerHTML = `<div>You don't have permission to create or edit roles</div>`
             return
         }
+        this.render()
+    }
+
+    disconnectedCallback() {
+        try { this._unsubProject?.() } catch {}
+    }
+
+    async render() {
         const group = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/customRoles`, {
             method: 'GET',
             headers: {

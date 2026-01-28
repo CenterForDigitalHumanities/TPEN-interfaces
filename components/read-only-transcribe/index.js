@@ -1,5 +1,10 @@
 import { checkIfUrlExists } from '../../utilities/checkIfUrlExists.js'
 
+/**
+ * ReadOnlyViewTranscribe - Public read-only view of transcription data from static manifest.
+ * Does not require authentication - displays publicly exported project data.
+ * @element tpen-read-only-view-transcribe
+ */
 class ReadOnlyViewTranscribe extends HTMLElement {
     #osd 
     #annotoriousInstance

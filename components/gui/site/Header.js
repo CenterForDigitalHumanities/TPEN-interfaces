@@ -1,5 +1,16 @@
 import TPEN from "../../../api/TPEN.js"
+
+/**
+ * TpenHeader - Main site header with navigation, title, and action button.
+ * @element tpen-header
+ */
 class TpenHeader extends HTMLElement {
+    /** @type {Function|null} Handler for title events */
+    _titleHandler = null
+    /** @type {Function|null} Handler for action link events */
+    _actionLinkHandler = null
+    /** @type {Function|null} Handler for action link remove events */
+    _actionLinkRemoveHandler = null
 
     constructor() {
         super();
@@ -49,29 +60,39 @@ class TpenHeader extends HTMLElement {
         `;
     }
     connectedCallback() {
-        TPEN.eventDispatcher.on('tpen-gui-title', ev => {
-            if(!ev.detail) {
+        this._titleHandler = ev => {
+            const title = this.shadowRoot.querySelector('.banner')
+            if (!ev.detail) {
                 title.classList.add('hidden')
                 return
             }
-            const title = this.shadowRoot.querySelector('.banner')
             title.classList.remove('hidden')
             title.textContent = ev.detail
             title.setAttribute('title', ev.detail)
-        })
-        TPEN.eventDispatcher.on('tpen-gui-action-link', ev => {
+        }
+        this._actionLinkHandler = ev => {
             const btn = this.shadowRoot.querySelector('.action-button')
             btn.classList.remove('hidden')
             btn.textContent = ev.detail.label
             btn.addEventListener('click', ev.detail.callback)
-        })
-        TPEN.eventDispatcher.on('tpen-gui-action-link-remove', ev => {
+        }
+        this._actionLinkRemoveHandler = ev => {
             const btn = this.shadowRoot.querySelector('.action-button')
             btn.classList.add('hidden')
             btn.removeEventListener('click', ev.detail.callback)
-        })
-        this.shadowRoot.querySelector('.logout-btn').addEventListener('click', ()=>TPEN.logout())
+        }
+
+        TPEN.eventDispatcher.on('tpen-gui-title', this._titleHandler)
+        TPEN.eventDispatcher.on('tpen-gui-action-link', this._actionLinkHandler)
+        TPEN.eventDispatcher.on('tpen-gui-action-link-remove', this._actionLinkRemoveHandler)
+        this.shadowRoot.querySelector('.logout-btn').addEventListener('click', () => TPEN.logout())
         this.setupDraggableButton()
+    }
+
+    disconnectedCallback() {
+        if (this._titleHandler) TPEN.eventDispatcher.off('tpen-gui-title', this._titleHandler)
+        if (this._actionLinkHandler) TPEN.eventDispatcher.off('tpen-gui-action-link', this._actionLinkHandler)
+        if (this._actionLinkRemoveHandler) TPEN.eventDispatcher.off('tpen-gui-action-link-remove', this._actionLinkRemoveHandler)
     }
 
     setupDraggableButton() {

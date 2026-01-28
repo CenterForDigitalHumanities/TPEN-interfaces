@@ -1,24 +1,37 @@
 import TPEN from '../../api/TPEN.js'
 import User from '../../api/User.js'
 
+/**
+ * UserProfile - Displays and allows editing of user profile information.
+ * @element tpen-user-profile
+ */
 class UserProfile extends HTMLElement {
     static get observedAttributes() {
         return ['tpen-user-id']
     }
     user = TPEN.currentUser
+    /** @type {Function|null} Handler for user loaded events */
+    _userLoadedHandler = null
 
     constructor() {
         super()
         this.attachShadow({ mode: 'open' })
-        TPEN.eventDispatcher.on('tpen-user-loaded', ev => {
-            this.render(ev.detail)
-            this.updateProfile(ev.detail)
-            this.user = ev.detail
-        })
     }
 
     connectedCallback() {
         TPEN.attachAuthentication(this)
+        this._userLoadedHandler = ev => {
+            this.render(ev.detail)
+            this.updateProfile(ev.detail)
+            this.user = ev.detail
+        }
+        TPEN.eventDispatcher.on('tpen-user-loaded', this._userLoadedHandler)
+    }
+
+    disconnectedCallback() {
+        if (this._userLoadedHandler) {
+            TPEN.eventDispatcher.off('tpen-user-loaded', this._userLoadedHandler)
+        }
     }
 
     attributeChangedCallback(name, oldValue, newValue) {

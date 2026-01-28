@@ -1,10 +1,19 @@
 import TPEN from "../../api/TPEN.js"
+import CheckPermissions from "../check-permissions/checkPermissions.js"
+import { onProjectReady } from "../../utilities/projectReady.js"
 
+/**
+ * TpenCreateColumn - Interface for creating and managing columns on annotation pages.
+ * Requires LINE SELECTOR all access.
+ * @element tpen-create-column
+ */
 class TpenCreateColumn extends HTMLElement {
+    /** @type {Function|null} Unsubscribe function for project ready listener */
+    _unsubProject = null
+
     constructor() {
         super()
         this.attachShadow({ mode: 'open' })
-        TPEN.attachAuthentication(this)
 
         this.projectID = null
         this.pageID = null
@@ -225,12 +234,29 @@ class TpenCreateColumn extends HTMLElement {
     }
 
     connectedCallback() {
+        TPEN.attachAuthentication(this)
         localStorage.removeItem('annotationsState')
         const params = new URLSearchParams(window.location.search)
         this.pageID = `${TPEN.RERUMURL}/id/${params.get("pageID")}`
         this.projectID = params.get("projectID")
         this.annotationPageID = this.pageID.split("/").pop()
-        TPEN.eventDispatcher.on('tpen-project-loaded', async () => await this.loadPage(this.pageID))
+        this._unsubProject = onProjectReady(this, this.authgate)
+    }
+
+    /**
+     * Authorization gate - checks permissions before loading page.
+     * Shows permission message if user lacks LINE SELECTOR all access.
+     */
+    async authgate() {
+        if (!CheckPermissions.checkAllAccess("LINE", "SELECTOR")) {
+            this.container.innerHTML = `<div class="error-message">You do not have permission to manage columns.</div>`
+            return
+        }
+        await this.loadPage(this.pageID)
+    }
+
+    disconnectedCallback() {
+        try { this._unsubProject?.() } catch {}
     }
 
     async columnLabelCheck() {

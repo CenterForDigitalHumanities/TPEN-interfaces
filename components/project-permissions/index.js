@@ -1,24 +1,43 @@
 import TPEN from "../../api/TPEN.js"
 import CheckPermissions from "../../components/check-permissions/checkPermissions.js"
+import { onProjectReady } from "../../utilities/projectReady.js"
 
+/**
+ * ProjectPermissions - Displays all project roles and their associated permissions.
+ * Requires PERMISSION view access.
+ * @element tpen-project-permissions
+ */
 class ProjectPermissions extends HTMLElement {
+    /** @type {Function|null} Unsubscribe function for project ready listener */
+    _unsubProject = null
+
     constructor() {
         super()
-        this.attachShadow({ mode : "open" })
+        this.attachShadow({ mode: "open" })
     }
 
     connectedCallback() {
         TPEN.attachAuthentication(this)
-        TPEN.eventDispatcher.on("tpen-project-loaded", () => this.render())
+        this._unsubProject = onProjectReady(this, this.authgate)
     }
 
-    async render() {
-        // Check if user has view permission
-        const hasViewAccess = CheckPermissions.checkViewAccess('PERMISSION', '*')
-        if (!hasViewAccess) {
+    /**
+     * Authorization gate - checks permissions before rendering.
+     * Shows permission message if user lacks PERMISSION view access.
+     */
+    authgate() {
+        if (!CheckPermissions.checkViewAccess('PERMISSION', '*')) {
             this.shadowRoot.innerHTML = `<p>You don't have permission to view project permissions</p>`
             return
         }
+        this.render()
+    }
+
+    disconnectedCallback() {
+        try { this._unsubProject?.() } catch {}
+    }
+
+    async render() {
         
         this.shadowRoot.innerHTML = `
             <style>

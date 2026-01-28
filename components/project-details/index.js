@@ -2,8 +2,18 @@ import TPEN from "../../api/TPEN.js"
 import Project from "../../api/Project.js"
 import "../../components/line-image/index.js"
 import CheckPermissions from "../check-permissions/checkPermissions.js"
+import { onProjectReady } from "../../utilities/projectReady.js"
 
+/**
+ * ProjectDetails - Displays project title, owner, collaborator count, and thumbnail.
+ * Requires PROJECT view access.
+ * @element tpen-project-details
+ */
 class ProjectDetails extends HTMLElement {
+    /** @type {Function|null} Unsubscribe function for project ready listener */
+    _unsubProject = null
+    /** @type {Function|null} Handler for project load failed events */
+    _loadFailedHandler = null
 
     style = `
     sequence-panel {
@@ -54,19 +64,6 @@ class ProjectDetails extends HTMLElement {
     constructor() {
         super()
         this.attachShadow({ mode: 'open' })
-        TPEN.eventDispatcher.on('tpen-project-loaded', this.render.bind(this))
-        TPEN.eventDispatcher.on('tpen-project-load-failed', (err) => {
-            this.shadowRoot.innerHTML = `
-                <style>${this.style}</style>
-                <h3>Project not found</h3>
-                <p>The project you are looking for does not exist or you do not have access to it.</p>
-            `
-            const toast = {
-                message: `Project failed to load: ${err.message}`,
-                status: "error"
-              }
-            TPEN.eventDispatcher.dispatch('tpen-toast',toast)
-        })
     }
 
     static get observedAttributes() {
@@ -75,16 +72,36 @@ class ProjectDetails extends HTMLElement {
 
     async attributeChangedCallback(name, oldValue, newValue) {
         if (name === 'tpen-project-id' && oldValue !== newValue) {
-            if(newValue === null) return
-            this.Project = (newValue === TPEN.activeProject._id) 
-                ? TPEN.activeProject 
-                : await(new Project(newValue).fetch())
+            if (newValue === null) return
+            this.Project = (newValue === TPEN.activeProject._id)
+                ? TPEN.activeProject
+                : await (new Project(newValue).fetch())
             this.render()
         }
     }
 
     connectedCallback() {
         TPEN.attachAuthentication(this)
+        this._unsubProject = onProjectReady(this, this.render)
+        this._loadFailedHandler = (err) => {
+            this.shadowRoot.innerHTML = `
+                <style>${this.style}</style>
+                <h3>Project not found</h3>
+                <p>The project you are looking for does not exist or you do not have access to it.</p>
+            `
+            TPEN.eventDispatcher.dispatch('tpen-toast', {
+                message: `Project failed to load: ${err.message}`,
+                status: "error"
+            })
+        }
+        TPEN.eventDispatcher.on('tpen-project-load-failed', this._loadFailedHandler)
+    }
+
+    disconnectedCallback() {
+        try { this._unsubProject?.() } catch {}
+        if (this._loadFailedHandler) {
+            TPEN.eventDispatcher.off('tpen-project-load-failed', this._loadFailedHandler)
+        }
     }
 
     async render() {

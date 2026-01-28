@@ -2,8 +2,17 @@ import TPEN from "../../api/TPEN.js"
 import User from "../../api/User.js"
 import { eventDispatcher } from "../../api/events.js"
 import CheckPermissions from "../../components/check-permissions/checkPermissions.js"
+import { onProjectReady } from "../../utilities/projectReady.js"
 
+/**
+ * UpdateMetadata - Modal dialog for viewing and editing project metadata.
+ * Requires PROJECT METADATA view access.
+ * @element update-metadata
+ */
 class UpdateMetadata extends HTMLElement {
+    /** @type {Function|null} Unsubscribe function for project ready listener */
+    _unsubProject = null
+
     constructor() {
         super()
         this.attachShadow({ mode: 'open' })
@@ -15,7 +24,24 @@ class UpdateMetadata extends HTMLElement {
 
     connectedCallback() {
         TPEN.attachAuthentication(this)
-        this.setupEventListeners()
+        this._unsubProject = onProjectReady(this, this.authgate)
+    }
+
+    /**
+     * Authorization gate - checks permissions before opening modal.
+     * Shows permission message if user lacks PROJECT METADATA view access.
+     */
+    authgate() {
+        if (!CheckPermissions.checkViewAccess('PROJECT', 'METADATA')) {
+            this.shadowRoot.innerHTML = `<p>You don't have permission to view project metadata</p>`
+            return
+        }
+        this.addEventListeners()
+        this.openModal()
+    }
+
+    disconnectedCallback() {
+        try { this._unsubProject?.() } catch {}
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
@@ -28,8 +54,10 @@ class UpdateMetadata extends HTMLElement {
         }
     }
 
-    setupEventListeners() {
-        eventDispatcher.on("tpen-project-loaded", () => this.openModal())
+    /**
+     * Sets up event listeners for add/save buttons.
+     */
+    addEventListeners() {
         document.getElementById("add-field-btn")?.addEventListener("click", () => {
             this.addMetadataField()
         })
@@ -40,12 +68,6 @@ class UpdateMetadata extends HTMLElement {
     }
 
     openModal() {
-        // Check if user has view permission (safe - project is loaded)
-        const hasViewAccess = CheckPermissions.checkViewAccess('PROJECT', 'METADATA')
-        if (!hasViewAccess) {
-            this.shadowRoot.innerHTML = `<p>You don't have permission to view project metadata</p>`
-            return
-        }
 
         const modal = document.getElementById("metadata-modal")
         const fieldsContainer = document.getElementById("metadata-fields")

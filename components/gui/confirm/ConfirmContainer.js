@@ -1,9 +1,20 @@
 import './Confirm.js'
 import { eventDispatcher } from '../../../api/events.js'
 
+/**
+ * ConfirmContainer - Global container for displaying confirmation dialogs.
+ * Listens for 'tpen-confirm' events and displays modal confirm dialogs.
+ * @element tpen-confirm-container
+ */
 class ConfirmContainer extends HTMLElement {
     #screenLockingSection
     #confirmElem
+    /** @type {Function|null} Handler for confirm events */
+    _confirmHandler = null
+    /** @type {Function|null} Handler for positive button events */
+    _positiveHandler = null
+    /** @type {Function|null} Handler for negative button events */
+    _negativeHandler = null
 
     constructor() {
         super()
@@ -12,9 +23,19 @@ class ConfirmContainer extends HTMLElement {
     }
 
     connectedCallback() {
-        eventDispatcher.on('tpen-confirm', ({ detail }) => this.addConfirm(detail?.message, detail?.positiveButtonText, detail.negativeButtonText))
-        eventDispatcher.on('tpen-confirm-positive', () => this.#confirmElem.dismiss())
-        eventDispatcher.on('tpen-confirm-negative', () => this.#confirmElem.dismiss())
+        this._confirmHandler = ({ detail }) => this.addConfirm(detail?.message, detail?.positiveButtonText, detail.negativeButtonText)
+        this._positiveHandler = () => this.#confirmElem?.dismiss()
+        this._negativeHandler = () => this.#confirmElem?.dismiss()
+
+        eventDispatcher.on('tpen-confirm', this._confirmHandler)
+        eventDispatcher.on('tpen-confirm-positive', this._positiveHandler)
+        eventDispatcher.on('tpen-confirm-negative', this._negativeHandler)
+    }
+
+    disconnectedCallback() {
+        if (this._confirmHandler) eventDispatcher.off('tpen-confirm', this._confirmHandler)
+        if (this._positiveHandler) eventDispatcher.off('tpen-confirm-positive', this._positiveHandler)
+        if (this._negativeHandler) eventDispatcher.off('tpen-confirm-negative', this._negativeHandler)
     }
 
     /**
