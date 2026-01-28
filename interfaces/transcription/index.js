@@ -8,15 +8,22 @@ import CheckPermissions from "../../components/check-permissions/checkPermission
 import { orderPageItemsByColumns } from "../../utilities/columnOrdering.js"
 import { renderPermissionError } from "../../utilities/renderPermissionError.js"
 import '../../components/gui/alert/AlertContainer.js'
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
+import { onProjectReady } from "../../utilities/projectReady.js"
+
+/**
+ * TranscriptionInterface - The standard transcription interface with split-pane tools.
+ * Requires ANY CONTENT view access.
+ * @element tpen-transcription-interface
+ */
 export default class TranscriptionInterface extends HTMLElement {
   #page
   #canvas
   #toolLineListeners = null
-  // Handler references for cleanup
-  _activePagePreviousHandler = null
-  _activePageNextHandler = null
-  _closeSplitscreenHandler = null
-  _escapeHandler = null
+  /** @type {CleanupRegistry} Registry for cleanup handlers */
+  cleanup = new CleanupRegistry()
+  /** @type {Function|null} Unsubscribe function for project ready listener */
+  _unsubProject = null
   _iframeOrigin = null
 
   constructor() {
@@ -34,19 +41,14 @@ export default class TranscriptionInterface extends HTMLElement {
   connectedCallback() {
     this.setAttribute('data-interface-type', 'transcription')
     TPEN.attachAuthentication(this)
-    if (TPEN.activeProject?._createdAt) {
-      this.authgate()
-    }
-    TPEN.eventDispatcher.on('tpen-project-loaded', this.authgate.bind(this))
-    
-    this._activePagePreviousHandler = this.updateLines.bind(this)
-    this._activePageNextHandler = this.updateLines.bind(this)
-    TPEN.eventDispatcher.on('tpen-transcription-previous-line', this._activePagePreviousHandler)
-    TPEN.eventDispatcher.on('tpen-transcription-next-line', this._activePageNextHandler)
-    
+    this._unsubProject = onProjectReady(this, this.authgate)
+
+    // UI update handlers for line navigation
+    this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-transcription-previous-line', () => this.updateLines())
+    this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-transcription-next-line', () => this.updateLines())
+
     // Listen for navigation messages from tools
-    this.messageHandler = this.#handleToolMessages.bind(this)
-    window.addEventListener('message', this.messageHandler)
+    this.cleanup.onWindow('message', this.#handleToolMessages.bind(this))
   }
 
   authgate() {
@@ -255,66 +257,35 @@ export default class TranscriptionInterface extends HTMLElement {
       this.updateLines()
     }
 
-    this.shadowRoot.addEventListener('splitscreen-toggle', e => openSplitscreen(e.detail?.selectedTool))
+    this.cleanup.onElement(this.shadowRoot, 'splitscreen-toggle', e => openSplitscreen(e.detail?.selectedTool))
 
-    this.shadowRoot.addEventListener('click', e => {
+    this.cleanup.onElement(this.shadowRoot, 'click', e => {
       if (e.target?.classList.contains('close-button')) closeSplitscreen()
     })
-    
-    this._escapeHandler = (e) => {
+
+    this.cleanup.onWindow('keydown', (e) => {
       if (e.key === 'Escape') closeSplitscreen()
-    }
-    window.addEventListener('keydown', this._escapeHandler)
-    
-    this._closeSplitscreenHandler = closeSplitscreen
-    TPEN.eventDispatcher.on('tools-dismiss', this._closeSplitscreenHandler)
+    })
 
-    // Listen for layer changes from layer-selector, store handler for cleanup
-    this._layerChangeHandler = (layerData) => {
-      this.updateLines()
-    }
-    TPEN.eventDispatcher.on('tpen-layer-changed', this._layerChangeHandler)
+    this.cleanup.onEvent(TPEN.eventDispatcher, 'tools-dismiss', closeSplitscreen)
 
-    // Listen for column selection changes, store handler for cleanup
-    this._columnSelectedHandler = (event) => {
+    // Listen for layer changes from layer-selector
+    this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-layer-changed', () => this.updateLines())
+
+    // Listen for column selection changes
+    this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-column-selected', (event) => {
       const columnData = event?.detail
       if (typeof columnData?.lineIndex === 'number') {
         TPEN.activeLineIndex = columnData.lineIndex
         this.updateLines()
       }
-    }
-    TPEN.eventDispatcher.on('tpen-column-selected', this._columnSelectedHandler)
+    })
   }
 
   disconnectedCallback() {
-    // Clean up connectedCallback listeners
-    if (this._activePagePreviousHandler) {
-      TPEN.eventDispatcher.off('tpen-transcription-previous-line', this._activePagePreviousHandler)
-    }
-    if (this._activePageNextHandler) {
-      TPEN.eventDispatcher.off('tpen-transcription-next-line', this._activePageNextHandler)
-    }
-    
-    // Remove event dispatcher handlers to avoid leaks when element is detached
-    if (this._layerChangeHandler) {
-      TPEN.eventDispatcher.off('tpen-layer-changed', this._layerChangeHandler)
-    }
-    if (this._columnSelectedHandler) {
-      TPEN.eventDispatcher.off('tpen-column-selected', this._columnSelectedHandler)
-    }
-    if (this._closeSplitscreenHandler) {
-      TPEN.eventDispatcher.off('tools-dismiss', this._closeSplitscreenHandler)
-    }
-    if (this._escapeHandler) {
-      window.removeEventListener('keydown', this._escapeHandler)
-    }
-    
-    if (this.messageHandler) {
-      window.removeEventListener('message', this.messageHandler)
-    }
-    
-    // Clean up tool line listeners
+    try { this._unsubProject?.() } catch {}
     this.#cleanupToolLineListeners()
+    this.cleanup.run()
   }
 
   #cleanupToolLineListeners() {
@@ -531,7 +502,7 @@ export default class TranscriptionInterface extends HTMLElement {
     }
 
     const onDrag = (e) => {
-      if (!isDragging) return;
+      if (!isDragging) return
       const containerRect = container.getBoundingClientRect()
       const offsetX = e.clientX - containerRect.left
 
@@ -545,9 +516,9 @@ export default class TranscriptionInterface extends HTMLElement {
       rightPane.style.width = `${rightWidth}px`
     }
 
-    splitter.addEventListener('mousedown', startDrag)
-    window.addEventListener('mousemove', onDrag)
-    window.addEventListener('mouseup', () => {
+    this.cleanup.onElement(splitter, 'mousedown', startDrag)
+    this.cleanup.onWindow('mousemove', onDrag)
+    this.cleanup.onWindow('mouseup', () => {
       if (!isDragging) return
       this.checkMagnifierVisibility()
       stopDrag()

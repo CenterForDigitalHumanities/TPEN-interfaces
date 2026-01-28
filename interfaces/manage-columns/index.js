@@ -2,6 +2,7 @@ import TPEN from "../../api/TPEN.js"
 import CheckPermissions from "../../components/check-permissions/checkPermissions.js"
 import { renderPermissionError } from "../../utilities/renderPermissionError.js"
 import { onProjectReady } from "../../utilities/projectReady.js"
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 
 /**
  * TpenManageColumns - Interface for managing column assignments on annotation pages.
@@ -9,6 +10,8 @@ import { onProjectReady } from "../../utilities/projectReady.js"
  * @element tpen-manage-columns
  */
 class TpenManageColumns extends HTMLElement {
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
     /** @type {Function|null} Unsubscribe function for project ready listener */
     _unsubProject = null
 
@@ -307,31 +310,32 @@ class TpenManageColumns extends HTMLElement {
      * Sets up event listeners for the interface controls.
      */
     addEventListeners() {
-        this.createBtn.addEventListener("click", () => this.createColumn())
-        this.clearBtn.addEventListener("click", () => this.clearAllSelections())
-        this.mergeColumnsCheckbox.addEventListener("change", () => this.handleModeChange())
-        this.extendColumnCheckbox.addEventListener("change", () => this.handleModeChange())
+        this.cleanup.onElement(this.createBtn, "click", () => this.createColumn())
+        this.cleanup.onElement(this.clearBtn, "click", () => this.clearAllSelections())
+        this.cleanup.onElement(this.mergeColumnsCheckbox, "change", () => this.handleModeChange())
+        this.cleanup.onElement(this.extendColumnCheckbox, "change", () => this.handleModeChange())
 
         // Inter-interface navigation buttons
         this.identifyLinesBtn.style.display = "block"
-        this.identifyLinesBtn.addEventListener("click", () =>
+        this.cleanup.onElement(this.identifyLinesBtn, "click", () =>
             document.location.href = `/annotator?projectID=${TPEN.activeProject._id}&pageID=${TPEN.screen.pageInQuery}`)
 
         if (CheckPermissions.checkEditAccess("PROJECT")) {
             this.projectManagementBtn.style.display = "block"
-            this.projectManagementBtn.addEventListener("click", () =>
+            this.cleanup.onElement(this.projectManagementBtn, "click", () =>
                 document.location.href = `/project/manage?projectID=${TPEN.activeProject._id}`)
         }
 
         if (CheckPermissions.checkViewAccess("LINE", "TEXT") || CheckPermissions.checkEditAccess("LINE", "TEXT")) {
             this.transcribeBtn.style.display = "block"
-            this.transcribeBtn.addEventListener("click", () =>
+            this.cleanup.onElement(this.transcribeBtn, "click", () =>
                 document.location.href = `/transcribe?projectID=${TPEN.activeProject._id}&pageID=${TPEN.screen.pageInQuery}`)
         }
     }
 
     disconnectedCallback() {
         try { this._unsubProject?.() } catch {}
+        this.cleanup.run()
     }
 
     async columnLabelCheck() {

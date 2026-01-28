@@ -152,7 +152,14 @@ class ProjectOptions extends HTMLElement {
 
 customElements.define('tpen-project-options', ProjectOptions)
 
+/**
+ * LineAnnotationLink - Link component for navigating to line annotation pages.
+ * @element line-annotation-link
+ */
 class LineAnnotationLink extends HTMLElement {
+    /** @type {Function|null} Handler for mouseenter event */
+    _mouseEnterHandler = null
+
     constructor() {
         super()
         this.attachShadow({ mode: 'open' })
@@ -163,7 +170,15 @@ class LineAnnotationLink extends HTMLElement {
 
     connectedCallback() {
         this.render()
-        this.shadowRoot.querySelector('a').addEventListener('mouseenter', () => this.fetchCount())
+        this._mouseEnterHandler = () => this.fetchCount()
+        this.shadowRoot.querySelector('a')?.addEventListener('mouseenter', this._mouseEnterHandler)
+    }
+
+    disconnectedCallback() {
+        const anchor = this.shadowRoot?.querySelector('a')
+        if (anchor && this._mouseEnterHandler) {
+            anchor.removeEventListener('mouseenter', this._mouseEnterHandler)
+        }
     }
 
     async fetchCount() {

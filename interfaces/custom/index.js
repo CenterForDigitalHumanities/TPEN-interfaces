@@ -2,6 +2,7 @@ import TPEN from '../../api/TPEN.js'
 import CheckPermissions from "../../components/check-permissions/checkPermissions.js"
 import { renderPermissionError } from "../../utilities/renderPermissionError.js"
 import { onProjectReady } from "../../utilities/projectReady.js"
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 
 /**
  * TpenCustomProperty - Interface for editing custom project properties as JSON.
@@ -9,6 +10,8 @@ import { onProjectReady } from "../../utilities/projectReady.js"
  * @element tpen-custom-property
  */
 class TpenCustomProperty extends HTMLElement {
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
     /** @type {Function|null} Unsubscribe function for project ready listener */
     _unsubProject = null
 
@@ -37,10 +40,10 @@ class TpenCustomProperty extends HTMLElement {
 
     disconnectedCallback() {
         try { this._unsubProject?.() } catch {}
+        this.cleanup.run()
     }
 
     render() {
-        const projectId = TPEN.screen?.projectInQuery ?? TPEN.activeProject?._id ?? ''
         this.shadowRoot.innerHTML = `
             <style>
                 :host { display:block; font-family: Arial, Helvetica, sans-serif }
@@ -62,7 +65,8 @@ class TpenCustomProperty extends HTMLElement {
      */
     addEventListeners() {
         const projectId = TPEN.screen?.projectInQuery ?? TPEN.activeProject?._id ?? ''
-        this.shadowRoot.getElementById('save').addEventListener('click', () => this.save(projectId))
+        const saveBtn = this.shadowRoot.getElementById('save')
+        this.cleanup.onElement(saveBtn, 'click', () => this.save(projectId))
     }
 
     async save(projectId) {
