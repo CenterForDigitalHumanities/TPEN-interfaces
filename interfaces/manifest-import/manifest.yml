@@ -1,0 +1,50 @@
+# Manifest for TPEN Manifest Import Interface
+
+## Metadata
+name: "Manifest Import"
+title: "Import IIIF Manifests"
+description: "Batch import multiple IIIF manifests and create projects in TPEN"
+version: "1.0.0"
+
+## Interface Configuration
+interface:
+  type: "utility"
+  category: "project-creation"
+  
+## Usage
+usage:
+  method: "direct-link"
+  url: "/import-manifest?manifest={URL1}&manifest={URL2}"
+  queryParameters:
+    - name: "manifest"
+      type: "url"
+      required: false
+      multiple: true
+      description: "URL-encoded IIIF manifest URL. Can be used multiple times for batch imports"
+      example: "?manifest=http%3A%2F%2Fexample.com%2Fmanifest.json"
+
+## Features
+features:
+  - "Single and batch manifest import"
+  - "Automatic authentication"
+  - "Real-time progress display"
+  - "Success/failure reporting"
+  - "Quick action buttons (View, Transcribe)"
+  - "Mobile responsive"
+  - "Duplicate manifest detection"
+
+## Permissions Required
+permissions:
+  - "project:create"
+
+## Browser Support
+browsers:
+  - "Chrome 90+"
+  - "Firefox 88+"
+  - "Safari 14+"
+  - "Edge 90+"
+
+## Dependencies
+dependencies:
+  - "TPEN.js"
+  - "iiif-tools"

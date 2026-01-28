@@ -1,0 +1,333 @@
+<!-- 
+    Manifest Import Example
+    
+    This page demonstrates how to link users to the manifest import interface.
+    Users can create projects from multiple IIIF manifests in one step.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manifest Import Examples</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        .section {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            color: #0066cc;
+            font-size: 18px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .example {
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .example:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .example h3 {
+            color: #333;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .code-block {
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 12px;
+            font-family: monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            margin-bottom: 10px;
+            color: #333;
+            line-height: 1.4;
+        }
+
+        .button-link {
+            display: inline-block;
+            background: #0066cc;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 4px;
+            text-decoration: none;
+            transition: background 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .button-link:hover {
+            background: #0052a3;
+        }
+
+        .note {
+            background: #e3f2fd;
+            border-left: 4px solid #0066cc;
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .warning {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #333;
+        }
+
+        code {
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+            color: #c7254e;
+        }
+
+        a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+
+        .table th,
+        .table td {
+            text-align: left;
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .table th {
+            background: #f5f5f5;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>TPEN Manifest Import Examples</h1>
+
+        <div class="section">
+            <h2>Quick Start</h2>
+            <p style="margin-bottom: 15px;">
+                The manifest import feature allows you to create projects from one or more IIIF manifests with a single link. 
+                Users are guided through authentication and see their newly created projects immediately.
+            </p>
+
+            <div class="example">
+                <h3>Single Manifest Import</h3>
+                <p>Import one IIIF manifest as a new project:</p>
+                <div class="code-block">/import-manifest?manifest=http%3A%2F%2Fwww.e-codices.unifr.ch%2Fmetadata%2Fiiif%2Fsl-0002%2Fmanifest.json</div>
+                <a href="/import-manifest?manifest=http%3A%2F%2Fwww.e-codices.unifr.ch%2Fmetadata%2Fiiif%2Fsl-0002%2Fmanifest.json" class="button-link">Try It →</a>
+            </div>
+
+            <div class="example">
+                <h3>Multiple Manifest Import</h3>
+                <p>Import multiple manifests as projects in one batch:</p>
+                <div class="code-block">/import-manifest?manifest=URL1&manifest=URL2&manifest=URL3</div>
+                <div class="note">
+                    Each <code>manifest</code> parameter should contain one IIIF manifest URL (URL-encoded).
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>How It Works</h2>
+            <ol style="margin-left: 20px; line-height: 1.8;">
+                <li><strong>User arrives</strong> with manifest URLs in the query string</li>
+                <li><strong>Authentication check</strong> - If not logged in, they're prompted to sign in</li>
+                <li><strong>Project creation</strong> - A loader shows while manifests are being imported</li>
+                <li><strong>Results display</strong> - Shows all created projects and any failures</li>
+                <li><strong>Quick actions</strong> - Links to view, transcribe, or manage projects</li>
+            </ol>
+        </div>
+
+        <div class="section">
+            <h2>URL Encoding</h2>
+            <p style="margin-bottom: 15px;">
+                IIIF manifest URLs must be URL-encoded. Use an encoder like <a href="https://www.urlencoder.org/" target="_blank">urlencoder.org</a>.
+            </p>
+
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Original URL</th>
+                        <th>URL-Encoded</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>http://example.com/manifest.json</code></td>
+                        <td><code>http%3A%2F%2Fexample.com%2Fmanifest.json</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>https://example.org/path?query=value</code></td>
+                        <td><code>https%3A%2F%2Fexample.org%2Fpath%3Fquery%3Dvalue</code></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="note">
+                Most modern browsers handle encoding automatically, but for maximum compatibility, always URL-encode manifest URLs.
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Integration Examples</h2>
+
+            <div class="example">
+                <h3>JavaScript</h3>
+                <div class="code-block">
+const manifestUrl = encodeURIComponent('http://example.com/manifest.json');
+const importLink = `/import-manifest?manifest=${manifestUrl}`;
+window.location.href = importLink;
+                </div>
+            </div>
+
+            <div class="example">
+                <h3>HTML Button</h3>
+                <div class="code-block">
+&lt;a href="/import-manifest?manifest=http%3A%2F%2Fexample.com%2Fmanifest.json" 
+   class="btn"&gt;
+  Import Manifest
+&lt;/a&gt;
+                </div>
+            </div>
+
+            <div class="example">
+                <h3>Multiple Manifests in a Form</h3>
+                <div class="code-block">
+// Build URL with multiple manifests
+const manifests = [
+  'http://example.com/manifest1.json',
+  'http://example.com/manifest2.json'
+];
+
+const params = new URLSearchParams();
+manifests.forEach(m => params.append('manifest', m));
+
+const url = `/import-manifest?${params.toString()}`;
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Features</h2>
+            <ul style="margin-left: 20px; line-height: 1.8;">
+                <li>✓ Multi-manifest batch import</li>
+                <li>✓ Automatic authentication</li>
+                <li>✓ Real-time progress indicator</li>
+                <li>✓ Success/failure reporting</li>
+                <li>✓ Quick action links (View, Transcribe)</li>
+                <li>✓ Responsive mobile design</li>
+                <li>✓ Duplicate manifest detection</li>
+                <li>✓ Detailed error messages</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>Error Handling</h2>
+            <p style="margin-bottom: 15px;">
+                The import process handles various error scenarios:
+            </p>
+            <ul style="margin-left: 20px; line-height: 1.8;">
+                <li><strong>Not authenticated:</strong> User is prompted to sign in</li>
+                <li><strong>Invalid manifest URL:</strong> Listed in failed section with error</li>
+                <li><strong>Network error:</strong> Displayed with error details</li>
+                <li><strong>Partial failures:</strong> Successfully created projects still show</li>
+                <li><strong>No manifests in URL:</strong> Helpful message with examples</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>API Reference</h2>
+            <p style="margin-bottom: 15px;">
+                The component uses the TPEN Services API to create projects from manifests:
+            </p>
+            <div class="code-block">
+POST /project/import?createFrom=URL
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "url": "https://example.com/manifest.json"
+}
+            </div>
+            <div class="note">
+                Authentication is required. The component automatically handles token management.
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Files</h2>
+            <ul style="margin-left: 20px; line-height: 1.8;">
+                <li><code>/components/manifest-import/index.js</code> - Main component</li>
+                <li><code>/interfaces/manifest-import/index.html</code> - Interface page</li>
+                <li><code>/components/manifest-import/README.md</code> - Detailed documentation</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>Support</h2>
+            <p style="margin-bottom: 15px;">
+                For issues or questions about the manifest import feature:
+            </p>
+            <ul style="margin-left: 20px; line-height: 1.8;">
+                <li>Check the <a href="README.md">README documentation</a></li>
+                <li>Review browser console for error messages</li>
+                <li>Verify manifest URLs are valid IIIF manifests</li>
+                <li>Ensure URLs are properly URL-encoded</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
