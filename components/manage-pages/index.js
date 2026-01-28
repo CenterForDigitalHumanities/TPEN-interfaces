@@ -1,7 +1,15 @@
 import TPEN from "../../api/TPEN.js"
 import CheckPermissions from "../../components/check-permissions/checkPermissions.js"
+import { onProjectReady } from "../../utilities/projectReady.js"
 
+/**
+ * ManagePages - Provides UI for managing pages within a layer including reordering, editing labels, and deletion.
+ * Requires PAGE METADATA view access.
+ * @element tpen-manage-pages
+ */
 class ManagePages extends HTMLElement {
+    /** @type {Function|null} Unsubscribe function for project ready listener */
+    _unsubProject = null
 
     constructor() {
         super()
@@ -10,21 +18,26 @@ class ManagePages extends HTMLElement {
 
     connectedCallback() {
         TPEN.attachAuthentication(this)
-
-        if (TPEN.activeProject?._id) {
-            this.render()
-        }
-        TPEN.eventDispatcher.on('tpen-project-loaded', this.render.bind(this))
+        this._unsubProject = onProjectReady(this, this.authgate)
     }
 
-    render() {
-        // Check if user has view permission (safe - project is loaded)
-        const hasViewAccess = CheckPermissions.checkViewAccess('PAGE', 'METADATA')
-        if (!hasViewAccess) {
+    /**
+     * Authorization gate - checks permissions before rendering.
+     * Shows permission message if user lacks PAGE METADATA view access.
+     */
+    authgate() {
+        if (!CheckPermissions.checkViewAccess('PAGE', 'METADATA')) {
             this.shadowRoot.innerHTML = `<p>You don't have permission to view pages</p>`
             return
         }
+        this.render()
+    }
 
+    disconnectedCallback() {
+        try { this._unsubProject?.() } catch {}
+    }
+
+    render() {
         this.shadowRoot.innerHTML = `
             <style>
                 .layer-container {

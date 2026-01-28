@@ -1,8 +1,15 @@
 import './Alert.js'
 import { eventDispatcher } from '../../../api/events.js'
 
+/**
+ * AlertContainer - Global container for displaying alert dialogs.
+ * Listens for 'tpen-alert' events and displays modal alert dialogs.
+ * @element tpen-alert-container
+ */
 class AlertContainer extends HTMLElement {
     #screenLockingSection
+    /** @type {Function|null} Handler for alert events */
+    _alertHandler = null
 
     constructor() {
         super()
@@ -11,7 +18,14 @@ class AlertContainer extends HTMLElement {
     }
 
     connectedCallback() {
-        eventDispatcher.on('tpen-alert', ({ detail }) => this.addAlert(detail?.message, detail?.buttonText))
+        this._alertHandler = ({ detail }) => this.addAlert(detail?.message, detail?.buttonText)
+        eventDispatcher.on('tpen-alert', this._alertHandler)
+    }
+
+    disconnectedCallback() {
+        if (this._alertHandler) {
+            eventDispatcher.off('tpen-alert', this._alertHandler)
+        }
     }
 
     /**

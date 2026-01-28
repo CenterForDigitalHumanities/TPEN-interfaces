@@ -3,7 +3,14 @@ const eventDispatcher = TPEN.eventDispatcher
 import vault from "/js/vault.js"
 import CheckPermissions from "/components/check-permissions/checkPermissions.js"
 import { orderPageItemsByColumns } from "/utilities/columnOrdering.js"
+import { onProjectReady } from "/utilities/projectReady.js"
 
+/**
+ * TranscriptionBlock - Provides the main transcription input interface with navigation.
+ * Handles line editing, autosave, and draft persistence.
+ * Requires LINE TEXT or LINE CONTENT view access.
+ * @element tpen-transcription-block
+ */
 export default class TranscriptionBlock extends HTMLElement {
 
     #page = null
@@ -12,7 +19,19 @@ export default class TranscriptionBlock extends HTMLElement {
     #saveTimers = new Map() // lineIndex -> timeout id
     #pendingSaves = new Map() // lineIndex -> Promise
     #unloadHandlerBound
+    /** @type {Function|null} Unsubscribe function for project ready listener */
+    _unsubProject = null
     _activeLineUpdatedHandler = null
+    /** @type {Function|null} Handler for previous line events */
+    _prevLineHandler = null
+    /** @type {Function|null} Handler for next line events */
+    _nextLineHandler = null
+    /** @type {Function|null} Handler for flush all events */
+    _flushAllHandler = null
+    /** @type {Function|null} Handler for save line events */
+    _saveLineHandler = null
+    /** @type {Function|null} Handler for message events */
+    _messageHandler = null
     #storageKey // localStorage key for drafts
 
     constructor() {
@@ -55,19 +74,14 @@ export default class TranscriptionBlock extends HTMLElement {
     }
 
     connectedCallback() {
-        if (TPEN.activeProject?._createdAt) {
-            this.authgate()
-        }
-        TPEN.eventDispatcher.on('tpen-project-loaded', this.authgate.bind(this))
-        TPEN.eventDispatcher.on('tpen-transcription-previous-line', _ev => {
-            this.updateTranscriptionUI()
-        })
-        TPEN.eventDispatcher.on('tpen-transcription-next-line', _ev => {
-            this.updateTranscriptionUI()
-        })
-        this._activeLineUpdatedHandler = (_line) => {
-            this.updateTranscriptionUI()
-        }
+        this._unsubProject = onProjectReady(this, this.authgate)
+
+        this._prevLineHandler = () => this.updateTranscriptionUI()
+        this._nextLineHandler = () => this.updateTranscriptionUI()
+        this._activeLineUpdatedHandler = () => this.updateTranscriptionUI()
+
+        TPEN.eventDispatcher.on('tpen-transcription-previous-line', this._prevLineHandler)
+        TPEN.eventDispatcher.on('tpen-transcription-next-line', this._nextLineHandler)
         TPEN.eventDispatcher.on('tpen-active-line-updated', this._activeLineUpdatedHandler)
     }
 
@@ -132,7 +146,7 @@ export default class TranscriptionBlock extends HTMLElement {
         this.#unloadHandlerBound = this.beforeUnloadHandler.bind(this)
         window.addEventListener('beforeunload', this.#unloadHandlerBound)
 
-        // Listen for line navigation events
+        // Listen for line navigation events (separate handlers for dirty check)
         eventDispatcher.on('tpen-transcription-previous-line', () => {
             this.checkDirtyLines()
         })
@@ -140,13 +154,16 @@ export default class TranscriptionBlock extends HTMLElement {
             this.checkDirtyLines()
         })
 
-        // External control events
-        eventDispatcher.on('tpen-transcription-flush-all', this.flushAllSaves.bind(this))
-        eventDispatcher.on('tpen-transcription-save-line', (index) => {
-            if (typeof index === 'number') this.scheduleLineSave(index)
-        })
+        // External control events - store references for cleanup
+        this._flushAllHandler = this.flushAllSaves.bind(this)
+        eventDispatcher.on('tpen-transcription-flush-all', this._flushAllHandler)
 
-        window.addEventListener("message", (event) => {
+        this._saveLineHandler = (index) => {
+            if (typeof index === 'number') this.scheduleLineSave(index)
+        }
+        eventDispatcher.on('tpen-transcription-save-line', this._saveLineHandler)
+
+        this._messageHandler = (event) => {
             if (event.data?.type === "RETURN_LINE_ID") {
                 const lineIndex = this.#page.items.findIndex(item => item.id === event.data.lineId)
                 if (lineIndex !== -1) {
@@ -164,7 +181,8 @@ export default class TranscriptionBlock extends HTMLElement {
                     this.scheduleLineSave(event.data.lineIndex)
                 }
             }
-        })
+        }
+        window.addEventListener("message", this._messageHandler)
     }
 
     // Helper to compare and queue dirty lines
@@ -283,9 +301,25 @@ export default class TranscriptionBlock extends HTMLElement {
     }
 
     disconnectedCallback() {
+        try { this._unsubProject?.() } catch {}
         window.removeEventListener('beforeunload', this.#unloadHandlerBound)
+        if (this._prevLineHandler) {
+            TPEN.eventDispatcher.off('tpen-transcription-previous-line', this._prevLineHandler)
+        }
+        if (this._nextLineHandler) {
+            TPEN.eventDispatcher.off('tpen-transcription-next-line', this._nextLineHandler)
+        }
         if (this._activeLineUpdatedHandler) {
             TPEN.eventDispatcher.off('tpen-active-line-updated', this._activeLineUpdatedHandler)
+        }
+        if (this._flushAllHandler) {
+            eventDispatcher.off('tpen-transcription-flush-all', this._flushAllHandler)
+        }
+        if (this._saveLineHandler) {
+            eventDispatcher.off('tpen-transcription-save-line', this._saveLineHandler)
+        }
+        if (this._messageHandler) {
+            window.removeEventListener('message', this._messageHandler)
         }
         eventDispatcher.dispatch('tpen-transcription-block-disconnected')
     }

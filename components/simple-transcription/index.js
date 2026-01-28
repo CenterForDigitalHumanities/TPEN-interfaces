@@ -6,7 +6,13 @@ import vault from '../../js/vault.js'
 import CheckPermissions from "../../components/check-permissions/checkPermissions.js"
 import { renderPermissionError } from "../../utilities/renderPermissionError.js"
 import { orderPageItemsByColumns } from "../../utilities/columnOrdering.js"
+import { onProjectReady } from "../../utilities/projectReady.js"
 
+/**
+ * SimpleTranscriptionInterface - The simplified transcription interface with split-pane image viewer.
+ * Requires ANY CONTENT view access.
+ * @element tpen-simple-transcription
+ */
 export default class SimpleTranscriptionInterface extends HTMLElement {
   #page
   #canvas
@@ -17,6 +23,8 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
   #imgTopPositionRatio = 1
   #toolLineListeners = null
   // Handler references for cleanup
+  /** @type {Function|null} Unsubscribe function for project ready listener */
+  _unsubProject = null
   _activePageHandler = null
   _activeToolHandler = null
   _activeLayerHandler = null
@@ -40,11 +48,8 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
   connectedCallback() {
     this.setAttribute('data-interface-type', 'transcription')
     TPEN.attachAuthentication(this)
-    if (TPEN.activeProject?._createdAt) {
-      this.authgate()
-    }
-    TPEN.eventDispatcher.on('tpen-project-loaded', this.authgate.bind(this))
-    
+    this._unsubProject = onProjectReady(this, this.authgate)
+
     this._activePageHandler = () => this.updateLines()
     TPEN.eventDispatcher.on('tpen-transcription-previous-line', this._activePageHandler)
     TPEN.eventDispatcher.on('tpen-transcription-next-line', this._activePageHandler)
@@ -73,11 +78,13 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
   }
 
   disconnectedCallback() {
-      // Clean up window listeners
+    try { this._unsubProject?.() } catch {}
+
+    // Clean up window listeners
     window.removeEventListener('resize', this.resizeHandler)
     window.removeEventListener('message', this.messageHandler)
-    
-        // Clean up TPEN event dispatcher listeners
+
+    // Clean up TPEN event dispatcher listeners
         if (this._activePageHandler) {
           TPEN.eventDispatcher.off('tpen-transcription-previous-line', this._activePageHandler)
           TPEN.eventDispatcher.off('tpen-transcription-next-line', this._activePageHandler)

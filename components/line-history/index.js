@@ -10,14 +10,22 @@
 
 import TPEN from '../../api/TPEN.js'
 import '../line-image/index.js'
+import CheckPermissions from '../check-permissions/checkPermissions.js'
+import { onProjectReady } from '../../utilities/projectReady.js'
 import { RerumHistoryData } from 'https://cubap.github.io/rerum-history-component/src/rerum-history-tree.js'
 
 /**
- * Custom element for displaying TPEN line history
+ * Custom element for displaying TPEN line history.
+ * Requires LINE TEXT view access.
  * @class TPENLineHistory
  * @extends HTMLElement
  */
 class TPENLineHistory extends HTMLElement {
+    /** @type {Function|null} Unsubscribe function for project ready listener */
+    _unsubProject = null
+    /** @type {Function|null} Handler for line update events */
+    _lineUpdateHandler = null
+
     constructor() {
         super()
         this.attachShadow({ mode: 'open' })
@@ -28,27 +36,45 @@ class TPENLineHistory extends HTMLElement {
     }
 
     connectedCallback() {
+        this._unsubProject = onProjectReady(this, this.authgate)
+    }
+
+    /**
+     * Authorization gate - checks permissions before rendering.
+     * Removes component if user lacks LINE TEXT view access.
+     */
+    authgate() {
+        if (!CheckPermissions.checkViewAccess("LINE", "TEXT")) {
+            this.remove()
+            return
+        }
         this.render()
-        this.setupEventListeners()
+        this.addEventListeners()
         this.handleLineChange(TPEN.activeLine)
-}
+    }
 
     disconnectedCallback() {
+        try { this._unsubProject?.() } catch {}
         // Clean up RerumHistoryData instance to prevent memory leaks
         if (this.rerumHistoryData) {
             this.rerumHistoryData.abort()
             this.rerumHistoryData = null
         }
+        // Clean up event dispatcher listener
+        if (this._lineUpdateHandler) {
+            TPEN.eventDispatcher.off('tpen-active-line-updated', this._lineUpdateHandler)
+        }
     }
 
     /**
-     * Setup event listeners for TPEN.eventDispatcher
+     * Sets up event listeners for line updates.
      */
-    setupEventListeners() {
+    addEventListeners() {
         // Listen for active line changes from TPEN.eventDispatcher
-        TPEN.eventDispatcher.on('tpen-active-line-updated', (event) => {
+        this._lineUpdateHandler = (event) => {
             this.handleLineChange(event.detail)
-        })
+        }
+        TPEN.eventDispatcher.on('tpen-active-line-updated', this._lineUpdateHandler)
     }
 
     /**

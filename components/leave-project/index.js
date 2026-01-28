@@ -1,7 +1,18 @@
 import TPEN from "../../api/TPEN.js"
 import { getAgentIRIFromToken } from '../iiif-tools/index.js'
+import CheckPermissions from '../check-permissions/checkPermissions.js'
+import { onProjectReady } from "../../utilities/projectReady.js"
 
+/**
+ * LeaveProject - Allows a user to leave a project they are a member of.
+ * Requires MEMBER view access.
+ * @element tpen-project-leave
+ */
 class LeaveProject extends HTMLElement {
+    /** @type {Function|null} Unsubscribe function for project ready listener */
+    _unsubProject = null
+    /** @type {Function|null} Handler for project load failed events */
+    _loadFailedHandler = null
 
     constructor() {
         super()
@@ -10,23 +21,40 @@ class LeaveProject extends HTMLElement {
 
     connectedCallback() {
         TPEN.attachAuthentication(this)
-        this.shadowRoot.innerHTML = `
-            <h3>Loading...</h3>
-        `
+        this.shadowRoot.innerHTML = `<h3>Loading...</h3>`
         if (!TPEN.screen.projectInQuery) {
             this.shadowRoot.innerHTML = `
                 <h3>The URL Parameter '?projectID' must be present and have a value.</h3>
             `
             return
         }
-        if (TPEN.activeProject?._id) this.render.bind(this)
-        TPEN.eventDispatcher.on('tpen-project-loaded', this.render.bind(this))
-        TPEN.eventDispatcher.on('tpen-project-load-failed', (err) => {
+        this._unsubProject = onProjectReady(this, this.authgate)
+        this._loadFailedHandler = () => {
             this.shadowRoot.innerHTML = `
                 <h3>Project Error</h3>
                 <p>Could not load project.  The project may not exist at all.</p>
             `
-        })
+        }
+        TPEN.eventDispatcher.on('tpen-project-load-failed', this._loadFailedHandler)
+    }
+
+    /**
+     * Authorization gate - checks permissions before rendering.
+     * Removes component if user lacks MEMBER view access.
+     */
+    authgate() {
+        if (!CheckPermissions.checkViewAccess("MEMBER", "*")) {
+            this.remove()
+            return
+        }
+        this.render()
+    }
+
+    disconnectedCallback() {
+        try { this._unsubProject?.() } catch {}
+        if (this._loadFailedHandler) {
+            TPEN.eventDispatcher.off('tpen-project-load-failed', this._loadFailedHandler)
+        }
     }
 
     render() {
@@ -89,10 +117,13 @@ class LeaveProject extends HTMLElement {
             <button type="button" id="noLeaveBtn">I Am Not Ready To Leave!</button>
             <button type="button" id="leaveBtn">I Am Ready To Leave This Project</button>
         `
-        this.attachEventListeners()
+        this.addEventListeners()
     }
 
-    attachEventListeners() {
+    /**
+     * Sets up event listeners for leave/stay buttons.
+     */
+    addEventListeners() {
         const leaveBtn = this.shadowRoot.getElementById("leaveBtn")
         const noLeaveBtn = this.shadowRoot.getElementById("noLeaveBtn")
         leaveBtn.addEventListener('click', (ev) => this.leaveProject())

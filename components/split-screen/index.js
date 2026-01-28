@@ -1,7 +1,20 @@
 import CheckPermissions from "../check-permissions/checkPermissions.js"
 import TPEN from "../../api/TPEN.js"
-const eventDispatcher = TPEN.eventDispatcher
+import { onProjectReady } from "../../utilities/projectReady.js"
+
+/**
+ * TpenSplitScreen - Provides a resizable split-pane layout.
+ * Requires TOOLS ANY view access.
+ * @element tpen-split-screen
+ */
 export default class TpenSplitScreen extends HTMLElement {
+    /** @type {Function|null} Unsubscribe function for project ready listener */
+    _unsubProject = null
+    /** @type {Function|null} Handler for window mousemove events */
+    _mousemoveHandler = null
+    /** @type {Function|null} Handler for window mouseup events */
+    _mouseupHandler = null
+
     constructor() {
         super()
         this.attachShadow({ mode: "open" })
@@ -11,28 +24,38 @@ export default class TpenSplitScreen extends HTMLElement {
     }
 
     connectedCallback() {
-      // If project is already loaded, run authgate immediately
-      if (TPEN.activeProject?._createdAt) {
-        this.authgate()
-      }
-      eventDispatcher.on("tpen-project-loaded", this.authgate.bind(this))
+        this._unsubProject = onProjectReady(this, this.authgate)
     }
 
     authgate() {
-      if(!CheckPermissions.checkViewAccess("TOOLS", "ANY")) {
-        // No reason to get this far, but let's not risk it.
-        this.remove()
-        return
-      }
-      this.render()
-      this.addEventListeners()
+        if (!CheckPermissions.checkViewAccess("TOOLS", "ANY")) {
+            this.remove()
+            return
+        }
+        this.render()
+        this.addEventListeners()
+    }
+
+    disconnectedCallback() {
+        try { this._unsubProject?.() } catch {}
+        // Clean up window event listeners
+        if (this._mousemoveHandler) {
+            window.removeEventListener('mousemove', this._mousemoveHandler)
+        }
+        if (this._mouseupHandler) {
+            window.removeEventListener('mouseup', this._mouseupHandler)
+        }
     }
 
     addEventListeners() {
         const resizer = this.shadowRoot.querySelector('.resizer')
         resizer.addEventListener('mousedown', this.onMouseDown.bind(this))
-        window.addEventListener('mousemove', this.onMouseMove.bind(this))
-        window.addEventListener('mouseup', this.onMouseUp.bind(this))
+
+        // Store handler references for cleanup
+        this._mousemoveHandler = this.onMouseMove.bind(this)
+        this._mouseupHandler = this.onMouseUp.bind(this)
+        window.addEventListener('mousemove', this._mousemoveHandler)
+        window.addEventListener('mouseup', this._mouseupHandler)
     }
 
     onMouseDown(e) {

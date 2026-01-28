@@ -1,8 +1,19 @@
 import TPEN from "../../api/TPEN.js"
 import CheckPermissions from "../check-permissions/checkPermissions.js"
-const eventDispatcher = TPEN.eventDispatcher
+import { onProjectReady } from "../../utilities/projectReady.js"
 import "../check-permissions/permission-match.js"
+
+const eventDispatcher = TPEN.eventDispatcher
+
+/**
+ * LayerSelector - Dropdown for selecting layers when a project has multiple layers.
+ * Requires LAYER ANY view access.
+ * @element tpen-layer-selector
+ */
 export default class LayerSelector extends HTMLElement {
+    /** @type {Function|null} Unsubscribe function for project ready listener */
+    _unsubProject = null
+
     constructor() {
         super()
         this.attachShadow({ mode: "open" })
@@ -10,25 +21,29 @@ export default class LayerSelector extends HTMLElement {
     }
 
     connectedCallback() {
-        // If project is already loaded, use its layers.
-        if (TPEN.activeProject && TPEN.activeProject.layers) {
-            this.layers = TPEN.activeProject.layers
-            if (this.layers.length <= 1) {
-                // No need to render if there's only one layer.
-               return this.remove()
-            }
-            this.render()
+        this._unsubProject = onProjectReady(this, this.authgate)
+    }
+
+    /**
+     * Authorization gate - checks permissions before rendering.
+     * Removes component if user lacks LAYER ANY view access or there's only one layer.
+     */
+    authgate() {
+        if (!CheckPermissions.checkViewAccess("LAYER", "ANY")) {
+            this.remove()
+            return
         }
-        // Listen for project loaded events to update layers.
-        eventDispatcher.on("tpen-project-loaded", () => {
-            if (!CheckPermissions.checkViewAccess("LAYER", "ANY")) {
-                // No reason to get this far, but let's not risk it.
-                this.remove()
-                return
-            }
-            this.layers = TPEN.activeProject.layers
-            this.render()
-        })
+        this.layers = TPEN.activeProject.layers
+        if (this.layers.length <= 1) {
+            // No need to render if there's only one layer.
+            return this.remove()
+        }
+        this.render()
+        this.addEventListeners()
+    }
+
+    disconnectedCallback() {
+        try { this._unsubProject?.() } catch {}
     }
 
     getLabel(data) {
@@ -82,7 +97,12 @@ export default class LayerSelector extends HTMLElement {
         ${optionsHtml}
       </select>
     `
+    }
 
+    /**
+     * Sets up event listeners for the layer selector.
+     */
+    addEventListeners() {
         const selectEl = this.shadowRoot.querySelector("select")
         selectEl.addEventListener("change", (e) => {
             const selectedURI = e.target.value

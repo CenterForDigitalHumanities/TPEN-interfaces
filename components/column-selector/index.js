@@ -1,12 +1,22 @@
 import TPEN from "../../api/TPEN.js"
 import CheckPermissions from "../check-permissions/checkPermissions.js"
+import { onProjectReady } from "../../utilities/projectReady.js"
 import vault from '../../js/vault.js'
 import { orderPageItemsByColumns } from '../../utilities/columnOrdering.js'
-const eventDispatcher = TPEN.eventDispatcher
 import "../check-permissions/permission-match.js"
 
+const eventDispatcher = TPEN.eventDispatcher
+
+/**
+ * ColumnSelector - Dropdown for selecting columns when a page has multiple columns defined.
+ * Requires LINE SELECTOR view access.
+ * @element tpen-column-selector
+ */
 export default class ColumnSelector extends HTMLElement {
     #page = null
+    /** @type {Function|null} Unsubscribe function for project ready listener */
+    _unsubProject = null
+
     constructor() {
         super()
         this.attachShadow({ mode: "open" })
@@ -16,13 +26,24 @@ export default class ColumnSelector extends HTMLElement {
         this.allLinesInPages = []
     }
 
-    async connectedCallback() {
-        if (TPEN.activeProject?.layers) await this.findColumnsData()
-        eventDispatcher.on("tpen-project-loaded", async () => {
-            if (!CheckPermissions.checkViewAccess("LAYER", "ANY")) 
-                return this.remove()
-            await this.findColumnsData()
-        })
+    connectedCallback() {
+        this._unsubProject = onProjectReady(this, this.authgate)
+    }
+
+    /**
+     * Authorization gate - checks permissions before rendering.
+     * Removes component if user lacks LINE SELECTOR view access.
+     */
+    async authgate() {
+        if (!CheckPermissions.checkViewAccess("LINE", "SELECTOR")) {
+            this.remove()
+            return
+        }
+        await this.findColumnsData()
+    }
+
+    disconnectedCallback() {
+        try { this._unsubProject?.() } catch {}
     }
 
     async findColumnsData() {

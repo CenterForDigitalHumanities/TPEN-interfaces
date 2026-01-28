@@ -1,6 +1,17 @@
 import TPEN from '../../api/TPEN.js'
+import CheckPermissions from "../../components/check-permissions/checkPermissions.js"
+import { renderPermissionError } from "../../utilities/renderPermissionError.js"
+import { onProjectReady } from "../../utilities/projectReady.js"
 
+/**
+ * TpenCustomProperty - Interface for editing custom project properties as JSON.
+ * Requires PROJECT OPTIONS edit access.
+ * @element tpen-custom-property
+ */
 class TpenCustomProperty extends HTMLElement {
+    /** @type {Function|null} Unsubscribe function for project ready listener */
+    _unsubProject = null
+
     constructor() {
         super()
         this.attachShadow({ mode: 'open' })
@@ -8,10 +19,24 @@ class TpenCustomProperty extends HTMLElement {
 
     connectedCallback() {
         TPEN.attachAuthentication(this)
-        if (TPEN.screen?.projectInQuery) {
-            this.render()
+        this._unsubProject = onProjectReady(this, this.authgate)
+    }
+
+    /**
+     * Authorization gate - checks permissions before rendering the interface.
+     * Renders permission error if user lacks PROJECT OPTIONS edit access.
+     */
+    authgate() {
+        if (!CheckPermissions.checkEditAccess("PROJECT", "OPTIONS")) {
+            renderPermissionError(this.shadowRoot, TPEN.screen?.projectInQuery ?? '')
+            return
         }
-        TPEN.eventDispatcher.on('tpen-project-loaded', () => this.render(), this)
+        this.render()
+        this.addEventListeners()
+    }
+
+    disconnectedCallback() {
+        try { this._unsubProject?.() } catch {}
     }
 
     render() {
@@ -30,6 +55,13 @@ class TpenCustomProperty extends HTMLElement {
                 <button id="save">Save to project</button>
             </div>
         `
+    }
+
+    /**
+     * Sets up event listeners for the save button.
+     */
+    addEventListeners() {
+        const projectId = TPEN.screen?.projectInQuery ?? TPEN.activeProject?._id ?? ''
         this.shadowRoot.getElementById('save').addEventListener('click', () => this.save(projectId))
     }
 

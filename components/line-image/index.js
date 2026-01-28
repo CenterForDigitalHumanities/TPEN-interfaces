@@ -6,6 +6,10 @@ document.head.appendChild(CANVAS_PANEL_SCRIPT)
 
 const LINE_IMG = () => document.createElement('canvas-panel')
 
+/**
+ * TpenLineImage - Displays a IIIF canvas image with region support.
+ * @element tpen-line-image
+ */
 class TpenLineImage extends HTMLElement {
     static get observedAttributes() {
         return ['tpen-line-id','region']
@@ -123,9 +127,15 @@ class TpenLineImage extends HTMLElement {
 
 customElements.define('tpen-line-image', TpenLineImage)
 
+/**
+ * TpenImageFragment - Displays a portion of a IIIF canvas image that follows the active line.
+ * @element tpen-image-fragment
+ */
 class TpenImageFragment extends HTMLElement {
     #lineImage = new Image()
     #canvas
+    /** @type {Function|null} Handler for canvas change events */
+    _canvasChangeHandler = null
 
     get lineImage() {
         return this.#lineImage
@@ -149,7 +159,7 @@ class TpenImageFragment extends HTMLElement {
         this.#canvas = value
         this.setContainerStyle()
     }
-    
+
     set line(annotation) {
         if (!annotation?.target?.startsWith(this.#canvas?.id ?? '')) return
 
@@ -172,7 +182,7 @@ class TpenImageFragment extends HTMLElement {
             this.region = newValue
         }
     }
-    
+
     setContainerStyle() {
         this.style.position = 'relative'
         this.style.left = `0px`
@@ -182,12 +192,15 @@ class TpenImageFragment extends HTMLElement {
         this.style.display = 'block'
         this.style.overflow = 'visible'
     }
-    
+
     constructor() {
         super()
         this.attachShadow({ mode: 'open' })
         this.#lineImage.onload = this.render.bind(this)
-        document.addEventListener('canvas-change', (event) => {
+    }
+
+    connectedCallback() {
+        this._canvasChangeHandler = (event) => {
             fetch(event.detail.canvasId)
             .then(res => res.json())
             .then(canvas => {
@@ -199,7 +212,14 @@ class TpenImageFragment extends HTMLElement {
                     }
                 })
                 .catch(console.error)
-        })
+        }
+        document.addEventListener('canvas-change', this._canvasChangeHandler)
+    }
+
+    disconnectedCallback() {
+        if (this._canvasChangeHandler) {
+            document.removeEventListener('canvas-change', this._canvasChangeHandler)
+        }
     }
 
     moveUnder(x, y, width, height, topImage) {

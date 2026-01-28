@@ -1,12 +1,22 @@
 import TPEN from "../../api/TPEN.js"
-const eventDispatcher = TPEN.eventDispatcher
 import CheckPermissions from "../check-permissions/checkPermissions.js"
+import { onProjectReady } from "../../utilities/projectReady.js"
 import "../../components/quicktype-tool/index.js"
 import "../../components/splitscreen-tool/index.js"
 import "../../components/page-tool/index.js"
 import { MagnifierTool, showMagnifier } from "../magnifier-tool/index.js"
 
+/**
+ * WorkspaceTools - Provides the toolbar with transcription tools like quicktype, magnifier, etc.
+ * Requires TOOLS ANY view access.
+ * @element tpen-workspace-tools
+ */
 export default class WorkspaceTools extends HTMLElement {
+  /** @type {Function|null} Unsubscribe function for project ready listener */
+  _unsubProject = null
+  /** @type {Function|null} Handler for magnifier escape key */
+  _magnifierEscHandler = null
+
   constructor() {
     super()
     this.attachShadow({ mode: "open" })
@@ -15,19 +25,31 @@ export default class WorkspaceTools extends HTMLElement {
   }
 
   connectedCallback() {
-    // If project is already loaded, run authgate immediately
-    if (TPEN.activeProject?._createdAt) {
-      this.authgate()
-    }
-    eventDispatcher.on("tpen-project-loaded", this.authgate.bind(this))
+    this._unsubProject = onProjectReady(this, this.authgate)
   }
 
+  /**
+   * Authorization gate - checks permissions before rendering.
+   * Removes component if user lacks TOOLS ANY view access.
+   */
   authgate() {
     if (!CheckPermissions.checkViewAccess("TOOLS", "ANY")) {
       this.remove()
       return
     }
     this.render()
+  }
+
+  disconnectedCallback() {
+    try { this._unsubProject?.() } catch {}
+    // Clean up magnifier escape handler
+    if (this._magnifierEscHandler) {
+      window.removeEventListener("keydown", this._magnifierEscHandler)
+    }
+    // Remove magnifier tool from DOM if it was added
+    if (this.magnifierTool?.parentNode) {
+      this.magnifierTool.remove()
+    }
   }
 
   render() {

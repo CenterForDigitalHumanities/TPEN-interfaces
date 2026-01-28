@@ -1,22 +1,42 @@
 import TPEN from "../../api/TPEN.js"
 import CheckPermissions from '../../components/check-permissions/checkPermissions.js'
+import { onProjectReady } from "../../utilities/projectReady.js"
 
+/**
+ * InviteMemberElement - Provides a form to invite new members to a project.
+ * Requires MEMBER create access.
+ * @element invite-member
+ */
 class InviteMemberElement extends HTMLElement {
+    /** @type {Function|null} Unsubscribe function for project ready listener */
+    _unsubProject = null
+
     constructor() {
         super()
         this.attachShadow({ mode: 'open' })
     }
-    
+
     connectedCallback() {
-        TPEN.eventDispatcher.on('tpen-project-loaded', () => this.render())
+        this._unsubProject = onProjectReady(this, this.authgate)
+    }
+
+    /**
+     * Authorization gate - checks permissions before rendering.
+     * Removes component if user lacks MEMBER create access.
+     */
+    authgate() {
+        if (!CheckPermissions.checkCreateAccess("MEMBER", "*")) {
+            this.remove()
+            return
+        }
+        this.render()
+    }
+
+    disconnectedCallback() {
+        try { this._unsubProject?.() } catch {}
     }
 
     render() {
-        const permitted = CheckPermissions.checkCreateAccess("member", "*")
-        if(!permitted) {
-            this.shadowRoot.innerHTML = `<div>You do not have permission to invite members to this project.</div>`
-            return
-        }
         this.shadowRoot.innerHTML = `
             <style>
             .success-message {

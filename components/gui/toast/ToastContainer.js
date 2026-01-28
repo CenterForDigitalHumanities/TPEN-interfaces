@@ -1,8 +1,15 @@
 import './Toast.js'
 import { eventDispatcher } from '../../../api/events.js'
 
+/**
+ * ToastContainer - Global container for displaying toast notifications.
+ * Listens for 'tpen-toast' events and displays transient toast messages.
+ * @element tpen-toast-container
+ */
 class ToastContainer extends HTMLElement {
     #containerSection
+    /** @type {Function|null} Handler for toast events */
+    _toastHandler = null
 
     constructor() {
         super()
@@ -11,7 +18,14 @@ class ToastContainer extends HTMLElement {
     }
 
     connectedCallback() {
-        eventDispatcher.on('tpen-toast', ({ detail }) => this.addToast(detail?.message, detail?.status, detail?.dismissible))
+        this._toastHandler = ({ detail }) => this.addToast(detail?.message, detail?.status, detail?.dismissible)
+        eventDispatcher.on('tpen-toast', this._toastHandler)
+    }
+
+    disconnectedCallback() {
+        if (this._toastHandler) {
+            eventDispatcher.off('tpen-toast', this._toastHandler)
+        }
     }
 
     /**
