@@ -314,13 +314,12 @@ class TpenQuickType extends HTMLElement {
 
   addEventListeners() {
     const addButton = this.shadowRoot.getElementById('add-quicktype')
-    addButton.addEventListener('click', () => this.addQuickType())
-
+    this.cleanup.onElement(addButton, 'click', () => this.addQuickType())
 
     // Event listeners for accordions
     const accordionHeaders = this.shadowRoot.querySelectorAll('.accordion-header')
     accordionHeaders.forEach((header) => {
-      header.addEventListener('click', () => {
+      this.cleanup.onElement(header, 'click', () => {
         const content = header.nextElementSibling
         content.classList.toggle('open')
       })
@@ -329,10 +328,9 @@ class TpenQuickType extends HTMLElement {
     // Add event listeners for QuickType characters
     const quicktypeCharacters = this.shadowRoot.querySelectorAll('.quicktype-shortcut')
     quicktypeCharacters.forEach((char) => {
-      char.addEventListener('click', () => {
+      this.cleanup.onElement(char, 'click', () => {
         const symbol = char.getAttribute('data-symbol')
         navigator.clipboard.writeText(symbol).then(() => {
-
           const toast = {
             message: `Copied ${symbol} to clipboard!`,
             status: 'info'
