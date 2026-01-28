@@ -195,6 +195,27 @@ class ManifestImport extends HTMLElement {
                 a:hover {
                     text-decoration: underline;
                 }
+
+                .button-link {
+                    display: inline-block;
+                    background: var(--interface-primary, #005a8c);
+                    color: var(--white, white);
+                    padding: 10px 20px;
+                    border-radius: 4px;
+                    text-decoration: none;
+                    margin: 15px 5px 10px;
+                    transition: background 0.3s ease;
+                }
+
+                .button-link:hover {
+                    background: var(--interface-primary-hover, #004670);
+                }
+
+                .actions {
+                    margin-top: 20px;
+                    padding-top: 20px;
+                    border-top: 1px solid var(--light-gray, #e0e0e0);
+                }
             </style>
             <div class="container">
                 <div class="card">
@@ -202,9 +223,14 @@ class ManifestImport extends HTMLElement {
                     <p>No IIIF manifests were provided in the URL.</p>
                     <p>Try a URL like:</p>
                     <p style="font-size: 12px; text-align: left;">
-                        <code>/?manifest=http%3A%2F%2Fexample.com%2Fmanifest.json&manifest=http%3A%2F%2Fexample.org%2Fmanifest.json</code>
+                        <code>/?manifest=http%3A%2F%2Fexample.com%2Fmanifest.json</code>
                     </p>
-                    <p><a href="${TPEN.BASEURL}/">Back to TPEN</a></p>
+                    <div class="actions">
+                        <p style="margin-bottom: 15px;">You can also:</p>
+                        <a href="${TPEN.BASEURL}/project/import" class="button-link">Use Import Form</a>
+                        <br>
+                        <a href="${TPEN.BASEURL}/">Back to TPEN</a>
+                    </div>
                 </div>
             </div>
         `
