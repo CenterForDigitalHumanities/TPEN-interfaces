@@ -85,7 +85,9 @@ class TpenHeader extends HTMLElement {
         TPEN.eventDispatcher.on('tpen-gui-title', this._titleHandler)
         TPEN.eventDispatcher.on('tpen-gui-action-link', this._actionLinkHandler)
         TPEN.eventDispatcher.on('tpen-gui-action-link-remove', this._actionLinkRemoveHandler)
-        this.shadowRoot.querySelector('.logout-btn').addEventListener('click', () => TPEN.logout())
+
+        this._logoutHandler = () => TPEN.logout()
+        this.shadowRoot.querySelector('.logout-btn').addEventListener('click', this._logoutHandler)
         this.setupDraggableButton()
     }
 
@@ -93,6 +95,10 @@ class TpenHeader extends HTMLElement {
         if (this._titleHandler) TPEN.eventDispatcher.off('tpen-gui-title', this._titleHandler)
         if (this._actionLinkHandler) TPEN.eventDispatcher.off('tpen-gui-action-link', this._actionLinkHandler)
         if (this._actionLinkRemoveHandler) TPEN.eventDispatcher.off('tpen-gui-action-link-remove', this._actionLinkRemoveHandler)
+        const logoutBtn = this.shadowRoot?.querySelector('.logout-btn')
+        if (logoutBtn && this._logoutHandler) {
+            logoutBtn.removeEventListener('click', this._logoutHandler)
+        }
     }
 
     setupDraggableButton() {

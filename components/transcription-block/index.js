@@ -147,12 +147,10 @@ export default class TranscriptionBlock extends HTMLElement {
         window.addEventListener('beforeunload', this.#unloadHandlerBound)
 
         // Listen for line navigation events (separate handlers for dirty check)
-        eventDispatcher.on('tpen-transcription-previous-line', () => {
-            this.checkDirtyLines()
-        })
-        eventDispatcher.on('tpen-transcription-next-line', () => {
-            this.checkDirtyLines()
-        })
+        this._prevLineDirtyHandler = () => this.checkDirtyLines()
+        this._nextLineDirtyHandler = () => this.checkDirtyLines()
+        eventDispatcher.on('tpen-transcription-previous-line', this._prevLineDirtyHandler)
+        eventDispatcher.on('tpen-transcription-next-line', this._nextLineDirtyHandler)
 
         // External control events - store references for cleanup
         this._flushAllHandler = this.flushAllSaves.bind(this)
@@ -301,7 +299,7 @@ export default class TranscriptionBlock extends HTMLElement {
     }
 
     disconnectedCallback() {
-        try { this._unsubProject?.() } catch {}
+        try { this._unsubProject?.() } catch { /* Expected if already unsubscribed */ }
         window.removeEventListener('beforeunload', this.#unloadHandlerBound)
         if (this._prevLineHandler) {
             TPEN.eventDispatcher.off('tpen-transcription-previous-line', this._prevLineHandler)
@@ -311,6 +309,13 @@ export default class TranscriptionBlock extends HTMLElement {
         }
         if (this._activeLineUpdatedHandler) {
             TPEN.eventDispatcher.off('tpen-active-line-updated', this._activeLineUpdatedHandler)
+        }
+        // Cleanup dirty check handlers from addEventListeners()
+        if (this._prevLineDirtyHandler) {
+            eventDispatcher.off('tpen-transcription-previous-line', this._prevLineDirtyHandler)
+        }
+        if (this._nextLineDirtyHandler) {
+            eventDispatcher.off('tpen-transcription-next-line', this._nextLineDirtyHandler)
         }
         if (this._flushAllHandler) {
             eventDispatcher.off('tpen-transcription-flush-all', this._flushAllHandler)
