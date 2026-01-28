@@ -2,6 +2,7 @@ import TPEN from "../../api/TPEN.js"
 import { getAgentIRIFromToken } from '../iiif-tools/index.js'
 import CheckPermissions from '../check-permissions/checkPermissions.js'
 import { onProjectReady } from "../../utilities/projectReady.js"
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 
 /**
  * LeaveProject - Allows a user to leave a project they are a member of.
@@ -9,10 +10,10 @@ import { onProjectReady } from "../../utilities/projectReady.js"
  * @element tpen-project-leave
  */
 class LeaveProject extends HTMLElement {
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
     /** @type {Function|null} Unsubscribe function for project ready listener */
     _unsubProject = null
-    /** @type {Function|null} Handler for project load failed events */
-    _loadFailedHandler = null
 
     constructor() {
         super()
@@ -29,13 +30,12 @@ class LeaveProject extends HTMLElement {
             return
         }
         this._unsubProject = onProjectReady(this, this.authgate)
-        this._loadFailedHandler = () => {
+        this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-project-load-failed', () => {
             this.shadowRoot.innerHTML = `
                 <h3>Project Error</h3>
                 <p>Could not load project.  The project may not exist at all.</p>
             `
-        }
-        TPEN.eventDispatcher.on('tpen-project-load-failed', this._loadFailedHandler)
+        })
     }
 
     /**
@@ -52,9 +52,7 @@ class LeaveProject extends HTMLElement {
 
     disconnectedCallback() {
         try { this._unsubProject?.() } catch {}
-        if (this._loadFailedHandler) {
-            TPEN.eventDispatcher.off('tpen-project-load-failed', this._loadFailedHandler)
-        }
+        this.cleanup.run()
     }
 
     render() {
@@ -126,8 +124,8 @@ class LeaveProject extends HTMLElement {
     addEventListeners() {
         const leaveBtn = this.shadowRoot.getElementById("leaveBtn")
         const noLeaveBtn = this.shadowRoot.getElementById("noLeaveBtn")
-        leaveBtn.addEventListener('click', (ev) => this.leaveProject())
-        noLeaveBtn.addEventListener('click', (ev) => document.location.href = `/project?projectID=${TPEN.activeProject._id}`)
+        this.cleanup.onElement(leaveBtn, 'click', () => this.leaveProject())
+        this.cleanup.onElement(noLeaveBtn, 'click', () => document.location.href = `/project?projectID=${TPEN.activeProject._id}`)
     }
 
     leaveProject() {

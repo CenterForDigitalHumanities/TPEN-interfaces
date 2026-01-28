@@ -1,6 +1,7 @@
 import TPEN from "../../api/TPEN.js"
 import CheckPermissions from "../check-permissions/checkPermissions.js"
 import { onProjectReady } from "../../utilities/projectReady.js"
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 import "../check-permissions/permission-match.js"
 
 const eventDispatcher = TPEN.eventDispatcher
@@ -11,6 +12,8 @@ const eventDispatcher = TPEN.eventDispatcher
  * @element tpen-layer-selector
  */
 export default class LayerSelector extends HTMLElement {
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
     /** @type {Function|null} Unsubscribe function for project ready listener */
     _unsubProject = null
 
@@ -44,6 +47,7 @@ export default class LayerSelector extends HTMLElement {
 
     disconnectedCallback() {
         try { this._unsubProject?.() } catch {}
+        this.cleanup.run()
     }
 
     getLabel(data) {
@@ -104,7 +108,7 @@ export default class LayerSelector extends HTMLElement {
      */
     addEventListeners() {
         const selectEl = this.shadowRoot.querySelector("select")
-        selectEl.addEventListener("change", (e) => {
+        const changeHandler = (e) => {
             const selectedURI = e.target.value
             const selectedLayer = this.layers.find((layer) => layer.URI === selectedURI)
             if (selectedLayer) {
@@ -116,7 +120,8 @@ export default class LayerSelector extends HTMLElement {
                 // Also update TPEN.activeLayer for backward compatibility
                 TPEN.activeLayer = selectedLayer
             }
-        })
+        }
+        this.cleanup.onElement(selectEl, 'change', changeHandler)
     }
 }
 

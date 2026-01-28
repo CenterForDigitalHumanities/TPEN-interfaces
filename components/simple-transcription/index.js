@@ -7,6 +7,7 @@ import CheckPermissions from "../../components/check-permissions/checkPermission
 import { renderPermissionError } from "../../utilities/renderPermissionError.js"
 import { orderPageItemsByColumns } from "../../utilities/columnOrdering.js"
 import { onProjectReady } from "../../utilities/projectReady.js"
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 
 /**
  * SimpleTranscriptionInterface - The simplified transcription interface with split-pane image viewer.
@@ -22,21 +23,11 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
   #imgBottomPositionRatio = 1
   #imgTopPositionRatio = 1
   #toolLineListeners = null
-  // Handler references for cleanup
+  /** @type {CleanupRegistry} Registry for cleanup handlers */
+  cleanup = new CleanupRegistry()
   /** @type {Function|null} Unsubscribe function for project ready listener */
   _unsubProject = null
-  _activePageHandler = null
-  _activeToolHandler = null
-  _activeLayerHandler = null
-  _closeSplitscreenHandler = null
-  _layerChangeHandler = null
-  _columnSelectedHandler = null
-  _escapeHandler = null
   _iframeOrigin = null
-  /** @type {Function|null} Handler for document mousemove during splitter drag */
-  _splitterMousemoveHandler = null
-  /** @type {Function|null} Handler for document mouseup during splitter drag */
-  _splitterMouseupHandler = null
 
   constructor() {
     super()
@@ -54,26 +45,24 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     TPEN.attachAuthentication(this)
     this._unsubProject = onProjectReady(this, this.authgate)
 
-    this._activePageHandler = () => this.updateLines()
-    TPEN.eventDispatcher.on('tpen-transcription-previous-line', this._activePageHandler)
-    TPEN.eventDispatcher.on('tpen-transcription-next-line', this._activePageHandler)
+    const activePageHandler = () => this.updateLines()
+    this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-transcription-previous-line', activePageHandler)
+    this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-transcription-next-line', activePageHandler)
 
     // Handle window resize
-    this.resizeHandler = this.handleResize.bind(this)
-    window.addEventListener('resize', this.resizeHandler)
+    this.cleanup.onWindow('resize', this.handleResize.bind(this))
 
     // Listen for navigation events from tools
-    this.messageHandler = this.#handleToolMessages.bind(this)
-    window.addEventListener('message', this.messageHandler)
+    this.cleanup.onWindow('message', this.#handleToolMessages.bind(this))
 
-    this.addEventListener('drawer-opened', () => {
+    this.cleanup.onElement(this, 'drawer-opened', () => {
       // Wait for the 0.3s CSS transition to complete before recalculating
       setTimeout(() => {
         this.updateLines()
       }, 300)
     })
 
-    this.addEventListener('drawer-closed', () => {
+    this.cleanup.onElement(this, 'drawer-closed', () => {
       // Wait for the 0.3s CSS transition to complete before recalculating
       setTimeout(() => {
         this.updateLines()
@@ -83,45 +72,8 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
 
   disconnectedCallback() {
     try { this._unsubProject?.() } catch {}
-
-    // Clean up window listeners
-    window.removeEventListener('resize', this.resizeHandler)
-    window.removeEventListener('message', this.messageHandler)
-
-    // Clean up TPEN event dispatcher listeners
-        if (this._activePageHandler) {
-          TPEN.eventDispatcher.off('tpen-transcription-previous-line', this._activePageHandler)
-          TPEN.eventDispatcher.off('tpen-transcription-next-line', this._activePageHandler)
-        }
-        if (this._activeToolHandler) {
-          TPEN.eventDispatcher.off('tpen-active-tool-changed', this._activeToolHandler)
-        }
-        if (this._activeLayerHandler) {
-          TPEN.eventDispatcher.off('tpen-active-layer-changed', this._activeLayerHandler)
-        }
-        if (this._closeSplitscreenHandler) {
-          TPEN.eventDispatcher.off('tools-dismiss', this._closeSplitscreenHandler)
-        }
-        if (this._layerChangeHandler) {
-          TPEN.eventDispatcher.off('tpen-layer-changed', this._layerChangeHandler)
-        }
-        if (this._columnSelectedHandler) {
-          TPEN.eventDispatcher.off('tpen-column-selected', this._columnSelectedHandler)
-        }
-        if (this._escapeHandler) {
-          window.removeEventListener('keydown', this._escapeHandler)
-        }
-    
-        // Clean up tool line listeners
     this.#cleanupToolLineListeners()
-
-    // Clean up document listeners from setupResizableSplit
-    if (this._splitterMousemoveHandler) {
-      document.removeEventListener('mousemove', this._splitterMousemoveHandler)
-    }
-    if (this._splitterMouseupHandler) {
-      document.removeEventListener('mouseup', this._splitterMouseupHandler)
-    }
+    this.cleanup.run()
   }
 
   #cleanupToolLineListeners() {
@@ -413,38 +365,34 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       this.updateLines()
     }
 
-    this.shadowRoot.addEventListener('splitscreen-toggle', e => openSplitscreen(e.detail?.selectedTool))
+    this.cleanup.onElement(this.shadowRoot, 'splitscreen-toggle', e => openSplitscreen(e.detail?.selectedTool))
 
-    this.shadowRoot.addEventListener('click', e => {
+    this.cleanup.onElement(this.shadowRoot, 'click', e => {
       if (e.target?.classList.contains('close-button')) closeSplitscreen()
     })
-    
-    this._escapeHandler = (e) => {
+
+    this.cleanup.onWindow('keydown', (e) => {
       if (e.key === 'Escape') closeSplitscreen()
-    }
-    window.addEventListener('keydown', this._escapeHandler)
-    
-    this._closeSplitscreenHandler = closeSplitscreen
-    TPEN.eventDispatcher.on('tools-dismiss', this._closeSplitscreenHandler)
-    
+    })
+
+    this.cleanup.onEvent(TPEN.eventDispatcher, 'tools-dismiss', closeSplitscreen)
+
     // Listen for layer changes from layer-selector
-    this._layerChangeHandler = (event) => {
+    this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-layer-changed', (event) => {
       if (this.#page?.items?.length > 0) {
         TPEN.activeLineIndex = 0
       }
       this.updateLines()
-    }
-    TPEN.eventDispatcher.on('tpen-layer-changed', this._layerChangeHandler)
-    
+    })
+
     // Listen for column selection changes
-    this._columnSelectedHandler = (ev) => {
+    this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-column-selected', (ev) => {
       const columnData = ev.detail
       if (typeof columnData.lineIndex === 'number') {
         TPEN.activeLineIndex = columnData.lineIndex
         this.updateLines()
       }
-    }
-    TPEN.eventDispatcher.on('tpen-column-selected', this._columnSelectedHandler)
+    })
   }
 
   toggleSplitscreen() {
@@ -475,7 +423,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     let startX = 0
     let startLeftWidth = 0
 
-    splitter?.addEventListener('mousedown', (e) => {
+    this.cleanup.onElement(splitter, 'mousedown', (e) => {
       isDragging = true
       startX = e.clientX
       startLeftWidth = leftPane.getBoundingClientRect().width
@@ -484,8 +432,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       e.preventDefault()
     })
 
-    // Store handler references for cleanup in disconnectedCallback
-    this._splitterMousemoveHandler = (e) => {
+    this.cleanup.onDocument('mousemove', (e) => {
       if (!isDragging) return
 
       const container = this.shadowRoot.querySelector('.container')
@@ -499,18 +446,15 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
         rightPane.style.width = `${100 - leftPercent}%`
         this.updateLines()
       }
-    }
+    })
 
-    this._splitterMouseupHandler = () => {
+    this.cleanup.onDocument('mouseup', () => {
       if (isDragging) {
         isDragging = false
         document.body.style.cursor = ''
         this.enableTransitions()
       }
-    }
-
-    document.addEventListener('mousemove', this._splitterMousemoveHandler)
-    document.addEventListener('mouseup', this._splitterMouseupHandler)
+    })
   }
 
   async updateTranscriptionImages(pageID) {
