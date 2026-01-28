@@ -45,7 +45,7 @@ class QuickTypeManager extends HTMLElement {
     authgate() {
         this.loadShortcuts()
         this.render()
-        this.setupEventListeners()
+        this.addEventListeners()
     }
 
     disconnectedCallback() {
@@ -76,7 +76,7 @@ class QuickTypeManager extends HTMLElement {
                 message: 'Shortcuts saved successfully' 
             })
             this.render()
-            this.setupEventListeners()
+            this.addEventListeners()
         } catch (error) {
             TPEN.eventDispatcher.dispatch('tpen-toast', { 
                 status: 'error', 
@@ -337,14 +337,14 @@ class QuickTypeManager extends HTMLElement {
         `
     }
 
-    setupEventListeners() {
+    addEventListeners() {
         // Remove individual shortcuts
         this.shadowRoot.querySelectorAll('.remove-shortcut').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const index = parseInt(e.target.dataset.index)
                 this._shortcuts.splice(index, 1)
                 this.render()
-                this.setupEventListeners()
+                this.addEventListeners()
             })
         })
 
@@ -353,7 +353,7 @@ class QuickTypeManager extends HTMLElement {
             if (confirm('Are you sure you want to clear all shortcuts?')) {
                 this._shortcuts = []
                 this.render()
-                this.setupEventListeners()
+                this.addEventListeners()
             }
         })
 
@@ -373,7 +373,7 @@ class QuickTypeManager extends HTMLElement {
                     this._shortcuts = event.detail.quicktype
                     this._savedShortcuts = [...this._shortcuts]
                     this.render()
-                    this.setupEventListeners()
+                    this.addEventListeners()
                     TPEN.eventDispatcher.off('quicktype-editor-saved', handler)
                 }
                 TPEN.eventDispatcher.on('quicktype-editor-saved', handler)
@@ -410,7 +410,7 @@ class QuickTypeManager extends HTMLElement {
             this._shortcuts.push(value)
             customInput.value = ''
             this.render()
-            this.setupEventListeners()
+            this.addEventListeners()
             
             // Refocus the input after re-rendering
             const newInput = this.shadowRoot.querySelector('#custom-shortcut')
@@ -460,7 +460,7 @@ class QuickTypeManager extends HTMLElement {
                 }
                 
                 this.render()
-                this.setupEventListeners()
+                this.addEventListeners()
             })
         })
 

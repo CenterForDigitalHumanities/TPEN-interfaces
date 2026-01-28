@@ -94,14 +94,17 @@ export class CleanupRegistry {
 
     /**
      * Execute all cleanup functions. Safe to call multiple times.
-     * Errors in individual cleanup functions are caught and logged.
+     * Errors in individual cleanup functions are caught and logged in development.
      */
     run() {
         for (const cleanup of this.#handlers) {
             try {
                 cleanup()
             } catch (e) {
-                // Silently handle cleanup errors - component may have already been cleaned
+                // Log cleanup errors in development for debugging
+                if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                    console.warn('CleanupRegistry: Error during cleanup:', e)
+                }
             }
         }
         this.#handlers = []

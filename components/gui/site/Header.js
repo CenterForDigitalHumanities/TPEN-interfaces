@@ -8,14 +8,6 @@ import { CleanupRegistry } from '../../../utilities/CleanupRegistry.js'
 class TpenHeader extends HTMLElement {
     /** @type {CleanupRegistry} Registry for cleanup handlers */
     cleanup = new CleanupRegistry()
-    /** @type {Function|null} Handler for title events */
-    _titleHandler = null
-    /** @type {Function|null} Handler for action link events */
-    _actionLinkHandler = null
-    /** @type {Function|null} Handler for action link remove events */
-    _actionLinkRemoveHandler = null
-    /** @type {Function|null} Handler for logout button */
-    _logoutHandler = null
 
     constructor() {
         super();
@@ -67,7 +59,7 @@ class TpenHeader extends HTMLElement {
     connectedCallback() {
         TPEN.attachAuthentication(this)
 
-        this._titleHandler = ev => {
+        const titleHandler = ev => {
             const title = this.shadowRoot.querySelector('.banner')
             if (!ev.detail) {
                 title.classList.add('hidden')
@@ -77,25 +69,24 @@ class TpenHeader extends HTMLElement {
             title.textContent = ev.detail
             title.setAttribute('title', ev.detail)
         }
-        this._actionLinkHandler = ev => {
+        const actionLinkHandler = ev => {
             const btn = this.shadowRoot.querySelector('.action-button')
             btn.classList.remove('hidden')
             btn.textContent = ev.detail.label
             btn.addEventListener('click', ev.detail.callback)
         }
-        this._actionLinkRemoveHandler = ev => {
+        const actionLinkRemoveHandler = ev => {
             const btn = this.shadowRoot.querySelector('.action-button')
             btn.classList.add('hidden')
             btn.removeEventListener('click', ev.detail.callback)
         }
 
-        this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-gui-title', this._titleHandler)
-        this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-gui-action-link', this._actionLinkHandler)
-        this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-gui-action-link-remove', this._actionLinkRemoveHandler)
+        this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-gui-title', titleHandler)
+        this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-gui-action-link', actionLinkHandler)
+        this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-gui-action-link-remove', actionLinkRemoveHandler)
 
-        this._logoutHandler = () => TPEN.logout()
         const logoutBtn = this.shadowRoot.querySelector('.logout-btn')
-        this.cleanup.onElement(logoutBtn, 'click', this._logoutHandler)
+        this.cleanup.onElement(logoutBtn, 'click', () => TPEN.logout())
         this.setupDraggableButton()
     }
 

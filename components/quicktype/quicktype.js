@@ -69,7 +69,7 @@ class TpenQuickType extends HTMLElement {
     TPEN.attachAuthentication(this)
     this.cleanup.onEvent(eventDispatcher, "tpen-project-loaded", () => this.loadQuickType())
     this.render()
-    this.setupEventListeners()
+    this.addEventListeners()
     if (TPEN.activeProject) {
       this.loadQuickType()
     }
@@ -312,7 +312,7 @@ class TpenQuickType extends HTMLElement {
       .join("")
   }
 
-  setupEventListeners() {
+  addEventListeners() {
     const addButton = this.shadowRoot.getElementById('add-quicktype')
     addButton.addEventListener('click', () => this.addQuickType())
 

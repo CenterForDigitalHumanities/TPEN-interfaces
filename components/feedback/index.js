@@ -16,7 +16,7 @@ class TpenFeedback extends HTMLElement {
   }
 
   connectedCallback() {
-    this.setupEventListeners()
+    this.addEventListeners()
   }
 
   disconnectedCallback() {
@@ -86,7 +86,7 @@ class TpenFeedback extends HTMLElement {
     `
   }
 
-  setupEventListeners() {
+  addEventListeners() {
     const submitButton = this.shadowRoot.getElementById("submit-feedback")
     const submitHandler = async () => {
       const description = this.shadowRoot.getElementById("feedback-description").value.trim()

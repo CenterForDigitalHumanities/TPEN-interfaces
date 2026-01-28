@@ -47,7 +47,7 @@ class QuickTypeEditorDialog extends HTMLElement {
         overlay.classList.add('show')
         container.classList.add('show')
         
-        this.setupEventListeners()
+        this.addEventListeners()
     }
 
     close() {
@@ -63,7 +63,7 @@ class QuickTypeEditorDialog extends HTMLElement {
         }, 300)
     }
 
-    setupEventListeners() {
+    addEventListeners() {
         const closeBtn = this.shadowRoot.querySelector('.close-btn')
         const cancelBtn = this.shadowRoot.querySelector('.cancel-btn')
         const saveBtn = this.shadowRoot.querySelector('.save-btn')
@@ -326,7 +326,7 @@ class QuickTypeEditorDialog extends HTMLElement {
             container?.classList.add('show')
         }
 
-        this.setupEventListeners()
+        this.addEventListeners()
         return true
     }
 

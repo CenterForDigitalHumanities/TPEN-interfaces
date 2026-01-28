@@ -2,6 +2,7 @@ import TPEN from '../../api/TPEN.js'
 import { escapeHtml } from '/js/utils.js'
 import CheckPermissions from '../check-permissions/checkPermissions.js'
 import { onProjectReady } from "../../utilities/projectReady.js"
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 
 /**
  * NavigationManager - Interface for customizing project navigation URLs.
@@ -9,6 +10,8 @@ import { onProjectReady } from "../../utilities/projectReady.js"
  * @element tpen-navigation-manager
  */
 class NavigationManager extends HTMLElement {
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
     /** @type {Function|null} Unsubscribe function for project ready listener */
     _unsubProject = null
 
@@ -44,6 +47,7 @@ class NavigationManager extends HTMLElement {
 
     disconnectedCallback() {
         try { this._unsubProject?.() } catch {}
+        this.cleanup.run()
     }
 
     loadNavigation() {
@@ -332,6 +336,9 @@ class NavigationManager extends HTMLElement {
     }
 
     addEventListeners() {
+        // Clear previous listeners before re-adding (called after render)
+        this.cleanup.run()
+
         // Input change handlers
         const transcribeInput = this.shadowRoot.querySelector('#transcribe-url')
         const defineLinesInput = this.shadowRoot.querySelector('#define-lines-url')
@@ -345,18 +352,16 @@ class NavigationManager extends HTMLElement {
             this.addEventListeners()
         }
 
-        transcribeInput?.addEventListener('input', updateNav)
-        defineLinesInput?.addEventListener('input', updateNav)
-        manageProjectInput?.addEventListener('input', updateNav)
+        this.cleanup.onElement(transcribeInput, 'input', updateNav)
+        this.cleanup.onElement(defineLinesInput, 'input', updateNav)
+        this.cleanup.onElement(manageProjectInput, 'input', updateNav)
 
         // Button handlers
-        this.shadowRoot.querySelector('#save-btn')?.addEventListener('click', () => {
-            this.saveNavigation()
-        })
+        const saveBtn = this.shadowRoot.querySelector('#save-btn')
+        const resetBtn = this.shadowRoot.querySelector('#reset-btn')
 
-        this.shadowRoot.querySelector('#reset-btn')?.addEventListener('click', () => {
-            this.resetToDefaults()
-        })
+        this.cleanup.onElement(saveBtn, 'click', () => this.saveNavigation())
+        this.cleanup.onElement(resetBtn, 'click', () => this.resetToDefaults())
     }
 }
 
