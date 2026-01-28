@@ -34,12 +34,12 @@ export default class ColumnSelector extends HTMLElement {
      * Authorization gate - checks permissions before rendering.
      * Removes component if user lacks LINE SELECTOR view access.
      */
-    async authgate() {
+    authgate() {
         if (!CheckPermissions.checkViewAccess("LINE", "SELECTOR")) {
             this.remove()
             return
         }
-        await this.findColumnsData()
+        this.findColumnsData()
     }
 
     disconnectedCallback() {

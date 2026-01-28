@@ -294,13 +294,13 @@ class TpenManageColumns extends HTMLElement {
      * Authorization gate - checks permissions before rendering the interface.
      * Renders permission error if user lacks LINE SELECTOR access.
      */
-    async authgate() {
+    authgate() {
         if (!CheckPermissions.checkAllAccess("LINE", "SELECTOR")) {
             renderPermissionError(this.shadowRoot, TPEN.screen?.projectInQuery ?? '')
             return
         }
         this.addEventListeners()
-        await this.loadPage(this.pageID)
+        this.loadPage(this.pageID)
     }
 
     /**

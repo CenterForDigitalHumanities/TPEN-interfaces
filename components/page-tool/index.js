@@ -1,8 +1,16 @@
 import TPEN from '../../api/TPEN.js'
 import CheckPermissions from "../check-permissions/checkPermissions.js"
 import { onProjectReady } from "../../utilities/projectReady.js"
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 
+/**
+ * PageTool - Provides image manipulation tools like contrast, brightness, grayscale, and invert.
+ * Requires TOOL ANY view access.
+ * @element tpen-page-tool
+ */
 export default class PageTool extends HTMLElement {
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
     #drawerContent
     #drawerToggleBtn
 
@@ -39,6 +47,7 @@ export default class PageTool extends HTMLElement {
     }
 
     connectedCallback() {
+        TPEN.attachAuthentication(this)
         this._unsubProject = onProjectReady(this, this.authgate.bind(this))
     }
 
@@ -53,12 +62,12 @@ export default class PageTool extends HTMLElement {
 
     disconnectedCallback() {
         try { this._unsubProject?.() } catch {}
-        if (this._escapeHandler) window.removeEventListener('keydown', this._escapeHandler)
+        this.cleanup.run()
     }
 
     addEventListeners() {
-        this.drawerToggleBtn?.addEventListener('click', () => this.toggleDrawer())
-        this.shadowRoot.querySelector('.drawer-close-btn')?.addEventListener('click', () => this.closeDrawer())
+        this.cleanup.onElement(this.drawerToggleBtn, 'click', () => this.toggleDrawer())
+        this.cleanup.onElement(this.shadowRoot.querySelector('.drawer-close-btn'), 'click', () => this.closeDrawer())
     }
 
     toggleDrawer() {
@@ -476,20 +485,20 @@ export default class PageTool extends HTMLElement {
         </div>
         `
 
-        this.shadowRoot.querySelector('.grayscale-btn')?.addEventListener('click', () => this.toggleGrayscale())
-        this.shadowRoot.querySelector('.invert-btn')?.addEventListener('click', () => this.toggleInvert())
-        this.shadowRoot.querySelector('.contrast-slider')?.addEventListener('input', (e) => this.setContrast(e))
-        this.shadowRoot.querySelector('.brightness-slider')?.addEventListener('input', (e) => this.setBrightness(e))
-        this.shadowRoot.querySelector('.reset-btn')?.addEventListener('click', () => this.resetFilters())
+        this.cleanup.onElement(this.shadowRoot.querySelector('.grayscale-btn'), 'click', () => this.toggleGrayscale())
+        this.cleanup.onElement(this.shadowRoot.querySelector('.invert-btn'), 'click', () => this.toggleInvert())
+        this.cleanup.onElement(this.shadowRoot.querySelector('.contrast-slider'), 'input', (e) => this.setContrast(e))
+        this.cleanup.onElement(this.shadowRoot.querySelector('.brightness-slider'), 'input', (e) => this.setBrightness(e))
+        this.cleanup.onElement(this.shadowRoot.querySelector('.reset-btn'), 'click', () => this.resetFilters())
         if (CheckPermissions.checkEditAccess("LINE", "SELECTOR")) {
             const linesBtn = this.shadowRoot.querySelector('.lines-btn')
             const columnsBtn = this.shadowRoot.querySelector('.columns-btn')
             this.shadowRoot.querySelector('.parsing-section').style.display = "block"
             linesBtn.style.display = "block"
             columnsBtn.style.display = "block"
-            linesBtn.addEventListener('click', () => 
+            this.cleanup.onElement(linesBtn, 'click', () =>
                 document.location.href = `/annotator?projectID=${TPEN.activeProject._id}&pageID=${TPEN.screen.pageInQuery}`)
-            columnsBtn.addEventListener('click', () => 
+            this.cleanup.onElement(columnsBtn, 'click', () =>
                 document.location.href = `/manage-columns?projectID=${TPEN.activeProject._id}&pageID=${TPEN.screen.pageInQuery}`)
         }
     }

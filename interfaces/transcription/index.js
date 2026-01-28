@@ -49,7 +49,7 @@ export default class TranscriptionInterface extends HTMLElement {
     window.addEventListener('message', this.messageHandler)
   }
 
-  async authgate() {
+  authgate() {
     if (!CheckPermissions.checkViewAccess("ANY", "CONTENT")) {
       this.renderPermissionError()
       return
@@ -57,6 +57,13 @@ export default class TranscriptionInterface extends HTMLElement {
     this.render()
     this.addEventListeners()
     this.setupResizableSplit()
+    this.initializeAsync()
+  }
+
+  /**
+   * Performs async initialization after authgate passes.
+   */
+  async initializeAsync() {
     const pageID = TPEN.screen?.pageInQuery
     await this.updateTranscriptionImages(pageID)
     this.updateLines()

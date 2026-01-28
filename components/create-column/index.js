@@ -247,12 +247,12 @@ class TpenCreateColumn extends HTMLElement {
      * Authorization gate - checks permissions before loading page.
      * Shows permission message if user lacks LINE SELECTOR all access.
      */
-    async authgate() {
+    authgate() {
         if (!CheckPermissions.checkAllAccess("LINE", "SELECTOR")) {
             this.container.innerHTML = `<div class="error-message">You do not have permission to manage columns.</div>`
             return
         }
-        await this.loadPage(this.pageID)
+        this.loadPage(this.pageID)
     }
 
     disconnectedCallback() {

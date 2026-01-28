@@ -85,13 +85,20 @@ export default class TranscriptionBlock extends HTMLElement {
         TPEN.eventDispatcher.on('tpen-active-line-updated', this._activeLineUpdatedHandler)
     }
 
-    async authgate() {
+    authgate() {
         if (!CheckPermissions.checkViewAccess("ANY", "CONTENT")) {
             this.remove()
             return
         }
         this.render()
         this.addEventListeners()
+        this.initializeAsync()
+    }
+
+    /**
+     * Performs async initialization after authgate passes.
+     */
+    async initializeAsync() {
         const pageID = TPEN.screen?.pageInQuery
         this.#page = await vault.get(pageID, 'annotationpage', true)
         const projectPage = TPEN.activeProject.layers.flatMap(layer => layer.pages || []).find(p => p.id.split('/').pop() === pageID.split('/').pop())

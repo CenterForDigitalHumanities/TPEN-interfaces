@@ -1,11 +1,32 @@
 import TPEN from "../api/TPEN.js"
+import { CleanupRegistry } from '../utilities/CleanupRegistry.js'
 
+/**
+ * NewAction - Displays quick action links for creating projects, importing manifests, etc.
+ * @element tpen-new-action
+ */
 class NewAction extends HTMLElement {
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
+
     constructor() {
         super()
         this.attachShadow({ mode: 'open' })
+    }
+
+    connectedCallback() {
+        TPEN.attachAuthentication(this)
+        this.render()
+        this.addEventListeners()
+    }
+
+    disconnectedCallback() {
+        this.cleanup.run()
+    }
+
+    render() {
         this.shadowRoot.innerHTML = `
-            <style> 
+            <style>
             .new-action {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -60,8 +81,10 @@ class NewAction extends HTMLElement {
             </a>
             </div>
         `
+    }
 
-        this.shadowRoot.getElementById("link-tpen-2.8").addEventListener("click", this.TPEN2ImportHandler.bind(this))
+    addEventListeners() {
+        this.cleanup.onElement(this.shadowRoot.getElementById("link-tpen-2.8"), "click", this.TPEN2ImportHandler.bind(this))
     }
 
     TPEN2ImportHandler = async (event) => {

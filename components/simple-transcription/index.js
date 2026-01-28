@@ -147,7 +147,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     }
   }
 
-  async authgate() {
+  authgate() {
     if (!CheckPermissions.checkViewAccess("ANY", "CONTENT")) {
       this.renderPermissionError()
       return
@@ -155,6 +155,13 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     this.render()
     this.addEventListeners()
     this.setupResizableSplit()
+    this.initializeAsync()
+  }
+
+  /**
+   * Performs async initialization after authgate passes.
+   */
+  async initializeAsync() {
     const pageID = TPEN.screen?.pageInQuery
     await this.updateTranscriptionImages(pageID)
 
