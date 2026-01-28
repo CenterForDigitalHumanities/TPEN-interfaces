@@ -1,5 +1,6 @@
 import './Confirm.js'
 import { eventDispatcher } from '../../../api/events.js'
+import { CleanupRegistry } from '../../../utilities/CleanupRegistry.js'
 
 /**
  * ConfirmContainer - Global container for displaying confirmation dialogs.
@@ -9,12 +10,8 @@ import { eventDispatcher } from '../../../api/events.js'
 class ConfirmContainer extends HTMLElement {
     #screenLockingSection
     #confirmElem
-    /** @type {Function|null} Handler for confirm events */
-    _confirmHandler = null
-    /** @type {Function|null} Handler for positive button events */
-    _positiveHandler = null
-    /** @type {Function|null} Handler for negative button events */
-    _negativeHandler = null
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
 
     constructor() {
         super()
@@ -23,19 +20,17 @@ class ConfirmContainer extends HTMLElement {
     }
 
     connectedCallback() {
-        this._confirmHandler = ({ detail }) => this.addConfirm(detail?.message, detail?.positiveButtonText, detail.negativeButtonText)
-        this._positiveHandler = () => this.#confirmElem?.dismiss()
-        this._negativeHandler = () => this.#confirmElem?.dismiss()
+        const confirmHandler = ({ detail }) => this.addConfirm(detail?.message, detail?.positiveButtonText, detail.negativeButtonText)
+        const positiveHandler = () => this.#confirmElem?.dismiss()
+        const negativeHandler = () => this.#confirmElem?.dismiss()
 
-        eventDispatcher.on('tpen-confirm', this._confirmHandler)
-        eventDispatcher.on('tpen-confirm-positive', this._positiveHandler)
-        eventDispatcher.on('tpen-confirm-negative', this._negativeHandler)
+        this.cleanup.onEvent(eventDispatcher, 'tpen-confirm', confirmHandler)
+        this.cleanup.onEvent(eventDispatcher, 'tpen-confirm-positive', positiveHandler)
+        this.cleanup.onEvent(eventDispatcher, 'tpen-confirm-negative', negativeHandler)
     }
 
     disconnectedCallback() {
-        if (this._confirmHandler) eventDispatcher.off('tpen-confirm', this._confirmHandler)
-        if (this._positiveHandler) eventDispatcher.off('tpen-confirm-positive', this._positiveHandler)
-        if (this._negativeHandler) eventDispatcher.off('tpen-confirm-negative', this._negativeHandler)
+        this.cleanup.run()
     }
 
     /**

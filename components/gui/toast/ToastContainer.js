@@ -1,5 +1,6 @@
 import './Toast.js'
 import { eventDispatcher } from '../../../api/events.js'
+import { CleanupRegistry } from '../../../utilities/CleanupRegistry.js'
 
 /**
  * ToastContainer - Global container for displaying toast notifications.
@@ -8,8 +9,8 @@ import { eventDispatcher } from '../../../api/events.js'
  */
 class ToastContainer extends HTMLElement {
     #containerSection
-    /** @type {Function|null} Handler for toast events */
-    _toastHandler = null
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
 
     constructor() {
         super()
@@ -18,14 +19,12 @@ class ToastContainer extends HTMLElement {
     }
 
     connectedCallback() {
-        this._toastHandler = ({ detail }) => this.addToast(detail?.message, detail?.status, detail?.dismissible)
-        eventDispatcher.on('tpen-toast', this._toastHandler)
+        const toastHandler = ({ detail }) => this.addToast(detail?.message, detail?.status, detail?.dismissible)
+        this.cleanup.onEvent(eventDispatcher, 'tpen-toast', toastHandler)
     }
 
     disconnectedCallback() {
-        if (this._toastHandler) {
-            eventDispatcher.off('tpen-toast', this._toastHandler)
-        }
+        this.cleanup.run()
     }
 
     /**

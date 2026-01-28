@@ -1,5 +1,6 @@
 import CheckPermissions from "../check-permissions/checkPermissions.js"
 import { onProjectReady } from "../../utilities/projectReady.js"
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 
 /**
  * MagnifierTool - Provides a magnifying glass overlay for image inspection.
@@ -9,14 +10,10 @@ import { onProjectReady } from "../../utilities/projectReady.js"
 export class MagnifierTool extends HTMLElement {
     #imageElem = null
     #magnifier
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
     /** @type {Function|null} Unsubscribe function for project ready listener */
     _unsubProject = null
-    /** @type {Function|null} Handler for window mousemove events */
-    _mousemoveHandler = null
-    /** @type {Function|null} Handler for window mouseup events */
-    _mouseupHandler = null
-    /** @type {Function|null} Handler for window keydown events */
-    _keydownHandler = null
 
     constructor() {
         super()
@@ -58,16 +55,7 @@ export class MagnifierTool extends HTMLElement {
 
     disconnectedCallback() {
         try { this._unsubProject?.() } catch {}
-        // Clean up window event listeners
-        if (this._mousemoveHandler) {
-            window.removeEventListener('mousemove', this._mousemoveHandler)
-        }
-        if (this._mouseupHandler) {
-            window.removeEventListener('mouseup', this._mouseupHandler)
-        }
-        if (this._keydownHandler) {
-            window.removeEventListener('keydown', this._keydownHandler)
-        }
+        this.cleanup.run()
     }
 
     setMagnifierView(centerX, centerY, zoomLevel = this.zoomLevel) {
@@ -85,7 +73,7 @@ export class MagnifierTool extends HTMLElement {
     addEventListeners() {
         const magnifier = this.magnifier
 
-        magnifier.addEventListener('mousedown', (e) => {
+        const mousedownHandler = (e) => {
             e.preventDefault()
             this.isDragging = true
 
@@ -94,19 +82,20 @@ export class MagnifierTool extends HTMLElement {
             this.dragOffset.y = e.clientY - rect.top
 
             magnifier.style.cursor = 'grabbing'
-        })
+        }
+        this.cleanup.onElement(magnifier, 'mousedown', mousedownHandler)
 
-        magnifier.addEventListener('wheel', (e) => {
+        const wheelHandler = (e) => {
             if (!this.isMagnifierVisible) return
             e.preventDefault()
             const delta = Math.sign(e.deltaY)
             // Zoom out if delta > 0, in if < 0
             this.zoomLevel = Math.min(6, Math.max(1.5, this.zoomLevel - delta * 0.1))
             this.updateMagnifier()
-        })
+        }
+        this.cleanup.onElement(magnifier, 'wheel', wheelHandler)
 
-        // Store handler references for cleanup
-        this._mousemoveHandler = (e) => {
+        const mousemoveHandler = (e) => {
             if (!this.isDragging || !this.isMagnifierVisible) return
             e.preventDefault()
             const img = this.imageElem
@@ -143,22 +132,22 @@ export class MagnifierTool extends HTMLElement {
 
             this.setMagnifierView(x, y)
         }
-        window.addEventListener('mousemove', this._mousemoveHandler)
+        this.cleanup.onWindow('mousemove', mousemoveHandler)
 
-        this._mouseupHandler = () => {
+        const mouseupHandler = () => {
             if (this.isDragging) {
                 this.isDragging = false
                 magnifier.style.cursor = 'grab'
             }
         }
-        window.addEventListener('mouseup', this._mouseupHandler)
+        this.cleanup.onWindow('mouseup', mouseupHandler)
 
-        this._keydownHandler = (e) => {
+        const keydownHandler = (e) => {
             if (e.key === 'Escape' && this.isMagnifierVisible) {
                 this.hideMagnifier()
             }
         }
-        window.addEventListener('keydown', this._keydownHandler)
+        this.cleanup.onWindow('keydown', keydownHandler)
     }
 
     showMagnifier() {

@@ -1,6 +1,16 @@
 import { eventDispatcher } from '../../../api/events.js'
 
+/**
+ * Alert - A modal alert dialog that requires user acknowledgement.
+ * Takes over the screen until dismissed.
+ * @element tpen-alert
+ */
 class Alert extends HTMLElement {
+    /** @type {number|null} Timer ID for show animation */
+    _showTimer = null
+    /** @type {number|null} Timer ID for removal animation */
+    _removeTimer = null
+
     constructor() {
         super()
         this.attachShadow({ mode: 'open' })
@@ -17,7 +27,7 @@ class Alert extends HTMLElement {
      */
     show() {
         this.closest(".alert-area").style.display = "grid"
-        setTimeout(() => {
+        this._showTimer = setTimeout(() => {
             this.closest(".alert-area").classList.add("show")
             this.classList.add('show')
             document.querySelector("body").style.overflow = "hidden"
@@ -33,12 +43,16 @@ class Alert extends HTMLElement {
         this.classList.remove('show')
         this.closest(".alert-area").classList.remove("show")
         document.querySelector("body").style.overflow = "auto"
-        setTimeout(() => {
+        this._removeTimer = setTimeout(() => {
             this.remove()
         }, 500)
         eventDispatcher.dispatch("tpen-alert-acknowledged")
     }
 
+    disconnectedCallback() {
+        if (this._showTimer) clearTimeout(this._showTimer)
+        if (this._removeTimer) clearTimeout(this._removeTimer)
+    }
 }
 
 customElements.define('tpen-alert', Alert)

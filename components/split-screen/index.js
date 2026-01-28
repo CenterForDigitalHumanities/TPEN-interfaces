@@ -1,6 +1,7 @@
 import CheckPermissions from "../check-permissions/checkPermissions.js"
 import TPEN from "../../api/TPEN.js"
 import { onProjectReady } from "../../utilities/projectReady.js"
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 
 /**
  * TpenSplitScreen - Provides a resizable split-pane layout.
@@ -8,12 +9,10 @@ import { onProjectReady } from "../../utilities/projectReady.js"
  * @element tpen-split-screen
  */
 export default class TpenSplitScreen extends HTMLElement {
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
     /** @type {Function|null} Unsubscribe function for project ready listener */
     _unsubProject = null
-    /** @type {Function|null} Handler for window mousemove events */
-    _mousemoveHandler = null
-    /** @type {Function|null} Handler for window mouseup events */
-    _mouseupHandler = null
 
     constructor() {
         super()
@@ -38,24 +37,14 @@ export default class TpenSplitScreen extends HTMLElement {
 
     disconnectedCallback() {
         try { this._unsubProject?.() } catch {}
-        // Clean up window event listeners
-        if (this._mousemoveHandler) {
-            window.removeEventListener('mousemove', this._mousemoveHandler)
-        }
-        if (this._mouseupHandler) {
-            window.removeEventListener('mouseup', this._mouseupHandler)
-        }
+        this.cleanup.run()
     }
 
     addEventListeners() {
         const resizer = this.shadowRoot.querySelector('.resizer')
-        resizer.addEventListener('mousedown', this.onMouseDown.bind(this))
-
-        // Store handler references for cleanup
-        this._mousemoveHandler = this.onMouseMove.bind(this)
-        this._mouseupHandler = this.onMouseUp.bind(this)
-        window.addEventListener('mousemove', this._mousemoveHandler)
-        window.addEventListener('mouseup', this._mouseupHandler)
+        this.cleanup.onElement(resizer, 'mousedown', this.onMouseDown.bind(this))
+        this.cleanup.onWindow('mousemove', this.onMouseMove.bind(this))
+        this.cleanup.onWindow('mouseup', this.onMouseUp.bind(this))
     }
 
     onMouseDown(e) {

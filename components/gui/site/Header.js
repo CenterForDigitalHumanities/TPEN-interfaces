@@ -1,16 +1,21 @@
 import TPEN from "../../../api/TPEN.js"
+import { CleanupRegistry } from '../../../utilities/CleanupRegistry.js'
 
 /**
  * TpenHeader - Main site header with navigation, title, and action button.
  * @element tpen-header
  */
 class TpenHeader extends HTMLElement {
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
     /** @type {Function|null} Handler for title events */
     _titleHandler = null
     /** @type {Function|null} Handler for action link events */
     _actionLinkHandler = null
     /** @type {Function|null} Handler for action link remove events */
     _actionLinkRemoveHandler = null
+    /** @type {Function|null} Handler for logout button */
+    _logoutHandler = null
 
     constructor() {
         super();
@@ -60,6 +65,8 @@ class TpenHeader extends HTMLElement {
         `;
     }
     connectedCallback() {
+        TPEN.attachAuthentication(this)
+
         this._titleHandler = ev => {
             const title = this.shadowRoot.querySelector('.banner')
             if (!ev.detail) {
@@ -82,23 +89,18 @@ class TpenHeader extends HTMLElement {
             btn.removeEventListener('click', ev.detail.callback)
         }
 
-        TPEN.eventDispatcher.on('tpen-gui-title', this._titleHandler)
-        TPEN.eventDispatcher.on('tpen-gui-action-link', this._actionLinkHandler)
-        TPEN.eventDispatcher.on('tpen-gui-action-link-remove', this._actionLinkRemoveHandler)
+        this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-gui-title', this._titleHandler)
+        this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-gui-action-link', this._actionLinkHandler)
+        this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-gui-action-link-remove', this._actionLinkRemoveHandler)
 
         this._logoutHandler = () => TPEN.logout()
-        this.shadowRoot.querySelector('.logout-btn').addEventListener('click', this._logoutHandler)
+        const logoutBtn = this.shadowRoot.querySelector('.logout-btn')
+        this.cleanup.onElement(logoutBtn, 'click', this._logoutHandler)
         this.setupDraggableButton()
     }
 
     disconnectedCallback() {
-        if (this._titleHandler) TPEN.eventDispatcher.off('tpen-gui-title', this._titleHandler)
-        if (this._actionLinkHandler) TPEN.eventDispatcher.off('tpen-gui-action-link', this._actionLinkHandler)
-        if (this._actionLinkRemoveHandler) TPEN.eventDispatcher.off('tpen-gui-action-link-remove', this._actionLinkRemoveHandler)
-        const logoutBtn = this.shadowRoot?.querySelector('.logout-btn')
-        if (logoutBtn && this._logoutHandler) {
-            logoutBtn.removeEventListener('click', this._logoutHandler)
-        }
+        this.cleanup.run()
     }
 
     setupDraggableButton() {
@@ -126,15 +128,15 @@ class TpenHeader extends HTMLElement {
                 btn.style.left = '0px'
                 initialRect = btn.getBoundingClientRect()
             }
-            
+
             const header = this.shadowRoot.querySelector('header')
             const headerRect = header.getBoundingClientRect()
             const btnWidth = initialRect.width
-            
+
             // Calculate bounds relative to initial position
             const maxLeft = headerRect.right - initialRect.right - 20 // Space to right edge
             const maxRight = headerRect.left - initialRect.left + 20 // Space to left edge
-            
+
             return { maxLeft, maxRight }
         }
 
@@ -142,7 +144,7 @@ class TpenHeader extends HTMLElement {
             if (Math.abs(velocityX) > MIN_VELOCITY) {
                 currentX += velocityX
                 velocityX *= FRICTION
-                
+
                 // Check boundaries and bounce
                 const bounds = getBounds()
                 if (currentX > bounds.maxLeft) {
@@ -152,7 +154,7 @@ class TpenHeader extends HTMLElement {
                     currentX = bounds.maxRight
                     velocityX = Math.abs(velocityX) * BOUNCE_DAMPING // Bounce back with damping
                 }
-                
+
                 btn.style.left = `${currentX}px`
                 animationFrame = requestAnimationFrame(animate)
             } else {
@@ -166,7 +168,7 @@ class TpenHeader extends HTMLElement {
                 cancelAnimationFrame(animationFrame)
                 animationFrame = null
             }
-            
+
             isDragging = true
             hasMoved = false
             dragStartTime = Date.now()
@@ -182,24 +184,24 @@ class TpenHeader extends HTMLElement {
 
         const onPointerMove = (e) => {
             if (!isDragging) return
-            
+
             const now = Date.now()
             const deltaTime = now - lastTime
             const deltaX = e.clientX - startX
-            
+
             if (Math.abs(deltaX - currentX) > DRAG_THRESHOLD) {
                 hasMoved = true
             }
-            
+
             // Calculate velocity for momentum
             if (deltaTime > 0) {
                 velocityX = (e.clientX - lastX) / deltaTime * 16 // Normalize to ~60fps
             }
-            
+
             // Constrain to viewport bounds while dragging
             const bounds = getBounds()
             currentX = Math.max(bounds.maxRight, Math.min(bounds.maxLeft, deltaX))
-            
+
             lastX = e.clientX
             lastTime = now
             btn.style.position = 'relative'
@@ -208,19 +210,19 @@ class TpenHeader extends HTMLElement {
 
         const onPointerUp = (e) => {
             if (!isDragging) return
-            
+
             isDragging = false
             btn.style.cursor = 'grab'
             btn.releasePointerCapture(e.pointerId)
-            
+
             const dragDuration = Date.now() - dragStartTime
-            
+
             // If the button was dragged significantly (distance or time), prevent the click
             if (hasMoved || dragDuration > TIME_THRESHOLD) {
                 e.preventDefault()
                 e.stopPropagation()
             }
-            
+
             // Apply momentum if there's velocity
             if (Math.abs(velocityX) > MIN_VELOCITY && hasMoved) {
                 animationFrame = requestAnimationFrame(animate)
@@ -228,19 +230,28 @@ class TpenHeader extends HTMLElement {
         }
 
         // Prevent click if drag occurred
-        btn.addEventListener('click', (e) => {
+        const clickHandler = (e) => {
             if (hasMoved) {
                 e.preventDefault()
                 e.stopPropagation()
             }
-        }, true)
+        }
 
-        btn.addEventListener('pointerdown', onPointerDown)
-        btn.addEventListener('pointermove', onPointerMove)
-        btn.addEventListener('pointerup', onPointerUp)
-        btn.addEventListener('pointercancel', onPointerUp)
+        // Register all button event listeners with cleanup registry
+        this.cleanup.onElement(btn, 'click', clickHandler, true)
+        this.cleanup.onElement(btn, 'pointerdown', onPointerDown)
+        this.cleanup.onElement(btn, 'pointermove', onPointerMove)
+        this.cleanup.onElement(btn, 'pointerup', onPointerUp)
+        this.cleanup.onElement(btn, 'pointercancel', onPointerUp)
         btn.style.cursor = 'grab'
         btn.style.touchAction = 'none'
+
+        // Track animation frame for cleanup
+        this.cleanup.add(() => {
+            if (animationFrame) {
+                cancelAnimationFrame(animationFrame)
+            }
+        })
     }
 }
 

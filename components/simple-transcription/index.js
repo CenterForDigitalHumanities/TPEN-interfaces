@@ -33,6 +33,10 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
   _columnSelectedHandler = null
   _escapeHandler = null
   _iframeOrigin = null
+  /** @type {Function|null} Handler for document mousemove during splitter drag */
+  _splitterMousemoveHandler = null
+  /** @type {Function|null} Handler for document mouseup during splitter drag */
+  _splitterMouseupHandler = null
 
   constructor() {
     super()
@@ -110,6 +114,14 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     
         // Clean up tool line listeners
     this.#cleanupToolLineListeners()
+
+    // Clean up document listeners from setupResizableSplit
+    if (this._splitterMousemoveHandler) {
+      document.removeEventListener('mousemove', this._splitterMousemoveHandler)
+    }
+    if (this._splitterMouseupHandler) {
+      document.removeEventListener('mouseup', this._splitterMouseupHandler)
+    }
   }
 
   #cleanupToolLineListeners() {
@@ -472,7 +484,8 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       e.preventDefault()
     })
 
-    document.addEventListener('mousemove', (e) => {
+    // Store handler references for cleanup in disconnectedCallback
+    this._splitterMousemoveHandler = (e) => {
       if (!isDragging) return
 
       const container = this.shadowRoot.querySelector('.container')
@@ -486,15 +499,18 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
         rightPane.style.width = `${100 - leftPercent}%`
         this.updateLines()
       }
-    })
+    }
 
-    document.addEventListener('mouseup', () => {
+    this._splitterMouseupHandler = () => {
       if (isDragging) {
         isDragging = false
         document.body.style.cursor = ''
         this.enableTransitions()
       }
-    })
+    }
+
+    document.addEventListener('mousemove', this._splitterMousemoveHandler)
+    document.addEventListener('mouseup', this._splitterMouseupHandler)
   }
 
   async updateTranscriptionImages(pageID) {

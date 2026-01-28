@@ -1,5 +1,6 @@
 import './Alert.js'
 import { eventDispatcher } from '../../../api/events.js'
+import { CleanupRegistry } from '../../../utilities/CleanupRegistry.js'
 
 /**
  * AlertContainer - Global container for displaying alert dialogs.
@@ -8,8 +9,8 @@ import { eventDispatcher } from '../../../api/events.js'
  */
 class AlertContainer extends HTMLElement {
     #screenLockingSection
-    /** @type {Function|null} Handler for alert events */
-    _alertHandler = null
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
 
     constructor() {
         super()
@@ -18,14 +19,12 @@ class AlertContainer extends HTMLElement {
     }
 
     connectedCallback() {
-        this._alertHandler = ({ detail }) => this.addAlert(detail?.message, detail?.buttonText)
-        eventDispatcher.on('tpen-alert', this._alertHandler)
+        const alertHandler = ({ detail }) => this.addAlert(detail?.message, detail?.buttonText)
+        this.cleanup.onEvent(eventDispatcher, 'tpen-alert', alertHandler)
     }
 
     disconnectedCallback() {
-        if (this._alertHandler) {
-            eventDispatcher.off('tpen-alert', this._alertHandler)
-        }
+        this.cleanup.run()
     }
 
     /**

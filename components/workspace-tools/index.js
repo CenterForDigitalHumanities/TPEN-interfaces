@@ -1,6 +1,7 @@
 import TPEN from "../../api/TPEN.js"
 import CheckPermissions from "../check-permissions/checkPermissions.js"
 import { onProjectReady } from "../../utilities/projectReady.js"
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 import "../../components/quicktype-tool/index.js"
 import "../../components/splitscreen-tool/index.js"
 import "../../components/page-tool/index.js"
@@ -12,6 +13,8 @@ import { MagnifierTool, showMagnifier } from "../magnifier-tool/index.js"
  * @element tpen-workspace-tools
  */
 export default class WorkspaceTools extends HTMLElement {
+  /** @type {CleanupRegistry} Registry for cleanup handlers */
+  cleanup = new CleanupRegistry()
   /** @type {Function|null} Unsubscribe function for project ready listener */
   _unsubProject = null
   /** @type {Function|null} Handler for magnifier escape key */
@@ -42,10 +45,7 @@ export default class WorkspaceTools extends HTMLElement {
 
   disconnectedCallback() {
     try { this._unsubProject?.() } catch {}
-    // Clean up magnifier escape handler
-    if (this._magnifierEscHandler) {
-      window.removeEventListener("keydown", this._magnifierEscHandler)
-    }
+    this.cleanup.run()
     // Remove magnifier tool from DOM if it was added
     if (this.magnifierTool?.parentNode) {
       this.magnifierTool.remove()
@@ -130,12 +130,7 @@ export default class WorkspaceTools extends HTMLElement {
     `
 
   this.magnifierBtn = this.shadowRoot.querySelector(".magnifier-btn")
-  
-  // Remove old event listener if it exists to prevent duplicates
-  if (this._magnifierClickHandler && this.magnifierBtn) {
-    this.magnifierBtn.removeEventListener("click", this._magnifierClickHandler)
-  }
-  
+
   // Store the handler so we can remove it later if render() is called again
   this._magnifierClickHandler = () => {
     const iface = document.querySelector('[data-interface-type="transcription"]')
@@ -157,10 +152,6 @@ export default class WorkspaceTools extends HTMLElement {
     if (this.magnifierTool.isMagnifierVisible) {
       this.magnifierTool.hideMagnifier()
       fragmentEl?.style.removeProperty("z-index")
-      if (this._magnifierEscHandler) {
-        window.removeEventListener("keydown", this._magnifierEscHandler)
-        this._magnifierEscHandler = null
-      }
       this.magnifierBtn.blur()
       return
     }
@@ -175,15 +166,13 @@ export default class WorkspaceTools extends HTMLElement {
         this.magnifierTool.hideMagnifier()
         fragmentEl?.style.removeProperty("z-index")
         this.magnifierBtn.blur()
-        window.removeEventListener("keydown", this._magnifierEscHandler)
-        this._magnifierEscHandler = null
       }
     }
-    window.addEventListener("keydown", this._magnifierEscHandler)
+    this.cleanup.onWindow("keydown", this._magnifierEscHandler)
   }
-  
+
   if (this.magnifierBtn) {
-    this.magnifierBtn.addEventListener("click", this._magnifierClickHandler)
+    this.cleanup.onElement(this.magnifierBtn, "click", this._magnifierClickHandler)
   }
   }
 }
