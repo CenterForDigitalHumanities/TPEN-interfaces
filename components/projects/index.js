@@ -1,4 +1,5 @@
 import TPEN from "../../api/TPEN.js"
+import { CleanupRegistry } from "../../utilities/CleanupRegistry.js"
 
 /**
  * ProjectsList - Displays a list of user's projects with optional management controls.
@@ -10,8 +11,8 @@ export default class ProjectsList extends HTMLElement {
     }
 
     #projects = []
-    /** @type {Function|null} Handler for authentication events */
-    _authHandler = null
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
 
     get projects() {
         return this.#projects
@@ -29,7 +30,7 @@ export default class ProjectsList extends HTMLElement {
 
     connectedCallback() {
         TPEN.attachAuthentication(this)
-        this._authHandler = async (ev) => {
+        this.cleanup.onEvent(TPEN.eventDispatcher, "tpen-authenticated", async (ev) => {
             try {
                 this.projects = await TPEN.getUserProjects(ev.detail)
             } catch (error) {
@@ -38,14 +39,11 @@ export default class ProjectsList extends HTMLElement {
                     status: error.status
                 })
             }
-        }
-        TPEN.eventDispatcher.on("tpen-authenticated", this._authHandler)
+        })
     }
 
     disconnectedCallback() {
-        if (this._authHandler) {
-            TPEN.eventDispatcher.off("tpen-authenticated", this._authHandler)
-        }
+        this.cleanup.run()
     }
 
     attributeChangedCallback(name, oldValue, newValue) {

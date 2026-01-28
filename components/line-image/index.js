@@ -1,4 +1,5 @@
 import { decodeContentState } from '../iiif-tools/index.js'
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 
 const CANVAS_PANEL_SCRIPT = document.createElement('script')
 CANVAS_PANEL_SCRIPT.src = "https://cdn.jsdelivr.net/npm/@digirati/canvas-panel-web-components@latest"
@@ -134,8 +135,8 @@ customElements.define('tpen-line-image', TpenLineImage)
 class TpenImageFragment extends HTMLElement {
     #lineImage = new Image()
     #canvas
-    /** @type {Function|null} Handler for canvas change events */
-    _canvasChangeHandler = null
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
 
     get lineImage() {
         return this.#lineImage
@@ -200,26 +201,23 @@ class TpenImageFragment extends HTMLElement {
     }
 
     connectedCallback() {
-        this._canvasChangeHandler = (event) => {
+        this.cleanup.onDocument('canvas-change', (event) => {
             fetch(event.detail.canvasId)
-            .then(res => res.json())
-            .then(canvas => {
-                this.#canvas = canvas
-                this.setContainerStyle()
-                const imageResource = canvas?.items?.[0]?.items?.[0]?.body?.id ?? canvas?.images?.[0]?.resource?.id
+                .then(res => res.json())
+                .then(canvas => {
+                    this.#canvas = canvas
+                    this.setContainerStyle()
+                    const imageResource = canvas?.items?.[0]?.items?.[0]?.body?.id ?? canvas?.images?.[0]?.resource?.id
                     if (imageResource) {
                         this.#lineImage.src = imageResource
                     }
                 })
                 .catch(console.error)
-        }
-        document.addEventListener('canvas-change', this._canvasChangeHandler)
+        })
     }
 
     disconnectedCallback() {
-        if (this._canvasChangeHandler) {
-            document.removeEventListener('canvas-change', this._canvasChangeHandler)
-        }
+        this.cleanup.run()
     }
 
     moveUnder(x, y, width, height, topImage) {

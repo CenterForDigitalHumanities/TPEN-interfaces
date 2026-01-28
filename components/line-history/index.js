@@ -12,6 +12,7 @@ import TPEN from '../../api/TPEN.js'
 import '../line-image/index.js'
 import CheckPermissions from '../check-permissions/checkPermissions.js'
 import { onProjectReady } from '../../utilities/projectReady.js'
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 import { RerumHistoryData } from 'https://cubap.github.io/rerum-history-component/src/rerum-history-tree.js'
 
 /**
@@ -21,10 +22,10 @@ import { RerumHistoryData } from 'https://cubap.github.io/rerum-history-componen
  * @extends HTMLElement
  */
 class TPENLineHistory extends HTMLElement {
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
     /** @type {Function|null} Unsubscribe function for project ready listener */
     _unsubProject = null
-    /** @type {Function|null} Handler for line update events */
-    _lineUpdateHandler = null
 
     constructor() {
         super()
@@ -60,10 +61,7 @@ class TPENLineHistory extends HTMLElement {
             this.rerumHistoryData.abort()
             this.rerumHistoryData = null
         }
-        // Clean up event dispatcher listener
-        if (this._lineUpdateHandler) {
-            TPEN.eventDispatcher.off('tpen-active-line-updated', this._lineUpdateHandler)
-        }
+        this.cleanup.run()
     }
 
     /**
@@ -71,10 +69,9 @@ class TPENLineHistory extends HTMLElement {
      */
     addEventListeners() {
         // Listen for active line changes from TPEN.eventDispatcher
-        this._lineUpdateHandler = (event) => {
+        this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-active-line-updated', (event) => {
             this.handleLineChange(event.detail)
-        }
-        TPEN.eventDispatcher.on('tpen-active-line-updated', this._lineUpdateHandler)
+        })
     }
 
     /**

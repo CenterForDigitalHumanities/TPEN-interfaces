@@ -6,10 +6,11 @@
 
 import TPEN from "../../api/TPEN.js"
 import { eventDispatcher } from "../../api/events.js"
+import { CleanupRegistry } from "../../utilities/CleanupRegistry.js"
 
 class AuthButton extends HTMLElement {
-  /** @type {Function|null} Handler for authentication events */
-  _authHandler = null
+  /** @type {CleanupRegistry} Registry for cleanup handlers */
+  cleanup = new CleanupRegistry()
 
   constructor() {
     super()
@@ -21,20 +22,17 @@ class AuthButton extends HTMLElement {
     this.shadowRoot.innerHTML = ''
     const button = document.createElement("button")
     button.innerText = "LOGIN"
-    this._authHandler = () => {
+    this.cleanup.onEvent(eventDispatcher, "tpen-authenticated", () => {
       button.setAttribute("loggedIn", true)
       button.innerText = "LOGOUT"
-    }
-    eventDispatcher.on("tpen-authenticated", this._authHandler)
+    })
     button.addEventListener('click', () => this[button.getAttribute("loggedIn") ? 'logout' : 'login']())
     TPEN.attachAuthentication(this)
     this.shadowRoot.append(button)
   }
 
   disconnectedCallback() {
-    if (this._authHandler) {
-      eventDispatcher.off("tpen-authenticated", this._authHandler)
-    }
+    this.cleanup.run()
   }
 
   /**

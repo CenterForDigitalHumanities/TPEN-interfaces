@@ -3,6 +3,7 @@ import Project from "../../api/Project.js"
 import "../../components/line-image/index.js"
 import CheckPermissions from "../check-permissions/checkPermissions.js"
 import { onProjectReady } from "../../utilities/projectReady.js"
+import { CleanupRegistry } from "../../utilities/CleanupRegistry.js"
 
 /**
  * ProjectDetails - Displays project title, owner, collaborator count, and thumbnail.
@@ -10,10 +11,10 @@ import { onProjectReady } from "../../utilities/projectReady.js"
  * @element tpen-project-details
  */
 class ProjectDetails extends HTMLElement {
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
     /** @type {Function|null} Unsubscribe function for project ready listener */
     _unsubProject = null
-    /** @type {Function|null} Handler for project load failed events */
-    _loadFailedHandler = null
 
     style = `
     sequence-panel {
@@ -83,7 +84,7 @@ class ProjectDetails extends HTMLElement {
     connectedCallback() {
         TPEN.attachAuthentication(this)
         this._unsubProject = onProjectReady(this, this.authgate)
-        this._loadFailedHandler = (err) => {
+        this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-project-load-failed', (err) => {
             this.shadowRoot.innerHTML = `
                 <style>${this.style}</style>
                 <h3>Project not found</h3>
@@ -93,8 +94,7 @@ class ProjectDetails extends HTMLElement {
                 message: `Project failed to load: ${err.message}`,
                 status: "error"
             })
-        }
-        TPEN.eventDispatcher.on('tpen-project-load-failed', this._loadFailedHandler)
+        })
     }
 
     /**
@@ -114,9 +114,7 @@ class ProjectDetails extends HTMLElement {
 
     disconnectedCallback() {
         try { this._unsubProject?.() } catch {}
-        if (this._loadFailedHandler) {
-            TPEN.eventDispatcher.off('tpen-project-load-failed', this._loadFailedHandler)
-        }
+        this.cleanup.run()
     }
 
     render() {

@@ -1,5 +1,6 @@
 import TPEN from '../../api/TPEN.js'
 import User from '../../api/User.js'
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 
 /**
  * UserProfile - Displays and allows editing of user profile information.
@@ -10,8 +11,8 @@ class UserProfile extends HTMLElement {
         return ['tpen-user-id']
     }
     user = TPEN.currentUser
-    /** @type {Function|null} Handler for user loaded events */
-    _userLoadedHandler = null
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
 
     constructor() {
         super()
@@ -20,18 +21,15 @@ class UserProfile extends HTMLElement {
 
     connectedCallback() {
         TPEN.attachAuthentication(this)
-        this._userLoadedHandler = ev => {
+        this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-user-loaded', ev => {
             this.render(ev.detail)
             this.updateProfile(ev.detail)
             this.user = ev.detail
-        }
-        TPEN.eventDispatcher.on('tpen-user-loaded', this._userLoadedHandler)
+        })
     }
 
     disconnectedCallback() {
-        if (this._userLoadedHandler) {
-            TPEN.eventDispatcher.off('tpen-user-loaded', this._userLoadedHandler)
-        }
+        this.cleanup.run()
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
