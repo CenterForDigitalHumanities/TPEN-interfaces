@@ -1,6 +1,14 @@
 import TPEN from "../../api/TPEN.js"
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 
+/**
+ * TpenFeedback - Feedback submission form component.
+ * @element tpen-feedback
+ */
 class TpenFeedback extends HTMLElement {
+  /** @type {CleanupRegistry} Registry for cleanup handlers */
+  cleanup = new CleanupRegistry()
+
   constructor() {
     super()
     this.attachShadow({ mode: "open" })
@@ -9,6 +17,10 @@ class TpenFeedback extends HTMLElement {
 
   connectedCallback() {
     this.setupEventListeners()
+  }
+
+  disconnectedCallback() {
+    this.cleanup.run()
   }
 
   // FIXME we copied the :root rules from /components/gui/site/index.css.  Importing it was too much.
@@ -76,7 +88,7 @@ class TpenFeedback extends HTMLElement {
 
   setupEventListeners() {
     const submitButton = this.shadowRoot.getElementById("submit-feedback")
-    submitButton.addEventListener("click", async () => {
+    const submitHandler = async () => {
       const description = this.shadowRoot.getElementById("feedback-description").value.trim()
       if (!description) {
         const descriptionField = this.shadowRoot.getElementById("feedback-description")
@@ -103,7 +115,8 @@ class TpenFeedback extends HTMLElement {
           type: "error"
         })
       }
-    })
+    }
+    this.cleanup.onElement(submitButton, "click", submitHandler)
   }
 
   /**

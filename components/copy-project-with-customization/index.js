@@ -2,7 +2,12 @@ import Project from '../../api/Project.js'
 import TPEN from '../../api/TPEN.js'
 import User from '../../api/User.js'
 import { getUserFromToken } from "../iiif-tools/index.js"
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 
+/**
+ * CopyExistingProjectWithCustomizations - Allows users to copy a project with selective customizations.
+ * @element tpen-copy-existing-project-with-customizations
+ */
 class CopyExistingProjectWithCustomizations extends HTMLElement {
     #modules = {
         "Metadata": true,
@@ -12,14 +17,21 @@ class CopyExistingProjectWithCustomizations extends HTMLElement {
         "Layers": true
     }
 
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
+
     constructor() {
         super()
         this.attachShadow({ mode: 'open' })
-        TPEN.attachAuthentication(this)
     }
 
     connectedCallback() {
+        TPEN.attachAuthentication(this)
         this.load()
+    }
+
+    disconnectedCallback() {
+        this.cleanup.run()
     }
 
     async load() {

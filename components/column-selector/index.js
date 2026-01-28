@@ -83,7 +83,7 @@ export default class ColumnSelector extends HTMLElement {
         return `Unlabeled column: ${data["id"]}`
     }
 
-    async render() {
+    render() {
         let optionsHtml = this.columns.map((column) => {
             const label = this.getLabel(column)
             return `<option value="${column["id"]}">${label}</option>`
@@ -122,7 +122,7 @@ export default class ColumnSelector extends HTMLElement {
         selectEl.addEventListener("change", (e) => this.selectColumn(e))
     }
 
-    async selectColumn(e) {
+    selectColumn(e) {
         const selected = e.target.value
 
         if (selected === "unordered-lines") {

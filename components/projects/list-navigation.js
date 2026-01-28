@@ -1,9 +1,17 @@
 import TPEN from "../../api/TPEN.js"
 import CheckPermissions from "../check-permissions/checkPermissions.js"
 import Project from "../../api/Project.js"
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 
+/**
+ * ProjectsListNavigation - Displays a navigable list of user's projects.
+ * @element tpen-projects-list-navigation
+ */
 export default class ProjectsListNavigation extends HTMLElement {
     #projects = []
+
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
 
     constructor() {
         super()
@@ -106,8 +114,12 @@ export default class ProjectsListNavigation extends HTMLElement {
         placeholderItem.innerHTML = `<a href="#">Loading...</a>`
         projectList.append(...Array.from({ length: 5 }, () => placeholderItem.cloneNode(true)))
         this.shadowRoot.prepend(style, projectList)
+    }
 
-        TPEN.eventDispatcher.on("tpen-authenticated", async (ev) => {
+    connectedCallback() {
+        TPEN.attachAuthentication(this)
+
+        this.cleanup.onEvent(TPEN.eventDispatcher, "tpen-authenticated", async (ev) => {
             try {
                 this.projects = await TPEN.getUserProjects(ev.detail)
             } catch (error) {
@@ -125,13 +137,14 @@ export default class ProjectsListNavigation extends HTMLElement {
         })
 
         // Handle empty recent activity signal from other components via central dispatcher
-        TPEN.eventDispatcher.on('tpen-no-recent-activity', () => {
+        this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-no-recent-activity', () => {
             // Show the welcome/empty state message
             this.projects = []
         })
     }
-    async connectedCallback() {
-        TPEN.attachAuthentication(this)
+
+    disconnectedCallback() {
+        this.cleanup.run()
     }
     set projects(projects) {
         this.#projects = projects

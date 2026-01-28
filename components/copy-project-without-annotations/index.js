@@ -1,16 +1,28 @@
 import TPEN from '../../api/TPEN.js'
 import User from '../../api/User.js'
 import { getUserFromToken } from "../iiif-tools/index.js"
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 
+/**
+ * CopyExistingProjectWithoutAnnotations - Allows users to copy a project without annotations.
+ * @element tpen-copy-existing-project-without-annotations
+ */
 class CopyExistingProjectWithoutAnnotations extends HTMLElement {
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
+
     constructor() {
         super()
         this.attachShadow({ mode: 'open' })
-        TPEN.attachAuthentication(this)
     }
 
     connectedCallback() {
+        TPEN.attachAuthentication(this)
         this.load()
+    }
+
+    disconnectedCallback() {
+        this.cleanup.run()
     }
 
     async load() {

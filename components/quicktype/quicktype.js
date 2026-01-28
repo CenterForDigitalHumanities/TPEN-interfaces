@@ -1,16 +1,21 @@
 import TPEN from "../../api/TPEN.js"
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 
 const eventDispatcher = TPEN.eventDispatcher
 
+/**
+ * TpenQuickType - Quicktype shortcut panel for transcription interfaces.
+ * @element tpen-quicktype
+ */
 class TpenQuickType extends HTMLElement {
+  /** @type {CleanupRegistry} Registry for cleanup handlers */
+  cleanup = new CleanupRegistry()
+
   constructor() {
     super()
     this.attachShadow({ mode: 'open' })
     this._quicktype = []
-    TPEN.attachAuthentication(this)
-    eventDispatcher.on("tpen-project-loaded", () => this.loadQuickType())
   }
-
 
   get quicktype() {
     return this._quicktype
@@ -61,11 +66,17 @@ class TpenQuickType extends HTMLElement {
 
 
   connectedCallback() {
+    TPEN.attachAuthentication(this)
+    this.cleanup.onEvent(eventDispatcher, "tpen-project-loaded", () => this.loadQuickType())
     this.render()
     this.setupEventListeners()
     if (TPEN.activeProject) {
       this.loadQuickType()
     }
+  }
+
+  disconnectedCallback() {
+    this.cleanup.run()
   }
 
   render() {

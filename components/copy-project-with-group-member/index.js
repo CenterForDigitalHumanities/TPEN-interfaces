@@ -1,16 +1,28 @@
 import TPEN from '../../api/TPEN.js'
 import User from '../../api/User.js'
 import { getUserFromToken } from "../iiif-tools/index.js"
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 
+/**
+ * CopyProjectWithGroupMember - Allows users to copy a project with group members.
+ * @element tpen-copy-project-with-group-member
+ */
 class CopyProjectWithGroupMember extends HTMLElement {
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
+
     constructor() {
         super()
         this.attachShadow({ mode: 'open' })
-        TPEN.attachAuthentication(this)
     }
 
     connectedCallback() {
+        TPEN.attachAuthentication(this)
         this.load()
+    }
+
+    disconnectedCallback() {
+        this.cleanup.run()
     }
 
     async load() {

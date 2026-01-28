@@ -37,8 +37,7 @@ class ProjectPermissions extends HTMLElement {
         try { this._unsubProject?.() } catch {}
     }
 
-    async render() {
-        
+    render() {
         this.shadowRoot.innerHTML = `
             <style>
                 .roles-list {

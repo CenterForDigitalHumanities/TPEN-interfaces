@@ -33,14 +33,14 @@ class ManageRole extends HTMLElement {
             this.shadowRoot.innerHTML = `<div>You don't have permission to create or edit roles</div>`
             return
         }
-        this.render()
+        this.loadCustomRoles()
     }
 
     disconnectedCallback() {
         try { this._unsubProject?.() } catch {}
     }
 
-    async render() {
+    async loadCustomRoles() {
         const group = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/customRoles`, {
             method: 'GET',
             headers: {
@@ -48,6 +48,10 @@ class ManageRole extends HTMLElement {
                 'Authorization': `Bearer ${TPEN.getAuthorization()}`
             }
         }).then(response => response.json())
+        this.render(group)
+    }
+
+    render(group) {
         this.shadowRoot.innerHTML = `
             <style>
                 h3 {

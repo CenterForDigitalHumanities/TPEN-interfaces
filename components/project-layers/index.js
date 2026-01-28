@@ -37,8 +37,7 @@ class ProjectLayers extends HTMLElement {
         try { this._unsubProject?.() } catch {}
     }
 
-    async render() {
-        
+    render() {
         const layers = TPEN.activeProject.layers
         this.shadowRoot.innerHTML = `
             <style>

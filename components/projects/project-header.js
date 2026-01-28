@@ -3,8 +3,18 @@ const eventDispatcher = TPEN.eventDispatcher
 import "../layer-selector/index.js"
 import "../column-selector/index.js"
 import CheckPermissions from "../check-permissions/checkPermissions.js"
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
+
+/**
+ * ProjectHeader - Navigation header for transcription interface with canvas selection.
+ * Requires PROJECT ANY view access.
+ * @element tpen-project-header
+ */
 export default class ProjectHeader extends HTMLElement {
     loadFailed = false
+
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
 
     constructor() {
         super()
@@ -28,31 +38,37 @@ export default class ProjectHeader extends HTMLElement {
         this.content = document.createElement('div')
         this.content.id = 'content'
         this.shadowRoot.appendChild(this.content)
-        eventDispatcher.on("tpen-user-loaded", (ev) => (this.currentUser = ev.detail))
+    }
+
+    connectedCallback() {
+        TPEN.attachAuthentication(this)
+
         const setLineIndicator = index => {
             const indicator = this.shadowRoot.querySelector('.line-indicator')
             if (!indicator) return
             indicator.textContent = `Line ${index ?? ''}`
         }
 
-        eventDispatcher.on("tpen-transcription-previous-line", () => {
+        this.cleanup.onEvent(eventDispatcher, "tpen-user-loaded", (ev) => (this.currentUser = ev.detail))
+        this.cleanup.onEvent(eventDispatcher, "tpen-transcription-previous-line", () => {
             setLineIndicator(TPEN.activeLineIndex + 1)
         })
-        eventDispatcher.on("tpen-transcription-next-line", () => {
+        this.cleanup.onEvent(eventDispatcher, "tpen-transcription-next-line", () => {
             setLineIndicator(TPEN.activeLineIndex + 1)
         })
-        eventDispatcher.on("tpen-project-load-failed", () => {
+        this.cleanup.onEvent(eventDispatcher, "tpen-project-load-failed", () => {
             this.loadFailed = true
             this.render()
         })
-    }
+        this.cleanup.onEvent(eventDispatcher, 'tpen-project-loaded', this.authgate.bind(this))
 
-    connectedCallback() {
-        TPEN.attachAuthentication(this)
         if(TPEN.activeProject?._createdAt){
             this.authgate()
         }
-        eventDispatcher.on('tpen-project-loaded', this.authgate.bind(this))
+    }
+
+    disconnectedCallback() {
+        this.cleanup.run()
     }
 
     authgate() {

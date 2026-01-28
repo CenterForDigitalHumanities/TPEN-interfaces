@@ -1,4 +1,5 @@
 import { checkIfUrlExists } from '../../utilities/checkIfUrlExists.js'
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 
 /**
  * ReadOnlyViewTranscribe - Public read-only view of transcription data from static manifest.
@@ -6,7 +7,7 @@ import { checkIfUrlExists } from '../../utilities/checkIfUrlExists.js'
  * @element tpen-read-only-view-transcribe
  */
 class ReadOnlyViewTranscribe extends HTMLElement {
-    #osd 
+    #osd
     #annotoriousInstance
     #annotationPageID
     #resolvedAnnotationPage
@@ -15,6 +16,9 @@ class ReadOnlyViewTranscribe extends HTMLElement {
     #canvasDims
     #currentPage
     _currentCanvas
+
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
 
     constructor() {
         super()
@@ -212,16 +216,16 @@ class ReadOnlyViewTranscribe extends HTMLElement {
             </div>
         `
 
-        this.shadowRoot.getElementById("nextPage").addEventListener("click", () => this.openPage(this.currentPage + 1))
-        this.shadowRoot.getElementById("prevPage").addEventListener("click", () => this.openPage(this.currentPage - 1))
+        this.cleanup.onElement(this.shadowRoot.getElementById("nextPage"), "click", () => this.openPage(this.currentPage + 1))
+        this.cleanup.onElement(this.shadowRoot.getElementById("prevPage"), "click", () => this.openPage(this.currentPage - 1))
 
-        this.shadowRoot.getElementById("layerSelect").addEventListener("change", (e) => {
+        this.cleanup.onElement(this.shadowRoot.getElementById("layerSelect"), "change", (e) => {
             this.currentLayer = e.target.value
             this.populateCanvasDropdown()
             if (this.pages.length > 0) this.openPage(0)
         })
 
-        this.shadowRoot.getElementById("canvasSelect").addEventListener("change", (e) => {
+        this.cleanup.onElement(this.shadowRoot.getElementById("canvasSelect"), "change", (e) => {
             const canvasIndex = this.pages.indexOf(e.target.value)
             if (canvasIndex !== -1) this.openPage(canvasIndex)
         })
@@ -236,6 +240,16 @@ class ReadOnlyViewTranscribe extends HTMLElement {
             }
             setTimeout(() => { this.processPage(this.#annotationPageID) }, 200)
         }, 200)
+    }
+
+    disconnectedCallback() {
+        this.cleanup.run()
+        if (this.#osd) {
+            try { this.#osd.destroy() } catch {}
+        }
+        if (this.#annotoriousInstance) {
+            try { this.#annotoriousInstance.destroy() } catch {}
+        }
     }
 
     async loadExternalScripts() {

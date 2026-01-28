@@ -1,11 +1,19 @@
 import TPEN from '../../api/TPEN.js'
 import User from '../../api/User.js'
 import Project from '../../api/Project.js'
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 
+/**
+ * ContributionActivity - Displays user's contribution activity across projects.
+ * @element contribution-activity
+ */
 class ContributionActivity extends HTMLElement {
     static get observedAttributes() {
         return ['tpen-user-id']
     }
+
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
 
     constructor() {
         super()
@@ -13,10 +21,14 @@ class ContributionActivity extends HTMLElement {
     }
 
     connectedCallback() {
-        TPEN.eventDispatcher.on('tpen-user-loaded', async ev => {
+        this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-user-loaded', async ev => {
             await this.render(await TPEN.getUserProjects(TPEN.getAuthorization()))
         })
         TPEN.attachAuthentication(this)
+    }
+
+    disconnectedCallback() {
+        this.cleanup.run()
     }
 
     attributeChangedCallback(name, oldValue, newValue) {

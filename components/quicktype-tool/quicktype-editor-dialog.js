@@ -1,10 +1,18 @@
 import TPEN from "../../api/TPEN.js"
 import { evaluateEntry } from '../quicktype/validation.js'
 import { escapeHtml } from "../../js/utils.js"
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 
 const eventDispatcher = TPEN.eventDispatcher
 
+/**
+ * QuickTypeEditorDialog - Dialog for editing quicktype shortcuts.
+ * @element tpen-quicktype-editor-dialog
+ */
 class QuickTypeEditorDialog extends HTMLElement {
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
+
     constructor() {
         super()
         this.attachShadow({ mode: "open" })
@@ -16,6 +24,10 @@ class QuickTypeEditorDialog extends HTMLElement {
 
     connectedCallback() {
         this.render()
+    }
+
+    disconnectedCallback() {
+        this.cleanup.run()
     }
 
     open(quicktypeArray) {

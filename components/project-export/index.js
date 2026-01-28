@@ -31,16 +31,14 @@ customElements.define('tpen-project-export', class extends HTMLElement {
             this.shadowRoot.innerHTML = `<p>You don't have permission to view project export</p>`
             return
         }
-        this.render()
+        this.loadDeploymentStatus()
     }
 
     disconnectedCallback() {
         try { this._unsubProject?.() } catch {}
     }
 
-    async render() {
-        
-        const url = `${TPEN.staticURL}/${TPEN.activeProject._id}/manifest.json`
+    async loadDeploymentStatus() {
         const response = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/deploymentStatus`, {
             method: 'GET',
             headers: {
@@ -52,6 +50,11 @@ customElements.define('tpen-project-export', class extends HTMLElement {
                 const errStatus = await response.json()
                 return errStatus
             })
+        this.render(response)
+    }
+
+    render(response) {
+        const url = `${TPEN.staticURL}/${TPEN.activeProject._id}/manifest.json`
         this.shadowRoot.innerHTML = `
             <style>
                 a, .success {

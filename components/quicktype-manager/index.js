@@ -2,6 +2,8 @@ import TPEN from '../../api/TPEN.js'
 import { escapeHtml } from '/js/utils.js'
 import { evaluateEntry } from '../quicktype/validation.js'
 import '../quicktype-tool/quicktype-editor-dialog.js'
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
+import { onProjectReady } from '../../utilities/projectReady.js'
 
 export const PRESET_COLLECTIONS = {
     'Old English': ['Þ', 'þ', 'Ð', 'ð', 'Æ', 'æ', 'Ȝ', 'ȝ'],
@@ -14,7 +16,17 @@ export const PRESET_COLLECTIONS = {
     'Currency': ['€', '£', '¥', '₹', '₽', '₩', '₪', '₦', '₱', '฿']
 }
 
+/**
+ * QuickTypeManager - Interface for managing quicktype shortcuts in a project.
+ * Requires project access.
+ * @element tpen-quicktype-manager
+ */
 class QuickTypeManager extends HTMLElement {
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
+    /** @type {Function|null} Unsubscribe function for project ready listener */
+    _unsubProject = null
+
     constructor() {
         super()
         this.attachShadow({ mode: 'open' })
@@ -24,11 +36,21 @@ class QuickTypeManager extends HTMLElement {
 
     connectedCallback() {
         TPEN.attachAuthentication(this)
-        TPEN.eventDispatcher.on('tpen-project-loaded', () => {
-            this.loadShortcuts()
-            this.render()
-            this.setupEventListeners()
-        })
+        this._unsubProject = onProjectReady(this, this.authgate)
+    }
+
+    /**
+     * Authorization gate - loads shortcuts and renders after project is ready.
+     */
+    authgate() {
+        this.loadShortcuts()
+        this.render()
+        this.setupEventListeners()
+    }
+
+    disconnectedCallback() {
+        try { this._unsubProject?.() } catch {}
+        this.cleanup.run()
     }
 
     loadShortcuts() {

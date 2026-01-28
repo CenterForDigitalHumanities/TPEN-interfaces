@@ -82,7 +82,7 @@ class ProjectDetails extends HTMLElement {
 
     connectedCallback() {
         TPEN.attachAuthentication(this)
-        this._unsubProject = onProjectReady(this, this.render)
+        this._unsubProject = onProjectReady(this, this.authgate)
         this._loadFailedHandler = (err) => {
             this.shadowRoot.innerHTML = `
                 <style>${this.style}</style>
@@ -97,6 +97,21 @@ class ProjectDetails extends HTMLElement {
         TPEN.eventDispatcher.on('tpen-project-load-failed', this._loadFailedHandler)
     }
 
+    /**
+     * Authorization gate - checks permissions before rendering.
+     * Shows permission message if user lacks PROJECT view access.
+     */
+    authgate() {
+        if (!CheckPermissions.checkViewAccess('PROJECT', '*')) {
+            this.shadowRoot.innerHTML = `
+                <style>${this.style}</style>
+                <p class="permission-msg">You don't have permission to view the Project Details</p>
+            `
+            return
+        }
+        this.render()
+    }
+
     disconnectedCallback() {
         try { this._unsubProject?.() } catch {}
         if (this._loadFailedHandler) {
@@ -104,7 +119,7 @@ class ProjectDetails extends HTMLElement {
         }
     }
 
-    async render() {
+    render() {
         const project = this.Project ?? TPEN.activeProject
         const projectOwner = Object.entries(project.collaborators).find(([userID, u]) => u.roles.includes('OWNER'))?.[1].profile.displayName
         const collaboratorCount = Object.keys(project.collaborators).length
@@ -113,12 +128,10 @@ class ProjectDetails extends HTMLElement {
         const isManagePage = window.location.pathname === '/project/manage' || window.location.pathname.startsWith('/project/manage/')
         const displayTitle = isManagePage ? `Manage Project "${TPEN.screen.title}"` : TPEN.screen.title
         TPEN.eventDispatcher.dispatch('tpen-gui-title', displayTitle)
-        const isReadAccess = CheckPermissions.checkViewAccess('PROJECT')
         const isProjectEditor = CheckPermissions.checkEditAccess('PROJECT', 'METADATA')
         const editTitle = isProjectEditor ? `<a id="edit-project-title" href="#">✏️</a>` : ``
-        
-        isReadAccess ? 
-        (this.shadowRoot.innerHTML = `
+
+        this.shadowRoot.innerHTML = `
             <style>${this.style}</style>
             <div class="project-title-input-container">
                 <h3 class="project-title">${TPEN.screen.title}</h3>
@@ -130,10 +143,8 @@ class ProjectDetails extends HTMLElement {
                 ${collaboratorCount < 3 ? "Collaborators: "+Object.entries(project.collaborators).map(([userID, u]) => u.profile.displayName).join(', ') : `${collaboratorCount} collaborator${collaboratorCount===1? '' : 's'}`}
             </p>
             <sequence-panel manifest-id="${project.manifest}"></sequence-panel>
-        `) : (this.shadowRoot.innerHTML = `
-            <p class="permission-msg">You don't have permission to view the Project Details</p>
-        `)
-        if(!isProjectEditor) return
+        `
+        if (!isProjectEditor) return
         this.shadowRoot.getElementById('edit-project-title').addEventListener('click', (e) => {
             const screenTitle = this.shadowRoot.querySelector('.project-title')
             const editButton = this.shadowRoot.getElementById('edit-project-title')

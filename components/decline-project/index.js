@@ -1,10 +1,18 @@
 import TPEN from "../../api/TPEN.js"
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 
+/**
+ * DeclineInvite - Allows invited users to decline a project invitation.
+ * @element tpen-project-decline-invite
+ */
 class DeclineInvite extends HTMLElement {
     #user
     #email
     #project
     #projectTitle
+
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
 
     constructor() {
         super()
@@ -16,6 +24,10 @@ class DeclineInvite extends HTMLElement {
             <h3> Loading... </h3>
         `
         this.load()
+    }
+
+    disconnectedCallback() {
+        this.cleanup.run()
     }
 
     load() {
@@ -64,7 +76,8 @@ class DeclineInvite extends HTMLElement {
 
     attachEventListeners() {
         const declineBtn = this.shadowRoot.getElementById("declineBtn")
-        declineBtn.addEventListener('click', (ev) => this.declineInvitation(this.#user, this.#project))
+        const declineHandler = () => this.declineInvitation(this.#user, this.#project)
+        this.cleanup.onElement(declineBtn, 'click', declineHandler)
     }
 
     declineInvitation(collaboratorID, projectID) {

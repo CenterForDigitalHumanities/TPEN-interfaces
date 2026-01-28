@@ -2,7 +2,14 @@ import TPEN from "../../api/TPEN.js"
 import { onProjectReady } from "../../utilities/projectReady.js"
 import CheckPermissions from "../check-permissions/checkPermissions.js"
 
+/**
+ * ProjectTools - Displays and manages project tools configuration.
+ * @element tpen-project-tools
+ */
 class ProjectTools extends HTMLElement {
+    /** @type {Function|null} Unsubscribe function for project ready listener */
+    _unsubProject = null
+
     constructor() {
         super()
         this.attachShadow({ mode: "open" })
@@ -10,14 +17,14 @@ class ProjectTools extends HTMLElement {
 
     connectedCallback() {
         TPEN.attachAuthentication(this)
-        onProjectReady(this, this.render)
+        this._unsubProject = onProjectReady(this, this.render)
     }
 
     disconnectedCallback() {
         try { this._unsubProject?.() } catch { }
     }
 
-    async render() {
+    render() {
         const tools = TPEN.activeProject.tools
         const isToolsEditAccess = !this.getAttribute("readonly") && CheckPermissions.checkEditAccess("TOOL")
         this.shadowRoot.innerHTML = `

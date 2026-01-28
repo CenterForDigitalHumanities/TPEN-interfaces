@@ -1,16 +1,28 @@
 import TPEN from '../../api/TPEN.js'
 import User from '../../api/User.js'
 import { getUserFromToken } from "../iiif-tools/index.js"
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 
+/**
+ * CopyExistingProject - Allows users to copy an existing project.
+ * @element tpen-copy-existing-project
+ */
 class CopyExistingProject extends HTMLElement {
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
+
     constructor() {
         super()
         this.attachShadow({ mode: 'open' })
-        TPEN.attachAuthentication(this)
     }
 
     connectedCallback() {
+        TPEN.attachAuthentication(this)
         this.load()
+    }
+
+    disconnectedCallback() {
+        this.cleanup.run()
     }
 
     async load() {
@@ -112,7 +124,7 @@ class CopyExistingProject extends HTMLElement {
             <div id="project-info-container"></div>
         `
 
-        this.shadowRoot.getElementById('copy-project-btn').addEventListener('click', async () => {
+        const copyHandler = async () => {
             const projectSelect = this.shadowRoot.getElementById('project-select')
             const selectedProjectId = projectSelect.value
             if (selectedProjectId === 'none') {
@@ -153,7 +165,9 @@ class CopyExistingProject extends HTMLElement {
             }).catch(error => {
                 this.shadowRoot.getElementById('message').textContent = `Error copying project: ${error.message}`
             })
-        })
+        }
+        const copyBtn = this.shadowRoot.getElementById('copy-project-btn')
+        this.cleanup.onElement(copyBtn, 'click', copyHandler)
     }
 }
 

@@ -1,17 +1,17 @@
-
 /**
  * A plain TPEN Annotator that can draw Rectangles.
  * This is legacy code that was componentized and brought forward.  It was meant to be a simple annotator POC.
  * We are using Annotorious for this now instead.  However, it is likely we will run into a 'parsing interface'
  * for which we will need a completely custom annotator.
- * 
+ *
  * It is exposed to the user through /interfaces/annotator/legacy.html
+ * @element tpen-legacy-annotator
  */
-
 
 import { eventDispatcher } from '../../api/events.js'
 import TPEN from '../../api/TPEN.js'
 import User from '../../api/User.js'
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 
 class LegacyAnnotator extends HTMLElement {
     #isDrawing = false
@@ -20,14 +20,41 @@ class LegacyAnnotator extends HTMLElement {
     #startY
     #creatorURI
     #knownAnnotationPage
+
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
+
     static get observedAttributes() {
         return ['annotationpage']
     }
 
     constructor() {
         super()
-        TPEN.attachAuthentication(this)
         this.attachShadow({ mode: 'open' })
+    }
+
+    async connectedCallback() {
+        TPEN.attachAuthentication(this)
+        this.render()
+        this.addEventListeners()
+        if(!this.#creatorURI) {
+          const tpenUserProfile = await User.fromToken(this.userToken).getProfile()
+          this.#creatorURI = tpenUserProfile.agent.replace("http://", "https://")
+        }
+        this.#isDrawing = false
+        this.#knownAnnotationPage = TPEN.screen.pageInQuery
+        if (!this.#knownAnnotationPage) {
+            alert("You must provide a ?pageID= in the URL.  The value should be the URI of an existing AnnotationPage.")
+            return
+        }
+        this.setAttribute("annotationpage", this.#knownAnnotationPage)
+    }
+
+    disconnectedCallback() {
+        this.cleanup.run()
+    }
+
+    render() {
         this.shadowRoot.innerHTML = `
         <style>
             #uploadedImage {
@@ -81,7 +108,7 @@ class LegacyAnnotator extends HTMLElement {
               </label>
               <label>
                <input type="checkbox" id="eraseTool"> Shape Eraser
-             </label> 
+             </label>
              <input id="saveButton" type="button" value="Save" />
             </div>
             <div id="imageContainer" class="image-container" canvas="">
@@ -89,23 +116,7 @@ class LegacyAnnotator extends HTMLElement {
               <canvas id="imageCanvas"> </canvas>
             </div>
         </div>
-
         `
-        this.listen()
-    }
-
-    async connectedCallback() {
-        if(!this.#creatorURI) {
-          const tpenUserProfile = await User.fromToken(this.userToken).getProfile()
-          this.#creatorURI = tpenUserProfile.agent.replace("http://", "https://")
-        }
-        this.#isDrawing = false
-        this.#knownAnnotationPage = TPEN.screen.pageInQuery
-        if (!this.#knownAnnotationPage) {
-            alert("You must provide a ?pageID= in the URL.  The value should be the URI of an existing AnnotationPage.")
-            return
-        }
-        this.setAttribute("annotationpage", this.#knownAnnotationPage)
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
@@ -115,18 +126,17 @@ class LegacyAnnotator extends HTMLElement {
         }
     }
 
-    listen() {
+    addEventListeners() {
         const imageContainer = this.shadowRoot.getElementById("imageContainer")
-        const uploadedImage = this.shadowRoot.getElementById("uploadedImage")
         const drawTool = this.shadowRoot.getElementById("drawTool")
         const eraseTool = this.shadowRoot.getElementById("eraseTool")
         const saveButton = this.shadowRoot.getElementById("saveButton")
 
-        saveButton.addEventListener("click", (ev) => this.saveAnnotations()) 
-        imageContainer.addEventListener("mousedown", (ev) => this.switchOperation(ev)) 
-        imageContainer.addEventListener("mouseup", () => this.endDrawing())
-        drawTool.addEventListener("change", () => this.toggleDrawingMode())
-        eraseTool.addEventListener("change", () => this.toggleEraseMode())
+        this.cleanup.onElement(saveButton, "click", () => this.saveAnnotations())
+        this.cleanup.onElement(imageContainer, "mousedown", (ev) => this.switchOperation(ev))
+        this.cleanup.onElement(imageContainer, "mouseup", () => this.endDrawing())
+        this.cleanup.onElement(drawTool, "change", () => this.toggleDrawingMode())
+        this.cleanup.onElement(eraseTool, "change", () => this.toggleEraseMode())
     }
 
     switchOperation(event) {

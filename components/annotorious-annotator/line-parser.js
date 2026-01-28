@@ -7,6 +7,7 @@
  * and thanks the Annotorious development team for this open source software.
  * @see https://annotorious.dev/
  * Annotorious licensing information can be found at https://github.com/annotorious/annotorious
+ * @element tpen-line-parser
  */
 
 import TPEN from '../../api/TPEN.js'
@@ -15,9 +16,10 @@ import { getAgentIRIFromToken } from '../iiif-tools/index.js'
 import CheckPermissions from '../check-permissions/checkPermissions.js'
 import { detectTextLinesCombined } from "./detect-lines.js"
 import { v4 as uuidv4 } from "https://cdn.skypack.dev/uuid@9.0.1"
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 
 class AnnotoriousAnnotator extends HTMLElement {
-  #osd 
+  #osd
   #annotoriousInstance
   #annotoriousContainer
   #userForAnnotorious
@@ -34,14 +36,17 @@ class AnnotoriousAnnotator extends HTMLElement {
   #canvasID
   #currentMergeSelection
 
+  /** @type {CleanupRegistry} Registry for cleanup handlers */
+  cleanup = new CleanupRegistry()
+
   constructor() {
     super()
-    TPEN.attachAuthentication(this)
     this.attachShadow({ mode: 'open' })
   }
 
   // Custom component setup
   async connectedCallback() {
+    TPEN.attachAuthentication(this)
     // Must know the User
     if (!this.#userForAnnotorious) {
       const agent = getAgentIRIFromToken(this.userToken)
@@ -57,14 +62,18 @@ class AnnotoriousAnnotator extends HTMLElement {
     }
     // Must know the Project
     this.shadowRoot.innerHTML = "Loading the Annotator.  Please provide a ?projectID= in the URL."
-    TPEN.eventDispatcher.on('tpen-project-loaded', (ev) => this.render())
-    TPEN.eventDispatcher.on('tpen-project-load-failed', (err) => {
+    this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-project-loaded', () => this.render())
+    this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-project-load-failed', (err) => {
       this.shadowRoot.innerHTML = `
           <h3>Project Error</h3>
           <p>The project you are looking for does not exist or you do not have access to it.</p>
           <p> ${err.detail.status}: ${err.detail.statusText} </p>
       `
     })
+  }
+
+  disconnectedCallback() {
+    this.cleanup.run()
   }
 
   // Initialize HTML after loading in a TPEN3 Project

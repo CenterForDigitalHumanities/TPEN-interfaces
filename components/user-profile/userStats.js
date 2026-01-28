@@ -1,11 +1,19 @@
 import TPEN from '../../api/TPEN.js'
 import User from '../../api/User.js'
 import Project from '../../api/Project.js'
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 
+/**
+ * UserStats - Displays user profile card with stats and collaborators.
+ * @element user-stats
+ */
 class UserStats extends HTMLElement {
     static get observedAttributes() {
         return ['tpen-user-id']
     }
+
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
 
     constructor() {
         super()
@@ -13,11 +21,15 @@ class UserStats extends HTMLElement {
     }
 
     connectedCallback() {
-        TPEN.eventDispatcher.on('tpen-user-loaded', async ev => {
+        this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-user-loaded', async ev => {
             await this.render(ev.detail, await TPEN.getUserProjects(TPEN.getAuthorization()))
             this.updateProfile(ev.detail)
         })
         TPEN.attachAuthentication(this)
+    }
+
+    disconnectedCallback() {
+        this.cleanup.run()
     }
 
     attributeChangedCallback(name, oldValue, newValue) {

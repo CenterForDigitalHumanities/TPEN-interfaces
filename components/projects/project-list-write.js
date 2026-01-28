@@ -1,17 +1,27 @@
 import TPEN from "../../api/TPEN.js"
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
+
 const eventDispatcher = TPEN.eventDispatcher
 
+/**
+ * ProjectsManager - Manages user's projects with delete functionality.
+ * @element tpen-projects-manager
+ */
 export default class ProjectsManager extends HTMLElement {
     #projects = [];
+
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
 
     constructor() {
         super()
         this.attachShadow({mode:"open"})
-        eventDispatcher.on("tpen-user-loaded", ev => this.currentUser = ev.detail)
     }
 
     async connectedCallback() {
         TPEN.attachAuthentication(this)
+        this.cleanup.onEvent(eventDispatcher, "tpen-user-loaded", ev => this.currentUser = ev.detail)
+
         if (this.currentUser && this.currentUser._id) {
             try {
                 await this.getProjects()
@@ -23,6 +33,10 @@ export default class ProjectsManager extends HTMLElement {
         } else {
             this.innerHTML = "No user logged in yet."
         }
+    }
+
+    disconnectedCallback() {
+        this.cleanup.run()
     }
 
     render() {
