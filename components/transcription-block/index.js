@@ -67,6 +67,7 @@ export default class TranscriptionBlock extends HTMLElement {
     }
 
     connectedCallback() {
+        TPEN.attachAuthentication(this)
         this._unsubProject = onProjectReady(this, this.authgate)
 
         // UI update handlers for line navigation

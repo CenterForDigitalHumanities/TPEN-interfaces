@@ -1,3 +1,4 @@
+import TPEN from "../../api/TPEN.js"
 import CheckPermissions from "../check-permissions/checkPermissions.js"
 import { onProjectReady } from "../../utilities/projectReady.js"
 import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
@@ -43,7 +44,8 @@ export class MagnifierTool extends HTMLElement {
     }
 
     connectedCallback() {
-    this._unsubProject = onProjectReady(this, this.authgate)
+        TPEN.attachAuthentication(this)
+        this._unsubProject = onProjectReady(this, this.authgate)
     }
 
     authgate() {

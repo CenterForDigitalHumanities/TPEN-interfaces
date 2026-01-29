@@ -25,6 +25,7 @@ export default class TpenSplitScreen extends HTMLElement {
     }
 
     connectedCallback() {
+        TPEN.attachAuthentication(this)
         this._unsubProject = onProjectReady(this, this.authgate)
     }
 

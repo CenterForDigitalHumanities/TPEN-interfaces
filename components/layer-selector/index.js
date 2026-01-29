@@ -26,6 +26,7 @@ export default class LayerSelector extends HTMLElement {
     }
 
     connectedCallback() {
+        TPEN.attachAuthentication(this)
         this._unsubProject = onProjectReady(this, this.authgate)
     }
 

@@ -39,6 +39,7 @@ class TPENLineHistory extends HTMLElement {
     }
 
     connectedCallback() {
+        TPEN.attachAuthentication(this)
         this._unsubProject = onProjectReady(this, this.authgate)
     }
 

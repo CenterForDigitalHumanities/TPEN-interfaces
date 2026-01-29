@@ -32,6 +32,7 @@ export default class ColumnSelector extends HTMLElement {
     }
 
     connectedCallback() {
+        TPEN.attachAuthentication(this)
         this._unsubProject = onProjectReady(this, this.authgate)
     }
 
