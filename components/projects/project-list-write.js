@@ -12,6 +12,8 @@ export default class ProjectsManager extends HTMLElement {
 
     /** @type {CleanupRegistry} Registry for cleanup handlers */
     cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers */
+    renderCleanup = new CleanupRegistry()
 
     constructor() {
         super()
@@ -42,6 +44,7 @@ export default class ProjectsManager extends HTMLElement {
     }
 
     disconnectedCallback() {
+        this.renderCleanup.run()
         this.cleanup.run()
     }
 
@@ -82,8 +85,11 @@ export default class ProjectsManager extends HTMLElement {
             </ul>
         `
 
+        // Clear previous render-specific listeners
+        this.renderCleanup.run()
+
         this.querySelectorAll('.delete-btn').forEach(button => {
-            this.cleanup.onElement(button, "click", (event) => {
+            this.renderCleanup.onElement(button, "click", (event) => {
                 const projectId = event.target.getAttribute("data-project-id")
                 alert(`Delete not implemented for project ID: ${projectId}`)
             })

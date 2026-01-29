@@ -19,6 +19,8 @@ export default class ColumnSelector extends HTMLElement {
     _unsubProject = null
     /** @type {CleanupRegistry} Registry for cleanup handlers */
     cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers */
+    renderCleanup = new CleanupRegistry()
 
     constructor() {
         super()
@@ -47,6 +49,7 @@ export default class ColumnSelector extends HTMLElement {
 
     disconnectedCallback() {
         try { this._unsubProject?.() } catch {}
+        this.renderCleanup.run()
         this.cleanup.run()
     }
 
@@ -121,9 +124,12 @@ export default class ColumnSelector extends HTMLElement {
             </select>
         `
 
+        // Clear previous render-specific listeners
+        this.renderCleanup.run()
+
         const selectEl = this.shadowRoot.querySelector("select")
         this.selectColumn({ target: selectEl })
-        this.cleanup.onElement(selectEl, "change", (e) => this.selectColumn(e))
+        this.renderCleanup.onElement(selectEl, "change", (e) => this.selectColumn(e))
     }
 
     selectColumn(e) {

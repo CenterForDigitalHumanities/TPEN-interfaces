@@ -15,10 +15,14 @@ import { MagnifierTool, showMagnifier } from "../magnifier-tool/index.js"
 export default class WorkspaceTools extends HTMLElement {
   /** @type {CleanupRegistry} Registry for cleanup handlers */
   cleanup = new CleanupRegistry()
+  /** @type {CleanupRegistry} Registry for render-specific handlers */
+  renderCleanup = new CleanupRegistry()
   /** @type {Function|null} Unsubscribe function for project ready listener */
   _unsubProject = null
   /** @type {Function|null} Handler for magnifier escape key */
   _magnifierEscHandler = null
+  /** @type {Function|null} Unsubscribe function for magnifier escape key listener */
+  _unsubMagnifierEsc = null
 
   constructor() {
     super()
@@ -45,6 +49,8 @@ export default class WorkspaceTools extends HTMLElement {
 
   disconnectedCallback() {
     try { this._unsubProject?.() } catch {}
+    try { this._unsubMagnifierEsc?.() } catch {}
+    this.renderCleanup.run()
     this.cleanup.run()
     // Remove magnifier tool from DOM if it was added
     if (this.magnifierTool?.parentNode) {
@@ -53,6 +59,9 @@ export default class WorkspaceTools extends HTMLElement {
   }
 
   render() {
+    // Clear previous render-specific listeners before re-rendering
+    this.renderCleanup.run()
+
     this.shadowRoot.innerHTML = `
     <style>
       .workspace-tools {
@@ -153,6 +162,9 @@ export default class WorkspaceTools extends HTMLElement {
       this.magnifierTool.hideMagnifier()
       fragmentEl?.style.removeProperty("z-index")
       this.magnifierBtn.blur()
+      // Remove the escape key listener when hiding
+      try { this._unsubMagnifierEsc?.() } catch {}
+      this._unsubMagnifierEsc = null
       return
     }
 
@@ -166,13 +178,18 @@ export default class WorkspaceTools extends HTMLElement {
         this.magnifierTool.hideMagnifier()
         fragmentEl?.style.removeProperty("z-index")
         this.magnifierBtn.blur()
+        // Remove the escape key listener when hiding via Escape
+        try { this._unsubMagnifierEsc?.() } catch {}
+        this._unsubMagnifierEsc = null
       }
     }
-    this.cleanup.onWindow("keydown", this._magnifierEscHandler)
+    // Remove any previous escape listener before adding a new one
+    try { this._unsubMagnifierEsc?.() } catch {}
+    this._unsubMagnifierEsc = this.cleanup.onWindow("keydown", this._magnifierEscHandler)
   }
 
   if (this.magnifierBtn) {
-    this.cleanup.onElement(this.magnifierBtn, "click", this._magnifierClickHandler)
+    this.renderCleanup.onElement(this.magnifierBtn, "click", this._magnifierClickHandler)
   }
   }
 }

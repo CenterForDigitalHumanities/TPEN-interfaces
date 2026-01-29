@@ -12,6 +12,8 @@ import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 class LeaveProject extends HTMLElement {
     /** @type {CleanupRegistry} Registry for cleanup handlers */
     cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers */
+    renderCleanup = new CleanupRegistry()
     /** @type {Function|null} Unsubscribe function for project ready listener */
     _unsubProject = null
 
@@ -52,6 +54,7 @@ class LeaveProject extends HTMLElement {
 
     disconnectedCallback() {
         try { this._unsubProject?.() } catch {}
+        this.renderCleanup.run()
         this.cleanup.run()
     }
 
@@ -122,10 +125,13 @@ class LeaveProject extends HTMLElement {
      * Sets up event listeners for leave/stay buttons.
      */
     addEventListeners() {
+        // Clear previous render-specific listeners
+        this.renderCleanup.run()
+
         const leaveBtn = this.shadowRoot.getElementById("leaveBtn")
         const noLeaveBtn = this.shadowRoot.getElementById("noLeaveBtn")
-        this.cleanup.onElement(leaveBtn, 'click', () => this.leaveProject())
-        this.cleanup.onElement(noLeaveBtn, 'click', () => document.location.href = `/project?projectID=${TPEN.activeProject._id}`)
+        this.renderCleanup.onElement(leaveBtn, 'click', () => this.leaveProject())
+        this.renderCleanup.onElement(noLeaveBtn, 'click', () => document.location.href = `/project?projectID=${TPEN.activeProject._id}`)
     }
 
     leaveProject() {

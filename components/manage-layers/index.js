@@ -12,6 +12,8 @@ import { CleanupRegistry } from "../../utilities/CleanupRegistry.js"
 class ProjectLayers extends HTMLElement {
     /** @type {CleanupRegistry} Registry for cleanup handlers */
     cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers */
+    renderCleanup = new CleanupRegistry()
     /** @type {Function|null} Unsubscribe function for project ready listener */
     _unsubProject = null
 
@@ -40,6 +42,7 @@ class ProjectLayers extends HTMLElement {
 
     disconnectedCallback() {
         try { this._unsubProject?.() } catch {}
+        this.renderCleanup.run()
         this.cleanup.run()
     }
 
@@ -226,10 +229,13 @@ class ProjectLayers extends HTMLElement {
      * Sets up event listeners for layer management actions.
      */
     addEventListeners() {
+        // Clear previous render-specific listeners
+        this.renderCleanup.run()
+
         const layers = TPEN.activeProject.layers
 
         this.shadowRoot.querySelectorAll(".delete-layer").forEach((button) => {
-            this.cleanup.onElement(button, "click", (event) => {
+            this.renderCleanup.onElement(button, "click", (event) => {
                 const hasDeleteAccess = CheckPermissions.checkDeleteAccess('LAYER', '*')
                 if (!hasDeleteAccess) {
                     TPEN.eventDispatcher.dispatch("tpen-toast", {
@@ -259,7 +265,7 @@ class ProjectLayers extends HTMLElement {
             })
         })
 
-        this.cleanup.onElement(this.shadowRoot.querySelector(".add-layer"), "click", () => {
+        this.renderCleanup.onElement(this.shadowRoot.querySelector(".add-layer"), "click", () => {
             const hasCreateAccess = CheckPermissions.checkCreateAccess('LAYER', '*')
             if (!hasCreateAccess) {
                 TPEN.eventDispatcher.dispatch("tpen-toast", {

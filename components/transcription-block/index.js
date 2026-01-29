@@ -21,6 +21,8 @@ export default class TranscriptionBlock extends HTMLElement {
     #pendingSaves = new Map() // lineIndex -> Promise
     /** @type {CleanupRegistry} Registry for cleanup handlers */
     cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers */
+    renderCleanup = new CleanupRegistry()
     /** @type {Function|null} Unsubscribe function for project ready listener */
     _unsubProject = null
     #storageKey // localStorage key for drafts
@@ -102,6 +104,9 @@ export default class TranscriptionBlock extends HTMLElement {
     }
 
     addEventListeners() {
+        // Clear previous render-specific listeners
+        this.renderCleanup.run()
+
         const prevButton = this.shadowRoot.querySelector('.prev-button')
         const prevPageButton = this.shadowRoot.querySelector('.prev-page-button')
         const nextButton = this.shadowRoot.querySelector('.next-button')
@@ -110,21 +115,21 @@ export default class TranscriptionBlock extends HTMLElement {
 
         // Shadow DOM element listeners
         if (prevButton) {
-            this.cleanup.onElement(prevButton, 'click', this.moveToPreviousLine.bind(this))
+            this.renderCleanup.onElement(prevButton, 'click', this.moveToPreviousLine.bind(this))
         }
         if (prevPageButton) {
-            this.cleanup.onElement(prevPageButton, 'click', () => this.navigateToPage('prev'))
+            this.renderCleanup.onElement(prevPageButton, 'click', () => this.navigateToPage('prev'))
         }
         if (nextButton) {
-            this.cleanup.onElement(nextButton, 'click', this.moveToNextLine.bind(this))
+            this.renderCleanup.onElement(nextButton, 'click', this.moveToNextLine.bind(this))
         }
         if (nextPageButton) {
-            this.cleanup.onElement(nextPageButton, 'click', () => this.navigateToPage('next'))
+            this.renderCleanup.onElement(nextPageButton, 'click', () => this.navigateToPage('next'))
         }
         if (inputField) {
-            this.cleanup.onElement(inputField, 'blur', () => this.checkDirtyLines())
-            this.cleanup.onElement(inputField, 'keydown', (e) => this.handleKeydown(e))
-            this.cleanup.onElement(inputField, 'input', () => {
+            this.renderCleanup.onElement(inputField, 'blur', () => this.checkDirtyLines())
+            this.renderCleanup.onElement(inputField, 'keydown', (e) => this.handleKeydown(e))
+            this.renderCleanup.onElement(inputField, 'input', () => {
                 this.#transcriptions[TPEN.activeLineIndex] = inputField.value ?? ''
                 this.markLineDirty(TPEN.activeLineIndex)
                 this.persistDraft(TPEN.activeLineIndex)
@@ -136,20 +141,20 @@ export default class TranscriptionBlock extends HTMLElement {
         this.$dirtyLines = new Set()
 
         // Window/global event listeners (need explicit cleanup)
-        this.cleanup.onWindow('beforeunload', this.beforeUnloadHandler.bind(this))
+        this.renderCleanup.onWindow('beforeunload', this.beforeUnloadHandler.bind(this))
 
         // Dirty check handlers for line navigation
-        this.cleanup.onEvent(eventDispatcher, 'tpen-transcription-previous-line', () => this.checkDirtyLines())
-        this.cleanup.onEvent(eventDispatcher, 'tpen-transcription-next-line', () => this.checkDirtyLines())
+        this.renderCleanup.onEvent(eventDispatcher, 'tpen-transcription-previous-line', () => this.checkDirtyLines())
+        this.renderCleanup.onEvent(eventDispatcher, 'tpen-transcription-next-line', () => this.checkDirtyLines())
 
         // External control events
-        this.cleanup.onEvent(eventDispatcher, 'tpen-transcription-flush-all', this.flushAllSaves.bind(this))
-        this.cleanup.onEvent(eventDispatcher, 'tpen-transcription-save-line', (index) => {
+        this.renderCleanup.onEvent(eventDispatcher, 'tpen-transcription-flush-all', this.flushAllSaves.bind(this))
+        this.renderCleanup.onEvent(eventDispatcher, 'tpen-transcription-save-line', (index) => {
             if (typeof index === 'number') this.scheduleLineSave(index)
         })
 
         // Window message handler for external tool communication
-        this.cleanup.onWindow('message', (event) => {
+        this.renderCleanup.onWindow('message', (event) => {
             if (event.data?.type === "RETURN_LINE_ID") {
                 const lineIndex = this.#page.items.findIndex(item => item.id === event.data.lineId)
                 if (lineIndex !== -1) {
@@ -287,6 +292,7 @@ export default class TranscriptionBlock extends HTMLElement {
 
     disconnectedCallback() {
         try { this._unsubProject?.() } catch { /* Expected if already unsubscribed */ }
+        this.renderCleanup.run()
         this.cleanup.run()
         eventDispatcher.dispatch('tpen-transcription-block-disconnected')
     }

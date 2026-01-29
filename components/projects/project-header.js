@@ -16,6 +16,8 @@ export default class ProjectHeader extends HTMLElement {
 
     /** @type {CleanupRegistry} Registry for cleanup handlers */
     cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers */
+    renderCleanup = new CleanupRegistry()
     /** @type {Function|null} Unsubscribe function for project ready listener */
     _unsubProject = null
 
@@ -68,6 +70,7 @@ export default class ProjectHeader extends HTMLElement {
 
     disconnectedCallback() {
         try { this._unsubProject?.() } catch {}
+        this.renderCleanup.run()
         this.cleanup.run()
     }
 
@@ -142,7 +145,10 @@ export default class ProjectHeader extends HTMLElement {
             return option
         })
         canvasLabels.replaceChildren(...CanvasSelectOptions)
-        this.cleanup.onElement(canvasLabels, 'change', event => {
+        // Clear previous render-specific listeners
+        this.renderCleanup.run()
+
+        this.renderCleanup.onElement(canvasLabels, 'change', event => {
             const url = new URL(location.href)
             url.searchParams.set('pageID', event.target.value ?? '')
             location.href = url.toString()

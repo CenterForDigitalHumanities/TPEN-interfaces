@@ -12,6 +12,8 @@ export class MagnifierTool extends HTMLElement {
     #magnifier
     /** @type {CleanupRegistry} Registry for cleanup handlers */
     cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers */
+    renderCleanup = new CleanupRegistry()
     /** @type {Function|null} Unsubscribe function for project ready listener */
     _unsubProject = null
 
@@ -55,6 +57,7 @@ export class MagnifierTool extends HTMLElement {
 
     disconnectedCallback() {
         try { this._unsubProject?.() } catch {}
+        this.renderCleanup.run()
         this.cleanup.run()
     }
 
@@ -71,6 +74,9 @@ export class MagnifierTool extends HTMLElement {
     }
 
     addEventListeners() {
+        // Clear previous render-specific listeners
+        this.renderCleanup.run()
+
         const magnifier = this.magnifier
 
         const mousedownHandler = (e) => {
@@ -83,7 +89,7 @@ export class MagnifierTool extends HTMLElement {
 
             magnifier.style.cursor = 'grabbing'
         }
-        this.cleanup.onElement(magnifier, 'mousedown', mousedownHandler)
+        this.renderCleanup.onElement(magnifier, 'mousedown', mousedownHandler)
 
         const wheelHandler = (e) => {
             if (!this.isMagnifierVisible) return
@@ -93,7 +99,7 @@ export class MagnifierTool extends HTMLElement {
             this.zoomLevel = Math.min(6, Math.max(1.5, this.zoomLevel - delta * 0.1))
             this.updateMagnifier()
         }
-        this.cleanup.onElement(magnifier, 'wheel', wheelHandler)
+        this.renderCleanup.onElement(magnifier, 'wheel', wheelHandler)
 
         const mousemoveHandler = (e) => {
             if (!this.isDragging || !this.isMagnifierVisible) return
@@ -132,7 +138,7 @@ export class MagnifierTool extends HTMLElement {
 
             this.setMagnifierView(x, y)
         }
-        this.cleanup.onWindow('mousemove', mousemoveHandler)
+        this.renderCleanup.onWindow('mousemove', mousemoveHandler)
 
         const mouseupHandler = () => {
             if (this.isDragging) {
@@ -140,14 +146,14 @@ export class MagnifierTool extends HTMLElement {
                 magnifier.style.cursor = 'grab'
             }
         }
-        this.cleanup.onWindow('mouseup', mouseupHandler)
+        this.renderCleanup.onWindow('mouseup', mouseupHandler)
 
         const keydownHandler = (e) => {
             if (e.key === 'Escape' && this.isMagnifierVisible) {
                 this.hideMagnifier()
             }
         }
-        this.cleanup.onWindow('keydown', keydownHandler)
+        this.renderCleanup.onWindow('keydown', keydownHandler)
     }
 
     showMagnifier() {

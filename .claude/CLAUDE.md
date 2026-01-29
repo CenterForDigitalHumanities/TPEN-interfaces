@@ -167,6 +167,8 @@ import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 class ComponentName extends HTMLElement {
     /** @type {CleanupRegistry} Registry for cleanup handlers */
     cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers */
+    renderCleanup = new CleanupRegistry()
     /** @type {Function|null} Unsubscribe function for project ready listener */
     _unsubProject = null
 
@@ -182,6 +184,7 @@ class ComponentName extends HTMLElement {
 
     /**
      * Authorization gate - checks permissions before rendering.
+     * NOTE: This can be called multiple times via onProjectReady.
      */
     authgate() {
         if (!CheckPermissions.checkViewAccess('RESOURCE', 'ACTION')) {
@@ -195,6 +198,7 @@ class ComponentName extends HTMLElement {
 
     disconnectedCallback() {
         try { this._unsubProject?.() } catch {}
+        this.renderCleanup.run()
         this.cleanup.run()
     }
 
@@ -204,10 +208,15 @@ class ComponentName extends HTMLElement {
     }
 
     addEventListeners() {
-        // Use cleanup registry for all listeners
-        this.cleanup.onElement(this.shadowRoot.querySelector('#btn'), 'click', () => {})
+        // Clear previous render-specific listeners (important since authgate can be called multiple times)
+        this.renderCleanup.run()
+
+        // Use renderCleanup for listeners on elements created in render()
+        this.renderCleanup.onElement(this.shadowRoot.querySelector('#btn'), 'click', () => {})
+
+        // Use cleanup for persistent listeners (window, document, eventDispatcher)
+        // that should only be registered once
         this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-event', () => {})
-        this.cleanup.onWindow('resize', () => {})
     }
 
     /**
@@ -236,12 +245,22 @@ The `CleanupRegistry` class (`utilities/CleanupRegistry.js`) provides centralize
 // Available methods:
 cleanup.add(cleanupFn)                    // Add custom cleanup function
 cleanup.onEvent(dispatcher, event, handler)  // TPEN eventDispatcher listeners
-cleanup.onWindow(event, handler)          // Window event listeners
-cleanup.onDocument(event, handler)        // Document event listeners
-cleanup.onElement(element, event, handler) // DOM element listeners
+cleanup.onWindow(event, handler)          // Window event listeners (returns unsubscribe fn)
+cleanup.onDocument(event, handler)        // Document event listeners (returns unsubscribe fn)
+cleanup.onElement(element, event, handler) // DOM element listeners (returns unsubscribe fn)
 cleanup.addObserver(observer)             // ResizeObserver cleanup
 cleanup.addMutationObserver(observer)     // MutationObserver cleanup
 cleanup.run()                             // Execute all cleanup (call in disconnectedCallback)
+```
+
+**Early Unsubscription**: Methods that return unsubscribe functions allow manual cleanup before `disconnectedCallback`:
+```javascript
+// Store the unsubscribe function for later manual cleanup
+this._unsubEscKey = this.cleanup.onWindow('keydown', escHandler)
+
+// Later, manually unsubscribe (e.g., when hiding a modal)
+this._unsubEscKey?.()
+this._unsubEscKey = null
 ```
 
 ### Dual Cleanup Pattern
@@ -271,6 +290,15 @@ class ReRenderingComponent extends HTMLElement {
     }
 }
 ```
+
+**When to use `renderCleanup`** (required to prevent memory leaks):
+- Components using `onProjectReady(this, this.authgate)` where `authgate()` calls `addEventListeners()` - `authgate` can be called multiple times
+- Components with setters or `attributeChangedCallback` that trigger `render()` + `addEventListeners()`
+- Components where event handlers call `render()` + `addEventListeners()` (like form re-renders on input)
+
+**When `renderCleanup` is NOT needed:**
+- Components that only call `render()` and `addEventListeners()` once in `connectedCallback()`
+- Components using `onProjectReady` with a callback that doesn't call `addEventListeners()` (e.g., just loads data)
 
 ### Key Components
 - `<tpen-dashboard>` - Main dashboard interface

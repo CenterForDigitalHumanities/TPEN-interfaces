@@ -24,6 +24,8 @@ import { RerumHistoryData } from 'https://cubap.github.io/rerum-history-componen
 class TPENLineHistory extends HTMLElement {
     /** @type {CleanupRegistry} Registry for cleanup handlers */
     cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers */
+    renderCleanup = new CleanupRegistry()
     /** @type {Function|null} Unsubscribe function for project ready listener */
     _unsubProject = null
 
@@ -61,6 +63,7 @@ class TPENLineHistory extends HTMLElement {
             this.rerumHistoryData.abort()
             this.rerumHistoryData = null
         }
+        this.renderCleanup.run()
         this.cleanup.run()
     }
 
@@ -68,8 +71,11 @@ class TPENLineHistory extends HTMLElement {
      * Sets up event listeners for line updates.
      */
     addEventListeners() {
+        // Clear previous render-specific listeners
+        this.renderCleanup.run()
+
         // Listen for active line changes from TPEN.eventDispatcher
-        this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-active-line-updated', (event) => {
+        this.renderCleanup.onEvent(TPEN.eventDispatcher, 'tpen-active-line-updated', (event) => {
             this.handleLineChange(event.detail)
         })
     }

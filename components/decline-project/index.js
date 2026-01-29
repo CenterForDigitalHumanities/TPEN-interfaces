@@ -13,6 +13,8 @@ class DeclineInvite extends HTMLElement {
 
     /** @type {CleanupRegistry} Registry for cleanup handlers */
     cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers */
+    renderCleanup = new CleanupRegistry()
 
     constructor() {
         super()
@@ -27,6 +29,7 @@ class DeclineInvite extends HTMLElement {
     }
 
     disconnectedCallback() {
+        this.renderCleanup.run()
         this.cleanup.run()
     }
 
@@ -75,9 +78,12 @@ class DeclineInvite extends HTMLElement {
     }
 
     attachEventListeners() {
+        // Clear previous render-specific listeners
+        this.renderCleanup.run()
+
         const declineBtn = this.shadowRoot.getElementById("declineBtn")
         const declineHandler = () => this.declineInvitation(this.#user, this.#project)
-        this.cleanup.onElement(declineBtn, 'click', declineHandler)
+        this.renderCleanup.onElement(declineBtn, 'click', declineHandler)
     }
 
     declineInvitation(collaboratorID, projectID) {

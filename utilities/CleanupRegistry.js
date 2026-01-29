@@ -47,10 +47,13 @@ export class CleanupRegistry {
      * @param {string} event - Event name to listen for
      * @param {Function} handler - Event handler function
      * @param {Object} [options] - addEventListener options
+     * @returns {Function} Unsubscribe function to remove listener early
      */
     onWindow(event, handler, options) {
         window.addEventListener(event, handler, options)
-        this.#handlers.push(() => window.removeEventListener(event, handler, options))
+        const cleanup = () => window.removeEventListener(event, handler, options)
+        this.#handlers.push(cleanup)
+        return cleanup
     }
 
     /**
@@ -58,10 +61,13 @@ export class CleanupRegistry {
      * @param {string} event - Event name to listen for
      * @param {Function} handler - Event handler function
      * @param {Object} [options] - addEventListener options
+     * @returns {Function} Unsubscribe function to remove listener early
      */
     onDocument(event, handler, options) {
         document.addEventListener(event, handler, options)
-        this.#handlers.push(() => document.removeEventListener(event, handler, options))
+        const cleanup = () => document.removeEventListener(event, handler, options)
+        this.#handlers.push(cleanup)
+        return cleanup
     }
 
     /**
@@ -70,10 +76,13 @@ export class CleanupRegistry {
      * @param {string} event - Event name to listen for
      * @param {Function} handler - Event handler function
      * @param {Object} [options] - addEventListener options
+     * @returns {Function} Unsubscribe function to remove listener early
      */
     onElement(element, event, handler, options) {
         element?.addEventListener(event, handler, options)
-        this.#handlers.push(() => element?.removeEventListener(event, handler, options))
+        const cleanup = () => element?.removeEventListener(event, handler, options)
+        this.#handlers.push(cleanup)
+        return cleanup
     }
 
     /**

@@ -13,6 +13,8 @@ class ManagePages extends HTMLElement {
     _unsubProject = null
     /** @type {CleanupRegistry} Registry for cleanup handlers */
     cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers */
+    renderCleanup = new CleanupRegistry()
     /** @type {CleanupRegistry} Registry for dynamic handlers created during interaction */
     dynamicCleanup = new CleanupRegistry()
 
@@ -41,6 +43,7 @@ class ManagePages extends HTMLElement {
     disconnectedCallback() {
         try { this._unsubProject?.() } catch {}
         this.dynamicCleanup.run()
+        this.renderCleanup.run()
         this.cleanup.run()
     }
 
@@ -124,10 +127,13 @@ class ManagePages extends HTMLElement {
             </style>
             <button class="layer-btn manage-pages">Manage Pages</button>
         `
+        // Clear previous render-specific listeners
+        this.renderCleanup.run()
+
         const layers = TPEN.activeProject?.layers
         const pages = layers?.pages
         this.shadowRoot.querySelectorAll(".manage-pages").forEach((button) => {
-            this.cleanup.onElement(button, "click", () => {
+            this.renderCleanup.onElement(button, "click", () => {
                 // Clear previous dynamic listeners when entering manage mode
                 this.dynamicCleanup.run()
                 // Check if user has edit permission for pages

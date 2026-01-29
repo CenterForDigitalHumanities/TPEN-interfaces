@@ -160,6 +160,8 @@ customElements.define('tpen-project-options', ProjectOptions)
 class LineAnnotationLink extends HTMLElement {
     /** @type {CleanupRegistry} Registry for cleanup handlers */
     cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers */
+    renderCleanup = new CleanupRegistry()
 
     constructor() {
         super()
@@ -175,13 +177,17 @@ class LineAnnotationLink extends HTMLElement {
     }
 
     addEventListeners() {
+        // Clear previous render-specific listeners
+        this.renderCleanup.run()
+
         const anchor = this.shadowRoot.querySelector('a')
         if (anchor) {
-            this.cleanup.onElement(anchor, 'mouseenter', () => this.fetchCount())
+            this.renderCleanup.onElement(anchor, 'mouseenter', () => this.fetchCount())
         }
     }
 
     disconnectedCallback() {
+        this.renderCleanup.run()
         this.cleanup.run()
     }
 
@@ -190,6 +196,7 @@ class LineAnnotationLink extends HTMLElement {
         const page = { id: this._pageId, type: 'page' }
         this._linesCount = await vault.get(page).then(p => p.items?.length)
         this.render()
+        this.addEventListeners()
     }
 
     render() {

@@ -11,6 +11,8 @@ import { CleanupRegistry } from "../../utilities/CleanupRegistry.js"
 class TpenCreateColumn extends HTMLElement {
     /** @type {CleanupRegistry} Registry for cleanup handlers */
     cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers (annotation boxes) */
+    renderCleanup = new CleanupRegistry()
     /** @type {CleanupRegistry} Registry for dynamic workspace listeners */
     workspaceCleanup = new CleanupRegistry()
     /** @type {Function|null} Unsubscribe function for project ready listener */
@@ -270,6 +272,7 @@ class TpenCreateColumn extends HTMLElement {
     disconnectedCallback() {
         try { this._unsubProject?.() } catch {}
         this.workspaceCleanup.run()
+        this.renderCleanup.run()
         this.cleanup.run()
     }
 
@@ -647,6 +650,9 @@ class TpenCreateColumn extends HTMLElement {
     }
 
     renderAnnotations(annotations, imgWidth, imgHeight, filteredAnnotations = []) {
+        // Clear previous annotation box listeners
+        this.renderCleanup.run()
+
         this.annotationData = annotations
         const createdBoxes = []
 
@@ -665,7 +671,7 @@ class TpenCreateColumn extends HTMLElement {
             box.style.width  = `${(w / imgWidth) * 100}%`
             box.style.height = `${(h / imgHeight) * 100}%`
 
-            this.cleanup.onElement(box, "click", (event) => this.selectAnnotation(box, event))
+            this.renderCleanup.onElement(box, "click", (event) => this.selectAnnotation(box, event))
 
             createdBoxes.push(box)
         })

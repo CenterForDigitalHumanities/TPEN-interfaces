@@ -11,6 +11,8 @@ import { CleanupRegistry } from "../../utilities/CleanupRegistry.js"
 class InviteMemberElement extends HTMLElement {
     /** @type {CleanupRegistry} Registry for cleanup handlers */
     cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers */
+    renderCleanup = new CleanupRegistry()
     /** @type {Function|null} Unsubscribe function for project ready listener */
     _unsubProject = null
 
@@ -37,6 +39,7 @@ class InviteMemberElement extends HTMLElement {
 
     disconnectedCallback() {
         try { this._unsubProject?.() } catch {}
+        this.renderCleanup.run()
         this.cleanup.run()
     }
 
@@ -79,8 +82,11 @@ class InviteMemberElement extends HTMLElement {
     }
 
     addEventListeners() {
+        // Clear previous render-specific listeners
+        this.renderCleanup.run()
+
         const inviteForm = this.shadowRoot.querySelector("#invite-form")
-        this.cleanup.onElement(inviteForm, "submit", this.inviteUser.bind(this))
+        this.renderCleanup.onElement(inviteForm, "submit", this.inviteUser.bind(this))
     }
 
     async inviteUser(event) {

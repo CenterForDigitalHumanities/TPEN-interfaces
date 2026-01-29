@@ -11,6 +11,8 @@ import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 export default class TpenSplitScreen extends HTMLElement {
     /** @type {CleanupRegistry} Registry for cleanup handlers */
     cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers */
+    renderCleanup = new CleanupRegistry()
     /** @type {Function|null} Unsubscribe function for project ready listener */
     _unsubProject = null
 
@@ -37,14 +39,18 @@ export default class TpenSplitScreen extends HTMLElement {
 
     disconnectedCallback() {
         try { this._unsubProject?.() } catch {}
+        this.renderCleanup.run()
         this.cleanup.run()
     }
 
     addEventListeners() {
+        // Clear previous render-specific listeners
+        this.renderCleanup.run()
+
         const resizer = this.shadowRoot.querySelector('.resizer')
-        this.cleanup.onElement(resizer, 'mousedown', this.onMouseDown.bind(this))
-        this.cleanup.onWindow('mousemove', this.onMouseMove.bind(this))
-        this.cleanup.onWindow('mouseup', this.onMouseUp.bind(this))
+        this.renderCleanup.onElement(resizer, 'mousedown', this.onMouseDown.bind(this))
+        this.renderCleanup.onWindow('mousemove', this.onMouseMove.bind(this))
+        this.renderCleanup.onWindow('mouseup', this.onMouseUp.bind(this))
     }
 
     onMouseDown(e) {

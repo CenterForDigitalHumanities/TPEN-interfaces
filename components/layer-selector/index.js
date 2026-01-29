@@ -14,6 +14,8 @@ const eventDispatcher = TPEN.eventDispatcher
 export default class LayerSelector extends HTMLElement {
     /** @type {CleanupRegistry} Registry for cleanup handlers */
     cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers */
+    renderCleanup = new CleanupRegistry()
     /** @type {Function|null} Unsubscribe function for project ready listener */
     _unsubProject = null
 
@@ -47,6 +49,7 @@ export default class LayerSelector extends HTMLElement {
 
     disconnectedCallback() {
         try { this._unsubProject?.() } catch {}
+        this.renderCleanup.run()
         this.cleanup.run()
     }
 
@@ -107,6 +110,9 @@ export default class LayerSelector extends HTMLElement {
      * Sets up event listeners for the layer selector.
      */
     addEventListeners() {
+        // Clear previous render-specific listeners
+        this.renderCleanup.run()
+
         const selectEl = this.shadowRoot.querySelector("select")
         const changeHandler = (e) => {
             const selectedURI = e.target.value
@@ -121,7 +127,7 @@ export default class LayerSelector extends HTMLElement {
                 TPEN.activeLayer = selectedLayer
             }
         }
-        this.cleanup.onElement(selectEl, 'change', changeHandler)
+        this.renderCleanup.onElement(selectEl, 'change', changeHandler)
     }
 }
 

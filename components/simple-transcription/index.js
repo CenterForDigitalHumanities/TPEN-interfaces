@@ -25,6 +25,8 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
   #toolLineListeners = null
   /** @type {CleanupRegistry} Registry for cleanup handlers */
   cleanup = new CleanupRegistry()
+  /** @type {CleanupRegistry} Registry for render-specific handlers */
+  renderCleanup = new CleanupRegistry()
   /** @type {Function|null} Unsubscribe function for project ready listener */
   _unsubProject = null
   _iframeOrigin = null
@@ -73,6 +75,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
   disconnectedCallback() {
     try { this._unsubProject?.() } catch {}
     this.#cleanupToolLineListeners()
+    this.renderCleanup.run()
     this.cleanup.run()
   }
 
@@ -350,6 +353,9 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
   }
 
   addEventListeners() {
+    // Clear previous render-specific listeners
+    this.renderCleanup.run()
+
     const closeSplitscreen = () => {
       if (!this.state.isSplitscreenActive) return
       this.state.isSplitscreenActive = false
@@ -365,20 +371,20 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       this.updateLines()
     }
 
-    this.cleanup.onElement(this.shadowRoot, 'splitscreen-toggle', e => openSplitscreen(e.detail?.selectedTool))
+    this.renderCleanup.onElement(this.shadowRoot, 'splitscreen-toggle', e => openSplitscreen(e.detail?.selectedTool))
 
-    this.cleanup.onElement(this.shadowRoot, 'click', e => {
+    this.renderCleanup.onElement(this.shadowRoot, 'click', e => {
       if (e.target?.classList.contains('close-button')) closeSplitscreen()
     })
 
-    this.cleanup.onWindow('keydown', (e) => {
+    this.renderCleanup.onWindow('keydown', (e) => {
       if (e.key === 'Escape') closeSplitscreen()
     })
 
-    this.cleanup.onEvent(TPEN.eventDispatcher, 'tools-dismiss', closeSplitscreen)
+    this.renderCleanup.onEvent(TPEN.eventDispatcher, 'tools-dismiss', closeSplitscreen)
 
     // Listen for layer changes from layer-selector
-    this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-layer-changed', (event) => {
+    this.renderCleanup.onEvent(TPEN.eventDispatcher, 'tpen-layer-changed', (event) => {
       if (this.#page?.items?.length > 0) {
         TPEN.activeLineIndex = 0
       }
@@ -386,7 +392,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     })
 
     // Listen for column selection changes
-    this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-column-selected', (ev) => {
+    this.renderCleanup.onEvent(TPEN.eventDispatcher, 'tpen-column-selected', (ev) => {
       const columnData = ev.detail
       if (typeof columnData.lineIndex === 'number') {
         TPEN.activeLineIndex = columnData.lineIndex
@@ -423,7 +429,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     let startX = 0
     let startLeftWidth = 0
 
-    this.cleanup.onElement(splitter, 'mousedown', (e) => {
+    this.renderCleanup.onElement(splitter, 'mousedown', (e) => {
       isDragging = true
       startX = e.clientX
       startLeftWidth = leftPane.getBoundingClientRect().width
@@ -432,7 +438,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       e.preventDefault()
     })
 
-    this.cleanup.onDocument('mousemove', (e) => {
+    this.renderCleanup.onDocument('mousemove', (e) => {
       if (!isDragging) return
 
       const container = this.shadowRoot.querySelector('.container')
@@ -448,7 +454,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       }
     })
 
-    this.cleanup.onDocument('mouseup', () => {
+    this.renderCleanup.onDocument('mouseup', () => {
       if (isDragging) {
         isDragging = false
         document.body.style.cursor = ''

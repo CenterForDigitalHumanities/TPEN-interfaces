@@ -10,6 +10,8 @@ import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 class CopyExistingProjectWithoutAnnotations extends HTMLElement {
     /** @type {CleanupRegistry} Registry for cleanup handlers */
     cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers */
+    renderCleanup = new CleanupRegistry()
 
     constructor() {
         super()
@@ -22,6 +24,7 @@ class CopyExistingProjectWithoutAnnotations extends HTMLElement {
     }
 
     disconnectedCallback() {
+        this.renderCleanup.run()
         this.cleanup.run()
     }
 
@@ -124,7 +127,10 @@ class CopyExistingProjectWithoutAnnotations extends HTMLElement {
             <div id="project-info-container"></div>
         `
 
-        this.cleanup.onElement(this.shadowRoot.getElementById('copy-project-btn'), 'click', async () => {
+        // Clear previous render-specific listeners
+        this.renderCleanup.run()
+
+        this.renderCleanup.onElement(this.shadowRoot.getElementById('copy-project-btn'), 'click', async () => {
             this.shadowRoot.getElementById('message').textContent = 'Copying project... Please wait.'
             this.shadowRoot.getElementById('copy-project-btn').disabled = true
             const projectSelect = this.shadowRoot.getElementById('project-select')

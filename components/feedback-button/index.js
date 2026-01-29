@@ -7,6 +7,8 @@ import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 export default class FeedbackButton extends HTMLElement {
   /** @type {CleanupRegistry} Registry for cleanup handlers */
   cleanup = new CleanupRegistry()
+  /** @type {CleanupRegistry} Registry for render-specific handlers */
+  renderCleanup = new CleanupRegistry()
 
   constructor() {
     super()
@@ -18,6 +20,7 @@ export default class FeedbackButton extends HTMLElement {
   }
 
   disconnectedCallback() {
+    this.renderCleanup.run()
     this.cleanup.run()
   }
 
@@ -222,9 +225,12 @@ export default class FeedbackButton extends HTMLElement {
       </div>
     `
 
-    this.cleanup.onElement(this.shadowRoot.querySelector("#feedback-button"), "click", () => this.showFeedback())
-    this.cleanup.onElement(this.shadowRoot.querySelector("#close-modal"), "click", () => this.closeModal())
-    this.cleanup.onElement(this.shadowRoot.querySelector("#feedback-backdrop"), "click", () => this.closeModal())
+    // Clear previous render-specific listeners
+    this.renderCleanup.run()
+
+    this.renderCleanup.onElement(this.shadowRoot.querySelector("#feedback-button"), "click", () => this.showFeedback())
+    this.renderCleanup.onElement(this.shadowRoot.querySelector("#close-modal"), "click", () => this.closeModal())
+    this.renderCleanup.onElement(this.shadowRoot.querySelector("#feedback-backdrop"), "click", () => this.closeModal())
   }
 }
 

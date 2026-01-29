@@ -12,6 +12,8 @@ import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 class NavigationManager extends HTMLElement {
     /** @type {CleanupRegistry} Registry for cleanup handlers */
     cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers */
+    renderCleanup = new CleanupRegistry()
     /** @type {Function|null} Unsubscribe function for project ready listener */
     _unsubProject = null
 
@@ -47,6 +49,7 @@ class NavigationManager extends HTMLElement {
 
     disconnectedCallback() {
         try { this._unsubProject?.() } catch {}
+        this.renderCleanup.run()
         this.cleanup.run()
     }
 
@@ -336,8 +339,8 @@ class NavigationManager extends HTMLElement {
     }
 
     addEventListeners() {
-        // Clear previous listeners before re-adding (called after render)
-        this.cleanup.run()
+        // Clear previous render-specific listeners
+        this.renderCleanup.run()
 
         // Input change handlers
         const transcribeInput = this.shadowRoot.querySelector('#transcribe-url')
@@ -352,16 +355,16 @@ class NavigationManager extends HTMLElement {
             this.addEventListeners()
         }
 
-        this.cleanup.onElement(transcribeInput, 'input', updateNav)
-        this.cleanup.onElement(defineLinesInput, 'input', updateNav)
-        this.cleanup.onElement(manageProjectInput, 'input', updateNav)
+        this.renderCleanup.onElement(transcribeInput, 'input', updateNav)
+        this.renderCleanup.onElement(defineLinesInput, 'input', updateNav)
+        this.renderCleanup.onElement(manageProjectInput, 'input', updateNav)
 
         // Button handlers
         const saveBtn = this.shadowRoot.querySelector('#save-btn')
         const resetBtn = this.shadowRoot.querySelector('#reset-btn')
 
-        this.cleanup.onElement(saveBtn, 'click', () => this.saveNavigation())
-        this.cleanup.onElement(resetBtn, 'click', () => this.resetToDefaults())
+        this.renderCleanup.onElement(saveBtn, 'click', () => this.saveNavigation())
+        this.renderCleanup.onElement(resetBtn, 'click', () => this.resetToDefaults())
     }
 }
 

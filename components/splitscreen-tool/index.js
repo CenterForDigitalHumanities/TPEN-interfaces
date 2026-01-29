@@ -12,6 +12,8 @@ import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 export default class SplitscreenTool extends HTMLElement {
     /** @type {CleanupRegistry} Registry for cleanup handlers */
     cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers */
+    renderCleanup = new CleanupRegistry()
 
     constructor() {
       super()
@@ -35,17 +37,21 @@ export default class SplitscreenTool extends HTMLElement {
 
     disconnectedCallback() {
       try { this._unsubProject?.() } catch {}
+      this.renderCleanup.run()
       this.cleanup.run()
     }
 
     addEventListeners() {
+      // Clear previous render-specific listeners
+      this.renderCleanup.run()
+
       const dropdown = this.shadowRoot.querySelector('.dropdown-select')
       if (dropdown) {
-        this.cleanup.onElement(dropdown, 'click', (e) => {
+        this.renderCleanup.onElement(dropdown, 'click', (e) => {
           e.target.dataset.prev = e.target.value
         })
 
-        this.cleanup.onElement(dropdown, 'change', (e) => {
+        this.renderCleanup.onElement(dropdown, 'change', (e) => {
             const value = e.target.value
             this.dispatchEvent(new CustomEvent('splitscreen-toggle', {
                 bubbles: true,

@@ -13,6 +13,8 @@ import { CleanupRegistry } from "../../utilities/CleanupRegistry.js"
 class UpdateMetadata extends HTMLElement {
     /** @type {CleanupRegistry} Registry for cleanup handlers */
     cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers */
+    renderCleanup = new CleanupRegistry()
     /** @type {Function|null} Unsubscribe function for project ready listener */
     _unsubProject = null
 
@@ -45,6 +47,7 @@ class UpdateMetadata extends HTMLElement {
 
     disconnectedCallback() {
         try { this._unsubProject?.() } catch {}
+        this.renderCleanup.run()
         this.cleanup.run()
     }
 
@@ -62,11 +65,14 @@ class UpdateMetadata extends HTMLElement {
      * Sets up event listeners for add/save buttons.
      */
     addEventListeners() {
-        this.cleanup.onElement(document.getElementById("add-field-btn"), "click", () => {
+        // Clear previous render-specific listeners
+        this.renderCleanup.run()
+
+        this.renderCleanup.onElement(document.getElementById("add-field-btn"), "click", () => {
             this.addMetadataField()
         })
 
-        this.cleanup.onElement(document.getElementById("save-metadata-btn"), "click", () => {
+        this.renderCleanup.onElement(document.getElementById("save-metadata-btn"), "click", () => {
             this.updateMetadata()
         })
     }

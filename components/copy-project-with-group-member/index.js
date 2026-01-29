@@ -10,6 +10,8 @@ import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 class CopyProjectWithGroupMember extends HTMLElement {
     /** @type {CleanupRegistry} Registry for cleanup handlers */
     cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers */
+    renderCleanup = new CleanupRegistry()
 
     constructor() {
         super()
@@ -22,6 +24,7 @@ class CopyProjectWithGroupMember extends HTMLElement {
     }
 
     disconnectedCallback() {
+        this.renderCleanup.run()
         this.cleanup.run()
     }
 
@@ -124,7 +127,10 @@ class CopyProjectWithGroupMember extends HTMLElement {
             <div id="project-info-container"></div>
         `
 
-        this.cleanup.onElement(this.shadowRoot.getElementById('copy-project-btn'), 'click', async () => {
+        // Clear previous render-specific listeners
+        this.renderCleanup.run()
+
+        this.renderCleanup.onElement(this.shadowRoot.getElementById('copy-project-btn'), 'click', async () => {
             const projectSelect = this.shadowRoot.getElementById('project-select')
             const selectedProjectId = projectSelect.value
             if (selectedProjectId === 'none') {
