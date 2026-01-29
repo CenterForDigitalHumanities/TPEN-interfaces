@@ -84,12 +84,12 @@ Display results page
 
 ### Single Manifest
 ```
-/?manifest=http%3A%2F%2Fwww.e-codices.unifr.ch%2Fmetadata%2Fiiif%2Fsl-0002%2Fmanifest.json
+/import-manifest?manifest=http%3A%2F%2Fwww.e-codices.unifr.ch%2Fmetadata%2Fiiif%2Fsl-0002%2Fmanifest.json
 ```
 
 ### Multiple Manifests
 ```
-/?manifest=URL1&manifest=URL2&manifest=URL3
+/import-manifest?manifest=URL1&manifest=URL2&manifest=URL3
 ```
 
 **Key Points**:
@@ -209,16 +209,16 @@ To test the feature, try these URLs:
 
 ```
 # Single manifest (e-codices)
-/?manifest=http%3A%2F%2Fwww.e-codices.unifr.ch%2Fmetadata%2Fiiif%2Fsl-0002%2Fmanifest.json
+/import-manifest?manifest=http%3A%2F%2Fwww.e-codices.unifr.ch%2Fmetadata%2Fiiif%2Fsl-0002%2Fmanifest.json
 
 # Multiple manifests
-/?manifest=URL1&manifest=URL2
+/import-manifest?manifest=URL1&manifest=URL2
 
 # With duplicates (one will be filtered)
-/?manifest=URL1&manifest=URL1&manifest=URL2
+/import-manifest?manifest=URL1&manifest=URL1&manifest=URL2
 
 # No manifests (shows error)
-/?manifest=
+/import-manifest?manifest=
 ```
 
 ## Files Created
