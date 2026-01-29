@@ -1,6 +1,7 @@
 import TPEN from "../../api/TPEN.js"
 import CheckPermissions from "../../components/check-permissions/checkPermissions.js"
 import { onProjectReady } from "../../utilities/projectReady.js"
+import { CleanupRegistry } from "../../utilities/CleanupRegistry.js"
 
 /**
  * ManagePages - Provides UI for managing pages within a layer including reordering, editing labels, and deletion.
@@ -10,6 +11,10 @@ import { onProjectReady } from "../../utilities/projectReady.js"
 class ManagePages extends HTMLElement {
     /** @type {Function|null} Unsubscribe function for project ready listener */
     _unsubProject = null
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for dynamic handlers created during interaction */
+    dynamicCleanup = new CleanupRegistry()
 
     constructor() {
         super()
@@ -35,6 +40,8 @@ class ManagePages extends HTMLElement {
 
     disconnectedCallback() {
         try { this._unsubProject?.() } catch {}
+        this.dynamicCleanup.run()
+        this.cleanup.run()
     }
 
     render() {
@@ -120,7 +127,9 @@ class ManagePages extends HTMLElement {
         const layers = TPEN.activeProject?.layers
         const pages = layers?.pages
         this.shadowRoot.querySelectorAll(".manage-pages").forEach((button) => {
-            button.addEventListener("click", () => {
+            this.cleanup.onElement(button, "click", () => {
+                // Clear previous dynamic listeners when entering manage mode
+                this.dynamicCleanup.run()
                 // Check if user has edit permission for pages
                 const hasEditAccess = CheckPermissions.checkEditAccess('PAGE', 'METADATA')
                 if (!hasEditAccess) {
@@ -150,19 +159,19 @@ class ManagePages extends HTMLElement {
                     el.classList.add("layer-card", "layer-card-flex")
                     el.setAttribute("draggable", "true")
 
-                    el.addEventListener("dragstart", (event) => {
+                    this.dynamicCleanup.onElement(el, "dragstart", (event) => {
                         event.dataTransfer.setData("text/plain", el.dataset.index)
                         el_dragged = event.target
                     })
-                    el.addEventListener("dragend", () => {
+                    this.dynamicCleanup.onElement(el, "dragend", () => {
                         layerPagesCard.forEach((el) => el.style.opacity = "1")
                     })
-                    el.addEventListener("dragover", (event) => {
+                    this.dynamicCleanup.onElement(el, "dragover", (event) => {
                         event.preventDefault()
                     })
-                    el.addEventListener("dragleave", () => {
+                    this.dynamicCleanup.onElement(el, "dragleave", () => {
                     })
-                    el.addEventListener("drop", (event) => {
+                    this.dynamicCleanup.onElement(el, "drop", (event) => {
                         event.preventDefault()
                         el_droppedOn = event.target
                         if (!el_droppedOn.classList.contains("layer-page")) el_droppedOn = el_droppedOn.closest(".layer-page")
@@ -205,7 +214,7 @@ class ManagePages extends HTMLElement {
                     deleteButton.innerText = "Delete Page"
                     editPageLabelButton.after(deleteButton)
 
-                    editPageLabelButton.addEventListener("click", () => {
+                    this.dynamicCleanup.onElement(editPageLabelButton, "click", () => {
                         const hasUpdateAccess = CheckPermissions.checkEditAccess('PAGE', 'METADATA')
                         if (!hasUpdateAccess) {
                             TPEN.eventDispatcher.dispatch("tpen-toast", {
@@ -230,7 +239,7 @@ class ManagePages extends HTMLElement {
                         saveLabelButton.dataset.pageId = pageId
                         saveLabelButton.innerText = "Save Label"
                         labelInput.after(saveLabelButton)
-                        saveLabelButton.addEventListener("click", () => {
+                        this.dynamicCleanup.onElement(saveLabelButton, "click", () => {
                             fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/page/${page_id}`, {
                                 method: "PUT",
                                 headers: {
@@ -266,7 +275,7 @@ class ManagePages extends HTMLElement {
                         })
                     })
 
-                    deleteButton.addEventListener("click", () => {
+                    this.dynamicCleanup.onElement(deleteButton, "click", () => {
                         const hasDeleteAccess = CheckPermissions.checkDeleteAccess('PAGE', '*')
                         if (!hasDeleteAccess) {
                             TPEN.eventDispatcher.dispatch("tpen-toast", {
@@ -302,7 +311,7 @@ class ManagePages extends HTMLElement {
                 layerActions.insertBefore(saveButton, layerActions.firstChild)
                 layerActions.removeChild(layerCardOuter.querySelector("tpen-manage-pages"))
 
-                editLayerLabelButton.addEventListener("click", () => {
+                this.dynamicCleanup.onElement(editLayerLabelButton, "click", () => {
                     const hasUpdateAccess = CheckPermissions.checkEditAccess('LAYER', 'METADATA')
                     if (!hasUpdateAccess) {
                         TPEN.eventDispatcher.dispatch("tpen-toast", {
@@ -329,7 +338,7 @@ class ManagePages extends HTMLElement {
                     saveLabelButton.innerText = "Save Label"
                     labelInput.insertAdjacentElement("afterend", saveLabelButton)
 
-                    saveLabelButton.addEventListener("click", () => {
+                    this.dynamicCleanup.onElement(saveLabelButton, "click", () => {
                         fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/layer/${layer_id}`, {
                             method: "PUT",
                             headers: {
@@ -368,7 +377,7 @@ class ManagePages extends HTMLElement {
                     })
                 })
 
-                saveButton.addEventListener("click", () => {
+                this.dynamicCleanup.onElement(saveButton, "click", () => {
                     const hasUpdateAccess = CheckPermissions.checkEditAccess('PAGE', 'ORDER')
                     if (!hasUpdateAccess) {
                         TPEN.eventDispatcher.dispatch("tpen-toast", {

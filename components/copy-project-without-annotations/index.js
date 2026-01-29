@@ -124,7 +124,7 @@ class CopyExistingProjectWithoutAnnotations extends HTMLElement {
             <div id="project-info-container"></div>
         `
 
-        this.shadowRoot.getElementById('copy-project-btn').addEventListener('click', async () => {
+        this.cleanup.onElement(this.shadowRoot.getElementById('copy-project-btn'), 'click', async () => {
             this.shadowRoot.getElementById('message').textContent = 'Copying project... Please wait.'
             this.shadowRoot.getElementById('copy-project-btn').disabled = true
             const projectSelect = this.shadowRoot.getElementById('project-select')

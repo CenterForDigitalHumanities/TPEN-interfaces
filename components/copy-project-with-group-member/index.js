@@ -124,7 +124,7 @@ class CopyProjectWithGroupMember extends HTMLElement {
             <div id="project-info-container"></div>
         `
 
-        this.shadowRoot.getElementById('copy-project-btn').addEventListener('click', async () => {
+        this.cleanup.onElement(this.shadowRoot.getElementById('copy-project-btn'), 'click', async () => {
             const projectSelect = this.shadowRoot.getElementById('project-select')
             const selectedProjectId = projectSelect.value
             if (selectedProjectId === 'none') {

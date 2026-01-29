@@ -1,6 +1,7 @@
 import TPEN from "../../api/TPEN.js"
 import CheckPermissions from "../check-permissions/checkPermissions.js"
 import { onProjectReady } from "../../utilities/projectReady.js"
+import { CleanupRegistry } from "../../utilities/CleanupRegistry.js"
 import vault from '../../js/vault.js'
 import { orderPageItemsByColumns } from '../../utilities/columnOrdering.js'
 import "../check-permissions/permission-match.js"
@@ -16,6 +17,8 @@ export default class ColumnSelector extends HTMLElement {
     #page = null
     /** @type {Function|null} Unsubscribe function for project ready listener */
     _unsubProject = null
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
 
     constructor() {
         super()
@@ -44,6 +47,7 @@ export default class ColumnSelector extends HTMLElement {
 
     disconnectedCallback() {
         try { this._unsubProject?.() } catch {}
+        this.cleanup.run()
     }
 
     async findColumnsData() {
@@ -119,7 +123,7 @@ export default class ColumnSelector extends HTMLElement {
 
         const selectEl = this.shadowRoot.querySelector("select")
         this.selectColumn({ target: selectEl })
-        selectEl.addEventListener("change", (e) => this.selectColumn(e))
+        this.cleanup.onElement(selectEl, "change", (e) => this.selectColumn(e))
     }
 
     selectColumn(e) {

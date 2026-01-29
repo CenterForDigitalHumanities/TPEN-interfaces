@@ -13,6 +13,8 @@ class UserProfile extends HTMLElement {
     user = TPEN.currentUser
     /** @type {CleanupRegistry} Registry for cleanup handlers */
     cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers */
+    renderCleanup = new CleanupRegistry()
 
     constructor() {
         super()
@@ -29,6 +31,7 @@ class UserProfile extends HTMLElement {
     }
 
     disconnectedCallback() {
+        this.renderCleanup.run()
         this.cleanup.run()
     }
 
@@ -93,6 +96,8 @@ class UserProfile extends HTMLElement {
     }
 
     render(profile) {
+        // Clear previous render-specific listeners before re-rendering
+        this.renderCleanup.run()
         const showMetadata = this.hasAttribute('show-metadata') && this.getAttribute('show-metadata') !== 'false'
         const linkedin = this.getPublicProfile(profile).linkedin || ''
         const twitter = this.getPublicProfile(profile).twitter || ''
@@ -405,23 +410,23 @@ class UserProfile extends HTMLElement {
 
         const imgElement = this.shadowRoot.querySelector('.user-image')
         userImageInput.value = imgElement.src || ''
-        userImageInput.addEventListener('input', (e) => {
+        this.renderCleanup.onElement(userImageInput, 'input', (e) => {
             const url = e.target.value.trim()
             if (url) {
                 imgElement.src = url
             }
         })
 
-        editBtn.addEventListener('click', () => {
+        this.renderCleanup.onElement(editBtn, 'click', () => {
             for (const key in inputs) {
                 inputs[key].value = texts[key].textContent
             }
             toggleEditMode(true)
         })
 
-        cancelBtn.addEventListener('click', () => toggleEditMode(false))
+        this.renderCleanup.onElement(cancelBtn, 'click', () => toggleEditMode(false))
 
-        saveBtn.addEventListener('click', async () => {
+        this.renderCleanup.onElement(saveBtn, 'click', async () => {
             const newName = inputs.name.value.trim()
             if (!newName || !/^[a-zA-Z0-9\s._'-@#]+$/.test(newName)) {
                 return TPEN.eventDispatcher.dispatch('tpen-toast', { message: 'Please enter a valid name', status: 'error' })
