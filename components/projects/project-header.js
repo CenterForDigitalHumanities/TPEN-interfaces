@@ -142,7 +142,7 @@ export default class ProjectHeader extends HTMLElement {
             return option
         })
         canvasLabels.replaceChildren(...CanvasSelectOptions)
-        canvasLabels.addEventListener('change', event => {
+        this.cleanup.onElement(canvasLabels, 'change', event => {
             const url = new URL(location.href)
             url.searchParams.set('pageID', event.target.value ?? '')
             location.href = url.toString()

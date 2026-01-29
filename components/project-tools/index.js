@@ -1,12 +1,17 @@
 import TPEN from "../../api/TPEN.js"
 import { onProjectReady } from "../../utilities/projectReady.js"
 import CheckPermissions from "../check-permissions/checkPermissions.js"
+import { CleanupRegistry } from "../../utilities/CleanupRegistry.js"
 
 /**
  * ProjectTools - Displays and manages project tools configuration.
  * @element tpen-project-tools
  */
 class ProjectTools extends HTMLElement {
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers */
+    renderCleanup = new CleanupRegistry()
     /** @type {Function|null} Unsubscribe function for project ready listener */
     _unsubProject = null
 
@@ -22,6 +27,8 @@ class ProjectTools extends HTMLElement {
 
     disconnectedCallback() {
         try { this._unsubProject?.() } catch { }
+        this.renderCleanup.run()
+        this.cleanup.run()
     }
 
     render() {
@@ -246,18 +253,21 @@ class ProjectTools extends HTMLElement {
             return code.test(str)
         }
 
-        openModalBtn?.addEventListener("click", () => {
+        // Clear previous render-specific listeners before adding new ones
+        this.renderCleanup.run()
+
+        this.renderCleanup.onElement(openModalBtn, "click", () => {
             modal.style.display = "flex"
             iframe.style.display = "none"
             nameInput.value = ""
             urlInput.value = ""
         })
 
-        closeModalBtn?.addEventListener("click", () => {
+        this.renderCleanup.onElement(closeModalBtn, "click", () => {
             modal.style.display = "none"
         })
 
-        testBtn?.addEventListener("click", () => {
+        this.renderCleanup.onElement(testBtn, "click", () => {
             const name = nameInput.value.trim()
             const url = urlInput.value.trim()
 
@@ -274,7 +284,7 @@ class ProjectTools extends HTMLElement {
             iframe.style.display = "block"
         })
 
-        addBtn?.addEventListener("click", async () => {
+        this.renderCleanup.onElement(addBtn, "click", async () => {
             const name = nameInput.value.trim()
             const url = urlInput.value.trim()
 
@@ -340,7 +350,7 @@ class ProjectTools extends HTMLElement {
         })
 
         toggleTools?.forEach(toggle => {
-            toggle.addEventListener("click", async () => {
+            this.renderCleanup.onElement(toggle, "click", async () => {
                 const toolName = toggle.value
                 const response = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/toggleTool`, {
                     method: "PUT",
@@ -365,7 +375,7 @@ class ProjectTools extends HTMLElement {
         })
 
         deleteButtons?.forEach(button => {
-            button.addEventListener("click", async (e) => {
+            this.renderCleanup.onElement(button, "click", async (e) => {
                 const toolName = e.target.closest(".tool-card").querySelector("label").textContent.trim()
                 const toolValue = e.target.closest(".tool-card").querySelector("input[type='checkbox']").value
                 const container = e.target.closest(".container")

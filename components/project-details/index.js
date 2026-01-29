@@ -13,6 +13,8 @@ import { CleanupRegistry } from "../../utilities/CleanupRegistry.js"
 class ProjectDetails extends HTMLElement {
     /** @type {CleanupRegistry} Registry for cleanup handlers */
     cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers */
+    renderCleanup = new CleanupRegistry()
     /** @type {Function|null} Unsubscribe function for project ready listener */
     _unsubProject = null
 
@@ -114,6 +116,7 @@ class ProjectDetails extends HTMLElement {
 
     disconnectedCallback() {
         try { this._unsubProject?.() } catch {}
+        this.renderCleanup.run()
         this.cleanup.run()
     }
 
@@ -142,8 +145,11 @@ class ProjectDetails extends HTMLElement {
             </p>
             <sequence-panel manifest-id="${project.manifest}"></sequence-panel>
         `
+        // Clear previous render-specific listeners before adding new ones
+        this.renderCleanup.run()
+
         if (!isProjectEditor) return
-        this.shadowRoot.getElementById('edit-project-title').addEventListener('click', (e) => {
+        this.renderCleanup.onElement(this.shadowRoot.getElementById('edit-project-title'), 'click', (e) => {
             const screenTitle = this.shadowRoot.querySelector('.project-title')
             const editButton = this.shadowRoot.getElementById('edit-project-title')
             screenTitle.classList.add('hidden')
@@ -162,6 +168,7 @@ class ProjectDetails extends HTMLElement {
             inputDiv.appendChild(saveButton)
             this.shadowRoot.querySelector('small').insertAdjacentElement('beforebegin', inputDiv)
 
+            // Save button listener - element is removed after use, so no cleanup needed
             saveButton.addEventListener('click', async () => {
                 const response = await fetch(`${TPEN.servicesURL}/project/${project._id}/label`, {
                     method: 'PATCH',

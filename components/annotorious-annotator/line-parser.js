@@ -39,6 +39,10 @@ class AnnotoriousAnnotator extends HTMLElement {
 
   /** @type {CleanupRegistry} Registry for cleanup handlers */
   cleanup = new CleanupRegistry()
+  /** @type {CleanupRegistry} Registry for render-specific handlers */
+  renderCleanup = new CleanupRegistry()
+  /** @type {CleanupRegistry} Registry for annotation element handlers */
+  annotationCleanup = new CleanupRegistry()
   /** @type {Function|null} Unsubscribe function for project ready listener */
   _unsubProject = null
 
@@ -84,6 +88,8 @@ class AnnotoriousAnnotator extends HTMLElement {
 
   disconnectedCallback() {
     try { this._unsubProject?.() } catch {}
+    this.annotationCleanup.run()
+    this.renderCleanup.run()
     this.cleanup.run()
   }
 
@@ -334,7 +340,10 @@ class AnnotoriousAnnotator extends HTMLElement {
         <span id="sampleRuler"></span>
       </div>`
 
-      this.shadowRoot.querySelector("#autoParseBtn").addEventListener("click", async () => {
+      // Clear previous render-specific listeners before adding new ones
+      this.renderCleanup.run()
+
+      this.renderCleanup.onElement(this.shadowRoot.querySelector("#autoParseBtn"), "click", async () => {
         try {
           if (typeof cv === "undefined") {
             await new Promise((resolve, reject) => {
@@ -400,23 +409,23 @@ class AnnotoriousAnnotator extends HTMLElement {
     const mergeLinesBtn = this.shadowRoot.getElementById("mergeLinesBtn")
     const drag = this.shadowRoot.querySelectorAll(".dragMe")
 
-    drag.forEach(elem => elem.addEventListener("mousedown", (e) => this.dragging(e)))
-    addLinesBtn.addEventListener("click", (e) => this.toggleAddLines(e))
-    mergeLinesBtn.addEventListener("click", (e) => this.toggleMergeLines(e))
-    drawTool.addEventListener("change", (e) => this.toggleDrawingMode(e))
-    editTool.addEventListener("change", (e) => this.toggleEditingMode(e))
-    eraseTool.addEventListener("change", (e) => this.toggleErasingMode(e))
-    seeTool.addEventListener("change", (e) => this.toggleAnnotationVisibility(e))
-    createColumnsBtn.addEventListener("click", () =>
+    drag.forEach(elem => this.renderCleanup.onElement(elem, "mousedown", (e) => this.dragging(e)))
+    this.renderCleanup.onElement(addLinesBtn, "click", (e) => this.toggleAddLines(e))
+    this.renderCleanup.onElement(mergeLinesBtn, "click", (e) => this.toggleMergeLines(e))
+    this.renderCleanup.onElement(drawTool, "change", (e) => this.toggleDrawingMode(e))
+    this.renderCleanup.onElement(editTool, "change", (e) => this.toggleEditingMode(e))
+    this.renderCleanup.onElement(eraseTool, "change", (e) => this.toggleErasingMode(e))
+    this.renderCleanup.onElement(seeTool, "change", (e) => this.toggleAnnotationVisibility(e))
+    this.renderCleanup.onElement(createColumnsBtn, "click", () =>
       window.location.href = `/manage-columns?projectID=${TPEN.activeProject._id}&pageID=${this.#annotationPageID}`
     )
-    saveButton.addEventListener("click", (e) => {
+    this.renderCleanup.onElement(saveButton, "click", (e) => {
       this.#annotoriousInstance.cancelSelected()
       // Timeout required in order to allow the unfocus native functionality to complete for $isDirty.
       setTimeout(() => { this.saveAnnotations() }, 500)
     })
-    deleteAllBtn.addEventListener("click", async (e) => await this.deleteAllAnnotations(e))
-    window.addEventListener('beforeunload', (ev) => {
+    this.renderCleanup.onElement(deleteAllBtn, "click", async (e) => await this.deleteAllAnnotations(e))
+    this.renderCleanup.onWindow('beforeunload', (ev) => {
       if (this.#resolvedAnnotationPage?.$isDirty) {
         if (!confirm("If you leave unsaved changes will be lost.")){
           ev.preventDefault()
@@ -824,7 +833,7 @@ class AnnotoriousAnnotator extends HTMLElement {
     if (CheckPermissions.checkEditAccess("PROJECT")) {
       const manageProjectBtn = this.shadowRoot.querySelector("#projectManagementBtn")
       manageProjectBtn.style.display = "block"
-      manageProjectBtn.addEventListener("click", (e) => document.location.href = `/project/manage?projectID=${TPEN.activeProject._id}`)
+      this.renderCleanup.onElement(manageProjectBtn, "click", (e) => document.location.href = `/project/manage?projectID=${TPEN.activeProject._id}`)
     }
   }
 
@@ -1569,16 +1578,16 @@ class AnnotoriousAnnotator extends HTMLElement {
     }
 
     // Further cursor support when user changes edit options while an Annotation is selected.
-    elem.addEventListener('mouseenter', applyMouseEnter)
+    this.annotationCleanup.onElement(elem, 'mouseenter', applyMouseEnter)
 
     // Instead of click use mousedown and mouseup to accomodate moving a column during line editing mode
-    elem.addEventListener('mousedown', setMouseStart)
+    this.annotationCleanup.onElement(elem, 'mousedown', setMouseStart)
 
     // A click initiates a split or merge on the active line during line editing mode
-    elem.addEventListener('mouseup', applyMouseUp)
+    this.annotationCleanup.onElement(elem, 'mouseup', applyMouseUp)
 
     // Position the ruler element to be with the cursor
-    elem.addEventListener('mousemove', applyMouseMove)
+    this.annotationCleanup.onElement(elem, 'mousemove', applyMouseMove)
 
   }
 

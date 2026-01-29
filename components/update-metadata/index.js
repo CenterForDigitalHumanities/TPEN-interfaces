@@ -3,6 +3,7 @@ import User from "../../api/User.js"
 import { eventDispatcher } from "../../api/events.js"
 import CheckPermissions from "../../components/check-permissions/checkPermissions.js"
 import { onProjectReady } from "../../utilities/projectReady.js"
+import { CleanupRegistry } from "../../utilities/CleanupRegistry.js"
 
 /**
  * UpdateMetadata - Modal dialog for viewing and editing project metadata.
@@ -10,6 +11,8 @@ import { onProjectReady } from "../../utilities/projectReady.js"
  * @element update-metadata
  */
 class UpdateMetadata extends HTMLElement {
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
     /** @type {Function|null} Unsubscribe function for project ready listener */
     _unsubProject = null
 
@@ -42,6 +45,7 @@ class UpdateMetadata extends HTMLElement {
 
     disconnectedCallback() {
         try { this._unsubProject?.() } catch {}
+        this.cleanup.run()
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
@@ -58,11 +62,11 @@ class UpdateMetadata extends HTMLElement {
      * Sets up event listeners for add/save buttons.
      */
     addEventListeners() {
-        document.getElementById("add-field-btn")?.addEventListener("click", () => {
+        this.cleanup.onElement(document.getElementById("add-field-btn"), "click", () => {
             this.addMetadataField()
         })
 
-        document.getElementById("save-metadata-btn")?.addEventListener("click", () => {
+        this.cleanup.onElement(document.getElementById("save-metadata-btn"), "click", () => {
             this.updateMetadata()
         })
     }
@@ -199,11 +203,11 @@ class UpdateMetadata extends HTMLElement {
         </div>
         `
         fieldsContainer.insertAdjacentHTML("beforeend", fieldHTML)
-        fieldsContainer
-            .querySelector(".metadata-field:last-child .remove-field-btn .icon, .metadata-field:last-child .remove-field-btn")
-            .addEventListener("click", (e) => {
-                e.target.closest(".metadata-field").remove()
-            })
+        const removeBtn = fieldsContainer.querySelector(".metadata-field:last-child .remove-field-btn .icon, .metadata-field:last-child .remove-field-btn")
+        // Self-removing element - listener is cleaned up when element is removed from DOM
+        removeBtn.addEventListener("click", (e) => {
+            e.target.closest(".metadata-field").remove()
+        })
     }
 
     async updateMetadata() {

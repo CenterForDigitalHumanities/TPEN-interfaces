@@ -26,7 +26,7 @@ class AuthButton extends HTMLElement {
       button.setAttribute("loggedIn", true)
       button.innerText = "LOGOUT"
     })
-    button.addEventListener('click', () => this[button.getAttribute("loggedIn") ? 'logout' : 'login']())
+    this.cleanup.onElement(button, 'click', () => this[button.getAttribute("loggedIn") ? 'logout' : 'login']())
     TPEN.attachAuthentication(this)
     this.shadowRoot.append(button)
   }

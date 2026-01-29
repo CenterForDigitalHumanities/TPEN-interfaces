@@ -1,6 +1,7 @@
 import TPEN from "../../api/TPEN.js"
 import CheckPermissions from '../../components/check-permissions/checkPermissions.js'
 import { onProjectReady } from "../../utilities/projectReady.js"
+import { CleanupRegistry } from "../../utilities/CleanupRegistry.js"
 
 /**
  * RolesHandler - Manages role assignment UI for project collaborators.
@@ -8,6 +9,10 @@ import { onProjectReady } from "../../utilities/projectReady.js"
  * @element roles-handler
  */
 class RolesHandler extends HTMLElement {
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers */
+    renderCleanup = new CleanupRegistry()
     /** @type {Function|null} Unsubscribe function for project ready listener */
     _unsubProject = null
 
@@ -35,6 +40,8 @@ class RolesHandler extends HTMLElement {
 
     disconnectedCallback() {
         try { this._unsubProject?.() } catch {}
+        this.renderCleanup.run()
+        this.cleanup.run()
     }
 
     render() {
@@ -88,9 +95,12 @@ class RolesHandler extends HTMLElement {
     }
 
     addEventListeners() {
+        // Clear previous render-specific listeners
+        this.renderCleanup.run()
+
         const groupMembersElement = document.querySelector("project-collaborators")?.shadowRoot?.querySelector(".group-members")
         if(!groupMembersElement) return
-        groupMembersElement.addEventListener('click', this.rolesHandler.bind(this))
+        this.renderCleanup.onElement(groupMembersElement, 'click', this.rolesHandler.bind(this))
     }
 
     renderProjectCollaborators() {
@@ -134,14 +144,14 @@ class RolesHandler extends HTMLElement {
 
 
     manageRoleButtons(isOwnerOrLeader) {
-        if(!document.querySelector("project-collaborators")?.shadowRoot?.querySelector('.group-members')) return
-        document.querySelector("project-collaborators").shadowRoot.querySelector('.group-members').addEventListener("click", (e) => {
+        const groupMembers = document.querySelector("project-collaborators")?.shadowRoot?.querySelector('.group-members')
+        if(!groupMembers) return
+        this.renderCleanup.onElement(groupMembers, "click", (e) => {
             const button = e.target
             if (button.classList.contains("manage-roles-button")) {
                 this.toggleRoleManagementButtons(button)
             }
         })
-
     }
 
     toggleRoleManagementButtons(button) {

@@ -1,6 +1,7 @@
 import TPEN from "../../api/TPEN.js"
 import CheckPermissions from '../../components/check-permissions/checkPermissions.js'
 import { onProjectReady } from "../../utilities/projectReady.js"
+import { CleanupRegistry } from "../../utilities/CleanupRegistry.js"
 
 /**
  * InviteMemberElement - Provides a form to invite new members to a project.
@@ -8,6 +9,8 @@ import { onProjectReady } from "../../utilities/projectReady.js"
  * @element invite-member
  */
 class InviteMemberElement extends HTMLElement {
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
     /** @type {Function|null} Unsubscribe function for project ready listener */
     _unsubProject = null
 
@@ -34,6 +37,7 @@ class InviteMemberElement extends HTMLElement {
 
     disconnectedCallback() {
         try { this._unsubProject?.() } catch {}
+        this.cleanup.run()
     }
 
     render() {
@@ -76,7 +80,7 @@ class InviteMemberElement extends HTMLElement {
 
     addEventListeners() {
         const inviteForm = this.shadowRoot.querySelector("#invite-form")
-        inviteForm.addEventListener("submit", this.inviteUser.bind(this))
+        this.cleanup.onElement(inviteForm, "submit", this.inviteUser.bind(this))
     }
 
     async inviteUser(event) {

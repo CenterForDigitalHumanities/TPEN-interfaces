@@ -83,7 +83,7 @@ export default class ProjectsManager extends HTMLElement {
         `
 
         this.querySelectorAll('.delete-btn').forEach(button => {
-            button.addEventListener("click", (event) => {
+            this.cleanup.onElement(button, "click", (event) => {
                 const projectId = event.target.getAttribute("data-project-id")
                 alert(`Delete not implemented for project ID: ${projectId}`)
             })

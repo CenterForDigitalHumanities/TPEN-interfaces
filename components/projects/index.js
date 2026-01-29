@@ -88,7 +88,7 @@ export default class ProjectsList extends HTMLElement {
             ``)}</ul>`
 
         this.querySelectorAll('.delete-btn').forEach(button => {
-            button.addEventListener("click", (event) => {
+            this.cleanup.onElement(button, "click", (event) => {
                 const projectId = event.target.getAttribute("data-project-id")
                 alert(`Delete not implemented for project ID: ${projectId}`)
             })
@@ -97,7 +97,7 @@ export default class ProjectsList extends HTMLElement {
 
     attachDetailsListeners() {
         this.querySelectorAll('.details-button').forEach(button => {
-            button.addEventListener('click', (event) => {
+            this.cleanup.onElement(button, 'click', (event) => {
                 const projectId = event.target.closest('li').getAttribute('data-id')
                 this.loadContributors(projectId)
             })
