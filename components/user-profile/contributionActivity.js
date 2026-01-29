@@ -14,6 +14,8 @@ class ContributionActivity extends HTMLElement {
 
     /** @type {CleanupRegistry} Registry for cleanup handlers */
     cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers */
+    renderCleanup = new CleanupRegistry()
 
     constructor() {
         super()
@@ -34,6 +36,7 @@ class ContributionActivity extends HTMLElement {
     }
 
     disconnectedCallback() {
+        this.renderCleanup.run()
         this.cleanup.run()
     }
 
@@ -115,6 +118,9 @@ class ContributionActivity extends HTMLElement {
         Object.values(contributionsByProject).forEach(projectGroup => {
             projectGroup.contributions.sort((a, b) => new Date(b.modifiedTime) - new Date(a.modifiedTime))
         })
+
+        // Clear previous render-specific listeners before re-rendering
+        this.renderCleanup.run()
 
         this.shadowRoot.innerHTML = `
             <style>
@@ -284,7 +290,7 @@ class ContributionActivity extends HTMLElement {
             const projectGroup = Object.values(contributionsByProject)[projIndex]
             const ul = this.shadowRoot.getElementById(`project-${projIndex}`)
 
-            btn.addEventListener('click', () => {
+            this.renderCleanup.onElement(btn, 'click', () => {
                 const remaining = projectGroup.contributions.slice(shownCount, shownCount + 5)
 
                 remaining.forEach(c => {
