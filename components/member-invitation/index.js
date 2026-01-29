@@ -9,6 +9,8 @@ import { CleanupRegistry } from "../../utilities/CleanupRegistry.js"
  * @element invite-member
  */
 class InviteMemberElement extends HTMLElement {
+    /** @type {Set<number>} Set of pending timeout IDs for cleanup */
+    #pendingTimeouts = new Set()
     /** @type {CleanupRegistry} Registry for cleanup handlers */
     cleanup = new CleanupRegistry()
     /** @type {CleanupRegistry} Registry for render-specific handlers */
@@ -40,6 +42,11 @@ class InviteMemberElement extends HTMLElement {
 
     disconnectedCallback() {
         try { this._unsubProject?.() } catch {}
+        // Clear any pending timeouts
+        for (const timeoutId of this.#pendingTimeouts) {
+            clearTimeout(timeoutId)
+        }
+        this.#pendingTimeouts.clear()
         this.renderCleanup.run()
         this.cleanup.run()
     }
@@ -125,13 +132,17 @@ class InviteMemberElement extends HTMLElement {
             successMessage.classList.add("success-message")
             this.shadowRoot.querySelector('#invite-form').appendChild(successMessage)
 
-            setTimeout(() => {
+            const successTimeoutId = setTimeout(() => {
+                this.#pendingTimeouts.delete(successTimeoutId)
                 successMessage.remove()
             }, 3000)
+            this.#pendingTimeouts.add(successTimeoutId)
         } catch (error) {
-            setTimeout(() => {
+            const errorTimeoutId = setTimeout(() => {
+                this.#pendingTimeouts.delete(errorTimeoutId)
                 this.shadowRoot.querySelector('#errorHTML').innerHTML = ''
             }, 3000)
+            this.#pendingTimeouts.add(errorTimeoutId)
             this.shadowRoot.querySelector('#errorHTML').classList.add("error-padding")
             this.shadowRoot.querySelector('#errorHTML').innerHTML = error.message
             this.shadowRoot.querySelector('#submit').textContent = "Submit"

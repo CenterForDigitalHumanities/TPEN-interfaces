@@ -293,6 +293,11 @@ export default class TranscriptionBlock extends HTMLElement {
 
     disconnectedCallback() {
         try { this._unsubProject?.() } catch { /* Expected if already unsubscribed */ }
+        // Clear any pending save timers
+        for (const timerId of this.#saveTimers.values()) {
+            clearTimeout(timerId)
+        }
+        this.#saveTimers.clear()
         this.renderCleanup.run()
         this.cleanup.run()
         eventDispatcher.dispatch('tpen-transcription-block-disconnected')

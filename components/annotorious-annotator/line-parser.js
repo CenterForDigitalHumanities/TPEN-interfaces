@@ -36,6 +36,8 @@ class AnnotoriousAnnotator extends HTMLElement {
   #canvasImageURL
   #canvasID
   #currentMergeSelection
+  /** @type {Set<number>} Set of pending timeout IDs for cleanup */
+  #pendingTimeouts = new Set()
 
   /** @type {CleanupRegistry} Registry for cleanup handlers */
   cleanup = new CleanupRegistry()
@@ -88,6 +90,11 @@ class AnnotoriousAnnotator extends HTMLElement {
 
   disconnectedCallback() {
     try { this._unsubProject?.() } catch {}
+    // Clear any pending timeouts
+    for (const timeoutId of this.#pendingTimeouts) {
+      clearTimeout(timeoutId)
+    }
+    this.#pendingTimeouts.clear()
     this.annotationCleanup.run()
     this.renderCleanup.run()
     this.cleanup.run()
@@ -422,7 +429,11 @@ class AnnotoriousAnnotator extends HTMLElement {
     this.renderCleanup.onElement(saveButton, "click", (e) => {
       this.#annotoriousInstance.cancelSelected()
       // Timeout required in order to allow the unfocus native functionality to complete for $isDirty.
-      setTimeout(() => { this.saveAnnotations() }, 500)
+      const timeoutId = setTimeout(() => {
+        this.#pendingTimeouts.delete(timeoutId)
+        this.saveAnnotations()
+      }, 500)
+      this.#pendingTimeouts.add(timeoutId)
     })
     this.renderCleanup.onElement(deleteAllBtn, "click", async (e) => await this.deleteAllAnnotations(e))
     this.renderCleanup.onWindow('beforeunload', (ev) => {
@@ -435,13 +446,17 @@ class AnnotoriousAnnotator extends HTMLElement {
     })
     // OSD and AnnotoriousOSD need some cycles to load, they are big files.
     this.shadowRoot.appendChild(osdScript)
-    setTimeout(() => { 
+    const outerTimeoutId = setTimeout(() => {
+      this.#pendingTimeouts.delete(outerTimeoutId)
       this.shadowRoot.appendChild(annotoriousScript)
-      setTimeout(() => { 
+      const innerTimeoutId = setTimeout(() => {
+        this.#pendingTimeouts.delete(innerTimeoutId)
         // Process the page to get the data required for the component UI
         this.processPage(this.#annotationPageID)
       }, 200)
+      this.#pendingTimeouts.add(innerTimeoutId)
     }, 200)
+    this.#pendingTimeouts.add(outerTimeoutId)
   }
 
   /**
@@ -748,7 +763,8 @@ class AnnotoriousAnnotator extends HTMLElement {
       // console.log("Annotorious clickAnnotation")
       if (!originalAnnotation) return
       if (_this.#isErasing) {
-        setTimeout(() => {
+        const timeoutId = setTimeout(() => {
+          _this.#pendingTimeouts.delete(timeoutId)
           // Timeout required in order to allow the click-and-focus native functionality to complete.
           // Also stops the goofy UX for naturally slow clickers.
           let c = confirm("Are you sure you want to remove this?")
@@ -759,6 +775,7 @@ class AnnotoriousAnnotator extends HTMLElement {
             _this.#annotoriousInstance.cancelSelected()
           }
         }, 500)
+        _this.#pendingTimeouts.add(timeoutId)
       }
     })
 

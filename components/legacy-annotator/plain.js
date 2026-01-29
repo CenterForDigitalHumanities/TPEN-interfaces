@@ -59,6 +59,12 @@ class LegacyAnnotator extends HTMLElement {
     }
 
     disconnectedCallback() {
+        // Clean up mousemove handler if still attached (user was mid-drawing)
+        if (this.#mouseMoveHandler) {
+            const imageContainer = this.shadowRoot.getElementById("imageContainer")
+            imageContainer?.removeEventListener("mousemove", this.#mouseMoveHandler)
+            this.#mouseMoveHandler = null
+        }
         this.cleanup.run()
     }
 

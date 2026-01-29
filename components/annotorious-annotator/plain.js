@@ -26,6 +26,8 @@ class AnnotoriousAnnotator extends HTMLElement {
     #canvasDims
     #isDrawing = false
     #isErasing = false
+    /** @type {number|null} Timeout ID for erase confirmation */
+    #eraseConfirmTimeout = null
 
     /** @type {CleanupRegistry} Registry for cleanup handlers */
     cleanup = new CleanupRegistry()
@@ -108,6 +110,11 @@ class AnnotoriousAnnotator extends HTMLElement {
     }
 
     disconnectedCallback() {
+      // Clear any pending erase confirmation timeout
+      if (this.#eraseConfirmTimeout) {
+        clearTimeout(this.#eraseConfirmTimeout)
+        this.#eraseConfirmTimeout = null
+      }
       this.cleanup.run()
     }
 
@@ -245,12 +252,14 @@ class AnnotoriousAnnotator extends HTMLElement {
         if(!annotation) return
         // FIXME if the user holds the mouse down there is some goofy UX.
         if(_this.#isErasing) {
-          setTimeout(()=>{
+          if (_this.#eraseConfirmTimeout) clearTimeout(_this.#eraseConfirmTimeout)
+          _this.#eraseConfirmTimeout = setTimeout(()=>{
+            _this.#eraseConfirmTimeout = null
             // Timeout required in order to allow the click-and-focus native functionality to complete.
             // Also stops the goofy UX for naturally slow clickers.
             let c = confirm("Are you sure you want to remove this?")
             if(c) {
-              _this.#annotoriousInstance.removeAnnotation(annotation)  
+              _this.#annotoriousInstance.removeAnnotation(annotation)
             }
             else{
               _this.#annotoriousInstance.cancelSelected()

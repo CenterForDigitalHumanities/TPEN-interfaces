@@ -23,6 +23,8 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
   #imgBottomPositionRatio = 1
   #imgTopPositionRatio = 1
   #toolLineListeners = null
+  /** @type {number|null} Timeout ID for drawer transition callbacks */
+  #drawerTimeoutId = null
   /** @type {CleanupRegistry} Registry for cleanup handlers */
   cleanup = new CleanupRegistry()
   /** @type {CleanupRegistry} Registry for render-specific handlers */
@@ -59,14 +61,18 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
 
     this.cleanup.onElement(this, 'drawer-opened', () => {
       // Wait for the 0.3s CSS transition to complete before recalculating
-      setTimeout(() => {
+      if (this.#drawerTimeoutId) clearTimeout(this.#drawerTimeoutId)
+      this.#drawerTimeoutId = setTimeout(() => {
+        this.#drawerTimeoutId = null
         this.updateLines()
       }, 300)
     })
 
     this.cleanup.onElement(this, 'drawer-closed', () => {
       // Wait for the 0.3s CSS transition to complete before recalculating
-      setTimeout(() => {
+      if (this.#drawerTimeoutId) clearTimeout(this.#drawerTimeoutId)
+      this.#drawerTimeoutId = setTimeout(() => {
+        this.#drawerTimeoutId = null
         this.updateLines()
       }, 300)
     })
@@ -74,6 +80,11 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
 
   disconnectedCallback() {
     try { this._unsubProject?.() } catch {}
+    // Clear any pending drawer transition timeout
+    if (this.#drawerTimeoutId) {
+      clearTimeout(this.#drawerTimeoutId)
+      this.#drawerTimeoutId = null
+    }
     this.#cleanupToolLineListeners()
     this.renderCleanup.run()
     this.cleanup.run()

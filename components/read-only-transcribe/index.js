@@ -16,6 +16,8 @@ class ReadOnlyViewTranscribe extends HTMLElement {
     #canvasDims
     #currentPage
     _currentCanvas
+    /** @type {Set<number>} Set of pending timeout IDs for cleanup */
+    #pendingTimeouts = new Set()
 
     /** @type {CleanupRegistry} Registry for cleanup handlers */
     cleanup = new CleanupRegistry()
@@ -254,16 +256,27 @@ class ReadOnlyViewTranscribe extends HTMLElement {
         await this.loadAnnotations()
         await this.loadExternalScripts()
 
-        setTimeout(() => {
+        const outerTimeoutId = setTimeout(() => {
+            this.#pendingTimeouts.delete(outerTimeoutId)
             if (this.pages.length > 0) {
                 const currentCanvasUrl = this.layers[this.currentLayer][this.pages[this.currentPage]]?.id ?? ''
                 this.#annotationPageID = currentCanvasUrl.split('/').pop() ?? ''
             }
-            setTimeout(() => { this.processPage(this.#annotationPageID) }, 200)
+            const innerTimeoutId = setTimeout(() => {
+                this.#pendingTimeouts.delete(innerTimeoutId)
+                this.processPage(this.#annotationPageID)
+            }, 200)
+            this.#pendingTimeouts.add(innerTimeoutId)
         }, 200)
+        this.#pendingTimeouts.add(outerTimeoutId)
     }
 
     disconnectedCallback() {
+        // Clear any pending timeouts
+        for (const timeoutId of this.#pendingTimeouts) {
+            clearTimeout(timeoutId)
+        }
+        this.#pendingTimeouts.clear()
         this.renderCleanup.run()
         this.cleanup.run()
         if (this.#osd) {

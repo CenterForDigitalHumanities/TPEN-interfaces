@@ -14,6 +14,8 @@ class QuickTypeEditorDialog extends HTMLElement {
     cleanup = new CleanupRegistry()
     /** @type {CleanupRegistry} Registry for dialog-specific handlers (cleared on close/reopen) */
     dialogCleanup = new CleanupRegistry()
+    /** @type {number|null} Timeout ID for close animation */
+    #closeAnimationTimeout = null
 
     constructor() {
         super()
@@ -29,6 +31,11 @@ class QuickTypeEditorDialog extends HTMLElement {
     }
 
     disconnectedCallback() {
+        // Clear any pending close animation timeout
+        if (this.#closeAnimationTimeout) {
+            clearTimeout(this.#closeAnimationTimeout)
+            this.#closeAnimationTimeout = null
+        }
         this.dialogCleanup.run()
         this.cleanup.run()
     }
@@ -56,12 +63,14 @@ class QuickTypeEditorDialog extends HTMLElement {
     close() {
         const overlay = this.shadowRoot.querySelector('.dialog-overlay')
         const container = this.shadowRoot.querySelector('.dialog-container')
-        
+
         overlay.classList.remove('show')
         container.classList.remove('show')
-        
+
         // Wait for animation to complete before hiding
-        setTimeout(() => {
+        if (this.#closeAnimationTimeout) clearTimeout(this.#closeAnimationTimeout)
+        this.#closeAnimationTimeout = setTimeout(() => {
+            this.#closeAnimationTimeout = null
             overlay.style.display = 'none'
         }, 300)
     }

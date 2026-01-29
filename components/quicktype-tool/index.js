@@ -309,6 +309,8 @@ class QuickTypeToolButton extends HTMLElement {
     cleanup = new CleanupRegistry()
     /** @type {CleanupRegistry} Registry for render-specific handlers */
     renderCleanup = new CleanupRegistry()
+    /** @type {number|null} Timeout ID for panel close animation */
+    #panelCloseTimeout = null
 
     constructor() {
         super()
@@ -331,6 +333,11 @@ class QuickTypeToolButton extends HTMLElement {
 
     disconnectedCallback() {
         try { this._unsubProject?.() } catch { }
+        // Clear any pending panel close animation timeout
+        if (this.#panelCloseTimeout) {
+            clearTimeout(this.#panelCloseTimeout)
+            this.#panelCloseTimeout = null
+        }
         this.renderCleanup.run()
         this.cleanup.run()
     }
@@ -354,7 +361,9 @@ class QuickTypeToolButton extends HTMLElement {
                 // Close animation
                 charPanel.classList.remove('show')
                 // Set display to none after animation completes
-                setTimeout(() => {
+                if (this.#panelCloseTimeout) clearTimeout(this.#panelCloseTimeout)
+                this.#panelCloseTimeout = setTimeout(() => {
+                    this.#panelCloseTimeout = null
                     if (!charPanel.classList.contains('show')) {
                         charPanel.style.display = 'none'
                     }
