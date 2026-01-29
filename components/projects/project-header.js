@@ -4,6 +4,7 @@ import "../layer-selector/index.js"
 import "../column-selector/index.js"
 import CheckPermissions from "../check-permissions/checkPermissions.js"
 import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
+import { onProjectReady } from '../../utilities/projectReady.js'
 
 /**
  * ProjectHeader - Navigation header for transcription interface with canvas selection.
@@ -15,6 +16,8 @@ export default class ProjectHeader extends HTMLElement {
 
     /** @type {CleanupRegistry} Registry for cleanup handlers */
     cleanup = new CleanupRegistry()
+    /** @type {Function|null} Unsubscribe function for project ready listener */
+    _unsubProject = null
 
     constructor() {
         super()
@@ -60,14 +63,11 @@ export default class ProjectHeader extends HTMLElement {
             this.loadFailed = true
             this.render()
         })
-        this.cleanup.onEvent(eventDispatcher, 'tpen-project-loaded', this.authgate.bind(this))
-
-        if(TPEN.activeProject?._createdAt){
-            this.authgate()
-        }
+        this._unsubProject = onProjectReady(this, this.authgate)
     }
 
     disconnectedCallback() {
+        try { this._unsubProject?.() } catch {}
         this.cleanup.run()
     }
 

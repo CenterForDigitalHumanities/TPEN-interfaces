@@ -530,12 +530,8 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       const imgBottom = this.shadowRoot.querySelector('#imgBottom img')
 
       if (imgTop && imgBottom) {
-        const onLoad = () => {
-          // Update lines once image is loaded
-          this.updateLines()
-        }
-
-        imgTop.addEventListener('load', onLoad, { once: true })
+        // Use cleanup registry for consistency, even for one-time listeners
+        this.cleanup.onElement(imgTop, 'load', () => this.updateLines(), { once: true })
         imgTop.src = imageResource
         imgBottom.src = imageResource
       }

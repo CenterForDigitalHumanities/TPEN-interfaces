@@ -1,5 +1,6 @@
 import TPEN from "../../api/TPEN.js"
 import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
+import { onProjectReady } from '../../utilities/projectReady.js'
 
 const eventDispatcher = TPEN.eventDispatcher
 
@@ -10,6 +11,8 @@ const eventDispatcher = TPEN.eventDispatcher
 class TpenQuickType extends HTMLElement {
   /** @type {CleanupRegistry} Registry for cleanup handlers */
   cleanup = new CleanupRegistry()
+  /** @type {Function|null} Unsubscribe function for project ready listener */
+  _unsubProject = null
 
   constructor() {
     super()
@@ -67,15 +70,13 @@ class TpenQuickType extends HTMLElement {
 
   connectedCallback() {
     TPEN.attachAuthentication(this)
-    this.cleanup.onEvent(eventDispatcher, "tpen-project-loaded", () => this.loadQuickType())
+    this._unsubProject = onProjectReady(this, () => this.loadQuickType())
     this.render()
     this.addEventListeners()
-    if (TPEN.activeProject) {
-      this.loadQuickType()
-    }
   }
 
   disconnectedCallback() {
+    try { this._unsubProject?.() } catch {}
     this.cleanup.run()
   }
 

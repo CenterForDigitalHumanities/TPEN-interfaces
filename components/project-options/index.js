@@ -6,6 +6,7 @@ import { stringFromDate, escapeHtml } from '/js/utils.js'
 import { renderPermissionError } from '../../utilities/renderPermissionError.js'
 import CheckPermissions from '../check-permissions/checkPermissions.js'
 import { onProjectReady } from '../../utilities/projectReady.js'
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 import vault from '../../js/vault.js'
 
 /**
@@ -157,8 +158,8 @@ customElements.define('tpen-project-options', ProjectOptions)
  * @element line-annotation-link
  */
 class LineAnnotationLink extends HTMLElement {
-    /** @type {Function|null} Handler for mouseenter event */
-    _mouseEnterHandler = null
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
 
     constructor() {
         super()
@@ -170,15 +171,18 @@ class LineAnnotationLink extends HTMLElement {
 
     connectedCallback() {
         this.render()
-        this._mouseEnterHandler = () => this.fetchCount()
-        this.shadowRoot.querySelector('a')?.addEventListener('mouseenter', this._mouseEnterHandler)
+        this.addEventListeners()
+    }
+
+    addEventListeners() {
+        const anchor = this.shadowRoot.querySelector('a')
+        if (anchor) {
+            this.cleanup.onElement(anchor, 'mouseenter', () => this.fetchCount())
+        }
     }
 
     disconnectedCallback() {
-        const anchor = this.shadowRoot?.querySelector('a')
-        if (anchor && this._mouseEnterHandler) {
-            anchor.removeEventListener('mouseenter', this._mouseEnterHandler)
-        }
+        this.cleanup.run()
     }
 
     async fetchCount() {

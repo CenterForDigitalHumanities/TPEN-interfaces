@@ -108,23 +108,23 @@ export default class TranscriptionBlock extends HTMLElement {
         const nextPageButton = this.shadowRoot.querySelector('.next-page-button')
         const inputField = this.shadowRoot.querySelector('.transcription-input')
 
-        // Shadow DOM element listeners (cleaned up when shadow DOM is replaced)
+        // Shadow DOM element listeners
         if (prevButton) {
-            prevButton.addEventListener('click', this.moveToPreviousLine.bind(this))
+            this.cleanup.onElement(prevButton, 'click', this.moveToPreviousLine.bind(this))
         }
         if (prevPageButton) {
-            prevPageButton.addEventListener('click', () => this.navigateToPage('prev'))
+            this.cleanup.onElement(prevPageButton, 'click', () => this.navigateToPage('prev'))
         }
         if (nextButton) {
-            nextButton.addEventListener('click', this.moveToNextLine.bind(this))
+            this.cleanup.onElement(nextButton, 'click', this.moveToNextLine.bind(this))
         }
         if (nextPageButton) {
-            nextPageButton.addEventListener('click', () => this.navigateToPage('next'))
+            this.cleanup.onElement(nextPageButton, 'click', () => this.navigateToPage('next'))
         }
         if (inputField) {
-            inputField.addEventListener('blur', () => this.checkDirtyLines())
-            inputField.addEventListener('keydown', (e) => this.handleKeydown(e))
-            inputField.addEventListener('input', () => {
+            this.cleanup.onElement(inputField, 'blur', () => this.checkDirtyLines())
+            this.cleanup.onElement(inputField, 'keydown', (e) => this.handleKeydown(e))
+            this.cleanup.onElement(inputField, 'input', () => {
                 this.#transcriptions[TPEN.activeLineIndex] = inputField.value ?? ''
                 this.markLineDirty(TPEN.activeLineIndex)
                 this.persistDraft(TPEN.activeLineIndex)
