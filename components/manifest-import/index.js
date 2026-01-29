@@ -551,18 +551,20 @@ class ManifestImport extends HTMLElement {
     }
 
     #renderProjectCard(project) {
+        const escapedProjectId = this.#escapeHtml(String(project._id || ''))
+        const encodedProjectId = encodeURIComponent(String(project._id || ''))
         return `
             <div class="project-card">
                 <div class="project-title">${this.#escapeHtml(project.label || 'Untitled Project')}</div>
-                <div class="project-meta">ID: ${project._id}</div>
+                <div class="project-meta">ID: ${escapedProjectId}</div>
                 ${project.metadata?.length > 0 ? `
                     <div class="project-meta">
                         Layers: ${project.layers?.length || 0} | Pages: ${this.#countPages(project)}
                     </div>
                 ` : ''}
                 <div class="project-actions">
-                    <a href="${TPEN.BASEURL}/project?projectID=${project._id}" class="btn btn-primary">View</a>
-                    <a href="${TPEN.BASEURL}/interfaces/transcription?projectID=${project._id}" class="btn btn-secondary">Transcribe</a>
+                    <a href="${TPEN.BASEURL}/project?projectID=${encodedProjectId}" class="btn btn-primary">View</a>
+                    <a href="${TPEN.BASEURL}/interfaces/transcription?projectID=${encodedProjectId}" class="btn btn-secondary">Transcribe</a>
                 </div>
             </div>
         `
