@@ -24,12 +24,12 @@ https://tpen.rerum.io/import-manifest?manifest=URL1&manifest=URL2
 ### Example
 
 ```
-/?manifest=http%3A%2F%2Fwww.e-codices.unifr.ch%2Fmetadata%2Fiiif%2Fsl-0002%2Fmanifest.json&manifest=https%3A%2F%2Fcdm16821.contentdm.oclc.org%2Fiiif%2Fp16821coll4%3A2%2Fmanifest.json
+/import-manifest?manifest=http%3A%2F%2Fwww.e-codices.unifr.ch%2Fmetadata%2Fiiif%2Fsl-0002%2Fmanifest.json&manifest=https%3A%2F%2Fcdm16821.contentdm.oclc.org%2Fiiif%2Fp16821coll4%3A2%2Fmanifest.json
 ```
 
 Decoded:
 ```
-/?manifest=http://www.e-codices.unifr.ch/metadata/iiif/sl-0002/manifest.json&manifest=https://cdm16821.contentdm.oclc.org/iiif/p16821coll4:2/manifest.json
+/import-manifest?manifest=http://www.e-codices.unifr.ch/metadata/iiif/sl-0002/manifest.json&manifest=https://cdm16821.contentdm.oclc.org/iiif/p16821coll4:2/manifest.json
 ```
 
 ## User Flow

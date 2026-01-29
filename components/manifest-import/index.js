@@ -234,7 +234,7 @@ class ManifestImport extends HTMLElement {
                     <p>No IIIF manifests were provided in the URL.</p>
                     <p>Try a URL like:</p>
                     <p style="font-size: 12px; text-align: left;">
-                        <code>/?manifest=http%3A%2F%2Fexample.com%2Fmanifest.json</code>
+                        <code>/import-manifest?manifest=http%3A%2F%2Fexample.com%2Fmanifest.json</code>
                     </p>
                     <div class="actions">
                         <p style="margin-bottom: 15px;">You can also:</p>
