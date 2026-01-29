@@ -139,23 +139,82 @@ The API follows RESTful conventions with these primary endpoints:
 
 ## Web Components Architecture
 
-### Component Pattern
-All components follow this structure:
+### Component Lifecycle Pattern
+All components follow this standardized lifecycle:
+
+```
+connectedCallback() → authgate() → render() → addEventListeners() → disconnectedCallback()
+```
+
+**Key Conventions:**
+1. **No async lifecycle methods** - `connectedCallback()`, `render()`, and `authgate()` must be synchronous
+2. **Delegate async work** - Use separate methods like `initializeAsync()` or `loadAndRender()`
+3. **Use CleanupRegistry** - All event listeners that need cleanup must use `CleanupRegistry`
+4. **Authentication in connectedCallback** - Call `TPEN.attachAuthentication(this)` in `connectedCallback()`, not the constructor
+5. **Permission checks in authgate** - Use `CheckPermissions` before rendering
+
+### Standard Component Template
 ```javascript
+import TPEN from '../../api/TPEN.js'
+import CheckPermissions from '../check-permissions/checkPermissions.js'
+import { onProjectReady } from '../../utilities/projectReady.js'
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
+
+/**
+ * ComponentName - Brief description of what this component does.
+ * @element tpen-component-name
+ */
 class ComponentName extends HTMLElement {
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
+    /** @type {Function|null} Unsubscribe function for project ready listener */
+    _unsubProject = null
+
     constructor() {
         super()
         this.attachShadow({ mode: 'open' })
     }
 
     connectedCallback() {
-        // Component initialization
+        TPEN.attachAuthentication(this)
+        this._unsubProject = onProjectReady(this, this.authgate)
+    }
+
+    /**
+     * Authorization gate - checks permissions before rendering.
+     */
+    authgate() {
+        if (!CheckPermissions.checkViewAccess('RESOURCE', 'ACTION')) {
+            this.shadowRoot.innerHTML = `<p>Permission denied</p>`
+            return
+        }
         this.render()
         this.addEventListeners()
+        this.initializeAsync() // If async work is needed
+    }
+
+    disconnectedCallback() {
+        try { this._unsubProject?.() } catch {}
+        this.cleanup.run()
     }
 
     render() {
-        // Render component HTML
+        // Synchronous rendering only
+        this.shadowRoot.innerHTML = `...`
+    }
+
+    addEventListeners() {
+        // Use cleanup registry for all listeners
+        this.cleanup.onElement(this.shadowRoot.querySelector('#btn'), 'click', () => {})
+        this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-event', () => {})
+        this.cleanup.onWindow('resize', () => {})
+    }
+
+    /**
+     * Performs async initialization after authgate passes.
+     */
+    async initializeAsync() {
+        // Async work goes here, not in render() or authgate()
     }
 
     static get observedAttributes() {
@@ -167,7 +226,50 @@ class ComponentName extends HTMLElement {
     }
 }
 
-customElements.define('component-name', ComponentName)
+customElements.define('tpen-component-name', ComponentName)
+```
+
+### CleanupRegistry Utility
+The `CleanupRegistry` class (`utilities/CleanupRegistry.js`) provides centralized event listener management:
+
+```javascript
+// Available methods:
+cleanup.add(cleanupFn)                    // Add custom cleanup function
+cleanup.onEvent(dispatcher, event, handler)  // TPEN eventDispatcher listeners
+cleanup.onWindow(event, handler)          // Window event listeners
+cleanup.onDocument(event, handler)        // Document event listeners
+cleanup.onElement(element, event, handler) // DOM element listeners
+cleanup.addObserver(observer)             // ResizeObserver cleanup
+cleanup.addMutationObserver(observer)     // MutationObserver cleanup
+cleanup.run()                             // Execute all cleanup (call in disconnectedCallback)
+```
+
+### Dual Cleanup Pattern
+For components that re-render multiple times (calling `addEventListeners()` after each render), use two registries:
+
+```javascript
+class ReRenderingComponent extends HTMLElement {
+    /** @type {CleanupRegistry} Registry for persistent handlers */
+    cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers */
+    renderCleanup = new CleanupRegistry()
+
+    addEventListeners() {
+        // Clear previous render-specific listeners
+        this.renderCleanup.run()
+
+        // Add new listeners for this render
+        this.renderCleanup.onElement(btn, 'click', () => {
+            this.render()
+            this.addEventListeners() // Re-renders trigger cleanup
+        })
+    }
+
+    disconnectedCallback() {
+        this.renderCleanup.run()
+        this.cleanup.run()
+    }
+}
 ```
 
 ### Key Components
