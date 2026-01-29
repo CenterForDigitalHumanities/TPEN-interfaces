@@ -12,6 +12,8 @@ import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 class TpenManageColumns extends HTMLElement {
     /** @type {CleanupRegistry} Registry for cleanup handlers */
     cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers (dynamic buttons/boxes) */
+    renderCleanup = new CleanupRegistry()
     /** @type {Function|null} Unsubscribe function for project ready listener */
     _unsubProject = null
 
@@ -335,6 +337,7 @@ class TpenManageColumns extends HTMLElement {
 
     disconnectedCallback() {
         try { this._unsubProject?.() } catch {}
+        this.renderCleanup.run()
         this.cleanup.run()
     }
 
@@ -423,6 +426,9 @@ class TpenManageColumns extends HTMLElement {
     }
 
     mergeColumns() {
+        // Clear previous render-specific listeners before adding new ones
+        this.renderCleanup.run()
+
         const columnLabelsToMerge = []
         const columnLabels = this.existingColumns.map(col => col.label).filter(label => label)
         const workspaceToolbar = this.shadowRoot.querySelectorAll('.toolbar')[1]
@@ -453,7 +459,7 @@ class TpenManageColumns extends HTMLElement {
             btn.style.margin = '5px'
             btn.style.padding = '8px 12px'
             btn.style.cursor = 'pointer'
-            btn.addEventListener('click', () => {
+            this.renderCleanup.onElement(btn, 'click', () => {
                 if(!btn.dataset.selected) {
                     btn.dataset.selected = 'true'
                     btn.style.backgroundColor = 'var(--white)'
@@ -478,7 +484,7 @@ class TpenManageColumns extends HTMLElement {
         mergeColumnBtn.style.marginTop = '1em'
         workspaceToolbar.appendChild(mergeColumnBtn)
 
-        mergeColumnBtn.addEventListener('click', async () => {
+        this.renderCleanup.onElement(mergeColumnBtn, 'click', async () => {
             const newLabel = input.value.trim()
             if (!newLabel) {
                 return TPEN.eventDispatcher.dispatch("tpen-toast", { 
@@ -522,6 +528,9 @@ class TpenManageColumns extends HTMLElement {
     }
 
     extendColumn() {
+        // Clear previous render-specific listeners before adding new ones
+        this.renderCleanup.run()
+
         let columnToExtend = ''
         const columnLabels = this.existingColumns.map(col => col.label).filter(label => label)
         const workspaceToolbar = this.shadowRoot.querySelectorAll('.toolbar')[1]
@@ -546,7 +555,7 @@ class TpenManageColumns extends HTMLElement {
             btn.style.margin = '5px'
             btn.style.padding = '8px 12px'
             btn.style.cursor = 'pointer'
-            btn.addEventListener('click', () => {
+            this.renderCleanup.onElement(btn, 'click', () => {
                 if (btn.dataset.selected) {
                     columnToExtend = ''
                     delete btn.dataset.selected
@@ -576,7 +585,7 @@ class TpenManageColumns extends HTMLElement {
         extendColumnBtn.style.marginTop = '1em'
         workspaceToolbar.appendChild(extendColumnBtn)
 
-        extendColumnBtn.addEventListener('click', async () => {
+        this.renderCleanup.onElement(extendColumnBtn, 'click', async () => {
             if (!this.originalColumnLabels[columnToExtend]) {
                 return TPEN.eventDispatcher.dispatch("tpen-toast", { 
                     status: "error", message: 'Please select a column to extend.' 
@@ -729,7 +738,7 @@ class TpenManageColumns extends HTMLElement {
             box.style.width  = `${(w / imgWidth) * 100}%`
             box.style.height = `${(h / imgHeight) * 100}%`
 
-            box.addEventListener("click", (event) => this.selectAnnotation(box, event))
+            this.renderCleanup.onElement(box, "click", (event) => this.selectAnnotation(box, event))
 
             createdBoxes.push(box)
         })

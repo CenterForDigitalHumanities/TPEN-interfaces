@@ -19,6 +19,8 @@ class ReadOnlyViewTranscribe extends HTMLElement {
 
     /** @type {CleanupRegistry} Registry for cleanup handlers */
     cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers */
+    renderCleanup = new CleanupRegistry()
 
     constructor() {
         super()
@@ -262,6 +264,7 @@ class ReadOnlyViewTranscribe extends HTMLElement {
     }
 
     disconnectedCallback() {
+        this.renderCleanup.run()
         this.cleanup.run()
         if (this.#osd) {
             try { this.#osd.destroy() } catch {}
@@ -482,6 +485,9 @@ class ReadOnlyViewTranscribe extends HTMLElement {
     }
 
     renderRightPanel() {
+        // Clear previous render-specific listeners before adding new ones
+        this.renderCleanup.run()
+
         const container = this.shadowRoot.querySelector(".transcribed-text")
         container.innerHTML = ""
 
@@ -514,7 +520,7 @@ class ReadOnlyViewTranscribe extends HTMLElement {
             box.innerHTML = `
                 <div class="annotation-label">${index + 1}. ${line.text || "No Text Available"}</div>
             `
-            box.addEventListener("click", () => {
+            this.renderCleanup.onElement(box, "click", () => {
                 const allAnnotations = this.#annotoriousInstance.getAnnotations()
                 const targetAnno = allAnnotations.find(a => a.body[0]?.value === line.text)
                 if (targetAnno) {
