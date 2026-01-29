@@ -10,7 +10,6 @@ import { getUserFromToken } from '../iiif-tools/index.js'
 class ManifestImport extends HTMLElement {
     #manifests = []
     #createdProjects = []
-    #isCreating = false
     #authToken
 
     constructor() {
