@@ -103,10 +103,8 @@ class ManifestImport extends HTMLElement {
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    min-height: 100vh;
-                    background: var(--light-gray, #f5f5f5);
+                    padding: 60px 20px;
                     font-family: Roboto, Avenir, sans-serif;
-                    padding: 20px;
                 }
 
                 .card {
@@ -165,10 +163,8 @@ class ManifestImport extends HTMLElement {
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    min-height: 100vh;
-                    background: var(--light-gray, #f5f5f5);
+                    padding: 60px 20px;
                     font-family: Roboto, Avenir, sans-serif;
-                    padding: 20px;
                 }
 
                 .card {
@@ -254,8 +250,7 @@ class ManifestImport extends HTMLElement {
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    min-height: 100vh;
-                    background: var(--light-gray, #f5f5f5);
+                    padding: 60px 20px;
                     font-family: Roboto, Avenir, sans-serif;
                 }
 
@@ -305,8 +300,6 @@ class ManifestImport extends HTMLElement {
         this.shadowRoot.innerHTML = `
             <style>
                 .page {
-                    min-height: 100vh;
-                    background: var(--light-gray, #f5f5f5);
                     font-family: Roboto, Avenir, sans-serif;
                     padding: 20px;
                 }
