@@ -39,6 +39,17 @@ class ManifestImport extends HTMLElement {
             return
         }
 
+        // For multiple manifests, require explicit user confirmation before starting import
+        if (this.#manifests.length > 1) {
+            const confirmMessage = `You are about to import ${this.#manifests.length} manifests as new projects. Do you want to continue?`
+            const proceed = window.confirm(confirmMessage)
+            if (!proceed) {
+                if (this.shadowRoot) {
+                    this.shadowRoot.innerHTML = '<p>Manifest import canceled by user.</p>'
+                }
+                return
+            }
+        }
         this.renderCreating()
         await this.#createProjects()
     }
