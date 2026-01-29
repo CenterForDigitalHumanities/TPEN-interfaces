@@ -6,6 +6,7 @@
 
 import TPEN from '../../api/TPEN.js'
 import { getUserFromToken } from '../iiif-tools/index.js'
+import { escapeHtml } from '/js/utils.js'
 
 class ManifestImport extends HTMLElement {
     #manifests = []
@@ -561,11 +562,11 @@ class ManifestImport extends HTMLElement {
     }
 
     #renderProjectCard(project) {
-        const escapedProjectId = this.#escapeHtml(String(project._id || ''))
+        const escapedProjectId = escapeHtml(String(project._id || ''))
         const encodedProjectId = encodeURIComponent(String(project._id || ''))
         return `
             <div class="project-card">
-                <div class="project-title">${this.#escapeHtml(project.label || 'Untitled Project')}</div>
+                <div class="project-title">${escapeHtml(project.label || 'Untitled Project')}</div>
                 <div class="project-meta">ID: ${escapedProjectId}</div>
                 ${project.metadata?.length > 0 ? `
                     <div class="project-meta">
@@ -582,12 +583,6 @@ class ManifestImport extends HTMLElement {
 
     #countPages(project) {
         return project.layers?.reduce((total, layer) => total + (layer.pages?.length || 0), 0) || 0
-    }
-
-    #escapeHtml(text) {
-        const div = document.createElement('div')
-        div.textContent = text
-        return div.innerHTML
     }
 }
 
