@@ -26,6 +26,12 @@ permalink: /import-manifest
             background: #f5f5f5;
         }
 
+        main {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
         tpen-manifest-import {
             display: block;
             width: 100%;
@@ -34,7 +40,9 @@ permalink: /import-manifest
     </style>
 </head>
 <body>
-    <tpen-manifest-import></tpen-manifest-import>
+    <main>
+        <tpen-manifest-import></tpen-manifest-import>
+    </main>
     <script type="module" src="/components/manifest-import/index.js"></script>
 </body>
 </html>
