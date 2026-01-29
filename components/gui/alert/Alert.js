@@ -1,4 +1,5 @@
 import { eventDispatcher } from '../../../api/events.js'
+import { CleanupRegistry } from '../../../utilities/CleanupRegistry.js'
 
 /**
  * Alert - A modal alert dialog that requires user acknowledgement.
@@ -6,10 +7,8 @@ import { eventDispatcher } from '../../../api/events.js'
  * @element tpen-alert
  */
 class Alert extends HTMLElement {
-    /** @type {number|null} Timer ID for show animation */
-    _showTimer = null
-    /** @type {number|null} Timer ID for removal animation */
-    _removeTimer = null
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
 
     constructor() {
         super()
@@ -27,11 +26,12 @@ class Alert extends HTMLElement {
      */
     show() {
         this.closest(".alert-area").style.display = "grid"
-        this._showTimer = setTimeout(() => {
+        const showTimer = setTimeout(() => {
             this.closest(".alert-area").classList.add("show")
             this.classList.add('show')
             document.querySelector("body").style.overflow = "hidden"
         }, 1)
+        this.cleanup.add(() => clearTimeout(showTimer))
         eventDispatcher.dispatch("tpen-alert-activated")
     }
 
@@ -41,17 +41,17 @@ class Alert extends HTMLElement {
      */
     dismiss() {
         this.classList.remove('show')
-        this.closest(".alert-area").classList.remove("show")
+        this.closest(".alert-area")?.classList.remove("show")
         document.querySelector("body").style.overflow = "auto"
-        this._removeTimer = setTimeout(() => {
+        const removeTimer = setTimeout(() => {
             this.remove()
         }, 500)
+        this.cleanup.add(() => clearTimeout(removeTimer))
         eventDispatcher.dispatch("tpen-alert-acknowledged")
     }
 
     disconnectedCallback() {
-        if (this._showTimer) clearTimeout(this._showTimer)
-        if (this._removeTimer) clearTimeout(this._removeTimer)
+        this.cleanup.run()
     }
 }
 

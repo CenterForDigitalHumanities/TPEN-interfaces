@@ -22,6 +22,8 @@ export default class TranscriptionInterface extends HTMLElement {
   #toolLineListeners = null
   /** @type {CleanupRegistry} Registry for cleanup handlers */
   cleanup = new CleanupRegistry()
+  /** @type {CleanupRegistry} Registry for render-specific handlers */
+  renderCleanup = new CleanupRegistry()
   /** @type {Function|null} Unsubscribe function for project ready listener */
   _unsubProject = null
   _iframeOrigin = null
@@ -241,6 +243,9 @@ export default class TranscriptionInterface extends HTMLElement {
   }
 
   addEventListeners() {
+    // Clear previous render-specific listeners (important since authgate can be called multiple times)
+    this.renderCleanup.run()
+
     const closeSplitscreen = () => {
       if (!this.state.isSplitscreenActive) return
       this.state.isSplitscreenActive = false
@@ -257,23 +262,23 @@ export default class TranscriptionInterface extends HTMLElement {
       this.updateLines()
     }
 
-    this.cleanup.onElement(this.shadowRoot, 'splitscreen-toggle', e => openSplitscreen(e.detail?.selectedTool))
+    this.renderCleanup.onElement(this.shadowRoot, 'splitscreen-toggle', e => openSplitscreen(e.detail?.selectedTool))
 
-    this.cleanup.onElement(this.shadowRoot, 'click', e => {
+    this.renderCleanup.onElement(this.shadowRoot, 'click', e => {
       if (e.target?.classList.contains('close-button')) closeSplitscreen()
     })
 
-    this.cleanup.onWindow('keydown', (e) => {
+    this.renderCleanup.onWindow('keydown', (e) => {
       if (e.key === 'Escape') closeSplitscreen()
     })
 
-    this.cleanup.onEvent(TPEN.eventDispatcher, 'tools-dismiss', closeSplitscreen)
+    this.renderCleanup.onEvent(TPEN.eventDispatcher, 'tools-dismiss', closeSplitscreen)
 
     // Listen for layer changes from layer-selector
-    this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-layer-changed', () => this.updateLines())
+    this.renderCleanup.onEvent(TPEN.eventDispatcher, 'tpen-layer-changed', () => this.updateLines())
 
     // Listen for column selection changes
-    this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-column-selected', (event) => {
+    this.renderCleanup.onEvent(TPEN.eventDispatcher, 'tpen-column-selected', (event) => {
       const columnData = event?.detail
       if (typeof columnData?.lineIndex === 'number') {
         TPEN.activeLineIndex = columnData.lineIndex
@@ -285,6 +290,7 @@ export default class TranscriptionInterface extends HTMLElement {
   disconnectedCallback() {
     try { this._unsubProject?.() } catch {}
     this.#cleanupToolLineListeners()
+    this.renderCleanup.run()
     this.cleanup.run()
   }
 
@@ -516,9 +522,9 @@ export default class TranscriptionInterface extends HTMLElement {
       rightPane.style.width = `${rightWidth}px`
     }
 
-    this.cleanup.onElement(splitter, 'mousedown', startDrag)
-    this.cleanup.onWindow('mousemove', onDrag)
-    this.cleanup.onWindow('mouseup', () => {
+    this.renderCleanup.onElement(splitter, 'mousedown', startDrag)
+    this.renderCleanup.onWindow('mousemove', onDrag)
+    this.renderCleanup.onWindow('mouseup', () => {
       if (!isDragging) return
       this.checkMagnifierVisibility()
       stopDrag()

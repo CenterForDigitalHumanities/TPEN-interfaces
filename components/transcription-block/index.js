@@ -506,15 +506,6 @@ export default class TranscriptionBlock extends HTMLElement {
     }
 
     render() {
-        if (!CheckPermissions.checkViewAccess('LINE', 'TEXT') && !CheckPermissions.checkViewAccess('LINE', 'CONTENT')) {
-            import('/components/project-permissions/index.js')
-            this.shadowRoot.innerHTML = `
-            <div class="no-access" style="color: red;background: rgba(255, 0, 0, 0.1);text-align: center;">No access to view transcription
-            <tpen-project-permissions project-id="${TPEN.activeProject?.id ?? TPEN.activeProject?._id}" user-id="${TPEN.activeUser?.id ?? TPEN.activeUser?._id}"></tpen-project-permissions>
-            </div>
-            `
-            return
-        }
         this.shadowRoot.innerHTML = `
       <style>
         .transcription-block {

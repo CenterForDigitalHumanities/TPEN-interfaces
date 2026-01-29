@@ -1,4 +1,5 @@
 import { eventDispatcher } from '../../../api/events.js'
+import { CleanupRegistry } from '../../../utilities/CleanupRegistry.js'
 
 /**
  * Confirm - A modal confirmation dialog with positive/negative options.
@@ -6,10 +7,8 @@ import { eventDispatcher } from '../../../api/events.js'
  * @element tpen-confirm
  */
 class Confirm extends HTMLElement {
-    /** @type {number|null} Timer ID for show animation */
-    _showTimer = null
-    /** @type {number|null} Timer ID for removal animation */
-    _removeTimer = null
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
 
     constructor() {
         super()
@@ -27,11 +26,12 @@ class Confirm extends HTMLElement {
      */
     show() {
         this.closest(".confirm-area").style.display = "grid"
-        this._showTimer = setTimeout(() => {
+        const showTimer = setTimeout(() => {
             this.closest(".confirm-area").classList.add("show")
             this.classList.add('show')
             document.querySelector("body").style.overflow = "hidden"
         }, 1)
+        this.cleanup.add(() => clearTimeout(showTimer))
         eventDispatcher.dispatch("tpen-confirm-activated")
     }
 
@@ -41,16 +41,16 @@ class Confirm extends HTMLElement {
      */
     dismiss() {
         this.classList.remove('show')
-        this.closest(".confirm-area").classList.remove("show")
+        this.closest(".confirm-area")?.classList.remove("show")
         document.querySelector("body").style.overflow = "auto"
-        this._removeTimer = setTimeout(() => {
+        const removeTimer = setTimeout(() => {
             this.remove()
         }, 500)
+        this.cleanup.add(() => clearTimeout(removeTimer))
     }
 
     disconnectedCallback() {
-        if (this._showTimer) clearTimeout(this._showTimer)
-        if (this._removeTimer) clearTimeout(this._removeTimer)
+        this.cleanup.run()
     }
 }
 
