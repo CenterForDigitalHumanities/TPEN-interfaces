@@ -1,6 +1,7 @@
 import TPEN from "../../api/TPEN.js"
 import CheckPermissions from "../check-permissions/checkPermissions.js"
 import { onProjectReady } from "../../utilities/projectReady.js"
+import { CleanupRegistry } from "../../utilities/CleanupRegistry.js"
 
 /**
  * TpenCreateColumn - Interface for creating and managing columns on annotation pages.
@@ -8,6 +9,8 @@ import { onProjectReady } from "../../utilities/projectReady.js"
  * @element tpen-create-column
  */
 class TpenCreateColumn extends HTMLElement {
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
     /** @type {Function|null} Unsubscribe function for project ready listener */
     _unsubProject = null
 
@@ -227,10 +230,6 @@ class TpenCreateColumn extends HTMLElement {
         this.mergeColumnsLabel = this.shadowRoot.querySelector("#mergeColumnsLabel")
         this.extendColumnLabel = this.shadowRoot.querySelector("#extendColumnLabel")
         this.columnTitleInput = this.shadowRoot.querySelector("#columnTitle")
-        this.createBtn.addEventListener("click", () => this.createColumn())
-        this.clearBtn.addEventListener("click", () => this.clearAllSelections())
-        this.mergeColumnsCheckbox.addEventListener("change", () => this.handleModeChange())
-        this.extendColumnCheckbox.addEventListener("change", () => this.handleModeChange())
     }
 
     connectedCallback() {
@@ -252,11 +251,23 @@ class TpenCreateColumn extends HTMLElement {
             this.container.innerHTML = `<div class="error-message">You do not have permission to manage columns.</div>`
             return
         }
+        this.addEventListeners()
         this.loadPage(this.pageID)
+    }
+
+    /**
+     * Registers event listeners using CleanupRegistry for proper cleanup.
+     */
+    addEventListeners() {
+        this.cleanup.onElement(this.createBtn, "click", () => this.createColumn())
+        this.cleanup.onElement(this.clearBtn, "click", () => this.clearAllSelections())
+        this.cleanup.onElement(this.mergeColumnsCheckbox, "change", () => this.handleModeChange())
+        this.cleanup.onElement(this.extendColumnCheckbox, "change", () => this.handleModeChange())
     }
 
     disconnectedCallback() {
         try { this._unsubProject?.() } catch {}
+        this.cleanup.run()
     }
 
     async columnLabelCheck() {

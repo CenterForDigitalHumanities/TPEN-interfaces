@@ -17,6 +17,7 @@ import CheckPermissions from '../check-permissions/checkPermissions.js'
 import { detectTextLinesCombined } from "./detect-lines.js"
 import { v4 as uuidv4 } from "https://cdn.skypack.dev/uuid@9.0.1"
 import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
+import { onProjectReady } from '../../utilities/projectReady.js'
 
 class AnnotoriousAnnotator extends HTMLElement {
   #osd
@@ -38,6 +39,8 @@ class AnnotoriousAnnotator extends HTMLElement {
 
   /** @type {CleanupRegistry} Registry for cleanup handlers */
   cleanup = new CleanupRegistry()
+  /** @type {Function|null} Unsubscribe function for project ready listener */
+  _unsubProject = null
 
   constructor() {
     super()
@@ -69,7 +72,7 @@ class AnnotoriousAnnotator extends HTMLElement {
     }
     // Must know the Project
     this.shadowRoot.innerHTML = "Loading the Annotator.  Please provide a ?projectID= in the URL."
-    this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-project-loaded', () => this.render())
+    this._unsubProject = onProjectReady(this, this.render)
     this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-project-load-failed', (err) => {
       this.shadowRoot.innerHTML = `
           <h3>Project Error</h3>
@@ -80,6 +83,7 @@ class AnnotoriousAnnotator extends HTMLElement {
   }
 
   disconnectedCallback() {
+    try { this._unsubProject?.() } catch {}
     this.cleanup.run()
   }
 
