@@ -1,15 +1,6 @@
-import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
-
 const CENTRAL = "https://three.t-pen.org"
 
-/**
- * AuthButton - Authentication button for login/logout functionality.
- * @element auth-button
- */
 class AuthButton extends HTMLElement {
-    /** @type {CleanupRegistry} Registry for cleanup handlers */
-    cleanup = new CleanupRegistry()
-
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
@@ -18,11 +9,6 @@ class AuthButton extends HTMLElement {
     connectedCallback() {
         // When the component is added to the DOM, call the render function
         this.render();
-        this.addEventListeners();
-    }
-
-    disconnectedCallback() {
-        this.cleanup.run();
     }
 
     render() {
@@ -46,13 +32,10 @@ class AuthButton extends HTMLElement {
             </style>
             <button id="auth-btn">${token ? "Logout" : "Login"}</button>
         `;
-    }
 
-    addEventListeners() {
-        const token = this.getTokenFromURL() || localStorage.getItem('userToken');
-        const button = this.shadowRoot.querySelector('#auth-btn');
         // If the token exists (logged in), logout on click; otherwise, login
-        this.cleanup.onElement(button, 'click', () => {
+        const button = this.shadowRoot.querySelector('#auth-btn');
+        button.addEventListener('click', () => {
             if (token) {
                 this.logout();
             } else {
