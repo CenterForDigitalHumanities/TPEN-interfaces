@@ -17,7 +17,7 @@ This feature enables users to import multiple IIIF manifests into TPEN and creat
 ## 🚀 Getting Started
 
 ### For End Users
-1. Get a link like: `/?manifest=URL1&manifest=URL2`
+1. Get a link like: `/import-manifest?manifest=URL1&manifest=URL2`
 2. Click the link
 3. Sign in to TPEN (if needed)
 4. Wait for projects to create
