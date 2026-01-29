@@ -17,8 +17,6 @@ import vault from '../../js/vault.js'
 class ProjectOptions extends HTMLElement {
     /** @type {Function|null} Unsubscribe function for project ready listener */
     _unsubProject = null
-    /** @type {Function|null} Unsubscribe function for user projects listener */
-    _unsubUserProjects = null
 
     constructor() {
         super()

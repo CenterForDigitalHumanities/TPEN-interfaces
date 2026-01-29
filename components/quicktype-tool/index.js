@@ -307,6 +307,8 @@ customElements.define('tpen-quicktype-tool', QuickTypeTool)
 class QuickTypeToolButton extends HTMLElement {
     /** @type {CleanupRegistry} Registry for cleanup handlers */
     cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers */
+    renderCleanup = new CleanupRegistry()
 
     constructor() {
         super()
@@ -329,13 +331,17 @@ class QuickTypeToolButton extends HTMLElement {
 
     disconnectedCallback() {
         try { this._unsubProject?.() } catch { }
+        this.renderCleanup.run()
         this.cleanup.run()
     }
 
     addEventListeners() {
+        // Clear previous render-specific listeners (authgate can be called multiple times)
+        this.renderCleanup.run()
+
         const quicktypeBtn = this.shadowRoot.querySelector('.quicktype-btn')
 
-        this.cleanup.onElement(quicktypeBtn, 'click', () => {
+        this.renderCleanup.onElement(quicktypeBtn, 'click', () => {
             const iface = document.querySelector('[data-interface-type="transcription"]')
             const charPanel = iface?.shadowRoot
                 ?.querySelector('tpen-workspace-tools')?.shadowRoot

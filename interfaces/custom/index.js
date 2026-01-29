@@ -12,6 +12,8 @@ import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 class TpenCustomProperty extends HTMLElement {
     /** @type {CleanupRegistry} Registry for cleanup handlers */
     cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers */
+    renderCleanup = new CleanupRegistry()
     /** @type {Function|null} Unsubscribe function for project ready listener */
     _unsubProject = null
 
@@ -40,6 +42,7 @@ class TpenCustomProperty extends HTMLElement {
 
     disconnectedCallback() {
         try { this._unsubProject?.() } catch {}
+        this.renderCleanup.run()
         this.cleanup.run()
     }
 
@@ -64,9 +67,12 @@ class TpenCustomProperty extends HTMLElement {
      * Sets up event listeners for the save button.
      */
     addEventListeners() {
+        // Clear previous render-specific listeners (authgate can be called multiple times)
+        this.renderCleanup.run()
+
         const projectId = TPEN.screen?.projectInQuery ?? TPEN.activeProject?._id ?? ''
         const saveBtn = this.shadowRoot.getElementById('save')
-        this.cleanup.onElement(saveBtn, 'click', () => this.save(projectId))
+        this.renderCleanup.onElement(saveBtn, 'click', () => this.save(projectId))
     }
 
     async save(projectId) {

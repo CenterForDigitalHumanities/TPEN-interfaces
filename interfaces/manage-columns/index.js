@@ -312,6 +312,10 @@ class TpenManageColumns extends HTMLElement {
      * Sets up event listeners for the interface controls.
      */
     addEventListeners() {
+        // Guard: only register toolbar listeners once (authgate can be called multiple times)
+        if (this._toolbarListenersRegistered) return
+        this._toolbarListenersRegistered = true
+
         this.cleanup.onElement(this.createBtn, "click", () => this.createColumn())
         this.cleanup.onElement(this.clearBtn, "click", () => this.clearAllSelections())
         this.cleanup.onElement(this.mergeColumnsCheckbox, "change", () => this.handleModeChange())
