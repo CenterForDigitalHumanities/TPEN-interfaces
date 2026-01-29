@@ -55,7 +55,7 @@ export class PermissionMatch extends HTMLElement {
     connectedCallback() {
         TPEN.attachAuthentication(this)
         // Use onProjectReady to handle both already-loaded and future project loads
-        this._unsubProject = onProjectReady(this, (project) => this.render(project))
+        this._unsubProject = onProjectReady(this, () => this.render(TPEN.activeProject))
     }
 
     disconnectedCallback() {

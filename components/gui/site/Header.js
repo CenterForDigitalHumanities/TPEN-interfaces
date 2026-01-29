@@ -73,12 +73,13 @@ class TpenHeader extends HTMLElement {
             const btn = this.shadowRoot.querySelector('.action-button')
             btn.classList.remove('hidden')
             btn.textContent = ev.detail.label
-            btn.addEventListener('click', ev.detail.callback)
+            // Use onclick assignment to prevent listener accumulation on repeated dispatches
+            btn.onclick = ev.detail.callback
         }
-        const actionLinkRemoveHandler = ev => {
+        const actionLinkRemoveHandler = () => {
             const btn = this.shadowRoot.querySelector('.action-button')
             btn.classList.add('hidden')
-            btn.removeEventListener('click', ev.detail.callback)
+            btn.onclick = null
         }
 
         this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-gui-title', titleHandler)
