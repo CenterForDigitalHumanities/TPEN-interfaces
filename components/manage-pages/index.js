@@ -131,8 +131,6 @@ class ManagePages extends HTMLElement {
         const pages = layers?.pages
         this.shadowRoot.querySelectorAll(".manage-pages").forEach((button) => {
             this.renderCleanup.onElement(button, "click", () => {
-                // Clear previous dynamic listeners when entering manage mode
-                this.dynamicCleanup.run()
                 // Check if user has edit permission for pages
                 const hasEditAccess = CheckPermissions.checkEditAccess('PAGE', 'METADATA')
                 if (!hasEditAccess) {
@@ -217,10 +215,6 @@ class ManagePages extends HTMLElement {
                     deleteButton.dataset.layerId = layerId
                     deleteButton.innerText = "Delete Page"
                     editPageLabelButton.after(deleteButton)
-
-                    // Button listeners use plain addEventListener (not dynamicCleanup) because
-                    // this component is removed from DOM later in this handler, which would
-                    // trigger disconnectedCallback and clear dynamicCleanup listeners.
                     editPageLabelButton.addEventListener("click", () => {
                         const hasUpdateAccess = CheckPermissions.checkEditAccess('PAGE', 'METADATA')
                         if (!hasUpdateAccess) {
