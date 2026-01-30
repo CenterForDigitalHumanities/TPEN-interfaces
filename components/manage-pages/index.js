@@ -15,8 +15,6 @@ class ManagePages extends HTMLElement {
     cleanup = new CleanupRegistry()
     /** @type {CleanupRegistry} Registry for render-specific handlers */
     renderCleanup = new CleanupRegistry()
-    /** @type {CleanupRegistry} Registry for dynamic handlers created during interaction */
-    dynamicCleanup = new CleanupRegistry()
 
     constructor() {
         super()
@@ -42,7 +40,6 @@ class ManagePages extends HTMLElement {
 
     disconnectedCallback() {
         try { this._unsubProject?.() } catch {}
-        this.dynamicCleanup.run()
         this.renderCleanup.run()
         this.cleanup.run()
     }
@@ -164,20 +161,21 @@ class ManagePages extends HTMLElement {
                     const pageIndex = labelDiv.getAttribute("data-index")
                     el.classList.add("layer-card", "layer-card-flex")
                     el.setAttribute("draggable", "true")
-
-                    this.dynamicCleanup.onElement(el, "dragstart", (event) => {
+                    // Drag listeners are added to elements in the PARENT not CleanupRegistry).
+                    // These listeners will be naturally cleaned up when the parent re-renders or the user navigates away.
+                    el.addEventListener("dragstart", (event) => {
                         event.dataTransfer.setData("text/plain", el.dataset.index)
                         el_dragged = event.target
                     })
-                    this.dynamicCleanup.onElement(el, "dragend", () => {
+                    el.addEventListener("dragend", () => {
                         layerPagesCard.forEach((el) => el.style.opacity = "1")
                     })
-                    this.dynamicCleanup.onElement(el, "dragover", (event) => {
+                    el.addEventListener("dragover", (event) => {
                         event.preventDefault()
                     })
-                    this.dynamicCleanup.onElement(el, "dragleave", () => {
+                    el.addEventListener("dragleave", () => {
                     })
-                    this.dynamicCleanup.onElement(el, "drop", (event) => {
+                    el.addEventListener("drop", (event) => {
                         event.preventDefault()
                         el_droppedOn = event.target
                         if (!el_droppedOn.classList.contains("layer-page")) el_droppedOn = el_droppedOn.closest(".layer-page")
@@ -187,13 +185,13 @@ class ManagePages extends HTMLElement {
                         if (draggedIndex === targetIndex) return
                         if(draggedIndex < targetIndex) {
                             container.insertBefore(el_dragged, el_droppedOn)
-                            container.insertBefore(el_droppedOn, container.children[draggedIndex])    
+                            container.insertBefore(el_droppedOn, container.children[draggedIndex])
                         }
                         else{
                             container.insertBefore(el_dragged, el_droppedOn)
                             container.insertBefore(el_droppedOn, container.children[draggedIndex + 1])
                         }
-                        
+
                         Array.from(container.children).forEach((el, i) => {
                             el.setAttribute("position", i)
                             if (parseInt(el.getAttribute("data-index")) !== i) {
@@ -220,7 +218,10 @@ class ManagePages extends HTMLElement {
                     deleteButton.innerText = "Delete Page"
                     editPageLabelButton.after(deleteButton)
 
-                    this.dynamicCleanup.onElement(editPageLabelButton, "click", () => {
+                    // Button listeners use plain addEventListener (not dynamicCleanup) because
+                    // this component is removed from DOM later in this handler, which would
+                    // trigger disconnectedCallback and clear dynamicCleanup listeners.
+                    editPageLabelButton.addEventListener("click", () => {
                         const hasUpdateAccess = CheckPermissions.checkEditAccess('PAGE', 'METADATA')
                         if (!hasUpdateAccess) {
                             TPEN.eventDispatcher.dispatch("tpen-toast", {
@@ -245,7 +246,7 @@ class ManagePages extends HTMLElement {
                         saveLabelButton.dataset.pageId = pageId
                         saveLabelButton.innerText = "Save Label"
                         labelInput.after(saveLabelButton)
-                        this.dynamicCleanup.onElement(saveLabelButton, "click", () => {
+                        saveLabelButton.addEventListener("click", () => {
                             fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/page/${page_id}`, {
                                 method: "PUT",
                                 headers: {
@@ -281,7 +282,7 @@ class ManagePages extends HTMLElement {
                         })
                     })
 
-                    this.dynamicCleanup.onElement(deleteButton, "click", () => {
+                    deleteButton.addEventListener("click", () => {
                         const hasDeleteAccess = CheckPermissions.checkDeleteAccess('PAGE', '*')
                         if (!hasDeleteAccess) {
                             TPEN.eventDispatcher.dispatch("tpen-toast", {
@@ -317,7 +318,7 @@ class ManagePages extends HTMLElement {
                 layerActions.insertBefore(saveButton, layerActions.firstChild)
                 layerActions.removeChild(layerCardOuter.querySelector("tpen-manage-pages"))
 
-                this.dynamicCleanup.onElement(editLayerLabelButton, "click", () => {
+                editLayerLabelButton.addEventListener("click", () => {
                     const hasUpdateAccess = CheckPermissions.checkEditAccess('LAYER', 'METADATA')
                     if (!hasUpdateAccess) {
                         TPEN.eventDispatcher.dispatch("tpen-toast", {
@@ -344,7 +345,7 @@ class ManagePages extends HTMLElement {
                     saveLabelButton.innerText = "Save Label"
                     labelInput.insertAdjacentElement("afterend", saveLabelButton)
 
-                    this.dynamicCleanup.onElement(saveLabelButton, "click", () => {
+                    saveLabelButton.addEventListener("click", () => {
                         fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/layer/${layer_id}`, {
                             method: "PUT",
                             headers: {
@@ -383,7 +384,7 @@ class ManagePages extends HTMLElement {
                     })
                 })
 
-                this.dynamicCleanup.onElement(saveButton, "click", () => {
+                saveButton.addEventListener("click", () => {
                     const hasUpdateAccess = CheckPermissions.checkEditAccess('PAGE', 'ORDER')
                     if (!hasUpdateAccess) {
                         TPEN.eventDispatcher.dispatch("tpen-toast", {
