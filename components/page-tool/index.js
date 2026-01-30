@@ -74,6 +74,26 @@ export default class PageTool extends HTMLElement {
 
         this.renderCleanup.onElement(this.drawerToggleBtn, 'click', () => this.toggleDrawer())
         this.renderCleanup.onElement(this.shadowRoot.querySelector('.drawer-close-btn'), 'click', () => this.closeDrawer())
+
+        // Image control listeners
+        this.renderCleanup.onElement(this.shadowRoot.querySelector('.grayscale-btn'), 'click', () => this.toggleGrayscale())
+        this.renderCleanup.onElement(this.shadowRoot.querySelector('.invert-btn'), 'click', () => this.toggleInvert())
+        this.renderCleanup.onElement(this.shadowRoot.querySelector('.contrast-slider'), 'input', (e) => this.setContrast(e))
+        this.renderCleanup.onElement(this.shadowRoot.querySelector('.brightness-slider'), 'input', (e) => this.setBrightness(e))
+        this.renderCleanup.onElement(this.shadowRoot.querySelector('.reset-btn'), 'click', () => this.resetFilters())
+
+        // Lines & Columns buttons (if user has permission)
+        if (CheckPermissions.checkEditAccess("LINE", "SELECTOR")) {
+            const linesBtn = this.shadowRoot.querySelector('.lines-btn')
+            const columnsBtn = this.shadowRoot.querySelector('.columns-btn')
+            this.shadowRoot.querySelector('.parsing-section').style.display = "block"
+            linesBtn.style.display = "block"
+            columnsBtn.style.display = "block"
+            this.renderCleanup.onElement(linesBtn, 'click', () =>
+                document.location.href = `/annotator?projectID=${TPEN.activeProject._id}&pageID=${TPEN.screen.pageInQuery}`)
+            this.renderCleanup.onElement(columnsBtn, 'click', () =>
+                document.location.href = `/manage-columns?projectID=${TPEN.activeProject._id}&pageID=${TPEN.screen.pageInQuery}`)
+        }
     }
 
     toggleDrawer() {
@@ -490,23 +510,6 @@ export default class PageTool extends HTMLElement {
             </div>
         </div>
         `
-
-        this.renderCleanup.onElement(this.shadowRoot.querySelector('.grayscale-btn'), 'click', () => this.toggleGrayscale())
-        this.renderCleanup.onElement(this.shadowRoot.querySelector('.invert-btn'), 'click', () => this.toggleInvert())
-        this.renderCleanup.onElement(this.shadowRoot.querySelector('.contrast-slider'), 'input', (e) => this.setContrast(e))
-        this.renderCleanup.onElement(this.shadowRoot.querySelector('.brightness-slider'), 'input', (e) => this.setBrightness(e))
-        this.renderCleanup.onElement(this.shadowRoot.querySelector('.reset-btn'), 'click', () => this.resetFilters())
-        if (CheckPermissions.checkEditAccess("LINE", "SELECTOR")) {
-            const linesBtn = this.shadowRoot.querySelector('.lines-btn')
-            const columnsBtn = this.shadowRoot.querySelector('.columns-btn')
-            this.shadowRoot.querySelector('.parsing-section').style.display = "block"
-            linesBtn.style.display = "block"
-            columnsBtn.style.display = "block"
-            this.renderCleanup.onElement(linesBtn, 'click', () =>
-                document.location.href = `/annotator?projectID=${TPEN.activeProject._id}&pageID=${TPEN.screen.pageInQuery}`)
-            this.renderCleanup.onElement(columnsBtn, 'click', () =>
-                document.location.href = `/manage-columns?projectID=${TPEN.activeProject._id}&pageID=${TPEN.screen.pageInQuery}`)
-        }
     }
 }
 
