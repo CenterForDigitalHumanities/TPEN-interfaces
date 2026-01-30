@@ -126,7 +126,10 @@ class TpenLineImage extends HTMLElement {
     }
 }
 
-customElements.define('tpen-line-image', TpenLineImage)
+// Guard against duplicate registration when module is loaded via different URL paths
+if (!customElements.get('tpen-line-image')) {
+    customElements.define('tpen-line-image', TpenLineImage)
+}
 
 /**
  * TpenImageFragment - Displays a portion of a IIIF canvas image that follows the active line.
@@ -251,7 +254,10 @@ class TpenImageFragment extends HTMLElement {
     }
 }
 
-customElements.define('tpen-image-fragment', TpenImageFragment)
+// Guard against duplicate registration when module is loaded via different URL paths
+if (!customElements.get('tpen-image-fragment')) {
+    customElements.define('tpen-image-fragment', TpenImageFragment)
+}
 
 export default {
     TpenLineImage,

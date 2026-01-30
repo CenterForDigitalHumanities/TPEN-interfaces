@@ -169,6 +169,8 @@ class ConfirmContainer extends HTMLElement {
     }
 }
 
-customElements.define('tpen-confirm-container', ConfirmContainer)
-
-document?.body.after(new ConfirmContainer())
+// Guard against duplicate registration when module is loaded via different URL paths
+if (!customElements.get('tpen-confirm-container')) {
+    customElements.define('tpen-confirm-container', ConfirmContainer)
+    document?.body.after(new ConfirmContainer())
+}

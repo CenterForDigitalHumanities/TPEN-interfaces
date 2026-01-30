@@ -49,4 +49,7 @@ class Toast extends HTMLElement {
     }
 }
 
-customElements.define('tpen-toast', Toast)
+// Guard against duplicate registration when module is loaded via different URL paths
+if (!customElements.get('tpen-toast')) {
+    customElements.define('tpen-toast', Toast)
+}

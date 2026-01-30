@@ -156,6 +156,8 @@ class AlertContainer extends HTMLElement {
     }
 }
 
-customElements.define('tpen-alert-container', AlertContainer)
-
-document?.body.after(new AlertContainer())
+// Guard against duplicate registration when module is loaded via different URL paths
+if (!customElements.get('tpen-alert-container')) {
+    customElements.define('tpen-alert-container', AlertContainer)
+    document?.body.after(new AlertContainer())
+}

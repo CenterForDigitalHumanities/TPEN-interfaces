@@ -54,4 +54,7 @@ class Confirm extends HTMLElement {
     }
 }
 
-customElements.define('tpen-confirm', Confirm)
+// Guard against duplicate registration when module is loaded via different URL paths
+if (!customElements.get('tpen-confirm')) {
+    customElements.define('tpen-confirm', Confirm)
+}

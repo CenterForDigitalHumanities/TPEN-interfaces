@@ -158,6 +158,8 @@ class ToastContainer extends HTMLElement {
     }
 }
 
-customElements.define('tpen-toast-container', ToastContainer)
-
-document?.body.after(new ToastContainer())
+// Guard against duplicate registration when module is loaded via different URL paths
+if (!customElements.get('tpen-toast-container')) {
+    customElements.define('tpen-toast-container', ToastContainer)
+    document?.body.after(new ToastContainer())
+}

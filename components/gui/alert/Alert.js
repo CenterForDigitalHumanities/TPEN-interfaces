@@ -55,4 +55,7 @@ class Alert extends HTMLElement {
     }
 }
 
-customElements.define('tpen-alert', Alert)
+// Guard against duplicate registration when module is loaded via different URL paths
+if (!customElements.get('tpen-alert')) {
+    customElements.define('tpen-alert', Alert)
+}
