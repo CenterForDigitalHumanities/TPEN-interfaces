@@ -1,16 +1,24 @@
 import TPEN from "../../api/TPEN.js"
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
+import { onProjectReady } from '../../utilities/projectReady.js'
 
 const eventDispatcher = TPEN.eventDispatcher
 
+/**
+ * TpenQuickType - Quicktype shortcut panel for transcription interfaces.
+ * @element tpen-quicktype
+ */
 class TpenQuickType extends HTMLElement {
+  /** @type {CleanupRegistry} Registry for cleanup handlers */
+  cleanup = new CleanupRegistry()
+  /** @type {Function|null} Unsubscribe function for project ready listener */
+  _unsubProject = null
+
   constructor() {
     super()
     this.attachShadow({ mode: 'open' })
     this._quicktype = []
-    TPEN.attachAuthentication(this)
-    eventDispatcher.on("tpen-project-loaded", () => this.loadQuickType())
   }
-
 
   get quicktype() {
     return this._quicktype
@@ -61,11 +69,15 @@ class TpenQuickType extends HTMLElement {
 
 
   connectedCallback() {
+    TPEN.attachAuthentication(this)
+    this._unsubProject = onProjectReady(this, () => this.loadQuickType())
     this.render()
-    this.setupEventListeners()
-    if (TPEN.activeProject) {
-      this.loadQuickType()
-    }
+    this.addEventListeners()
+  }
+
+  disconnectedCallback() {
+    try { this._unsubProject?.() } catch {}
+    this.cleanup.run()
   }
 
   render() {
@@ -301,15 +313,14 @@ class TpenQuickType extends HTMLElement {
       .join("")
   }
 
-  setupEventListeners() {
+  addEventListeners() {
     const addButton = this.shadowRoot.getElementById('add-quicktype')
-    addButton.addEventListener('click', () => this.addQuickType())
-
+    this.cleanup.onElement(addButton, 'click', () => this.addQuickType())
 
     // Event listeners for accordions
     const accordionHeaders = this.shadowRoot.querySelectorAll('.accordion-header')
     accordionHeaders.forEach((header) => {
-      header.addEventListener('click', () => {
+      this.cleanup.onElement(header, 'click', () => {
         const content = header.nextElementSibling
         content.classList.toggle('open')
       })
@@ -318,10 +329,9 @@ class TpenQuickType extends HTMLElement {
     // Add event listeners for QuickType characters
     const quicktypeCharacters = this.shadowRoot.querySelectorAll('.quicktype-shortcut')
     quicktypeCharacters.forEach((char) => {
-      char.addEventListener('click', () => {
+      this.cleanup.onElement(char, 'click', () => {
         const symbol = char.getAttribute('data-symbol')
         navigator.clipboard.writeText(symbol).then(() => {
-
           const toast = {
             message: `Copied ${symbol} to clipboard!`,
             status: 'info'

@@ -1,11 +1,21 @@
 import TPEN from '../../api/TPEN.js'
 import User from '../../api/User.js'
 import Project from '../../api/Project.js'
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 
+/**
+ * ContributionActivity - Displays user's contribution activity across projects.
+ * @element contribution-activity
+ */
 class ContributionActivity extends HTMLElement {
     static get observedAttributes() {
         return ['tpen-user-id']
     }
+
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers */
+    renderCleanup = new CleanupRegistry()
 
     constructor() {
         super()
@@ -13,10 +23,21 @@ class ContributionActivity extends HTMLElement {
     }
 
     connectedCallback() {
-        TPEN.eventDispatcher.on('tpen-user-loaded', async ev => {
-            await this.render(await TPEN.getUserProjects(TPEN.getAuthorization()))
-        })
         TPEN.attachAuthentication(this)
+        this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-user-loaded', () => this.loadAndRender())
+    }
+
+    /**
+     * Loads user projects and renders the contribution activity.
+     */
+    async loadAndRender() {
+        const projects = await TPEN.getUserProjects(TPEN.getAuthorization())
+        await this.processAndRender(projects)
+    }
+
+    disconnectedCallback() {
+        this.renderCleanup.run()
+        this.cleanup.run()
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
@@ -31,7 +52,11 @@ class ContributionActivity extends HTMLElement {
         }
     }
 
-    async render(projects) {
+    /**
+     * Processes project data and renders the contribution activity.
+     * @param {Array} projects - Array of project data
+     */
+    async processAndRender(projects) {
         const contributionsMap = new Map()
 
         for (const project of projects) {
@@ -93,6 +118,9 @@ class ContributionActivity extends HTMLElement {
         Object.values(contributionsByProject).forEach(projectGroup => {
             projectGroup.contributions.sort((a, b) => new Date(b.modifiedTime) - new Date(a.modifiedTime))
         })
+
+        // Clear previous render-specific listeners before re-rendering
+        this.renderCleanup.run()
 
         this.shadowRoot.innerHTML = `
             <style>
@@ -262,7 +290,7 @@ class ContributionActivity extends HTMLElement {
             const projectGroup = Object.values(contributionsByProject)[projIndex]
             const ul = this.shadowRoot.getElementById(`project-${projIndex}`)
 
-            btn.addEventListener('click', () => {
+            this.renderCleanup.onElement(btn, 'click', () => {
                 const remaining = projectGroup.contributions.slice(shownCount, shownCount + 5)
 
                 remaining.forEach(c => {

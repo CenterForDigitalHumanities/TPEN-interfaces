@@ -1,7 +1,16 @@
 import TPEN from "../../api/TPEN.js"
 import CheckPermissions from "../../components/check-permissions/checkPermissions.js"
+import { onProjectReady } from "../../utilities/projectReady.js"
 
+/**
+ * ProjectLayers - Displays project layers and their page counts.
+ * Requires LAYER METADATA view access.
+ * @element tpen-project-layers
+ */
 class ProjectLayers extends HTMLElement {
+    /** @type {Function|null} Unsubscribe function for project ready listener */
+    _unsubProject = null
+
     constructor() {
         super()
         this.attachShadow({ mode: "open" })
@@ -9,17 +18,26 @@ class ProjectLayers extends HTMLElement {
 
     connectedCallback() {
         TPEN.attachAuthentication(this)
-        TPEN.eventDispatcher.on('tpen-project-loaded', () => this.render())
+        this._unsubProject = onProjectReady(this, this.authgate)
     }
 
-    async render() {
-        // Check if user has view permission
-        const hasViewAccess = CheckPermissions.checkViewAccess('LAYER', 'METADATA')
-        if (!hasViewAccess) {
+    /**
+     * Authorization gate - checks permissions before rendering.
+     * Shows permission message if user lacks LAYER METADATA view access.
+     */
+    authgate() {
+        if (!CheckPermissions.checkViewAccess('LAYER', 'METADATA')) {
             this.shadowRoot.innerHTML = `<p>You don't have permission to view layers</p>`
             return
         }
-        
+        this.render()
+    }
+
+    disconnectedCallback() {
+        try { this._unsubProject?.() } catch {}
+    }
+
+    render() {
         const layers = TPEN.activeProject.layers
         this.shadowRoot.innerHTML = `
             <style>

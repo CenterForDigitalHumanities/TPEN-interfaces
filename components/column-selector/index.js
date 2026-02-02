@@ -1,12 +1,27 @@
 import TPEN from "../../api/TPEN.js"
 import CheckPermissions from "../check-permissions/checkPermissions.js"
+import { onProjectReady } from "../../utilities/projectReady.js"
+import { CleanupRegistry } from "../../utilities/CleanupRegistry.js"
 import vault from '../../js/vault.js'
 import { orderPageItemsByColumns } from '../../utilities/columnOrdering.js'
-const eventDispatcher = TPEN.eventDispatcher
 import "../check-permissions/permission-match.js"
 
+const eventDispatcher = TPEN.eventDispatcher
+
+/**
+ * ColumnSelector - Dropdown for selecting columns when a page has multiple columns defined.
+ * Requires LINE SELECTOR view access.
+ * @element tpen-column-selector
+ */
 export default class ColumnSelector extends HTMLElement {
     #page = null
+    /** @type {Function|null} Unsubscribe function for project ready listener */
+    _unsubProject = null
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers */
+    renderCleanup = new CleanupRegistry()
+
     constructor() {
         super()
         this.attachShadow({ mode: "open" })
@@ -16,13 +31,27 @@ export default class ColumnSelector extends HTMLElement {
         this.allLinesInPages = []
     }
 
-    async connectedCallback() {
-        if (TPEN.activeProject?.layers) await this.findColumnsData()
-        eventDispatcher.on("tpen-project-loaded", async () => {
-            if (!CheckPermissions.checkViewAccess("LAYER", "ANY")) 
-                return this.remove()
-            await this.findColumnsData()
-        })
+    connectedCallback() {
+        TPEN.attachAuthentication(this)
+        this._unsubProject = onProjectReady(this, this.authgate)
+    }
+
+    /**
+     * Authorization gate - checks permissions before rendering.
+     * Removes component if user lacks LINE SELECTOR view access.
+     */
+    authgate() {
+        if (!CheckPermissions.checkViewAccess("LINE", "SELECTOR")) {
+            this.remove()
+            return
+        }
+        this.findColumnsData()
+    }
+
+    disconnectedCallback() {
+        try { this._unsubProject?.() } catch {}
+        this.renderCleanup.run()
+        this.cleanup.run()
     }
 
     async findColumnsData() {
@@ -62,7 +91,7 @@ export default class ColumnSelector extends HTMLElement {
         return `Unlabeled column: ${data["id"]}`
     }
 
-    async render() {
+    render() {
         let optionsHtml = this.columns.map((column) => {
             const label = this.getLabel(column)
             return `<option value="${column["id"]}">${label}</option>`
@@ -96,12 +125,15 @@ export default class ColumnSelector extends HTMLElement {
             </select>
         `
 
+        // Clear previous render-specific listeners
+        this.renderCleanup.run()
+
         const selectEl = this.shadowRoot.querySelector("select")
         this.selectColumn({ target: selectEl })
-        selectEl.addEventListener("change", (e) => this.selectColumn(e))
+        this.renderCleanup.onElement(selectEl, "change", (e) => this.selectColumn(e))
     }
 
-    async selectColumn(e) {
+    selectColumn(e) {
         const selected = e.target.value
 
         if (selected === "unordered-lines") {

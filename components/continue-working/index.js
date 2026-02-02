@@ -1,7 +1,15 @@
 import TPEN from '../../api/TPEN.js'
 import { stringFromDate } from '/js/utils.js'
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 
+/**
+ * ContinueWorking - Displays recent projects with thumbnails for quick access.
+ * @element tpen-continue-working
+ */
 class ContinueWorking extends HTMLElement {
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
+
     constructor() {
         super()
         this.attachShadow({ mode: 'open' })
@@ -37,12 +45,13 @@ class ContinueWorking extends HTMLElement {
     }
 
     connectedCallback() {
-        TPEN.eventDispatcher.on('tpen-user-projects-loaded', this.handleProjectsLoaded)
+        TPEN.attachAuthentication(this)
+        this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-user-projects-loaded', this.handleProjectsLoaded)
         TPEN.getUserProjects(TPEN.getAuthorization())
     }
 
     disconnectedCallback() {
-        TPEN.eventDispatcher.off('tpen-user-projects-loaded', this.handleProjectsLoaded)
+        this.cleanup.run()
     }
 
     handleProjectsLoaded = async (event) => {

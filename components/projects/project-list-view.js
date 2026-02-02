@@ -1,8 +1,16 @@
 import TPEN from "../../api/TPEN.js"
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 
+/**
+ * ProjectsView - Read-only list view of user's projects.
+ * @element tpen-projects-view
+ */
 export default class ProjectsView extends HTMLElement {
 
     #projects = []
+
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
 
     get projects() {
         return this.#projects
@@ -27,7 +35,11 @@ export default class ProjectsView extends HTMLElement {
         const projectList = document.createElement('ol')
         projectList.id = 'projectsListView'
         this.shadowRoot.prepend(style, projectList)
-        TPEN.eventDispatcher.on("tpen-authenticated", async (ev) => {
+    }
+
+    connectedCallback() {
+        TPEN.attachAuthentication(this)
+        this.cleanup.onEvent(TPEN.eventDispatcher, "tpen-authenticated", async (ev) => {
             try {
                 this.projects = await TPEN.getUserProjects(ev.detail)
             } catch (error) {
@@ -43,9 +55,8 @@ export default class ProjectsView extends HTMLElement {
         })
     }
 
-    async connectedCallback() {
-        TPEN.attachAuthentication(this)
-
+    disconnectedCallback() {
+        this.cleanup.run()
     }
 
     render() {

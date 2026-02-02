@@ -2,15 +2,27 @@ import CheckPermissions from "../check-permissions/checkPermissions.js"
 import TPEN from "../../api/TPEN.js"
 const eventDispatcher = TPEN.eventDispatcher
 import { onProjectReady } from "../../utilities/projectReady.js"
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 
+/**
+ * SplitscreenTool - Dropdown selector for activating split-screen tools.
+ * Requires TOOL ANY view access.
+ * @element tpen-splitscreen-tool
+ */
 export default class SplitscreenTool extends HTMLElement {
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers */
+    renderCleanup = new CleanupRegistry()
+
     constructor() {
       super()
       this.attachShadow({ mode: "open" })
     }
 
     connectedCallback() {
-      this._unsubProject = onProjectReady(this, this.authgate)
+      TPEN.attachAuthentication(this)
+      this._unsubProject = onProjectReady(this, this.authgate.bind(this))
     }
 
     authgate() {
@@ -25,16 +37,21 @@ export default class SplitscreenTool extends HTMLElement {
 
     disconnectedCallback() {
       try { this._unsubProject?.() } catch {}
+      this.renderCleanup.run()
+      this.cleanup.run()
     }
 
     addEventListeners() {
+      // Clear previous render-specific listeners
+      this.renderCleanup.run()
+
       const dropdown = this.shadowRoot.querySelector('.dropdown-select')
       if (dropdown) {
-        dropdown.addEventListener('click', (e) => {
+        this.renderCleanup.onElement(dropdown, 'click', (e) => {
           e.target.dataset.prev = e.target.value
         })
 
-        dropdown.addEventListener('change', (e) => {
+        this.renderCleanup.onElement(dropdown, 'change', (e) => {
             const value = e.target.value
             this.dispatchEvent(new CustomEvent('splitscreen-toggle', {
                 bubbles: true,

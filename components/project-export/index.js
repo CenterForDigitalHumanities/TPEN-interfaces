@@ -1,8 +1,17 @@
 import TPEN from '../../api/TPEN.js'
 import { checkIfUrlExists } from '../../utilities/checkIfUrlExists.js'
 import CheckPermissions from '../../components/check-permissions/checkPermissions.js'
+import { onProjectReady } from "../../utilities/projectReady.js"
 
+/**
+ * ProjectExport - Displays project manifest export status and links.
+ * Requires PROJECT METADATA view access.
+ * @element tpen-project-export
+ */
 customElements.define('tpen-project-export', class extends HTMLElement {
+    /** @type {Function|null} Unsubscribe function for project ready listener */
+    _unsubProject = null
+
     constructor() {
         super()
         this.attachShadow({ mode: 'open' })
@@ -10,19 +19,28 @@ customElements.define('tpen-project-export', class extends HTMLElement {
 
     connectedCallback() {
         TPEN.attachAuthentication(this)
-        TPEN.eventDispatcher.on('tpen-project-loaded', () => this.render())
+        this._unsubProject = onProjectReady(this, this.authgate)
     }
 
-    async render() {
-        // Check if user has view permission
-        const hasViewAccess = CheckPermissions.checkViewAccess('PROJECT', 'METADATA')
-        if (!hasViewAccess) {
+    /**
+     * Authorization gate - checks permissions before rendering.
+     * Shows permission message if user lacks PROJECT METADATA view access.
+     */
+    authgate() {
+        if (!CheckPermissions.checkViewAccess('PROJECT', 'METADATA')) {
             this.shadowRoot.innerHTML = `<p>You don't have permission to view project export</p>`
             return
         }
-        
+        this.loadDeploymentStatus()
+    }
+
+    disconnectedCallback() {
+        try { this._unsubProject?.() } catch {}
+    }
+
+    async loadDeploymentStatus() {
         const url = `${TPEN.staticURL}/${TPEN.activeProject._id}/manifest.json`
-        const response = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/deploymentStatus`, {
+        const result = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/deploymentStatus`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${TPEN.getAuthorization()}`
@@ -33,6 +51,28 @@ customElements.define('tpen-project-export', class extends HTMLElement {
                 const errStatus = await response.json()
                 return errStatus
             })
+
+        // Normalize response to extract numeric status code
+        // API may return a number directly or an object with a status property
+        const status = typeof result === 'number' ? result : (result?.status ?? -1)
+        const errorMessage = typeof result === 'object' ? result?.message : null
+
+        // Pre-check URL existence for statuses that need it
+        let urlExists = false
+        if ([3, 6, 7].includes(status)) {
+            urlExists = await checkIfUrlExists(url)
+        }
+        this.render(status, url, urlExists, errorMessage)
+    }
+
+    /**
+     * Renders the deployment status UI.
+     * @param {number} status - The numeric deployment status code
+     * @param {string} url - The manifest URL
+     * @param {boolean} urlExists - Whether the URL exists
+     * @param {string|null} errorMessage - Optional error message from API
+     */
+    render(status, url, urlExists = false, errorMessage = null) {
         this.shadowRoot.innerHTML = `
             <style>
                 a, .success {
@@ -71,17 +111,17 @@ customElements.define('tpen-project-export', class extends HTMLElement {
                     box-shadow: none;
                     vertical-align: middle;
                 }
-                
+
                 a.iiif-drag-drop img {
                     width: 100%;
                 }
             </style>
         `
         let html = ''
-        switch (response) {
+        switch (status) {
             case -1:
                 html += `<p class="error">Server or Service Error</p>`
-                console.error(response.message)
+                if (errorMessage) console.error(errorMessage)
                 break
             case 1:
                 // This case indicates that there is no manifest
@@ -103,7 +143,7 @@ customElements.define('tpen-project-export', class extends HTMLElement {
             // This case indicates that the deployment is inactive
             case 7:
                 // This case indicates that the deployment is failed
-                if (await checkIfUrlExists(url) && response.status !== 2) {
+                if (urlExists) {
                     html += `<a href="${url}" target="_blank">${url}</a>`
                     html += `<a class="iiif-drag-drop" href="${url}?manifest=${url}" target="_blank"><img src="https://iiif.io/img/logo-iiif-34x30.png" alt="IIIF Drag and Drop" title="Drag and Drop IIIF Resource"></a>`
                 } else {

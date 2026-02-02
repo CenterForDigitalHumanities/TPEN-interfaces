@@ -1,10 +1,15 @@
-// custom element named 'tpen-transcription' with a custom template built from the querystring 'projectID' parameter
+/**
+ * TpenTranscriptionElement - Default transcription view component.
+ * Displays line text and images for an annotation page.
+ * @element tpen-transcription
+ */
 import { userMessage, encodeContentState } from "../iiif-tools/index.js"
 import "../line-image/index.js"
 import "../line-text/index.js"
 import { Vault } from 'https://cdn.jsdelivr.net/npm/@iiif/helpers/+esm'
 
 const vault = new Vault()
+
 class TpenTranscriptionElement extends HTMLElement {
     #transcriptionContainer
     #activeLine
@@ -120,6 +125,10 @@ class TpenTranscriptionElement extends HTMLElement {
 
 customElements.define('tpen-transcription', TpenTranscriptionElement)
 
+/**
+ * TpenPaginationElement - Page navigation component for transcription.
+ * @element tpen-pagination
+ */
 class TpenPaginationElement extends HTMLElement {
     #paginationContainer
     activeCanvas = {}

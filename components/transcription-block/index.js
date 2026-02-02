@@ -3,7 +3,15 @@ const eventDispatcher = TPEN.eventDispatcher
 import vault from "/js/vault.js"
 import CheckPermissions from "/components/check-permissions/checkPermissions.js"
 import { orderPageItemsByColumns } from "/utilities/columnOrdering.js"
+import { onProjectReady } from "/utilities/projectReady.js"
+import { CleanupRegistry } from "/utilities/CleanupRegistry.js"
 
+/**
+ * TranscriptionBlock - Provides the main transcription input interface with navigation.
+ * Handles line editing, autosave, and draft persistence.
+ * Requires LINE TEXT or LINE CONTENT view access.
+ * @element tpen-transcription-block
+ */
 export default class TranscriptionBlock extends HTMLElement {
 
     #page = null
@@ -11,8 +19,12 @@ export default class TranscriptionBlock extends HTMLElement {
     #baseline // tracks last saved text per line
     #saveTimers = new Map() // lineIndex -> timeout id
     #pendingSaves = new Map() // lineIndex -> Promise
-    #unloadHandlerBound
-    _activeLineUpdatedHandler = null
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers */
+    renderCleanup = new CleanupRegistry()
+    /** @type {Function|null} Unsubscribe function for project ready listener */
+    _unsubProject = null
     #storageKey // localStorage key for drafts
 
     constructor() {
@@ -55,29 +67,29 @@ export default class TranscriptionBlock extends HTMLElement {
     }
 
     connectedCallback() {
-        if (TPEN.activeProject?._createdAt) {
-            this.authgate()
-        }
-        TPEN.eventDispatcher.on('tpen-project-loaded', this.authgate.bind(this))
-        TPEN.eventDispatcher.on('tpen-transcription-previous-line', _ev => {
-            this.updateTranscriptionUI()
-        })
-        TPEN.eventDispatcher.on('tpen-transcription-next-line', _ev => {
-            this.updateTranscriptionUI()
-        })
-        this._activeLineUpdatedHandler = (_line) => {
-            this.updateTranscriptionUI()
-        }
-        TPEN.eventDispatcher.on('tpen-active-line-updated', this._activeLineUpdatedHandler)
+        TPEN.attachAuthentication(this)
+        this._unsubProject = onProjectReady(this, this.authgate)
+
+        // UI update handlers for line navigation
+        this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-transcription-previous-line', () => this.updateTranscriptionUI())
+        this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-transcription-next-line', () => this.updateTranscriptionUI())
+        this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-active-line-updated', () => this.updateTranscriptionUI())
     }
 
-    async authgate() {
+    authgate() {
         if (!CheckPermissions.checkViewAccess("ANY", "CONTENT")) {
             this.remove()
             return
         }
         this.render()
         this.addEventListeners()
+        this.initializeAsync()
+    }
+
+    /**
+     * Performs async initialization after authgate passes.
+     */
+    async initializeAsync() {
         const pageID = TPEN.screen?.pageInQuery
         this.#page = await vault.get(pageID, 'annotationpage', true)
         const projectPage = TPEN.activeProject.layers.flatMap(layer => layer.pages || []).find(p => p.id.split('/').pop() === pageID.split('/').pop())
@@ -93,33 +105,32 @@ export default class TranscriptionBlock extends HTMLElement {
     }
 
     addEventListeners() {
+        // Clear previous render-specific listeners
+        this.renderCleanup.run()
+
         const prevButton = this.shadowRoot.querySelector('.prev-button')
         const prevPageButton = this.shadowRoot.querySelector('.prev-page-button')
         const nextButton = this.shadowRoot.querySelector('.next-button')
         const nextPageButton = this.shadowRoot.querySelector('.next-page-button')
         const inputField = this.shadowRoot.querySelector('.transcription-input')
+
+        // Shadow DOM element listeners
         if (prevButton) {
-            prevButton.addEventListener('click', this.moveToPreviousLine.bind(this))
+            this.renderCleanup.onElement(prevButton, 'click', this.moveToPreviousLine.bind(this))
         }
         if (prevPageButton) {
-            prevPageButton.addEventListener('click', () => {
-                this.navigateToPage('prev')
-            })
+            this.renderCleanup.onElement(prevPageButton, 'click', () => this.navigateToPage('prev'))
         }
         if (nextButton) {
-            nextButton.addEventListener('click', this.moveToNextLine.bind(this))
+            this.renderCleanup.onElement(nextButton, 'click', this.moveToNextLine.bind(this))
         }
         if (nextPageButton) {
-            nextPageButton.addEventListener('click', () => {
-                this.navigateToPage('next')
-            })
+            this.renderCleanup.onElement(nextPageButton, 'click', () => this.navigateToPage('next'))
         }
         if (inputField) {
-            // This blur happens and saves a transcription event if I have not typed any text.  Causes strange draft line behavior.
-            // inputField.addEventListener('blur', (e) => this.saveTranscription(e.target.value))
-            inputField.addEventListener('blur', () => this.checkDirtyLines())
-            inputField.addEventListener('keydown', (e) => this.handleKeydown(e))
-            inputField.addEventListener('input', e => {
+            this.renderCleanup.onElement(inputField, 'blur', () => this.checkDirtyLines())
+            this.renderCleanup.onElement(inputField, 'keydown', (e) => this.handleKeydown(e))
+            this.renderCleanup.onElement(inputField, 'input', () => {
                 this.#transcriptions[TPEN.activeLineIndex] = inputField.value ?? ''
                 this.markLineDirty(TPEN.activeLineIndex)
                 this.persistDraft(TPEN.activeLineIndex)
@@ -129,24 +140,22 @@ export default class TranscriptionBlock extends HTMLElement {
 
         // Track dirty lines
         this.$dirtyLines = new Set()
-        this.#unloadHandlerBound = this.beforeUnloadHandler.bind(this)
-        window.addEventListener('beforeunload', this.#unloadHandlerBound)
 
-        // Listen for line navigation events
-        eventDispatcher.on('tpen-transcription-previous-line', () => {
-            this.checkDirtyLines()
-        })
-        eventDispatcher.on('tpen-transcription-next-line', () => {
-            this.checkDirtyLines()
-        })
+        // Window/global event listeners (need explicit cleanup)
+        this.renderCleanup.onWindow('beforeunload', this.beforeUnloadHandler.bind(this))
+
+        // Dirty check handlers for line navigation
+        this.renderCleanup.onEvent(eventDispatcher, 'tpen-transcription-previous-line', () => this.checkDirtyLines())
+        this.renderCleanup.onEvent(eventDispatcher, 'tpen-transcription-next-line', () => this.checkDirtyLines())
 
         // External control events
-        eventDispatcher.on('tpen-transcription-flush-all', this.flushAllSaves.bind(this))
-        eventDispatcher.on('tpen-transcription-save-line', (index) => {
+        this.renderCleanup.onEvent(eventDispatcher, 'tpen-transcription-flush-all', this.flushAllSaves.bind(this))
+        this.renderCleanup.onEvent(eventDispatcher, 'tpen-transcription-save-line', (index) => {
             if (typeof index === 'number') this.scheduleLineSave(index)
         })
 
-        window.addEventListener("message", (event) => {
+        // Window message handler for external tool communication
+        this.renderCleanup.onWindow('message', (event) => {
             if (event.data?.type === "RETURN_LINE_ID") {
                 const lineIndex = this.#page.items.findIndex(item => item.id === event.data.lineId)
                 if (lineIndex !== -1) {
@@ -283,10 +292,14 @@ export default class TranscriptionBlock extends HTMLElement {
     }
 
     disconnectedCallback() {
-        window.removeEventListener('beforeunload', this.#unloadHandlerBound)
-        if (this._activeLineUpdatedHandler) {
-            TPEN.eventDispatcher.off('tpen-active-line-updated', this._activeLineUpdatedHandler)
+        try { this._unsubProject?.() } catch { /* Expected if already unsubscribed */ }
+        // Clear any pending save timers
+        for (const timerId of this.#saveTimers.values()) {
+            clearTimeout(timerId)
         }
+        this.#saveTimers.clear()
+        this.renderCleanup.run()
+        this.cleanup.run()
         eventDispatcher.dispatch('tpen-transcription-block-disconnected')
     }
 
@@ -499,15 +512,6 @@ export default class TranscriptionBlock extends HTMLElement {
     }
 
     render() {
-        if (!CheckPermissions.checkViewAccess('LINE', 'TEXT') && !CheckPermissions.checkViewAccess('LINE', 'CONTENT')) {
-            import('/components/project-permissions/index.js')
-            this.shadowRoot.innerHTML = `
-            <div class="no-access" style="color: red;background: rgba(255, 0, 0, 0.1);text-align: center;">No access to view transcription
-            <tpen-project-permissions project-id="${TPEN.activeProject?.id ?? TPEN.activeProject?._id}" user-id="${TPEN.activeUser?.id ?? TPEN.activeUser?._id}"></tpen-project-permissions>
-            </div>
-            `
-            return
-        }
         this.shadowRoot.innerHTML = `
       <style>
         .transcription-block {

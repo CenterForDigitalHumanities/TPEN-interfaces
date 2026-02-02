@@ -1,14 +1,22 @@
 import {decodeContentState} from '../iiif-tools/index.js'
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 
 const LINE_TEXT_HTML = `<span>
     <span style="border-radius: 1em; background-color: lightgrey; width: 100%; min-width:14em;min-height: 1em; display: inline-block;">
     </span>
 </span>`
 
+/**
+ * TpenLineText - Displays the text content from a TPEN line annotation.
+ * @element tpen-line-text
+ */
 class TpenLineText extends HTMLElement {
     static get observedAttributes() {
         return ['tpen-line-id', 'iiif-content']
     }
+
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
 
     attributeChangedCallback(name, oldValue, newValue) {
         if (oldValue !== newValue) {
@@ -28,15 +36,18 @@ class TpenLineText extends HTMLElement {
         super()
         this.attachShadow({ mode: 'open' })
         this.shadowRoot.innerHTML = LINE_TEXT_HTML
-        this.addEventListener('tpen-set-line', e => {
-            this.line = e.detail
-            this.drawLineText()
-        })
     }
 
     connectedCallback() {
+        const setLineHandler = e => {
+            this.line = e.detail
+            this.drawLineText()
+        }
+        this.addEventListener('tpen-set-line', setLineHandler)
+        this.cleanup.add(() => this.removeEventListener('tpen-set-line', setLineHandler))
+
         const SPAN = this.shadowRoot.querySelector('span')
-        
+
         if (!this.#id() && !this.#content()) {
             this.validateContent(null,SPAN,"Line ID is required")
         }
@@ -46,6 +57,10 @@ class TpenLineText extends HTMLElement {
             return
         }
         this.#content() ? this.loadContent(this.#content(),SPAN) : this.loadText(this.#id(),SPAN)
+    }
+
+    disconnectedCallback() {
+        this.cleanup.run()
     }
 
     drawLineText() {

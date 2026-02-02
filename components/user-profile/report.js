@@ -1,11 +1,19 @@
 import TPEN from '../../api/TPEN.js'
 import User from '../../api/User.js'
 import Project from '../../api/Project.js'
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 
+/**
+ * ReportStats - Displays summary statistics about user's projects.
+ * @element report-stats
+ */
 class ReportStats extends HTMLElement {
     static get observedAttributes() {
         return ['tpen-user-id']
     }
+
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
 
     constructor() {
         super()
@@ -13,10 +21,42 @@ class ReportStats extends HTMLElement {
     }
 
     connectedCallback() {
-        TPEN.eventDispatcher.on('tpen-user-loaded', async ev => {
-            await this.render(await TPEN.getUserProjects(TPEN.getAuthorization()))
-        })
         TPEN.attachAuthentication(this)
+        this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-user-loaded', () => this.loadAndRender())
+    }
+
+    /**
+     * Loads user projects, calculates statistics, and renders the report.
+     */
+    async loadAndRender() {
+        const projects = await TPEN.getUserProjects(TPEN.getAuthorization())
+
+        const uniqueCollaborators = new Set()
+        projects.forEach(project => {
+            if (project.collaborators) {
+                Object.keys(project.collaborators).forEach(collaborator => {
+                    if (collaborator !== TPEN.currentUser?._id) uniqueCollaborators.add(collaborator)
+                })
+            }
+        })
+
+        let totalContributions = 0
+        for (const project of projects) {
+            const projectData = await new Project(project._id).fetch()
+            totalContributions += projectData.layers?.length || 0
+            projectData.layers?.forEach(layer => {
+                totalContributions += layer.pages?.length || 0
+                layer.pages?.forEach(page => {
+                    totalContributions += page.items?.length || 0
+                })
+            })
+        }
+
+        this.render(projects.length, uniqueCollaborators.size, totalContributions)
+    }
+
+    disconnectedCallback() {
+        this.cleanup.run()
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
@@ -31,29 +71,13 @@ class ReportStats extends HTMLElement {
         }
     }
 
-    async render(projects) {
-        const uniqueCollaborators = new Set()
-        projects.forEach(project => {
-            if (project.collaborators) {
-                Object.keys(project.collaborators).forEach(collaborator => {
-                    if (collaborator !== TPEN.currentUser?._id) uniqueCollaborators.add(collaborator)
-                })
-            }
-        })
-
-        let totalContributions = 0
-
-        for (const project of projects) {
-            const projectData = await new Project(project._id).fetch()
-            totalContributions += projectData.layers?.length || 0
-            projectData.layers?.forEach(layer => {
-                totalContributions += layer.pages?.length || 0
-                layer.pages?.forEach(page => {
-                    totalContributions += page.items?.length || 0
-                })
-            })
-        }
-
+    /**
+     * Renders the report with pre-calculated statistics.
+     * @param {number} projectCount - Number of projects
+     * @param {number} collaboratorCount - Number of unique collaborators
+     * @param {number} totalContributions - Total contribution count
+     */
+    render(projectCount, collaboratorCount, totalContributions) {
         this.shadowRoot.innerHTML = `
             <style>
                 :host {
@@ -93,8 +117,8 @@ class ReportStats extends HTMLElement {
             </style>
             <div class="report">
                 <h2 class="stats-title">Report</h2>
-                <p>Number of Projects: <span>${projects.length}</span></p>
-                <p>Number of Collaborators: <span>${uniqueCollaborators.size}</span></p>
+                <p>Number of Projects: <span>${projectCount}</span></p>
+                <p>Number of Collaborators: <span>${collaboratorCount}</span></p>
                 <p>Total Contributions: <span>${totalContributions}</span></p>
             </div>
         `

@@ -1,4 +1,5 @@
 import { decodeContentState } from '../iiif-tools/index.js'
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 
 const CANVAS_PANEL_SCRIPT = document.createElement('script')
 CANVAS_PANEL_SCRIPT.src = "https://cdn.jsdelivr.net/npm/@digirati/canvas-panel-web-components@latest"
@@ -6,6 +7,10 @@ document.head.appendChild(CANVAS_PANEL_SCRIPT)
 
 const LINE_IMG = () => document.createElement('canvas-panel')
 
+/**
+ * TpenLineImage - Displays a IIIF canvas image with region support.
+ * @element tpen-line-image
+ */
 class TpenLineImage extends HTMLElement {
     static get observedAttributes() {
         return ['tpen-line-id','region']
@@ -121,11 +126,20 @@ class TpenLineImage extends HTMLElement {
     }
 }
 
-customElements.define('tpen-line-image', TpenLineImage)
+// Guard against duplicate registration when module is loaded via different URL paths
+if (!customElements.get('tpen-line-image')) {
+    customElements.define('tpen-line-image', TpenLineImage)
+}
 
+/**
+ * TpenImageFragment - Displays a portion of a IIIF canvas image that follows the active line.
+ * @element tpen-image-fragment
+ */
 class TpenImageFragment extends HTMLElement {
     #lineImage = new Image()
     #canvas
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
 
     get lineImage() {
         return this.#lineImage
@@ -149,7 +163,7 @@ class TpenImageFragment extends HTMLElement {
         this.#canvas = value
         this.setContainerStyle()
     }
-    
+
     set line(annotation) {
         if (!annotation?.target?.startsWith(this.#canvas?.id ?? '')) return
 
@@ -172,7 +186,7 @@ class TpenImageFragment extends HTMLElement {
             this.region = newValue
         }
     }
-    
+
     setContainerStyle() {
         this.style.position = 'relative'
         this.style.left = `0px`
@@ -182,24 +196,31 @@ class TpenImageFragment extends HTMLElement {
         this.style.display = 'block'
         this.style.overflow = 'visible'
     }
-    
+
     constructor() {
         super()
         this.attachShadow({ mode: 'open' })
         this.#lineImage.onload = this.render.bind(this)
-        document.addEventListener('canvas-change', (event) => {
+    }
+
+    connectedCallback() {
+        this.cleanup.onDocument('canvas-change', (event) => {
             fetch(event.detail.canvasId)
-            .then(res => res.json())
-            .then(canvas => {
-                this.#canvas = canvas
-                this.setContainerStyle()
-                const imageResource = canvas?.items?.[0]?.items?.[0]?.body?.id ?? canvas?.images?.[0]?.resource?.id
+                .then(res => res.json())
+                .then(canvas => {
+                    this.#canvas = canvas
+                    this.setContainerStyle()
+                    const imageResource = canvas?.items?.[0]?.items?.[0]?.body?.id ?? canvas?.images?.[0]?.resource?.id
                     if (imageResource) {
                         this.#lineImage.src = imageResource
                     }
                 })
                 .catch(console.error)
         })
+    }
+
+    disconnectedCallback() {
+        this.cleanup.run()
     }
 
     moveUnder(x, y, width, height, topImage) {
@@ -233,7 +254,10 @@ class TpenImageFragment extends HTMLElement {
     }
 }
 
-customElements.define('tpen-image-fragment', TpenImageFragment)
+// Guard against duplicate registration when module is loaded via different URL paths
+if (!customElements.get('tpen-image-fragment')) {
+    customElements.define('tpen-image-fragment', TpenImageFragment)
+}
 
 export default {
     TpenLineImage,

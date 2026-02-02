@@ -1,25 +1,53 @@
 import TPEN from "../../api/TPEN.js"
 import CheckPermissions from '../../components/check-permissions/checkPermissions.js'
+import { onProjectReady } from "../../utilities/projectReady.js"
+import { CleanupRegistry } from "../../utilities/CleanupRegistry.js"
 
+/**
+ * ManageRole - Interface for creating and managing custom project roles.
+ * Requires ROLE ALL access.
+ * @element tpen-manage-role
+ */
 class ManageRole extends HTMLElement {
+    /** @type {Function|null} Unsubscribe function for project ready listener */
+    _unsubProject = null
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers */
+    renderCleanup = new CleanupRegistry()
+
     permissions = []
     isExistingRole = false
+
     constructor() {
         super()
-        this.attachShadow({ mode : "open" })
+        this.attachShadow({ mode: "open" })
     }
 
     connectedCallback() {
         TPEN.attachAuthentication(this)
-        TPEN.eventDispatcher.on("tpen-project-loaded", () => this.render())
+        this._unsubProject = onProjectReady(this, this.authgate)
     }
 
-    async render() {
-        const permitted = CheckPermissions.checkAllAccess("role", "*")
-        if(!permitted) {
+    /**
+     * Authorization gate - checks permissions before rendering.
+     * Shows permission message if user lacks ROLE ALL access.
+     */
+    authgate() {
+        if (!CheckPermissions.checkAllAccess("ROLE", "*")) {
             this.shadowRoot.innerHTML = `<div>You don't have permission to create or edit roles</div>`
             return
         }
+        this.loadCustomRoles()
+    }
+
+    disconnectedCallback() {
+        try { this._unsubProject?.() } catch {}
+        this.renderCleanup.run()
+        this.cleanup.run()
+    }
+
+    async loadCustomRoles() {
         const group = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/customRoles`, {
             method: 'GET',
             headers: {
@@ -27,6 +55,10 @@ class ManageRole extends HTMLElement {
                 'Authorization': `Bearer ${TPEN.getAuthorization()}`
             }
         }).then(response => response.json())
+        this.render(group)
+    }
+
+    render(group) {
         this.shadowRoot.innerHTML = `
             <style>
                 h3 {
@@ -381,15 +413,18 @@ class ManageRole extends HTMLElement {
             <button type="button" id="projectManagementBtn"><span aria-hidden="true">↪</span> Go to Project Management</button>
         `
 
-        this.shadowRoot.getElementById("add-permissions").addEventListener('click', () => this.addPermissions(group))
-        this.shadowRoot.getElementById("resetPermissions").addEventListener('click', () => this.resetPermissions())
-        this.shadowRoot.getElementById("edit-role-name").addEventListener('click', () => this.editRoleName())
-        this.shadowRoot.getElementById("save-role").addEventListener('click', () => this.addRole(group))
-        this.shadowRoot.getElementById("update-role").addEventListener('click', () => this.updateRole(group))
+        // Clear previous render-specific listeners before adding new ones
+        this.renderCleanup.run()
+
+        this.renderCleanup.onElement(this.shadowRoot.getElementById("add-permissions"), 'click', () => this.addPermissions(group))
+        this.renderCleanup.onElement(this.shadowRoot.getElementById("resetPermissions"), 'click', () => this.resetPermissions())
+        this.renderCleanup.onElement(this.shadowRoot.getElementById("edit-role-name"), 'click', () => this.editRoleName())
+        this.renderCleanup.onElement(this.shadowRoot.getElementById("save-role"), 'click', () => this.addRole(group))
+        this.renderCleanup.onElement(this.shadowRoot.getElementById("update-role"), 'click', () => this.updateRole(group))
         if (CheckPermissions.checkEditAccess("PROJECT")) {
             const manageBtn = this.shadowRoot.getElementById("projectManagementBtn")
             manageBtn.style.display = "block"
-            manageBtn.addEventListener('click', () => document.location.href = `/project/manage?projectID=${TPEN.activeProject._id}`)
+            this.renderCleanup.onElement(manageBtn, 'click', () => document.location.href = `/project/manage?projectID=${TPEN.activeProject._id}`)
         }
 
         const rolesList = this.shadowRoot.querySelector(".roles-list")
@@ -413,7 +448,7 @@ class ManageRole extends HTMLElement {
             `
 
             this.shadowRoot.querySelectorAll(".role-li .remove-field-btn").forEach(btn => {
-                btn.addEventListener('click', async (e) => {
+                this.renderCleanup.onElement(btn, 'click', async (e) => {
                     e.stopPropagation()
                     const roleLi = btn.closest("li")
                     this.shadowRoot.getElementById('role-name').value = ''
@@ -434,7 +469,7 @@ class ManageRole extends HTMLElement {
             })
 
             this.shadowRoot.querySelectorAll(".roles-list li").forEach(li => {
-                li.addEventListener('click', () => this.updateRolePermissions(group, li))
+                this.renderCleanup.onElement(li, 'click', () => this.updateRolePermissions(group, li))
             })
         })
     }
@@ -460,7 +495,7 @@ class ManageRole extends HTMLElement {
         this.shadowRoot.getElementById('save-role').classList.add('hide-div')
 
         this.shadowRoot.querySelectorAll(".remove-field-btn").forEach(btn => {
-            btn.addEventListener('click', (e) => {
+            this.renderCleanup.onElement(btn, 'click', (e) => {
                 e.stopPropagation()
                 const li = btn.closest("li")
                 const permissionText = li.querySelector("span").textContent
@@ -692,7 +727,7 @@ class ManageRole extends HTMLElement {
             }
 
             this.shadowRoot.querySelectorAll(".remove-field-btn").forEach(btn => {
-                btn.addEventListener('click', (e) => {
+                this.renderCleanup.onElement(btn, 'click', (e) => {
                     e.stopPropagation()
                     const li = btn.closest("li")
                     const permissionText = li.querySelector("span").textContent

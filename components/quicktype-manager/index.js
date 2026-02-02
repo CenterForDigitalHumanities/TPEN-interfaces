@@ -2,6 +2,8 @@ import TPEN from '../../api/TPEN.js'
 import { escapeHtml } from '/js/utils.js'
 import { evaluateEntry } from '../quicktype/validation.js'
 import '../quicktype-tool/quicktype-editor-dialog.js'
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
+import { onProjectReady } from '../../utilities/projectReady.js'
 
 export const PRESET_COLLECTIONS = {
     'Old English': ['Þ', 'þ', 'Ð', 'ð', 'Æ', 'æ', 'Ȝ', 'ȝ'],
@@ -14,7 +16,19 @@ export const PRESET_COLLECTIONS = {
     'Currency': ['€', '£', '¥', '₹', '₽', '₩', '₪', '₦', '₱', '฿']
 }
 
+/**
+ * QuickTypeManager - Interface for managing quicktype shortcuts in a project.
+ * Requires project access.
+ * @element tpen-quicktype-manager
+ */
 class QuickTypeManager extends HTMLElement {
+    /** @type {CleanupRegistry} Registry for persistent cleanup handlers */
+    cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers (cleared on re-render) */
+    renderCleanup = new CleanupRegistry()
+    /** @type {Function|null} Unsubscribe function for project ready listener */
+    _unsubProject = null
+
     constructor() {
         super()
         this.attachShadow({ mode: 'open' })
@@ -24,11 +38,22 @@ class QuickTypeManager extends HTMLElement {
 
     connectedCallback() {
         TPEN.attachAuthentication(this)
-        TPEN.eventDispatcher.on('tpen-project-loaded', () => {
-            this.loadShortcuts()
-            this.render()
-            this.setupEventListeners()
-        })
+        this._unsubProject = onProjectReady(this, this.authgate)
+    }
+
+    /**
+     * Authorization gate - loads shortcuts and renders after project is ready.
+     */
+    authgate() {
+        this.loadShortcuts()
+        this.render()
+        this.addEventListeners()
+    }
+
+    disconnectedCallback() {
+        try { this._unsubProject?.() } catch {}
+        this.renderCleanup.run()
+        this.cleanup.run()
     }
 
     loadShortcuts() {
@@ -54,7 +79,7 @@ class QuickTypeManager extends HTMLElement {
                 message: 'Shortcuts saved successfully' 
             })
             this.render()
-            this.setupEventListeners()
+            this.addEventListeners()
         } catch (error) {
             TPEN.eventDispatcher.dispatch('tpen-toast', { 
                 status: 'error', 
@@ -315,53 +340,59 @@ class QuickTypeManager extends HTMLElement {
         `
     }
 
-    setupEventListeners() {
+    addEventListeners() {
+        // Clear previous render-specific listeners before adding new ones
+        this.renderCleanup.run()
+
         // Remove individual shortcuts
         this.shadowRoot.querySelectorAll('.remove-shortcut').forEach(btn => {
-            btn.addEventListener('click', (e) => {
+            this.renderCleanup.onElement(btn, 'click', (e) => {
                 const index = parseInt(e.target.dataset.index)
                 this._shortcuts.splice(index, 1)
                 this.render()
-                this.setupEventListeners()
+                this.addEventListeners()
             })
         })
 
         // Clear all
-        this.shadowRoot.querySelector('#clear-btn')?.addEventListener('click', () => {
+        const clearBtn = this.shadowRoot.querySelector('#clear-btn')
+        this.renderCleanup.onElement(clearBtn, 'click', () => {
             if (confirm('Are you sure you want to clear all shortcuts?')) {
                 this._shortcuts = []
                 this.render()
-                this.setupEventListeners()
+                this.addEventListeners()
             }
         })
 
         // Save
-        this.shadowRoot.querySelector('#save-btn')?.addEventListener('click', () => {
+        const saveBtn = this.shadowRoot.querySelector('#save-btn')
+        this.renderCleanup.onElement(saveBtn, 'click', () => {
             this.saveShortcuts()
         })
 
         // Edit with advanced editor
-        this.shadowRoot.querySelector('#edit-btn')?.addEventListener('click', () => {
+        const editBtn = this.shadowRoot.querySelector('#edit-btn')
+        this.renderCleanup.onElement(editBtn, 'click', () => {
             const dialog = document.querySelector('tpen-quicktype-editor-dialog')
             if (dialog) {
                 dialog.open(this._shortcuts)
-                
-                // Listen for save from dialog
+
+                // Listen for save from dialog (one-time handler)
                 const handler = (event) => {
                     this._shortcuts = event.detail.quicktype
                     this._savedShortcuts = [...this._shortcuts]
                     this.render()
-                    this.setupEventListeners()
+                    this.addEventListeners()
                     TPEN.eventDispatcher.off('quicktype-editor-saved', handler)
                 }
                 TPEN.eventDispatcher.on('quicktype-editor-saved', handler)
             }
         })
 
-    // Add custom shortcut
-    const customInput = this.shadowRoot.querySelector('#custom-shortcut')
+        // Add custom shortcut
+        const customInput = this.shadowRoot.querySelector('#custom-shortcut')
         const addCustomBtn = this.shadowRoot.querySelector('#add-custom-btn')
-        
+
         const addCustomChar = () => {
             const value = customInput.value.trim()
             if (!value) return
@@ -388,8 +419,8 @@ class QuickTypeManager extends HTMLElement {
             this._shortcuts.push(value)
             customInput.value = ''
             this.render()
-            this.setupEventListeners()
-            
+            this.addEventListeners()
+
             // Refocus the input after re-rendering
             const newInput = this.shadowRoot.querySelector('#custom-shortcut')
             if (newInput) {
@@ -397,8 +428,8 @@ class QuickTypeManager extends HTMLElement {
             }
         }
 
-        addCustomBtn?.addEventListener('click', addCustomChar)
-        customInput?.addEventListener('keypress', (e) => {
+        this.renderCleanup.onElement(addCustomBtn, 'click', addCustomChar)
+        this.renderCleanup.onElement(customInput, 'keypress', (e) => {
             if (e.key === 'Enter') {
                 addCustomChar()
             }
@@ -406,10 +437,10 @@ class QuickTypeManager extends HTMLElement {
 
         // Add preset collections
         this.shadowRoot.querySelectorAll('.preset-card').forEach(card => {
-            card.addEventListener('click', () => {
+            this.renderCleanup.onElement(card, 'click', () => {
                 const presetName = card.dataset.preset
                 const shortcuts = PRESET_COLLECTIONS[presetName]
-                
+
                 // Add characters that aren't already in the list
                 let addedCount = 0
                 let invalidCount = 0
@@ -424,21 +455,21 @@ class QuickTypeManager extends HTMLElement {
                         }
                     }
                 })
-                
+
                 if (invalidCount > 0) {
-                    TPEN.eventDispatcher.dispatch('tpen-toast', { 
-                        status: 'warning', 
-                        message: `Added ${addedCount} shortcuts from ${presetName} (${invalidCount} may need attention)` 
+                    TPEN.eventDispatcher.dispatch('tpen-toast', {
+                        status: 'warning',
+                        message: `Added ${addedCount} shortcuts from ${presetName} (${invalidCount} may need attention)`
                     })
                 } else {
-                    TPEN.eventDispatcher.dispatch('tpen-toast', { 
-                        status: 'info', 
-                        message: `Added ${addedCount} shortcuts from ${presetName}` 
+                    TPEN.eventDispatcher.dispatch('tpen-toast', {
+                        status: 'info',
+                        message: `Added ${addedCount} shortcuts from ${presetName}`
                     })
                 }
-                
+
                 this.render()
-                this.setupEventListeners()
+                this.addEventListeners()
             })
         })
 

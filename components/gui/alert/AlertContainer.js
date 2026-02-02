@@ -1,8 +1,16 @@
 import './Alert.js'
 import { eventDispatcher } from '../../../api/events.js'
+import { CleanupRegistry } from '../../../utilities/CleanupRegistry.js'
 
+/**
+ * AlertContainer - Global container for displaying alert dialogs.
+ * Listens for 'tpen-alert' events and displays modal alert dialogs.
+ * @element tpen-alert-container
+ */
 class AlertContainer extends HTMLElement {
     #screenLockingSection
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
 
     constructor() {
         super()
@@ -11,7 +19,12 @@ class AlertContainer extends HTMLElement {
     }
 
     connectedCallback() {
-        eventDispatcher.on('tpen-alert', ({ detail }) => this.addAlert(detail?.message, detail?.buttonText))
+        const alertHandler = ({ detail }) => this.addAlert(detail?.message, detail?.buttonText)
+        this.cleanup.onEvent(eventDispatcher, 'tpen-alert', alertHandler)
+    }
+
+    disconnectedCallback() {
+        this.cleanup.run()
     }
 
     /**
@@ -143,6 +156,8 @@ class AlertContainer extends HTMLElement {
     }
 }
 
-customElements.define('tpen-alert-container', AlertContainer)
-
-document?.body.after(new AlertContainer())
+// Guard against duplicate registration when module is loaded via different URL paths
+if (!customElements.get('tpen-alert-container')) {
+    customElements.define('tpen-alert-container', AlertContainer)
+    document?.body.after(new AlertContainer())
+}

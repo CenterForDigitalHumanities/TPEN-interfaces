@@ -1,9 +1,17 @@
 import './Confirm.js'
 import { eventDispatcher } from '../../../api/events.js'
+import { CleanupRegistry } from '../../../utilities/CleanupRegistry.js'
 
+/**
+ * ConfirmContainer - Global container for displaying confirmation dialogs.
+ * Listens for 'tpen-confirm' events and displays modal confirm dialogs.
+ * @element tpen-confirm-container
+ */
 class ConfirmContainer extends HTMLElement {
     #screenLockingSection
     #confirmElem
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
 
     constructor() {
         super()
@@ -12,9 +20,17 @@ class ConfirmContainer extends HTMLElement {
     }
 
     connectedCallback() {
-        eventDispatcher.on('tpen-confirm', ({ detail }) => this.addConfirm(detail?.message, detail?.positiveButtonText, detail.negativeButtonText))
-        eventDispatcher.on('tpen-confirm-positive', () => this.#confirmElem.dismiss())
-        eventDispatcher.on('tpen-confirm-negative', () => this.#confirmElem.dismiss())
+        const confirmHandler = ({ detail }) => this.addConfirm(detail?.message, detail?.positiveButtonText, detail.negativeButtonText)
+        const positiveHandler = () => this.#confirmElem?.dismiss()
+        const negativeHandler = () => this.#confirmElem?.dismiss()
+
+        this.cleanup.onEvent(eventDispatcher, 'tpen-confirm', confirmHandler)
+        this.cleanup.onEvent(eventDispatcher, 'tpen-confirm-positive', positiveHandler)
+        this.cleanup.onEvent(eventDispatcher, 'tpen-confirm-negative', negativeHandler)
+    }
+
+    disconnectedCallback() {
+        this.cleanup.run()
     }
 
     /**
@@ -153,6 +169,8 @@ class ConfirmContainer extends HTMLElement {
     }
 }
 
-customElements.define('tpen-confirm-container', ConfirmContainer)
-
-document?.body.after(new ConfirmContainer())
+// Guard against duplicate registration when module is loaded via different URL paths
+if (!customElements.get('tpen-confirm-container')) {
+    customElements.define('tpen-confirm-container', ConfirmContainer)
+    document?.body.after(new ConfirmContainer())
+}
