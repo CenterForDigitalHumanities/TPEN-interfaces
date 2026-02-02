@@ -1,9 +1,29 @@
 import TPEN from "../../api/TPEN.js"
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 
+/**
+ * ProjectImporter - Creates a new project from a IIIF manifest URL.
+ * @element tpen-project-importer
+ */
 class ProjectImporter extends HTMLElement {
+  /** @type {CleanupRegistry} Registry for cleanup handlers */
+  cleanup = new CleanupRegistry()
+
   constructor() {
     super()
     this.attachShadow({ mode: 'open' })
+  }
+
+  connectedCallback() {
+    this.render()
+    this.addEventListeners()
+  }
+
+  disconnectedCallback() {
+    this.cleanup.run()
+  }
+
+  render() {
     this.shadowRoot.innerHTML = `
         <style>
           .importer-container {
@@ -64,12 +84,19 @@ class ProjectImporter extends HTMLElement {
         </div>
       `
 
+  }
+
+  /**
+   * Sets up event listeners for the component.
+   */
+  addEventListeners() {
     this.urlInput = this.shadowRoot.querySelector('#url')
     this.submitButton = this.shadowRoot.querySelector('#submit')
     this.feedback = this.shadowRoot.querySelector('#feedback')
     this.projectInfoContainer = this.shadowRoot.querySelector('#project-info-container')
 
-    this.submitButton.addEventListener('click', this.handleImport.bind(this))
+    const importHandler = this.handleImport.bind(this)
+    this.cleanup.onElement(this.submitButton, 'click', importHandler)
   }
   setLoadingState(isLoading) {
     if (isLoading) {

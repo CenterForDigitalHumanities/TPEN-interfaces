@@ -1,11 +1,19 @@
 import TPEN from "../../api/TPEN.js"
 import CheckPermissions from "../../components/check-permissions/checkPermissions.js"
+import { onProjectReady } from "../../utilities/projectReady.js"
 
+/**
+ * ProjectMetadata - Displays project metadata in a formatted list.
+ * Requires PROJECT METADATA view access.
+ * @element tpen-project-metadata
+ */
 class ProjectMetadata extends HTMLElement {
+    /** @type {Function|null} Unsubscribe function for project ready listener */
+    _unsubProject = null
+
     constructor() {
         super()
         this.attachShadow({ mode: 'open' })
-        TPEN.attachAuthentication(this)
     }
 
     static get observedAttributes() {
@@ -13,8 +21,28 @@ class ProjectMetadata extends HTMLElement {
     }
 
     connectedCallback() {
+        TPEN.attachAuthentication(this)
         this.render()
-        this.addEventListener()
+        this._unsubProject = onProjectReady(this, this.authgate)
+    }
+
+    /**
+     * Authorization gate - checks permissions before loading metadata.
+     * Shows permission message if user lacks PROJECT METADATA view access.
+     */
+    authgate() {
+        if (!CheckPermissions.checkViewAccess('PROJECT', 'METADATA')) {
+            const projectMetadata = this.shadowRoot.querySelector(".metadata")
+            if (projectMetadata) {
+                projectMetadata.innerHTML = `<p>You don't have permission to view project metadata</p>`
+            }
+            return
+        }
+        this.loadMetadata(TPEN.activeProject)
+    }
+
+    disconnectedCallback() {
+        try { this._unsubProject?.() } catch {}
     }
 
     render() {
@@ -65,19 +93,11 @@ class ProjectMetadata extends HTMLElement {
         `
     }
 
-    addEventListener() {
-        TPEN.eventDispatcher.on("tpen-project-loaded", () => this.loadMetadata(TPEN.activeProject))
-    }
-
+    /**
+     * Loads and displays metadata from the project.
+     * @param {Object} project - The project object containing metadata
+     */
     async loadMetadata(project) {
-        // Check if user has view permission
-        const hasViewAccess = CheckPermissions.checkViewAccess('PROJECT', 'METADATA')
-        if (!hasViewAccess) {
-            const projectMetadata = this.shadowRoot.querySelector(".metadata")
-            projectMetadata.innerHTML = `<p>You don't have permission to view project metadata</p>`
-            return
-        }
-        
         let projectMetada = this.shadowRoot.querySelector(".metadata")
         const metadata = project.metadata 
         projectMetada.innerHTML = ""

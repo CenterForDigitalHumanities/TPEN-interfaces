@@ -1,32 +1,52 @@
 import TPEN from "../../api/TPEN.js"
 import "../../components/manage-pages/index.js"
 import CheckPermissions from "../../components/check-permissions/checkPermissions.js"
+import { onProjectReady } from "../../utilities/projectReady.js"
+import { CleanupRegistry } from "../../utilities/CleanupRegistry.js"
 
+/**
+ * ProjectLayers - Manages project layers including creation, deletion, and page management.
+ * Requires LAYER METADATA view access.
+ * @element tpen-manage-layers
+ */
 class ProjectLayers extends HTMLElement {
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers */
+    renderCleanup = new CleanupRegistry()
+    /** @type {Function|null} Unsubscribe function for project ready listener */
+    _unsubProject = null
 
     constructor() {
         super()
         this.attachShadow({ mode: "open" })
-        
     }
 
     connectedCallback() {
         TPEN.attachAuthentication(this)
+        this._unsubProject = onProjectReady(this, this.authgate)
+    }
 
-        if (TPEN.activeProject?._id) {
-            this.render()
+    /**
+     * Authorization gate - checks permissions before rendering.
+     * Removes component if user lacks LAYER METADATA view access.
+     */
+    authgate() {
+        if (!CheckPermissions.checkViewAccess('LAYER', 'METADATA')) {
+            this.remove()
+            return
         }
-        TPEN.eventDispatcher.on('tpen-project-loaded', this.render.bind(this))
+        this.render()
+        this.addEventListeners()
+    }
+
+    disconnectedCallback() {
+        try { this._unsubProject?.() } catch {}
+        this.renderCleanup.run()
+        this.cleanup.run()
     }
 
     render() {
-        // Check if user has view permission (safe - project is loaded)
-        const hasViewAccess = CheckPermissions.checkViewAccess('LAYER', 'METADATA')
-        if (!hasViewAccess) {
-            this.shadowRoot.innerHTML = `<p>You don't have permission to view layers</p>`
-            return
-        }
-
         const layers = TPEN.activeProject.layers
         this.shadowRoot.innerHTML = `
             <style>
@@ -203,8 +223,19 @@ class ProjectLayers extends HTMLElement {
                 .join("")}     
             </div>
         `
+    }
+
+    /**
+     * Sets up event listeners for layer management actions.
+     */
+    addEventListeners() {
+        // Clear previous render-specific listeners
+        this.renderCleanup.run()
+
+        const layers = TPEN.activeProject.layers
+
         this.shadowRoot.querySelectorAll(".delete-layer").forEach((button) => {
-            button.addEventListener("click", (event) => {
+            this.renderCleanup.onElement(button, "click", (event) => {
                 const hasDeleteAccess = CheckPermissions.checkDeleteAccess('LAYER', '*')
                 if (!hasDeleteAccess) {
                     TPEN.eventDispatcher.dispatch("tpen-toast", {
@@ -225,16 +256,16 @@ class ProjectLayers extends HTMLElement {
                     }
                 })
                 .then(response => {
-                    return TPEN.eventDispatcher.dispatch("tpen-toast", 
-                    response.ok ? 
-                        { status: "info", message: 'Successfully Deleted Layer' } : 
+                    return TPEN.eventDispatcher.dispatch("tpen-toast",
+                    response.ok ?
+                        { status: "info", message: 'Successfully Deleted Layer' } :
                         { status: "error", message: 'Error Deleting Layer' }
                     )
                 })
             })
         })
 
-        this.shadowRoot.querySelector(".add-layer").addEventListener("click", () => {
+        this.renderCleanup.onElement(this.shadowRoot.querySelector(".add-layer"), "click", () => {
             const hasCreateAccess = CheckPermissions.checkCreateAccess('LAYER', '*')
             if (!hasCreateAccess) {
                 TPEN.eventDispatcher.dispatch("tpen-toast", {
@@ -267,9 +298,9 @@ class ProjectLayers extends HTMLElement {
                 })
             })
             .then(response => {
-                return TPEN.eventDispatcher.dispatch("tpen-toast", 
-                response.ok ? 
-                    { status: "info", message: 'Successfully Added Layer' } : 
+                return TPEN.eventDispatcher.dispatch("tpen-toast",
+                response.ok ?
+                    { status: "info", message: 'Successfully Added Layer' } :
                     { status: "error", message: 'Error Adding Layer' }
                 )
             })

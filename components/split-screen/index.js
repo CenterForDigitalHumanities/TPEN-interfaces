@@ -1,7 +1,21 @@
 import CheckPermissions from "../check-permissions/checkPermissions.js"
 import TPEN from "../../api/TPEN.js"
-const eventDispatcher = TPEN.eventDispatcher
+import { onProjectReady } from "../../utilities/projectReady.js"
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
+
+/**
+ * TpenSplitScreen - Provides a resizable split-pane layout.
+ * Requires TOOLS ANY view access.
+ * @element tpen-split-screen
+ */
 export default class TpenSplitScreen extends HTMLElement {
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers */
+    renderCleanup = new CleanupRegistry()
+    /** @type {Function|null} Unsubscribe function for project ready listener */
+    _unsubProject = null
+
     constructor() {
         super()
         this.attachShadow({ mode: "open" })
@@ -11,28 +25,33 @@ export default class TpenSplitScreen extends HTMLElement {
     }
 
     connectedCallback() {
-      // If project is already loaded, run authgate immediately
-      if (TPEN.activeProject?._createdAt) {
-        this.authgate()
-      }
-      eventDispatcher.on("tpen-project-loaded", this.authgate.bind(this))
+        TPEN.attachAuthentication(this)
+        this._unsubProject = onProjectReady(this, this.authgate)
     }
 
     authgate() {
-      if(!CheckPermissions.checkViewAccess("TOOLS", "ANY")) {
-        // No reason to get this far, but let's not risk it.
-        this.remove()
-        return
-      }
-      this.render()
-      this.addEventListeners()
+        if (!CheckPermissions.checkViewAccess("TOOLS", "ANY")) {
+            this.remove()
+            return
+        }
+        this.render()
+        this.addEventListeners()
+    }
+
+    disconnectedCallback() {
+        try { this._unsubProject?.() } catch {}
+        this.renderCleanup.run()
+        this.cleanup.run()
     }
 
     addEventListeners() {
+        // Clear previous render-specific listeners
+        this.renderCleanup.run()
+
         const resizer = this.shadowRoot.querySelector('.resizer')
-        resizer.addEventListener('mousedown', this.onMouseDown.bind(this))
-        window.addEventListener('mousemove', this.onMouseMove.bind(this))
-        window.addEventListener('mouseup', this.onMouseUp.bind(this))
+        this.renderCleanup.onElement(resizer, 'mousedown', this.onMouseDown.bind(this))
+        this.renderCleanup.onWindow('mousemove', this.onMouseMove.bind(this))
+        this.renderCleanup.onWindow('mouseup', this.onMouseUp.bind(this))
     }
 
     onMouseDown(e) {

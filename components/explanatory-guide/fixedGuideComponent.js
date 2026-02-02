@@ -1,4 +1,13 @@
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
+
+/**
+ * FixedExplanatoryGuide - Fixed sidebar guide panel with toggle button.
+ * @element tpen-fixed-explanatory-guide
+ */
 export class FixedExplanatoryGuide extends HTMLElement {
+  /** @type {CleanupRegistry} Registry for cleanup handlers */
+  cleanup = new CleanupRegistry()
+
   constructor() {
     super()
     this.attachShadow({ mode: "open" })
@@ -21,8 +30,12 @@ export class FixedExplanatoryGuide extends HTMLElement {
       toggleButton.classList.toggle("open", isOpen)
     }
 
-    toggleButton.addEventListener("click", toggleSidebar)
-    overlay.addEventListener("click", toggleSidebar)
+    this.cleanup.onElement(toggleButton, "click", toggleSidebar)
+    this.cleanup.onElement(overlay, "click", toggleSidebar)
+  }
+
+  disconnectedCallback() {
+    this.cleanup.run()
   }
 
   /* Icon source: https://www.flaticon.com/free-icons/info by Freepik */

@@ -1,7 +1,22 @@
 import TPEN from '../../api/TPEN.js'
 import { escapeHtml } from '/js/utils.js'
+import CheckPermissions from '../check-permissions/checkPermissions.js'
+import { onProjectReady } from "../../utilities/projectReady.js"
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 
+/**
+ * NavigationManager - Interface for customizing project navigation URLs.
+ * Requires PROJECT OPTIONS edit access.
+ * @element tpen-navigation-manager
+ */
 class NavigationManager extends HTMLElement {
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers */
+    renderCleanup = new CleanupRegistry()
+    /** @type {Function|null} Unsubscribe function for project ready listener */
+    _unsubProject = null
+
     constructor() {
         super()
         this.attachShadow({ mode: 'open' })
@@ -15,11 +30,27 @@ class NavigationManager extends HTMLElement {
 
     connectedCallback() {
         TPEN.attachAuthentication(this)
-        TPEN.eventDispatcher.on('tpen-project-loaded', () => {
-            this.loadNavigation()
-            this.render()
-            this.setupEventListeners()
-        })
+        this._unsubProject = onProjectReady(this, this.authgate)
+    }
+
+    /**
+     * Authorization gate - checks permissions before rendering.
+     * Removes component if user lacks PROJECT OPTIONS edit access.
+     */
+    authgate() {
+        if (!CheckPermissions.checkEditAccess("PROJECT", "OPTIONS")) {
+            this.remove()
+            return
+        }
+        this.loadNavigation()
+        this.render()
+        this.addEventListeners()
+    }
+
+    disconnectedCallback() {
+        try { this._unsubProject?.() } catch {}
+        this.renderCleanup.run()
+        this.cleanup.run()
     }
 
     loadNavigation() {
@@ -59,7 +90,7 @@ class NavigationManager extends HTMLElement {
                 message: 'Navigation URLs saved successfully' 
             })
             this.render()
-            this.setupEventListeners()
+            this.addEventListeners()
         } catch (error) {
             TPEN.eventDispatcher.dispatch('tpen-toast', { 
                 status: 'error', 
@@ -77,7 +108,7 @@ class NavigationManager extends HTMLElement {
                 manageProject: ''
             }
             this.render()
-            this.setupEventListeners()
+            this.addEventListeners()
         }
     }
 
@@ -307,7 +338,10 @@ class NavigationManager extends HTMLElement {
         `
     }
 
-    setupEventListeners() {
+    addEventListeners() {
+        // Clear previous render-specific listeners
+        this.renderCleanup.run()
+
         // Input change handlers
         const transcribeInput = this.shadowRoot.querySelector('#transcribe-url')
         const defineLinesInput = this.shadowRoot.querySelector('#define-lines-url')
@@ -318,21 +352,19 @@ class NavigationManager extends HTMLElement {
             this._navigation.defineLines = defineLinesInput.value
             this._navigation.manageProject = manageProjectInput.value
             this.render()
-            this.setupEventListeners()
+            this.addEventListeners()
         }
 
-        transcribeInput?.addEventListener('input', updateNav)
-        defineLinesInput?.addEventListener('input', updateNav)
-        manageProjectInput?.addEventListener('input', updateNav)
+        this.renderCleanup.onElement(transcribeInput, 'input', updateNav)
+        this.renderCleanup.onElement(defineLinesInput, 'input', updateNav)
+        this.renderCleanup.onElement(manageProjectInput, 'input', updateNav)
 
         // Button handlers
-        this.shadowRoot.querySelector('#save-btn')?.addEventListener('click', () => {
-            this.saveNavigation()
-        })
+        const saveBtn = this.shadowRoot.querySelector('#save-btn')
+        const resetBtn = this.shadowRoot.querySelector('#reset-btn')
 
-        this.shadowRoot.querySelector('#reset-btn')?.addEventListener('click', () => {
-            this.resetToDefaults()
-        })
+        this.renderCleanup.onElement(saveBtn, 'click', () => this.saveNavigation())
+        this.renderCleanup.onElement(resetBtn, 'click', () => this.resetToDefaults())
     }
 }
 

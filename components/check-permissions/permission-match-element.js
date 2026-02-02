@@ -24,6 +24,7 @@
 import TPEN from '../../api/TPEN.js'
 import { getUserFromToken } from "../../components/iiif-tools/index.js"
 import { permissionMatch } from "../../components/check-permissions/permission-match.js"
+import { onProjectReady } from "../../utilities/projectReady.js"
 
 export class PermissionMatch extends HTMLElement {
     // TODO use these from a central location, such as a Permission Class.
@@ -42,15 +43,24 @@ export class PermissionMatch extends HTMLElement {
     #viewPermission = null
     #editPermission = null
 
+    /** @type {Function|null} Unsubscribe function for project ready listener */
+    _unsubProject = null
+
     constructor() {
         super()
         this.#viewPermission = this.getAttribute("tpen-view")
         this.#editPermission = this.getAttribute("tpen-edit")
-        TPEN.attachAuthentication(this)
-        TPEN.eventDispatcher.on("tpen-project-loaded", ev => this.render(ev.detail))
     }
 
-    connectedCallback() {}
+    connectedCallback() {
+        TPEN.attachAuthentication(this)
+        // Use onProjectReady to handle both already-loaded and future project loads
+        this._unsubProject = onProjectReady(this, () => this.render(TPEN.activeProject))
+    }
+
+    disconnectedCallback() {
+        try { this._unsubProject?.() } catch {}
+    }
 
     render(project) {
         // Must have a loaded project with collaborators or we can't check anything

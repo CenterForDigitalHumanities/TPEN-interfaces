@@ -4,54 +4,58 @@ import '/components/project-details/index.js'
 import '/components/project-tools/index.js'
 import { stringFromDate, escapeHtml } from '/js/utils.js'
 import { renderPermissionError } from '../../utilities/renderPermissionError.js'
-import { getUserFromToken } from '../iiif-tools/index.js'
+import CheckPermissions from '../check-permissions/checkPermissions.js'
+import { onProjectReady } from '../../utilities/projectReady.js'
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 import vault from '../../js/vault.js'
 
+/**
+ * ProjectOptions - Displays project details, tools, and navigation options.
+ * Requires PROJECT view access.
+ * @element tpen-project-options
+ */
 class ProjectOptions extends HTMLElement {
+    /** @type {Function|null} Unsubscribe function for project ready listener */
+    _unsubProject = null
+
     constructor() {
         super()
         this.attachShadow({ mode: 'open' })
-        this.shadowRoot.innerHTML = `
-          Loading...
-    `
-        TPEN.eventDispatcher.on('tpen-project-loaded', (ev) => {
-            this.authgate(ev.detail)
-        })
+        this.shadowRoot.innerHTML = `Loading...`
     }
 
     connectedCallback() {
         TPEN.attachAuthentication(this)
         if (!TPEN.screen.projectInQuery) {
             TPEN.getUserProjects(TPEN.getAuthorization())
-            TPEN.eventDispatcher.on('tpen-user-projects-loaded', (ev) => {
+            this._userProjectsHandler = () => {
                 import('../../api/Project.js').then(({ default: Project }) => {
                     Project.getById(TPEN.userProjects?.[0]?._id)
                 })
-            })
-        } else if (TPEN.activeProject?._createdAt) {
-            this.authgate(TPEN.activeProject)
+            }
+            TPEN.eventDispatcher.on('tpen-user-projects-loaded', this._userProjectsHandler)
         }
+        this._unsubProject = onProjectReady(this, this.authgate)
     }
 
-    authgate(project) {
-        if (!this.checkUserIsCollaborator(project)) {
-            this.renderPermissionError()
+    /**
+     * Authorization gate - checks permissions before rendering.
+     * Renders permission error if user lacks PROJECT view access.
+     */
+    authgate() {
+        if (!CheckPermissions.checkViewAccess("PROJECT", "*")) {
+            renderPermissionError(this.shadowRoot, TPEN.screen?.projectInQuery ?? '')
             return
         }
         this.render()
         this.updateActionLink()
     }
 
-    checkUserIsCollaborator(project) {
-        if (!project) return false
-        const userId = getUserFromToken(TPEN.getAuthorization())
-        if (!userId) return false
-        // Check if user is in the collaborators list
-        return project.collaborators && userId in project.collaborators
-    }
-
-    renderPermissionError() {
-        renderPermissionError(this.shadowRoot, TPEN.screen?.projectInQuery ?? '')
+    disconnectedCallback() {
+        try { this._unsubProject?.() } catch {}
+        if (this._userProjectsHandler) {
+            TPEN.eventDispatcher.off('tpen-user-projects-loaded', this._userProjectsHandler)
+        }
     }
 
     getNavigationUrl(type, project) {
@@ -147,7 +151,16 @@ class ProjectOptions extends HTMLElement {
 
 customElements.define('tpen-project-options', ProjectOptions)
 
+/**
+ * LineAnnotationLink - Link component for navigating to line annotation pages.
+ * @element line-annotation-link
+ */
 class LineAnnotationLink extends HTMLElement {
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers */
+    renderCleanup = new CleanupRegistry()
+
     constructor() {
         super()
         this.attachShadow({ mode: 'open' })
@@ -158,7 +171,22 @@ class LineAnnotationLink extends HTMLElement {
 
     connectedCallback() {
         this.render()
-        this.shadowRoot.querySelector('a').addEventListener('mouseenter', () => this.fetchCount())
+        this.addEventListeners()
+    }
+
+    addEventListeners() {
+        // Clear previous render-specific listeners
+        this.renderCleanup.run()
+
+        const anchor = this.shadowRoot.querySelector('a')
+        if (anchor) {
+            this.renderCleanup.onElement(anchor, 'mouseenter', () => this.fetchCount())
+        }
+    }
+
+    disconnectedCallback() {
+        this.renderCleanup.run()
+        this.cleanup.run()
     }
 
     async fetchCount() {
@@ -166,6 +194,7 @@ class LineAnnotationLink extends HTMLElement {
         const page = { id: this._pageId, type: 'page' }
         this._linesCount = await vault.get(page).then(p => p.items?.length)
         this.render()
+        this.addEventListeners()
     }
 
     render() {
@@ -191,43 +220,40 @@ class LineAnnotationLink extends HTMLElement {
 }
 customElements.define('line-annotation-link', LineAnnotationLink)
 
+/**
+ * ProjectCustomization - Displays and manages project interface customizations.
+ * Requires PROJECT view access.
+ * @element tpen-project-customization
+ */
 class ProjectCustomization extends HTMLElement {
+    /** @type {Function|null} Unsubscribe function for project ready listener */
+    _unsubProject = null
+
     constructor() {
         super()
         this.attachShadow({ mode: 'open' })
-        this.shadowRoot.innerHTML = `
-          Loading...
-    `
-        TPEN.eventDispatcher.on('tpen-project-loaded', (ev) => {
-            this.authgate(ev.detail)
-        })
+        this.shadowRoot.innerHTML = `Loading...`
     }
 
     connectedCallback() {
         TPEN.attachAuthentication(this)
-        if (TPEN.activeProject?._createdAt) {
-            this.authgate(TPEN.activeProject)
-        }
+        this._unsubProject = onProjectReady(this, this.authgate)
     }
 
-    authgate(project) {
-        if (!this.checkUserIsCollaborator(project)) {
-            this.renderPermissionError()
+    /**
+     * Authorization gate - checks permissions before rendering.
+     * Renders permission error if user lacks PROJECT view access.
+     */
+    authgate() {
+        if (!CheckPermissions.checkViewAccess("PROJECT", "*")) {
+            renderPermissionError(this.shadowRoot, TPEN.screen?.projectInQuery ?? '')
             return
         }
         this.render()
     }
 
-    checkUserIsCollaborator(project) {
-        if (!project) return false
-        const userId = getUserFromToken(TPEN.getAuthorization())
-        if (!userId) return false
-        // Check if user is in the collaborators list
-        return project.collaborators && userId in project.collaborators
-    }
-
-    renderPermissionError() {
-        renderPermissionError(this.shadowRoot, TPEN.screen?.projectInQuery ?? '')
+    disconnectedCallback() {
+        try { this._unsubProject?.() } catch {}
     }
 
     render() {

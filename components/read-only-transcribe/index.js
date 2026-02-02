@@ -1,7 +1,13 @@
 import { checkIfUrlExists } from '../../utilities/checkIfUrlExists.js'
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 
+/**
+ * ReadOnlyViewTranscribe - Public read-only view of transcription data from static manifest.
+ * Does not require authentication - displays publicly exported project data.
+ * @element tpen-read-only-view-transcribe
+ */
 class ReadOnlyViewTranscribe extends HTMLElement {
-    #osd 
+    #osd
     #annotoriousInstance
     #annotationPageID
     #resolvedAnnotationPage
@@ -10,6 +16,13 @@ class ReadOnlyViewTranscribe extends HTMLElement {
     #canvasDims
     #currentPage
     _currentCanvas
+    /** @type {Set<number>} Set of pending timeout IDs for cleanup */
+    #pendingTimeouts = new Set()
+
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers */
+    renderCleanup = new CleanupRegistry()
 
     constructor() {
         super()
@@ -31,7 +44,16 @@ class ReadOnlyViewTranscribe extends HTMLElement {
         this.#currentPage = index
     }
 
-    async connectedCallback() {
+    connectedCallback() {
+        this.render()
+        this.addEventListeners()
+        this.initialize()
+    }
+
+    /**
+     * Renders the component template.
+     */
+    render() {
         this.shadowRoot.innerHTML = `
             <style>
                 @import "../../components/annotorious-annotator/AnnotoriousOSD.min.css";
@@ -206,31 +228,63 @@ class ReadOnlyViewTranscribe extends HTMLElement {
                 <button id="nextPage">Next Page</button>
             </div>
         `
+    }
 
-        this.shadowRoot.getElementById("nextPage").addEventListener("click", () => this.openPage(this.currentPage + 1))
-        this.shadowRoot.getElementById("prevPage").addEventListener("click", () => this.openPage(this.currentPage - 1))
+    /**
+     * Sets up event listeners for the component.
+     */
+    addEventListeners() {
+        this.cleanup.onElement(this.shadowRoot.getElementById("nextPage"), "click", () => this.openPage(this.currentPage + 1))
+        this.cleanup.onElement(this.shadowRoot.getElementById("prevPage"), "click", () => this.openPage(this.currentPage - 1))
 
-        this.shadowRoot.getElementById("layerSelect").addEventListener("change", (e) => {
+        this.cleanup.onElement(this.shadowRoot.getElementById("layerSelect"), "change", (e) => {
             this.currentLayer = e.target.value
             this.populateCanvasDropdown()
             if (this.pages.length > 0) this.openPage(0)
         })
 
-        this.shadowRoot.getElementById("canvasSelect").addEventListener("change", (e) => {
+        this.cleanup.onElement(this.shadowRoot.getElementById("canvasSelect"), "change", (e) => {
             const canvasIndex = this.pages.indexOf(e.target.value)
             if (canvasIndex !== -1) this.openPage(canvasIndex)
         })
+    }
 
+    /**
+     * Initializes the component by loading annotations and scripts.
+     */
+    async initialize() {
         await this.loadAnnotations()
         await this.loadExternalScripts()
 
-        setTimeout(() => {
+        const outerTimeoutId = setTimeout(() => {
+            this.#pendingTimeouts.delete(outerTimeoutId)
             if (this.pages.length > 0) {
                 const currentCanvasUrl = this.layers[this.currentLayer][this.pages[this.currentPage]]?.id ?? ''
                 this.#annotationPageID = currentCanvasUrl.split('/').pop() ?? ''
             }
-            setTimeout(() => { this.processPage(this.#annotationPageID) }, 200)
+            const innerTimeoutId = setTimeout(() => {
+                this.#pendingTimeouts.delete(innerTimeoutId)
+                this.processPage(this.#annotationPageID)
+            }, 200)
+            this.#pendingTimeouts.add(innerTimeoutId)
         }, 200)
+        this.#pendingTimeouts.add(outerTimeoutId)
+    }
+
+    disconnectedCallback() {
+        // Clear any pending timeouts
+        for (const timeoutId of this.#pendingTimeouts) {
+            clearTimeout(timeoutId)
+        }
+        this.#pendingTimeouts.clear()
+        this.renderCleanup.run()
+        this.cleanup.run()
+        if (this.#osd) {
+            try { this.#osd.destroy() } catch {}
+        }
+        if (this.#annotoriousInstance) {
+            try { this.#annotoriousInstance.destroy() } catch {}
+        }
     }
 
     async loadExternalScripts() {
@@ -444,6 +498,9 @@ class ReadOnlyViewTranscribe extends HTMLElement {
     }
 
     renderRightPanel() {
+        // Clear previous render-specific listeners before adding new ones
+        this.renderCleanup.run()
+
         const container = this.shadowRoot.querySelector(".transcribed-text")
         container.innerHTML = ""
 
@@ -476,7 +533,7 @@ class ReadOnlyViewTranscribe extends HTMLElement {
             box.innerHTML = `
                 <div class="annotation-label">${index + 1}. ${line.text || "No Text Available"}</div>
             `
-            box.addEventListener("click", () => {
+            this.renderCleanup.onElement(box, "click", () => {
                 const allAnnotations = this.#annotoriousInstance.getAnnotations()
                 const targetAnno = allAnnotations.find(a => a.body[0]?.value === line.text)
                 if (targetAnno) {

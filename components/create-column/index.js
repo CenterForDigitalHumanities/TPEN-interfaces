@@ -1,10 +1,26 @@
 import TPEN from "../../api/TPEN.js"
+import CheckPermissions from "../check-permissions/checkPermissions.js"
+import { onProjectReady } from "../../utilities/projectReady.js"
+import { CleanupRegistry } from "../../utilities/CleanupRegistry.js"
 
+/**
+ * TpenCreateColumn - Interface for creating and managing columns on annotation pages.
+ * Requires LINE SELECTOR all access.
+ * @element tpen-create-column
+ */
 class TpenCreateColumn extends HTMLElement {
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers (annotation boxes) */
+    renderCleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for dynamic workspace listeners */
+    workspaceCleanup = new CleanupRegistry()
+    /** @type {Function|null} Unsubscribe function for project ready listener */
+    _unsubProject = null
+
     constructor() {
         super()
         this.attachShadow({ mode: 'open' })
-        TPEN.attachAuthentication(this)
 
         this.projectID = null
         this.pageID = null
@@ -218,19 +234,50 @@ class TpenCreateColumn extends HTMLElement {
         this.mergeColumnsLabel = this.shadowRoot.querySelector("#mergeColumnsLabel")
         this.extendColumnLabel = this.shadowRoot.querySelector("#extendColumnLabel")
         this.columnTitleInput = this.shadowRoot.querySelector("#columnTitle")
-        this.createBtn.addEventListener("click", () => this.createColumn())
-        this.clearBtn.addEventListener("click", () => this.clearAllSelections())
-        this.mergeColumnsCheckbox.addEventListener("change", () => this.handleModeChange())
-        this.extendColumnCheckbox.addEventListener("change", () => this.handleModeChange())
     }
 
     connectedCallback() {
+        TPEN.attachAuthentication(this)
         localStorage.removeItem('annotationsState')
         const params = new URLSearchParams(window.location.search)
         this.pageID = `${TPEN.RERUMURL}/id/${params.get("pageID")}`
         this.projectID = params.get("projectID")
         this.annotationPageID = this.pageID.split("/").pop()
-        TPEN.eventDispatcher.on('tpen-project-loaded', async () => await this.loadPage(this.pageID))
+        this._unsubProject = onProjectReady(this, this.authgate)
+    }
+
+    /**
+     * Authorization gate - checks permissions before loading page.
+     * Shows permission message if user lacks LINE SELECTOR all access.
+     */
+    authgate() {
+        if (!CheckPermissions.checkAllAccess("LINE", "SELECTOR")) {
+            this.container.innerHTML = `<div class="error-message">You do not have permission to manage columns.</div>`
+            return
+        }
+        this.addEventListeners()
+        this.loadPage(this.pageID)
+    }
+
+    /**
+     * Registers event listeners using CleanupRegistry for proper cleanup.
+     */
+    addEventListeners() {
+        // Guard: only register toolbar listeners once (authgate can be called multiple times)
+        if (this._toolbarListenersRegistered) return
+        this._toolbarListenersRegistered = true
+
+        this.cleanup.onElement(this.createBtn, "click", () => this.createColumn())
+        this.cleanup.onElement(this.clearBtn, "click", () => this.clearAllSelections())
+        this.cleanup.onElement(this.mergeColumnsCheckbox, "change", () => this.handleModeChange())
+        this.cleanup.onElement(this.extendColumnCheckbox, "change", () => this.handleModeChange())
+    }
+
+    disconnectedCallback() {
+        try { this._unsubProject?.() } catch {}
+        this.workspaceCleanup.run()
+        this.renderCleanup.run()
+        this.cleanup.run()
     }
 
     async columnLabelCheck() {
@@ -315,6 +362,8 @@ class TpenCreateColumn extends HTMLElement {
     }
 
     mergeColumns() {
+        // Clear previous workspace listeners
+        this.workspaceCleanup.run()
         const columnLabelsToMerge = []
         const columnLabels = this.existingColumns.map(col => col.label).filter(label => label)
         const workspaceToolbar = this.shadowRoot.querySelectorAll('.toolbar')[1]
@@ -345,7 +394,7 @@ class TpenCreateColumn extends HTMLElement {
             btn.style.margin = '5px'
             btn.style.padding = '8px 12px'
             btn.style.cursor = 'pointer'
-            btn.addEventListener('click', () => {
+            this.workspaceCleanup.onElement(btn, 'click', () => {
                 if(!btn.dataset.selected) {
                     btn.dataset.selected = 'true'
                     btn.style.backgroundColor = 'rgb(255, 255, 255)'
@@ -370,7 +419,7 @@ class TpenCreateColumn extends HTMLElement {
         mergeColumnBtn.style.marginTop = '1em'
         workspaceToolbar.appendChild(mergeColumnBtn)
 
-        mergeColumnBtn.addEventListener('click', async () => {
+        this.workspaceCleanup.onElement(mergeColumnBtn, 'click', async () => {
             const newLabel = input.value.trim()
             if (!newLabel) {
                 return TPEN.eventDispatcher.dispatch("tpen-toast", { 
@@ -414,6 +463,8 @@ class TpenCreateColumn extends HTMLElement {
     }
 
     extendColumn() {
+        // Clear previous workspace listeners
+        this.workspaceCleanup.run()
         let columnToExtend = ''
         const columnLabels = this.existingColumns.map(col => col.label).filter(label => label)
         const workspaceToolbar = this.shadowRoot.querySelectorAll('.toolbar')[1]
@@ -438,7 +489,7 @@ class TpenCreateColumn extends HTMLElement {
             btn.style.margin = '5px'
             btn.style.padding = '8px 12px'
             btn.style.cursor = 'pointer'
-            btn.addEventListener('click', () => {
+            this.workspaceCleanup.onElement(btn, 'click', () => {
                 if (btn.dataset.selected) {
                     columnToExtend = ''
                     delete btn.dataset.selected
@@ -468,7 +519,7 @@ class TpenCreateColumn extends HTMLElement {
         extendColumnBtn.style.marginTop = '1em'
         workspaceToolbar.appendChild(extendColumnBtn)
 
-        extendColumnBtn.addEventListener('click', async () => {
+        this.workspaceCleanup.onElement(extendColumnBtn, 'click', async () => {
             if (!this.originalColumnLabels[columnToExtend]) {
                 return TPEN.eventDispatcher.dispatch("tpen-toast", { 
                     status: "error", message: 'Please select a column to extend.' 
@@ -603,6 +654,9 @@ class TpenCreateColumn extends HTMLElement {
     }
 
     renderAnnotations(annotations, imgWidth, imgHeight, filteredAnnotations = []) {
+        // Clear previous annotation box listeners
+        this.renderCleanup.run()
+
         this.annotationData = annotations
         const createdBoxes = []
 
@@ -621,7 +675,7 @@ class TpenCreateColumn extends HTMLElement {
             box.style.width  = `${(w / imgWidth) * 100}%`
             box.style.height = `${(h / imgHeight) * 100}%`
 
-            box.addEventListener("click", (event) => this.selectAnnotation(box, event))
+            this.renderCleanup.onElement(box, "click", (event) => this.selectAnnotation(box, event))
 
             createdBoxes.push(box)
         })

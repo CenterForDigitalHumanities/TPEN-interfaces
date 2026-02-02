@@ -1,12 +1,29 @@
 import TPEN from "../../api/TPEN.js"
-const eventDispatcher = TPEN.eventDispatcher
 import CheckPermissions from "../check-permissions/checkPermissions.js"
+import { onProjectReady } from "../../utilities/projectReady.js"
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 import "../../components/quicktype-tool/index.js"
 import "../../components/splitscreen-tool/index.js"
 import "../../components/page-tool/index.js"
 import { MagnifierTool, showMagnifier } from "../magnifier-tool/index.js"
 
+/**
+ * WorkspaceTools - Provides the toolbar with transcription tools like quicktype, magnifier, etc.
+ * Requires TOOLS ANY view access.
+ * @element tpen-workspace-tools
+ */
 export default class WorkspaceTools extends HTMLElement {
+  /** @type {CleanupRegistry} Registry for cleanup handlers */
+  cleanup = new CleanupRegistry()
+  /** @type {CleanupRegistry} Registry for render-specific handlers */
+  renderCleanup = new CleanupRegistry()
+  /** @type {Function|null} Unsubscribe function for project ready listener */
+  _unsubProject = null
+  /** @type {Function|null} Handler for magnifier escape key */
+  _magnifierEscHandler = null
+  /** @type {Function|null} Unsubscribe function for magnifier escape key listener */
+  _unsubMagnifierEsc = null
+
   constructor() {
     super()
     this.attachShadow({ mode: "open" })
@@ -15,13 +32,14 @@ export default class WorkspaceTools extends HTMLElement {
   }
 
   connectedCallback() {
-    // If project is already loaded, run authgate immediately
-    if (TPEN.activeProject?._createdAt) {
-      this.authgate()
-    }
-    eventDispatcher.on("tpen-project-loaded", this.authgate.bind(this))
+    TPEN.attachAuthentication(this)
+    this._unsubProject = onProjectReady(this, this.authgate)
   }
 
+  /**
+   * Authorization gate - checks permissions before rendering.
+   * Removes component if user lacks TOOLS ANY view access.
+   */
   authgate() {
     if (!CheckPermissions.checkViewAccess("TOOLS", "ANY")) {
       this.remove()
@@ -30,7 +48,21 @@ export default class WorkspaceTools extends HTMLElement {
     this.render()
   }
 
+  disconnectedCallback() {
+    try { this._unsubProject?.() } catch {}
+    try { this._unsubMagnifierEsc?.() } catch {}
+    this.renderCleanup.run()
+    this.cleanup.run()
+    // Remove magnifier tool from DOM if it was added
+    if (this.magnifierTool?.parentNode) {
+      this.magnifierTool.remove()
+    }
+  }
+
   render() {
+    // Clear previous render-specific listeners before re-rendering
+    this.renderCleanup.run()
+
     this.shadowRoot.innerHTML = `
     <style>
       .workspace-tools {
@@ -108,12 +140,7 @@ export default class WorkspaceTools extends HTMLElement {
     `
 
   this.magnifierBtn = this.shadowRoot.querySelector(".magnifier-btn")
-  
-  // Remove old event listener if it exists to prevent duplicates
-  if (this._magnifierClickHandler && this.magnifierBtn) {
-    this.magnifierBtn.removeEventListener("click", this._magnifierClickHandler)
-  }
-  
+
   // Store the handler so we can remove it later if render() is called again
   this._magnifierClickHandler = () => {
     const iface = document.querySelector('[data-interface-type="transcription"]')
@@ -135,11 +162,10 @@ export default class WorkspaceTools extends HTMLElement {
     if (this.magnifierTool.isMagnifierVisible) {
       this.magnifierTool.hideMagnifier()
       fragmentEl?.style.removeProperty("z-index")
-      if (this._magnifierEscHandler) {
-        window.removeEventListener("keydown", this._magnifierEscHandler)
-        this._magnifierEscHandler = null
-      }
       this.magnifierBtn.blur()
+      // Remove the escape key listener when hiding
+      try { this._unsubMagnifierEsc?.() } catch {}
+      this._unsubMagnifierEsc = null
       return
     }
 
@@ -153,15 +179,18 @@ export default class WorkspaceTools extends HTMLElement {
         this.magnifierTool.hideMagnifier()
         fragmentEl?.style.removeProperty("z-index")
         this.magnifierBtn.blur()
-        window.removeEventListener("keydown", this._magnifierEscHandler)
-        this._magnifierEscHandler = null
+        // Remove the escape key listener when hiding via Escape
+        try { this._unsubMagnifierEsc?.() } catch {}
+        this._unsubMagnifierEsc = null
       }
     }
-    window.addEventListener("keydown", this._magnifierEscHandler)
+    // Remove any previous escape listener before adding a new one
+    try { this._unsubMagnifierEsc?.() } catch {}
+    this._unsubMagnifierEsc = this.cleanup.onWindow("keydown", this._magnifierEscHandler)
   }
-  
+
   if (this.magnifierBtn) {
-    this.magnifierBtn.addEventListener("click", this._magnifierClickHandler)
+    this.renderCleanup.onElement(this.magnifierBtn, "click", this._magnifierClickHandler)
   }
   }
 }

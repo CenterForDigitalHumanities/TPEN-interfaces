@@ -1,4 +1,3 @@
-
 /**
  * A plain Annotorious Annotator that can draw Rectangles.  It is able to draw Polygons, but this ability is not exposed to the user.
  * It assigns all Annotations to the provided AnnotationPage (does not make or track more than one page at a time)
@@ -9,10 +8,12 @@
  * and thanks the Annotorious development team for this open source software.
  * @see https://annotorious.dev/
  * Annotorious licensing information can be found at https://github.com/annotorious/annotorious
+ * @element tpen-plain-annotator
 */
 
 import TPEN from '../../api/TPEN.js'
 import User from '../../api/User.js'
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 
 class AnnotoriousAnnotator extends HTMLElement {
     #osd
@@ -25,15 +26,29 @@ class AnnotoriousAnnotator extends HTMLElement {
     #canvasDims
     #isDrawing = false
     #isErasing = false
-    
+    /** @type {number|null} Timeout ID for erase confirmation */
+    #eraseConfirmTimeout = null
+
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
+
     static get observedAttributes() {
       return ["annotationpage"]
     }
 
     constructor() {
       super()
-      TPEN.attachAuthentication(this)
       this.attachShadow({ mode: 'open' })
+    }
+
+    connectedCallback() {
+      TPEN.attachAuthentication(this)
+      this.render()
+      this.addEventListeners()
+      this.initAnnotator()
+    }
+
+    render() {
       const osdScript = document.createElement("script")
       osdScript.src = "https://cdn.jsdelivr.net/npm/openseadragon@latest/build/openseadragon/openseadragon.min.js"
       const annotoriousScript = document.createElement("script")
@@ -60,11 +75,11 @@ class AnnotoriousAnnotator extends HTMLElement {
               </label>
               <br>
               <label> Erase Mode
-               <input type="checkbox" id="eraseTool"> 
+               <input type="checkbox" id="eraseTool">
               </label>
               <br>
               <label> Annotation Visibility
-               <input type="checkbox" id="seeTool" checked> 
+               <input type="checkbox" id="seeTool" checked>
               </label>
               <br>
               <input id="saveBtn" type="button" value="Save Annotations"/>
@@ -73,19 +88,37 @@ class AnnotoriousAnnotator extends HTMLElement {
         </div>
 
         `
-      const drawTool = this.shadowRoot.getElementById("drawTool")
-      const eraseTool = this.shadowRoot.getElementById("eraseTool")
-      const seeTool = this.shadowRoot.getElementById("seeTool")
-      const saveButton = this.shadowRoot.getElementById("saveBtn")
-      drawTool.addEventListener("change", (e) => this.toggleDrawingMode(e))
-      eraseTool.addEventListener("change", (e) => this.toggleErasingMode(e))
-      seeTool.addEventListener("change", (e) => this.toggleAnnotationVisibility(e))
-      saveButton.addEventListener("click", (e) => this.saveAnnotations(e))
       this.shadowRoot.appendChild(osdScript)
       this.shadowRoot.appendChild(annotoriousScript)
     }
 
-    async connectedCallback() {
+    addEventListeners() {
+      const drawTool = this.shadowRoot.getElementById("drawTool")
+      const eraseTool = this.shadowRoot.getElementById("eraseTool")
+      const seeTool = this.shadowRoot.getElementById("seeTool")
+      const saveButton = this.shadowRoot.getElementById("saveBtn")
+
+      const drawHandler = (e) => this.toggleDrawingMode(e)
+      const eraseHandler = (e) => this.toggleErasingMode(e)
+      const seeHandler = (e) => this.toggleAnnotationVisibility(e)
+      const saveHandler = (e) => this.saveAnnotations(e)
+
+      this.cleanup.onElement(drawTool, 'change', drawHandler)
+      this.cleanup.onElement(eraseTool, 'change', eraseHandler)
+      this.cleanup.onElement(seeTool, 'change', seeHandler)
+      this.cleanup.onElement(saveButton, 'click', saveHandler)
+    }
+
+    disconnectedCallback() {
+      // Clear any pending erase confirmation timeout
+      if (this.#eraseConfirmTimeout) {
+        clearTimeout(this.#eraseConfirmTimeout)
+        this.#eraseConfirmTimeout = null
+      }
+      this.cleanup.run()
+    }
+
+    async initAnnotator() {
       if(!this.#userForAnnotorious) {
         const tpenUserProfile = await User.fromToken(this.userToken).getProfile()
         // Whatever value is here becomes the value of 'creator' on the Annotations.
@@ -99,6 +132,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       this.setAttribute("annotationpage", this.#annotationPageURI)
     }
 
+
     attributeChangedCallback(name, oldValue, newValue) {
       if(newValue === oldValue || !newValue) return
       if(name === 'annotationpage') {
@@ -106,7 +140,11 @@ class AnnotoriousAnnotator extends HTMLElement {
       }
     }
 
-    async render(resolvedCanvas) {
+    /**
+     * Renders the canvas with OpenSeadragon and Annotorious.
+     * @param {Object} resolvedCanvas - The resolved Canvas object
+     */
+    async renderCanvas(resolvedCanvas) {
       this.shadowRoot.getElementById('annotator-container').innerHTML = ""
       const canvasID = resolvedCanvas["@id"] ?? resolvedCanvas.id
       const fullImage = resolvedCanvas?.items[0]?.items[0]?.body?.id
@@ -214,12 +252,14 @@ class AnnotoriousAnnotator extends HTMLElement {
         if(!annotation) return
         // FIXME if the user holds the mouse down there is some goofy UX.
         if(_this.#isErasing) {
-          setTimeout(()=>{
+          if (_this.#eraseConfirmTimeout) clearTimeout(_this.#eraseConfirmTimeout)
+          _this.#eraseConfirmTimeout = setTimeout(()=>{
+            _this.#eraseConfirmTimeout = null
             // Timeout required in order to allow the click-and-focus native functionality to complete.
             // Also stops the goofy UX for naturally slow clickers.
             let c = confirm("Are you sure you want to remove this?")
             if(c) {
-              _this.#annotoriousInstance.removeAnnotation(annotation)  
+              _this.#annotoriousInstance.removeAnnotation(annotation)
             }
             else{
               _this.#annotoriousInstance.cancelSelected()
@@ -316,7 +356,7 @@ class AnnotoriousAnnotator extends HTMLElement {
           throw new Error(`Provided URI did not resolve a 'Canvas'.  It resolved a '${type}'`, 
             {"cause":"URI must point to a Canvas."})
       }
-      this.render(resolvedCanvas)
+      this.renderCanvas(resolvedCanvas)
     }
 
     /**

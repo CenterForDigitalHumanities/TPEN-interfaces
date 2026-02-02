@@ -1,4 +1,13 @@
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
+
+/**
+ * RelativeExplanatoryGuide - Collapsible guide panel with relative positioning.
+ * @element tpen-relative-explanatory-guide
+ */
 export class RelativeExplanatoryGuide extends HTMLElement {
+  /** @type {CleanupRegistry} Registry for cleanup handlers */
+  cleanup = new CleanupRegistry()
+
   constructor() {
     super()
     this.attachShadow({ mode: "open" })
@@ -17,14 +26,19 @@ export class RelativeExplanatoryGuide extends HTMLElement {
       list.appendChild(li.cloneNode(true))
     })
 
-    button.addEventListener("click", () => {
+    const toggleHandler = () => {
       const isCollapsed = panel.classList.toggle("collapsed")
       panelTop.classList.toggle("border-radius-include", isCollapsed)
-      /* Icon source: https://www.flaticon.com/free-icons/arrow-down by Freepik 
+      /* Icon source: https://www.flaticon.com/free-icons/arrow-down by Freepik
       Icon source: https://www.flaticon.com/free-icons/arrow-up by Freepik */
       button.src = isCollapsed ? "../../assets/icons/arrow-down.png" : "../../assets/icons/arrow-up.png"
       button.alt = isCollapsed ? "Expand section" : "Collapse section"
-    })
+    }
+    this.cleanup.onElement(button, "click", toggleHandler)
+  }
+
+  disconnectedCallback() {
+    this.cleanup.run()
   }
 
   render() {

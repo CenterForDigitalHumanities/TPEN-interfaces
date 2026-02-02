@@ -1,24 +1,43 @@
 import TPEN from "../../api/TPEN.js"
-import { eventDispatcher } from "../../api/events.js"
 import CheckPermissions from '../../components/check-permissions/checkPermissions.js'
+import { onProjectReady } from "../../utilities/projectReady.js"
 
+/**
+ * ProjectCollaborators - Displays project collaborators and their roles.
+ * Requires MEMBER view access.
+ * @element project-collaborators
+ */
 class ProjectCollaborators extends HTMLElement {
+    /** @type {Function|null} Unsubscribe function for project ready listener */
+    _unsubProject = null
+
     constructor() {
         super()
-        TPEN.attachAuthentication(this)
         this.attachShadow({ mode: 'open' })
     }
 
     connectedCallback() {
-        eventDispatcher.on('tpen-project-loaded', () => this.render())
+        TPEN.attachAuthentication(this)
+        this._unsubProject = onProjectReady(this, this.authgate)
+    }
+
+    /**
+     * Authorization gate - checks permissions before rendering.
+     * Removes component if user lacks MEMBER view access.
+     */
+    authgate() {
+        if (!CheckPermissions.checkViewAccess("MEMBER", "*")) {
+            this.remove()
+            return
+        }
+        this.render()
+    }
+
+    disconnectedCallback() {
+        try { this._unsubProject?.() } catch {}
     }
 
     render() {
-        const permitted = CheckPermissions.checkViewAccess("member", "*")
-        if(!permitted) {
-            this.shadowRoot.innerHTML = "<div>You do not have permissions to see group members.</div>"
-            return
-        }
         this.shadowRoot.innerHTML = `
             <div part="group-title" class="group-title">
                 <h1 part="project-title-h1">Project: <span part="project-title" class="project-title"></span></h1>
