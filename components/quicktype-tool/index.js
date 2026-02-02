@@ -3,9 +3,20 @@ import { escapeHtml } from "/js/utils.js"
 const eventDispatcher = TPEN.eventDispatcher
 import CheckPermissions from "../check-permissions/checkPermissions.js"
 import { onProjectReady } from "../../utilities/projectReady.js"
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 import "./quicktype-editor-dialog.js"
 
+/**
+ * QuickTypeTool - Provides keyboard shortcut buttons for inserting special characters.
+ * Requires PROJECT CONTENT edit access for shortcuts, PROJECT OPTIONS edit access for editing.
+ * @element tpen-quicktype-tool
+ */
 class QuickTypeTool extends HTMLElement {
+    /** @type {CleanupRegistry} Registry for persistent cleanup handlers */
+    cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers (cleared on re-render) */
+    renderCleanup = new CleanupRegistry()
+
     constructor() {
         super()
         this.attachShadow({ mode: "open" })
@@ -13,6 +24,7 @@ class QuickTypeTool extends HTMLElement {
     }
 
     connectedCallback() {
+        TPEN.attachAuthentication(this)
         this._unsubProject = onProjectReady(this, () => {
             this.render()
             this.addEventListeners()
@@ -22,7 +34,8 @@ class QuickTypeTool extends HTMLElement {
 
     disconnectedCallback() {
         try { this._unsubProject?.() } catch { }
-        try { this._unsubEditorSaved?.() } catch { }
+        this.renderCleanup.run()
+        this.cleanup.run()
     }
 
     initializeDialog() {
@@ -33,28 +46,31 @@ class QuickTypeTool extends HTMLElement {
         }
 
         // Listen for save events to refresh the panel
-        this._unsubEditorSaved = eventDispatcher.on("quicktype-editor-saved", (event) => {
+        this.cleanup.onEvent(eventDispatcher, "quicktype-editor-saved", (event) => {
             // Refresh the tool panel with updated shortcuts
             TPEN.activeProject.interfaces.quicktype = event.detail.quicktype
+            // Clear render-specific handlers before re-rendering
+            this.renderCleanup.run()
             this.render()
             this.addEventListeners()
         })
     }
 
     addEventListeners() {
-        const charPanel = this.shadowRoot.querySelector('.char-panel')
         const editCharBtn = this.shadowRoot.querySelector('.edit-char-btn')
 
-        editCharBtn.addEventListener('click', () => {
-            const dialog = document.querySelector('tpen-quicktype-editor-dialog')
-            if (dialog) {
-                const quicktype = TPEN.activeProject?.interfaces?.quicktype ?? []
-                dialog.open(quicktype)
-            }
-        })
+        if (editCharBtn) {
+            this.renderCleanup.onElement(editCharBtn, 'click', () => {
+                const dialog = document.querySelector('tpen-quicktype-editor-dialog')
+                if (dialog) {
+                    const quicktype = TPEN.activeProject?.interfaces?.quicktype ?? []
+                    dialog.open(quicktype)
+                }
+            })
+        }
 
         this.shadowRoot.querySelectorAll('.char-button').forEach(btn => {
-            btn.addEventListener('click', () => {
+            this.renderCleanup.onElement(btn, 'click', () => {
                 const char = btn.textContent
                 const iface = document.querySelector('[data-interface-type="transcription"]')
                 const block = iface?.shadowRoot?.querySelector('tpen-transcription-block')?.shadowRoot
@@ -283,14 +299,27 @@ class QuickTypeTool extends HTMLElement {
 
 customElements.define('tpen-quicktype-tool', QuickTypeTool)
 
+/**
+ * QuickTypeToolButton - Toggle button for the QuickType panel.
+ * Requires TOOL ANY view access.
+ * @element tpen-quicktype-tool-button
+ */
 class QuickTypeToolButton extends HTMLElement {
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers */
+    renderCleanup = new CleanupRegistry()
+    /** @type {number|null} Timeout ID for panel close animation */
+    #panelCloseTimeout = null
+
     constructor() {
         super()
         this.attachShadow({ mode: "open" })
     }
 
     connectedCallback() {
-        this._unsubProject = onProjectReady(this, this.authgate)
+        TPEN.attachAuthentication(this)
+        this._unsubProject = onProjectReady(this, this.authgate.bind(this))
     }
 
     authgate() {
@@ -304,12 +333,22 @@ class QuickTypeToolButton extends HTMLElement {
 
     disconnectedCallback() {
         try { this._unsubProject?.() } catch { }
+        // Clear any pending panel close animation timeout
+        if (this.#panelCloseTimeout) {
+            clearTimeout(this.#panelCloseTimeout)
+            this.#panelCloseTimeout = null
+        }
+        this.renderCleanup.run()
+        this.cleanup.run()
     }
 
     addEventListeners() {
+        // Clear previous render-specific listeners (authgate can be called multiple times)
+        this.renderCleanup.run()
+
         const quicktypeBtn = this.shadowRoot.querySelector('.quicktype-btn')
 
-        quicktypeBtn.addEventListener('click', () => {
+        this.renderCleanup.onElement(quicktypeBtn, 'click', () => {
             const iface = document.querySelector('[data-interface-type="transcription"]')
             const charPanel = iface?.shadowRoot
                 ?.querySelector('tpen-workspace-tools')?.shadowRoot
@@ -322,7 +361,9 @@ class QuickTypeToolButton extends HTMLElement {
                 // Close animation
                 charPanel.classList.remove('show')
                 // Set display to none after animation completes
-                setTimeout(() => {
+                if (this.#panelCloseTimeout) clearTimeout(this.#panelCloseTimeout)
+                this.#panelCloseTimeout = setTimeout(() => {
+                    this.#panelCloseTimeout = null
                     if (!charPanel.classList.contains('show')) {
                         charPanel.style.display = 'none'
                     }

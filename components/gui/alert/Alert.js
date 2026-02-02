@@ -1,6 +1,15 @@
 import { eventDispatcher } from '../../../api/events.js'
+import { CleanupRegistry } from '../../../utilities/CleanupRegistry.js'
 
+/**
+ * Alert - A modal alert dialog that requires user acknowledgement.
+ * Takes over the screen until dismissed.
+ * @element tpen-alert
+ */
 class Alert extends HTMLElement {
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
+
     constructor() {
         super()
         this.attachShadow({ mode: 'open' })
@@ -17,11 +26,12 @@ class Alert extends HTMLElement {
      */
     show() {
         this.closest(".alert-area").style.display = "grid"
-        setTimeout(() => {
+        const showTimer = setTimeout(() => {
             this.closest(".alert-area").classList.add("show")
             this.classList.add('show')
             document.querySelector("body").style.overflow = "hidden"
         }, 1)
+        this.cleanup.add(() => clearTimeout(showTimer))
         eventDispatcher.dispatch("tpen-alert-activated")
     }
 
@@ -31,14 +41,21 @@ class Alert extends HTMLElement {
      */
     dismiss() {
         this.classList.remove('show')
-        this.closest(".alert-area").classList.remove("show")
+        this.closest(".alert-area")?.classList.remove("show")
         document.querySelector("body").style.overflow = "auto"
-        setTimeout(() => {
+        const removeTimer = setTimeout(() => {
             this.remove()
         }, 500)
+        this.cleanup.add(() => clearTimeout(removeTimer))
         eventDispatcher.dispatch("tpen-alert-acknowledged")
     }
 
+    disconnectedCallback() {
+        this.cleanup.run()
+    }
 }
 
-customElements.define('tpen-alert', Alert)
+// Guard against duplicate registration when module is loaded via different URL paths
+if (!customElements.get('tpen-alert')) {
+    customElements.define('tpen-alert', Alert)
+}

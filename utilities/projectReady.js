@@ -8,6 +8,6 @@ export const onProjectReady = (ctx, handler, eventName = 'tpen-project-loaded') 
       bound()
     }
   } catch (_) {}
-  const ed = TPEN.eventDispatcher.on(eventName, bound)
-  return
+  TPEN.eventDispatcher.on(eventName, bound)
+  return () => TPEN.eventDispatcher.off(eventName, bound)
 }

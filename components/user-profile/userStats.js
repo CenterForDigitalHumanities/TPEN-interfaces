@@ -1,11 +1,19 @@
 import TPEN from '../../api/TPEN.js'
 import User from '../../api/User.js'
 import Project from '../../api/Project.js'
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 
+/**
+ * UserStats - Displays user profile card with stats and collaborators.
+ * @element user-stats
+ */
 class UserStats extends HTMLElement {
     static get observedAttributes() {
         return ['tpen-user-id']
     }
+
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
 
     constructor() {
         super()
@@ -13,11 +21,22 @@ class UserStats extends HTMLElement {
     }
 
     connectedCallback() {
-        TPEN.eventDispatcher.on('tpen-user-loaded', async ev => {
-            await this.render(ev.detail, await TPEN.getUserProjects(TPEN.getAuthorization()))
-            this.updateProfile(ev.detail)
-        })
         TPEN.attachAuthentication(this)
+        this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-user-loaded', ev => this.loadAndRender(ev.detail))
+    }
+
+    /**
+     * Loads user projects and renders the stats.
+     * @param {Object} profile - User profile data
+     */
+    async loadAndRender(profile) {
+        const projects = await TPEN.getUserProjects(TPEN.getAuthorization())
+        await this.processAndRender(profile, projects)
+        this.updateProfile(profile)
+    }
+
+    disconnectedCallback() {
+        this.cleanup.run()
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
@@ -61,7 +80,12 @@ class UserStats extends HTMLElement {
         return profile.profile
     }
 
-    async render(profile,projects) {
+    /**
+     * Processes profile and project data, then renders the stats.
+     * @param {Object} profile - User profile data
+     * @param {Array} projects - Array of project data
+     */
+    async processAndRender(profile, projects) {
         const linkedin = this.getPublicProfile(profile).linkedin || ''
         const twitter = this.getPublicProfile(profile).twitter || ''
         const instagram = this.getPublicProfile(profile).instagram || ''

@@ -1,17 +1,35 @@
 import TPEN from "../../api/TPEN.js"
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
+
 const eventDispatcher = TPEN.eventDispatcher
 
+/**
+ * ProjectsManager - Manages user's projects with delete functionality.
+ * @element tpen-projects-manager
+ */
 export default class ProjectsManager extends HTMLElement {
     #projects = [];
+
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers */
+    renderCleanup = new CleanupRegistry()
 
     constructor() {
         super()
         this.attachShadow({mode:"open"})
-        eventDispatcher.on("tpen-user-loaded", ev => this.currentUser = ev.detail)
     }
 
-    async connectedCallback() {
+    connectedCallback() {
         TPEN.attachAuthentication(this)
+        this.cleanup.onEvent(eventDispatcher, "tpen-user-loaded", ev => this.currentUser = ev.detail)
+        this.initialize()
+    }
+
+    /**
+     * Initializes the component by loading projects if user is authenticated.
+     */
+    async initialize() {
         if (this.currentUser && this.currentUser._id) {
             try {
                 await this.getProjects()
@@ -23,6 +41,11 @@ export default class ProjectsManager extends HTMLElement {
         } else {
             this.innerHTML = "No user logged in yet."
         }
+    }
+
+    disconnectedCallback() {
+        this.renderCleanup.run()
+        this.cleanup.run()
     }
 
     render() {
@@ -62,8 +85,11 @@ export default class ProjectsManager extends HTMLElement {
             </ul>
         `
 
+        // Clear previous render-specific listeners
+        this.renderCleanup.run()
+
         this.querySelectorAll('.delete-btn').forEach(button => {
-            button.addEventListener("click", (event) => {
+            this.renderCleanup.onElement(button, "click", (event) => {
                 const projectId = event.target.getAttribute("data-project-id")
                 alert(`Delete not implemented for project ID: ${projectId}`)
             })

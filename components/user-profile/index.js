@@ -1,24 +1,38 @@
 import TPEN from '../../api/TPEN.js'
 import User from '../../api/User.js'
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 
+/**
+ * UserProfile - Displays and allows editing of user profile information.
+ * @element tpen-user-profile
+ */
 class UserProfile extends HTMLElement {
     static get observedAttributes() {
         return ['tpen-user-id']
     }
     user = TPEN.currentUser
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers */
+    renderCleanup = new CleanupRegistry()
 
     constructor() {
         super()
         this.attachShadow({ mode: 'open' })
-        TPEN.eventDispatcher.on('tpen-user-loaded', ev => {
+    }
+
+    connectedCallback() {
+        TPEN.attachAuthentication(this)
+        this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-user-loaded', ev => {
             this.render(ev.detail)
             this.updateProfile(ev.detail)
             this.user = ev.detail
         })
     }
 
-    connectedCallback() {
-        TPEN.attachAuthentication(this)
+    disconnectedCallback() {
+        this.renderCleanup.run()
+        this.cleanup.run()
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
@@ -82,6 +96,8 @@ class UserProfile extends HTMLElement {
     }
 
     render(profile) {
+        // Clear previous render-specific listeners before re-rendering
+        this.renderCleanup.run()
         const showMetadata = this.hasAttribute('show-metadata') && this.getAttribute('show-metadata') !== 'false'
         const linkedin = this.getPublicProfile(profile).linkedin || ''
         const twitter = this.getPublicProfile(profile).twitter || ''
@@ -394,23 +410,23 @@ class UserProfile extends HTMLElement {
 
         const imgElement = this.shadowRoot.querySelector('.user-image')
         userImageInput.value = imgElement.src || ''
-        userImageInput.addEventListener('input', (e) => {
+        this.renderCleanup.onElement(userImageInput, 'input', (e) => {
             const url = e.target.value.trim()
             if (url) {
                 imgElement.src = url
             }
         })
 
-        editBtn.addEventListener('click', () => {
+        this.renderCleanup.onElement(editBtn, 'click', () => {
             for (const key in inputs) {
                 inputs[key].value = texts[key].textContent
             }
             toggleEditMode(true)
         })
 
-        cancelBtn.addEventListener('click', () => toggleEditMode(false))
+        this.renderCleanup.onElement(cancelBtn, 'click', () => toggleEditMode(false))
 
-        saveBtn.addEventListener('click', async () => {
+        this.renderCleanup.onElement(saveBtn, 'click', async () => {
             const newName = inputs.name.value.trim()
             if (!newName || !/^[a-zA-Z0-9\s._'-@#]+$/.test(newName)) {
                 return TPEN.eventDispatcher.dispatch('tpen-toast', { message: 'Please enter a valid name', status: 'error' })

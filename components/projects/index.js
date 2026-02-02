@@ -1,10 +1,20 @@
 import TPEN from "../../api/TPEN.js"
+import { CleanupRegistry } from "../../utilities/CleanupRegistry.js"
+
+/**
+ * ProjectsList - Displays a list of user's projects with optional management controls.
+ * @element tpen-projects-list
+ */
 export default class ProjectsList extends HTMLElement {
     static get observedAttributes() {
         return ['show-metadata', 'manage-project']
     }
 
     #projects = []
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers */
+    renderCleanup = new CleanupRegistry()
 
     get projects() {
         return this.#projects
@@ -15,27 +25,28 @@ export default class ProjectsList extends HTMLElement {
         this.render()
         return this
     }
-    
+
     constructor() {
         super()
-        TPEN.eventDispatcher.on("tpen-authenticated", async (ev) => {
+    }
+
+    connectedCallback() {
+        TPEN.attachAuthentication(this)
+        this.cleanup.onEvent(TPEN.eventDispatcher, "tpen-authenticated", async (ev) => {
             try {
                 this.projects = await TPEN.getUserProjects(ev.detail)
             } catch (error) {
-                // Toast error message
-                const toast = new CustomEvent('tpen-toast', {
-                    detail: {
-                        message: `Error fetching projects: ${error.message}`,
-                        status: error.status
-                    }
+                TPEN.eventDispatcher.dispatch('tpen-toast', {
+                    message: `Error fetching projects: ${error.message}`,
+                    status: error.status
                 })
-                TPEN.eventDispatcher.dispatch(toast)
             }
         })
     }
 
-    async connectedCallback() {
-        TPEN.attachAuthentication(this)
+    disconnectedCallback() {
+        this.renderCleanup.run()
+        this.cleanup.run()
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
@@ -79,8 +90,11 @@ export default class ProjectsList extends HTMLElement {
                </li>`,
             ``)}</ul>`
 
+        // Clear previous render-specific listeners before adding new ones
+        this.renderCleanup.run()
+
         this.querySelectorAll('.delete-btn').forEach(button => {
-            button.addEventListener("click", (event) => {
+            this.renderCleanup.onElement(button, "click", (event) => {
                 const projectId = event.target.getAttribute("data-project-id")
                 alert(`Delete not implemented for project ID: ${projectId}`)
             })
@@ -89,7 +103,7 @@ export default class ProjectsList extends HTMLElement {
 
     attachDetailsListeners() {
         this.querySelectorAll('.details-button').forEach(button => {
-            button.addEventListener('click', (event) => {
+            this.renderCleanup.onElement(button, 'click', (event) => {
                 const projectId = event.target.closest('li').getAttribute('data-id')
                 this.loadContributors(projectId)
             })

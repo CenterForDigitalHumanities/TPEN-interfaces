@@ -1,16 +1,31 @@
 import TPEN from '../../api/TPEN.js'
 import User from '../../api/User.js'
 import { getUserFromToken } from "../iiif-tools/index.js"
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 
+/**
+ * CopyExistingProjectWithoutAnnotations - Allows users to copy a project without annotations.
+ * @element tpen-copy-existing-project-without-annotations
+ */
 class CopyExistingProjectWithoutAnnotations extends HTMLElement {
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers */
+    renderCleanup = new CleanupRegistry()
+
     constructor() {
         super()
         this.attachShadow({ mode: 'open' })
-        TPEN.attachAuthentication(this)
     }
 
     connectedCallback() {
+        TPEN.attachAuthentication(this)
         this.load()
+    }
+
+    disconnectedCallback() {
+        this.renderCleanup.run()
+        this.cleanup.run()
     }
 
     async load() {
@@ -112,7 +127,10 @@ class CopyExistingProjectWithoutAnnotations extends HTMLElement {
             <div id="project-info-container"></div>
         `
 
-        this.shadowRoot.getElementById('copy-project-btn').addEventListener('click', async () => {
+        // Clear previous render-specific listeners
+        this.renderCleanup.run()
+
+        this.renderCleanup.onElement(this.shadowRoot.getElementById('copy-project-btn'), 'click', async () => {
             this.shadowRoot.getElementById('message').textContent = 'Copying project... Please wait.'
             this.shadowRoot.getElementById('copy-project-btn').disabled = true
             const projectSelect = this.shadowRoot.getElementById('project-select')

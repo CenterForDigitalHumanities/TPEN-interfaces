@@ -9,38 +9,41 @@ import "../../components/project-layers/index.js"
 import "../../components/project-tools/index.js"
 import CheckPermissions from "../../components/check-permissions/checkPermissions.js"
 
-TPEN.eventDispatcher.on('tpen-project-loaded', () => render())
 const container = document.body
 TPEN.attachAuthentication(container)
 
-// Set href for navigation links once project ID is available
+// Single consolidated listener for project loaded event
 TPEN.eventDispatcher.on('tpen-project-loaded', () => {
     const projectID = TPEN.screen.projectInQuery
-    
+
+    // Set href for navigation links
     const manageCollabBtn = document.getElementById('manage-collaboration-btn')
     if (manageCollabBtn) {
         manageCollabBtn.href = `/project/manage/collaborators?projectID=${projectID}`
     }
-    
+
     const updateMetadataBtn = document.getElementById("update-metadata-btn")
     if (updateMetadataBtn) {
         updateMetadataBtn.href = `/project/metadata?projectID=${projectID}`
     }
-    
+
     const manageLayersBtn = document.getElementById('manage-layers-btn')
     if (manageLayersBtn) {
         manageLayersBtn.href = `/project/manage/layers?projectID=${projectID}`
     }
-    
+
     const manageProjectOptionsBtn = document.getElementById('manage-project-options-btn')
     if (manageProjectOptionsBtn) {
         manageProjectOptionsBtn.href = `/project/options?projectID=${projectID}`
     }
-    
+
     const leaveProjectBtn = document.getElementById('leave-project-btn')
     if (leaveProjectBtn) {
         leaveProjectBtn.href = `/project/leave?projectID=${projectID}`
     }
+
+    // Render the page with permissions check
+    render()
 })
 
 document.getElementById('export-project-btn').addEventListener('click', async () => {

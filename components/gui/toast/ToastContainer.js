@@ -1,8 +1,16 @@
 import './Toast.js'
 import { eventDispatcher } from '../../../api/events.js'
+import { CleanupRegistry } from '../../../utilities/CleanupRegistry.js'
 
+/**
+ * ToastContainer - Global container for displaying toast notifications.
+ * Listens for 'tpen-toast' events and displays transient toast messages.
+ * @element tpen-toast-container
+ */
 class ToastContainer extends HTMLElement {
     #containerSection
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
 
     constructor() {
         super()
@@ -11,7 +19,12 @@ class ToastContainer extends HTMLElement {
     }
 
     connectedCallback() {
-        eventDispatcher.on('tpen-toast', ({ detail }) => this.addToast(detail?.message, detail?.status, detail?.dismissible))
+        const toastHandler = ({ detail }) => this.addToast(detail?.message, detail?.status, detail?.dismissible)
+        this.cleanup.onEvent(eventDispatcher, 'tpen-toast', toastHandler)
+    }
+
+    disconnectedCallback() {
+        this.cleanup.run()
     }
 
     /**
@@ -145,6 +158,8 @@ class ToastContainer extends HTMLElement {
     }
 }
 
-customElements.define('tpen-toast-container', ToastContainer)
-
-document?.body.after(new ToastContainer())
+// Guard against duplicate registration when module is loaded via different URL paths
+if (!customElements.get('tpen-toast-container')) {
+    customElements.define('tpen-toast-container', ToastContainer)
+    document?.body.after(new ToastContainer())
+}

@@ -1,10 +1,22 @@
 import TPEN from "../../api/TPEN.js"
 import { evaluateEntry } from '../quicktype/validation.js'
 import { escapeHtml } from "../../js/utils.js"
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 
 const eventDispatcher = TPEN.eventDispatcher
 
+/**
+ * QuickTypeEditorDialog - Dialog for editing quicktype shortcuts.
+ * @element tpen-quicktype-editor-dialog
+ */
 class QuickTypeEditorDialog extends HTMLElement {
+    /** @type {CleanupRegistry} Registry for persistent cleanup handlers */
+    cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for dialog-specific handlers (cleared on close/reopen) */
+    dialogCleanup = new CleanupRegistry()
+    /** @type {number|null} Timeout ID for close animation */
+    #closeAnimationTimeout = null
+
     constructor() {
         super()
         this.attachShadow({ mode: "open" })
@@ -16,6 +28,16 @@ class QuickTypeEditorDialog extends HTMLElement {
 
     connectedCallback() {
         this.render()
+    }
+
+    disconnectedCallback() {
+        // Clear any pending close animation timeout
+        if (this.#closeAnimationTimeout) {
+            clearTimeout(this.#closeAnimationTimeout)
+            this.#closeAnimationTimeout = null
+        }
+        this.dialogCleanup.run()
+        this.cleanup.run()
     }
 
     open(quicktypeArray) {
@@ -35,23 +57,28 @@ class QuickTypeEditorDialog extends HTMLElement {
         overlay.classList.add('show')
         container.classList.add('show')
         
-        this.setupEventListeners()
+        this.addEventListeners()
     }
 
     close() {
         const overlay = this.shadowRoot.querySelector('.dialog-overlay')
         const container = this.shadowRoot.querySelector('.dialog-container')
-        
+
         overlay.classList.remove('show')
         container.classList.remove('show')
-        
+
         // Wait for animation to complete before hiding
-        setTimeout(() => {
+        if (this.#closeAnimationTimeout) clearTimeout(this.#closeAnimationTimeout)
+        this.#closeAnimationTimeout = setTimeout(() => {
+            this.#closeAnimationTimeout = null
             overlay.style.display = 'none'
         }, 300)
     }
 
-    setupEventListeners() {
+    addEventListeners() {
+        // Clear previous dialog-specific listeners before adding new ones
+        this.dialogCleanup.run()
+
         const closeBtn = this.shadowRoot.querySelector('.close-btn')
         const cancelBtn = this.shadowRoot.querySelector('.cancel-btn')
         const saveBtn = this.shadowRoot.querySelector('.save-btn')
@@ -61,23 +88,23 @@ class QuickTypeEditorDialog extends HTMLElement {
         const dialogContainer = this.shadowRoot.querySelector('.dialog-container')
 
         // Prevent clicks inside dialog from closing it
-        dialogContainer?.addEventListener('click', (e) => {
+        this.dialogCleanup.onElement(dialogContainer, 'click', (e) => {
             e.stopPropagation()
         })
 
-        closeBtn?.addEventListener('click', (e) => this.handleCancel(e))
-        cancelBtn?.addEventListener('click', (e) => this.handleCancel(e))
-        saveBtn?.addEventListener('click', (e) => this.handleSave(e))
-        addBtn?.addEventListener('click', (e) => this.handleAdd(e))
+        this.dialogCleanup.onElement(closeBtn, 'click', (e) => this.handleCancel(e))
+        this.dialogCleanup.onElement(cancelBtn, 'click', (e) => this.handleCancel(e))
+        this.dialogCleanup.onElement(saveBtn, 'click', (e) => this.handleSave(e))
+        this.dialogCleanup.onElement(addBtn, 'click', (e) => this.handleAdd(e))
 
-        input?.addEventListener('keypress', (e) => {
+        this.dialogCleanup.onElement(input, 'keypress', (e) => {
             if (e.key === 'Enter') {
                 this.handleAdd(e)
             }
         })
 
         // Close on overlay click
-        overlay?.addEventListener('click', (e) => {
+        this.dialogCleanup.onElement(overlay, 'click', (e) => {
             if (e.target === overlay) {
                 this.handleCancel(e)
             }
@@ -90,19 +117,19 @@ class QuickTypeEditorDialog extends HTMLElement {
     setupItemListeners() {
         // Setup delete buttons
         this.shadowRoot.querySelectorAll('.delete-btn').forEach((btn, index) => {
-            btn.addEventListener('click', (e) => this.handleDelete(e, index))
+            this.dialogCleanup.onElement(btn, 'click', (e) => this.handleDelete(e, index))
         })
 
         // Setup drag and drop
         this.shadowRoot.querySelectorAll('.quicktype-item').forEach((item, index) => {
             item.draggable = true
             item.setAttribute('data-index', index)
-            
-            item.addEventListener('dragstart', (e) => this.handleDragStart(e, index))
-            item.addEventListener('dragend', (e) => this.handleDragEnd(e))
-            item.addEventListener('dragover', (e) => this.handleDragOver(e))
-            item.addEventListener('drop', (e) => this.handleDrop(e, index))
-            item.addEventListener('dragleave', (e) => this.handleDragLeave(e))
+
+            this.dialogCleanup.onElement(item, 'dragstart', (e) => this.handleDragStart(e, index))
+            this.dialogCleanup.onElement(item, 'dragend', (e) => this.handleDragEnd(e))
+            this.dialogCleanup.onElement(item, 'dragover', (e) => this.handleDragOver(e))
+            this.dialogCleanup.onElement(item, 'drop', (e) => this.handleDrop(e, index))
+            this.dialogCleanup.onElement(item, 'dragleave', (e) => this.handleDragLeave(e))
         })
     }
 
@@ -314,7 +341,7 @@ class QuickTypeEditorDialog extends HTMLElement {
             container?.classList.add('show')
         }
 
-        this.setupEventListeners()
+        this.addEventListeners()
         return true
     }
 

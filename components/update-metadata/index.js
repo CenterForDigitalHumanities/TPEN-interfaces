@@ -2,8 +2,22 @@ import TPEN from "../../api/TPEN.js"
 import User from "../../api/User.js"
 import { eventDispatcher } from "../../api/events.js"
 import CheckPermissions from "../../components/check-permissions/checkPermissions.js"
+import { onProjectReady } from "../../utilities/projectReady.js"
+import { CleanupRegistry } from "../../utilities/CleanupRegistry.js"
 
+/**
+ * UpdateMetadata - Modal dialog for viewing and editing project metadata.
+ * Requires PROJECT METADATA view access.
+ * @element update-metadata
+ */
 class UpdateMetadata extends HTMLElement {
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers */
+    renderCleanup = new CleanupRegistry()
+    /** @type {Function|null} Unsubscribe function for project ready listener */
+    _unsubProject = null
+
     constructor() {
         super()
         this.attachShadow({ mode: 'open' })
@@ -15,7 +29,26 @@ class UpdateMetadata extends HTMLElement {
 
     connectedCallback() {
         TPEN.attachAuthentication(this)
-        this.setupEventListeners()
+        this._unsubProject = onProjectReady(this, this.authgate)
+    }
+
+    /**
+     * Authorization gate - checks permissions before opening modal.
+     * Shows permission message if user lacks PROJECT METADATA view access.
+     */
+    authgate() {
+        if (!CheckPermissions.checkViewAccess('PROJECT', 'METADATA')) {
+            this.shadowRoot.innerHTML = `<p>You don't have permission to view project metadata</p>`
+            return
+        }
+        this.addEventListeners()
+        this.openModal()
+    }
+
+    disconnectedCallback() {
+        try { this._unsubProject?.() } catch {}
+        this.renderCleanup.run()
+        this.cleanup.run()
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
@@ -28,24 +61,23 @@ class UpdateMetadata extends HTMLElement {
         }
     }
 
-    setupEventListeners() {
-        eventDispatcher.on("tpen-project-loaded", () => this.openModal())
-        document.getElementById("add-field-btn")?.addEventListener("click", () => {
+    /**
+     * Sets up event listeners for add/save buttons.
+     */
+    addEventListeners() {
+        // Clear previous render-specific listeners
+        this.renderCleanup.run()
+
+        this.renderCleanup.onElement(document.getElementById("add-field-btn"), "click", () => {
             this.addMetadataField()
         })
 
-        document.getElementById("save-metadata-btn")?.addEventListener("click", () => {
+        this.renderCleanup.onElement(document.getElementById("save-metadata-btn"), "click", () => {
             this.updateMetadata()
         })
     }
 
     openModal() {
-        // Check if user has view permission (safe - project is loaded)
-        const hasViewAccess = CheckPermissions.checkViewAccess('PROJECT', 'METADATA')
-        if (!hasViewAccess) {
-            this.shadowRoot.innerHTML = `<p>You don't have permission to view project metadata</p>`
-            return
-        }
 
         const modal = document.getElementById("metadata-modal")
         const fieldsContainer = document.getElementById("metadata-fields")
@@ -177,11 +209,11 @@ class UpdateMetadata extends HTMLElement {
         </div>
         `
         fieldsContainer.insertAdjacentHTML("beforeend", fieldHTML)
-        fieldsContainer
-            .querySelector(".metadata-field:last-child .remove-field-btn .icon, .metadata-field:last-child .remove-field-btn")
-            .addEventListener("click", (e) => {
-                e.target.closest(".metadata-field").remove()
-            })
+        const removeBtn = fieldsContainer.querySelector(".metadata-field:last-child .remove-field-btn .icon, .metadata-field:last-child .remove-field-btn")
+        // Self-removing element - listener is cleaned up when element is removed from DOM
+        removeBtn.addEventListener("click", (e) => {
+            e.target.closest(".metadata-field").remove()
+        })
     }
 
     async updateMetadata() {

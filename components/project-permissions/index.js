@@ -1,25 +1,57 @@
 import TPEN from "../../api/TPEN.js"
 import CheckPermissions from "../../components/check-permissions/checkPermissions.js"
+import { onProjectReady } from "../../utilities/projectReady.js"
 
+/**
+ * ProjectPermissions - Displays all project roles and their associated permissions.
+ * Requires PERMISSION view access.
+ * @element tpen-project-permissions
+ */
 class ProjectPermissions extends HTMLElement {
+    /** @type {Function|null} Unsubscribe function for project ready listener */
+    _unsubProject = null
+
     constructor() {
         super()
-        this.attachShadow({ mode : "open" })
+        this.attachShadow({ mode: "open" })
     }
 
     connectedCallback() {
         TPEN.attachAuthentication(this)
-        TPEN.eventDispatcher.on("tpen-project-loaded", () => this.render())
+        this._unsubProject = onProjectReady(this, this.authgate)
     }
 
-    async render() {
-        // Check if user has view permission
-        const hasViewAccess = CheckPermissions.checkViewAccess('PERMISSION', '*')
-        if (!hasViewAccess) {
+    /**
+     * Authorization gate - checks permissions before rendering.
+     * Shows permission message if user lacks PERMISSION view access.
+     */
+    authgate() {
+        if (!CheckPermissions.checkViewAccess('PERMISSION', '*')) {
             this.shadowRoot.innerHTML = `<p>You don't have permission to view project permissions</p>`
             return
         }
-        
+        this.loadCustomRoles()
+    }
+
+    disconnectedCallback() {
+        try { this._unsubProject?.() } catch {}
+    }
+
+    /**
+     * Loads custom roles from the server and renders the component.
+     */
+    async loadCustomRoles() {
+        const group = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/customRoles`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${TPEN.getAuthorization()}`
+            }
+        }).then(response => response.json())
+        this.render(group)
+    }
+
+    render(customRoles = {}) {
         this.shadowRoot.innerHTML = `
             <style>
                 .roles-list {
@@ -36,7 +68,7 @@ class ProjectPermissions extends HTMLElement {
                     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
                     border-radius: 4px;
                     margin-bottom: 10px;
-                } 
+                }
                 .roles-list li #roleID {
                     text-align: left;
                     width: 30%;
@@ -61,20 +93,13 @@ class ProjectPermissions extends HTMLElement {
             <ol class="roles-list"></ol>
         `
         const rolesList = this.shadowRoot.querySelector(".roles-list")
-        const group = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/customRoles`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${TPEN.getAuthorization()}`
-            }
-        }).then(response => response.json())
         const defaultRoles = {
             OWNER: ["*_*_*"],
             LEADER: ["UPDATE_*_PROJECT", "READ_*_PROJECT", "*_*_MEMBER", "*_*_ROLE", "*_*_PERMISSION", "*_*_LAYER", "*_*_PAGE"],
             CONTRIBUTOR: ["READ_*_*", "UPDATE_TEXT_*", "UPDATE_ORDER_*", "UPDATE_SELECTOR_*", "CREATE_SELECTOR_*", "DELETE_*_LINE", "UPDATE_DESCRIPTION_LAYER", "CREATE_*_LAYER"],
             VIEWER: ["READ_*_PROJECT", "READ_*_MEMBER", "READ_*_LAYER", "READ_*_PAGE", "READ_*_LINE"]
         }
-        const roles = { ...defaultRoles, ...group }
+        const roles = { ...defaultRoles, ...customRoles }
         Object.entries(roles || {}).map(([key, value]) => ({
             id: key,
             name: value
@@ -85,7 +110,7 @@ class ProjectPermissions extends HTMLElement {
                     <span id="roleID">${role.id.charAt(0).toUpperCase() + role.id.slice(1).toLowerCase()}</span>
                     <span>
                         <ol class="name-ol">
-                            ${role.name.map(name => 
+                            ${role.name.map(name =>
                             `<li class="name-li">${this.getReadablePermission(name).toLowerCase()}</li>`)
                             .join("")}
                         </ol>

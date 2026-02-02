@@ -1,22 +1,57 @@
 import TPEN from "../../api/TPEN.js"
 import CheckPermissions from '../../components/check-permissions/checkPermissions.js'
+import { onProjectReady } from "../../utilities/projectReady.js"
+import { CleanupRegistry } from "../../utilities/CleanupRegistry.js"
 
+/**
+ * InviteMemberElement - Provides a form to invite new members to a project.
+ * Requires MEMBER create access.
+ * @element invite-member
+ */
 class InviteMemberElement extends HTMLElement {
+    /** @type {Set<number>} Set of pending timeout IDs for cleanup */
+    #pendingTimeouts = new Set()
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers */
+    renderCleanup = new CleanupRegistry()
+    /** @type {Function|null} Unsubscribe function for project ready listener */
+    _unsubProject = null
+
     constructor() {
         super()
         this.attachShadow({ mode: 'open' })
     }
-    
+
     connectedCallback() {
-        TPEN.eventDispatcher.on('tpen-project-loaded', () => this.render())
+        TPEN.attachAuthentication(this)
+        this._unsubProject = onProjectReady(this, this.authgate)
+    }
+
+    /**
+     * Authorization gate - checks permissions before rendering.
+     * Removes component if user lacks MEMBER create access.
+     */
+    authgate() {
+        if (!CheckPermissions.checkCreateAccess("MEMBER", "*")) {
+            this.remove()
+            return
+        }
+        this.render()
+    }
+
+    disconnectedCallback() {
+        try { this._unsubProject?.() } catch {}
+        // Clear any pending timeouts
+        for (const timeoutId of this.#pendingTimeouts) {
+            clearTimeout(timeoutId)
+        }
+        this.#pendingTimeouts.clear()
+        this.renderCleanup.run()
+        this.cleanup.run()
     }
 
     render() {
-        const permitted = CheckPermissions.checkCreateAccess("member", "*")
-        if(!permitted) {
-            this.shadowRoot.innerHTML = `<div>You do not have permission to invite members to this project.</div>`
-            return
-        }
         this.shadowRoot.innerHTML = `
             <style>
             .success-message {
@@ -55,8 +90,11 @@ class InviteMemberElement extends HTMLElement {
     }
 
     addEventListeners() {
+        // Clear previous render-specific listeners
+        this.renderCleanup.run()
+
         const inviteForm = this.shadowRoot.querySelector("#invite-form")
-        inviteForm.addEventListener("submit", this.inviteUser.bind(this))
+        this.renderCleanup.onElement(inviteForm, "submit", this.inviteUser.bind(this))
     }
 
     async inviteUser(event) {
@@ -94,13 +132,17 @@ class InviteMemberElement extends HTMLElement {
             successMessage.classList.add("success-message")
             this.shadowRoot.querySelector('#invite-form').appendChild(successMessage)
 
-            setTimeout(() => {
+            const successTimeoutId = setTimeout(() => {
+                this.#pendingTimeouts.delete(successTimeoutId)
                 successMessage.remove()
             }, 3000)
+            this.#pendingTimeouts.add(successTimeoutId)
         } catch (error) {
-            setTimeout(() => {
+            const errorTimeoutId = setTimeout(() => {
+                this.#pendingTimeouts.delete(errorTimeoutId)
                 this.shadowRoot.querySelector('#errorHTML').innerHTML = ''
             }, 3000)
+            this.#pendingTimeouts.add(errorTimeoutId)
             this.shadowRoot.querySelector('#errorHTML').classList.add("error-padding")
             this.shadowRoot.querySelector('#errorHTML').innerHTML = error.message
             this.shadowRoot.querySelector('#submit').textContent = "Submit"

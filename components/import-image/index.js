@@ -1,9 +1,29 @@
 import TPEN from "../../api/TPEN.js"
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 
+/**
+ * ImageImporter - Creates a new project from one or more image URLs.
+ * @element tpen-image-importer
+ */
 class ImageImporter extends HTMLElement {
+  /** @type {CleanupRegistry} Registry for cleanup handlers */
+  cleanup = new CleanupRegistry()
+
   constructor() {
     super()
     this.attachShadow({ mode: 'open' })
+  }
+
+  connectedCallback() {
+    this.render()
+    this.addEventListeners()
+  }
+
+  disconnectedCallback() {
+    this.cleanup.run()
+  }
+
+  render() {
     this.shadowRoot.innerHTML = `
       <style>
         .importer-container {
@@ -60,23 +80,30 @@ class ImageImporter extends HTMLElement {
       </div>
     `
 
+  }
+
+  /**
+   * Sets up event listeners for the component.
+   */
+  addEventListeners() {
     this.urlInput = this.shadowRoot.querySelector('#url')
     this.submitButton = this.shadowRoot.querySelector('#submit')
     this.feedback = this.shadowRoot.querySelector('#feedback')
     this.pageInfoContainer = this.shadowRoot.querySelector('#page-info-container')
-    this.submitButton.addEventListener('click', this.handleImport.bind(this))
 
-    this.urlInput.addEventListener('dragover', (e) => {
-      e.preventDefault()
-    })
-
-    this.urlInput.addEventListener('drop', (e) => {
+    const importHandler = this.handleImport.bind(this)
+    const dragoverHandler = (e) => e.preventDefault()
+    const dropHandler = (e) => {
       e.preventDefault()
       const data = e.dataTransfer.getData('text/uri-list') || e.dataTransfer.getData('text/plain')
       if (data) {
         this.urlInput.value = data
       }
-    })
+    }
+
+    this.cleanup.onElement(this.submitButton, 'click', importHandler)
+    this.cleanup.onElement(this.urlInput, 'dragover', dragoverHandler)
+    this.cleanup.onElement(this.urlInput, 'drop', dropHandler)
   }
 
   setLoadingState(isLoading) {

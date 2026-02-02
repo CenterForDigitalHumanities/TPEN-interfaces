@@ -2,8 +2,21 @@ import TPEN from "../../api/TPEN.js"
 import Project from "../../api/Project.js"
 import "../../components/line-image/index.js"
 import CheckPermissions from "../check-permissions/checkPermissions.js"
+import { onProjectReady } from "../../utilities/projectReady.js"
+import { CleanupRegistry } from "../../utilities/CleanupRegistry.js"
 
+/**
+ * ProjectDetails - Displays project title, owner, collaborator count, and thumbnail.
+ * Requires PROJECT view access.
+ * @element tpen-project-details
+ */
 class ProjectDetails extends HTMLElement {
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers */
+    renderCleanup = new CleanupRegistry()
+    /** @type {Function|null} Unsubscribe function for project ready listener */
+    _unsubProject = null
 
     style = `
     sequence-panel {
@@ -54,19 +67,6 @@ class ProjectDetails extends HTMLElement {
     constructor() {
         super()
         this.attachShadow({ mode: 'open' })
-        TPEN.eventDispatcher.on('tpen-project-loaded', this.render.bind(this))
-        TPEN.eventDispatcher.on('tpen-project-load-failed', (err) => {
-            this.shadowRoot.innerHTML = `
-                <style>${this.style}</style>
-                <h3>Project not found</h3>
-                <p>The project you are looking for does not exist or you do not have access to it.</p>
-            `
-            const toast = {
-                message: `Project failed to load: ${err.message}`,
-                status: "error"
-              }
-            TPEN.eventDispatcher.dispatch('tpen-toast',toast)
-        })
     }
 
     static get observedAttributes() {
@@ -75,19 +75,52 @@ class ProjectDetails extends HTMLElement {
 
     async attributeChangedCallback(name, oldValue, newValue) {
         if (name === 'tpen-project-id' && oldValue !== newValue) {
-            if(newValue === null) return
-            this.Project = (newValue === TPEN.activeProject._id) 
-                ? TPEN.activeProject 
-                : await(new Project(newValue).fetch())
+            if (newValue === null) return
+            this.Project = (newValue === TPEN.activeProject?._id)
+                ? TPEN.activeProject
+                : await (new Project(newValue).fetch())
             this.render()
         }
     }
 
     connectedCallback() {
         TPEN.attachAuthentication(this)
+        this._unsubProject = onProjectReady(this, this.authgate)
+        this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-project-load-failed', (err) => {
+            this.shadowRoot.innerHTML = `
+                <style>${this.style}</style>
+                <h3>Project not found</h3>
+                <p>The project you are looking for does not exist or you do not have access to it.</p>
+            `
+            TPEN.eventDispatcher.dispatch('tpen-toast', {
+                message: `Project failed to load: ${err.message}`,
+                status: "error"
+            })
+        })
     }
 
-    async render() {
+    /**
+     * Authorization gate - checks permissions before rendering.
+     * Shows permission message if user lacks PROJECT view access.
+     */
+    authgate() {
+        if (!CheckPermissions.checkViewAccess('PROJECT', '*')) {
+            this.shadowRoot.innerHTML = `
+                <style>${this.style}</style>
+                <p class="permission-msg">You don't have permission to view the Project Details</p>
+            `
+            return
+        }
+        this.render()
+    }
+
+    disconnectedCallback() {
+        try { this._unsubProject?.() } catch {}
+        this.renderCleanup.run()
+        this.cleanup.run()
+    }
+
+    render() {
         const project = this.Project ?? TPEN.activeProject
         const projectOwner = Object.entries(project.collaborators).find(([userID, u]) => u.roles.includes('OWNER'))?.[1].profile.displayName
         const collaboratorCount = Object.keys(project.collaborators).length
@@ -96,12 +129,10 @@ class ProjectDetails extends HTMLElement {
         const isManagePage = window.location.pathname === '/project/manage' || window.location.pathname.startsWith('/project/manage/')
         const displayTitle = isManagePage ? `Manage Project "${TPEN.screen.title}"` : TPEN.screen.title
         TPEN.eventDispatcher.dispatch('tpen-gui-title', displayTitle)
-        const isReadAccess = CheckPermissions.checkViewAccess('PROJECT')
         const isProjectEditor = CheckPermissions.checkEditAccess('PROJECT', 'METADATA')
         const editTitle = isProjectEditor ? `<a id="edit-project-title" href="#">✏️</a>` : ``
-        
-        isReadAccess ? 
-        (this.shadowRoot.innerHTML = `
+
+        this.shadowRoot.innerHTML = `
             <style>${this.style}</style>
             <div class="project-title-input-container">
                 <h3 class="project-title">${TPEN.screen.title}</h3>
@@ -113,11 +144,12 @@ class ProjectDetails extends HTMLElement {
                 ${collaboratorCount < 3 ? "Collaborators: "+Object.entries(project.collaborators).map(([userID, u]) => u.profile.displayName).join(', ') : `${collaboratorCount} collaborator${collaboratorCount===1? '' : 's'}`}
             </p>
             <sequence-panel manifest-id="${project.manifest}"></sequence-panel>
-        `) : (this.shadowRoot.innerHTML = `
-            <p class="permission-msg">You don't have permission to view the Project Details</p>
-        `)
-        if(!isProjectEditor) return
-        this.shadowRoot.getElementById('edit-project-title').addEventListener('click', (e) => {
+        `
+        // Clear previous render-specific listeners before adding new ones
+        this.renderCleanup.run()
+
+        if (!isProjectEditor) return
+        this.renderCleanup.onElement(this.shadowRoot.getElementById('edit-project-title'), 'click', (e) => {
             const screenTitle = this.shadowRoot.querySelector('.project-title')
             const editButton = this.shadowRoot.getElementById('edit-project-title')
             screenTitle.classList.add('hidden')
@@ -136,6 +168,7 @@ class ProjectDetails extends HTMLElement {
             inputDiv.appendChild(saveButton)
             this.shadowRoot.querySelector('small').insertAdjacentElement('beforebegin', inputDiv)
 
+            // Save button listener - element is removed after use, so no cleanup needed
             saveButton.addEventListener('click', async () => {
                 const response = await fetch(`${TPEN.servicesURL}/project/${project._id}/label`, {
                     method: 'PATCH',

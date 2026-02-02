@@ -2,7 +2,12 @@ import Project from '../../api/Project.js'
 import TPEN from '../../api/TPEN.js'
 import User from '../../api/User.js'
 import { getUserFromToken } from "../iiif-tools/index.js"
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 
+/**
+ * CopyExistingProjectWithCustomizations - Allows users to copy a project with selective customizations.
+ * @element tpen-copy-existing-project-with-customizations
+ */
 class CopyExistingProjectWithCustomizations extends HTMLElement {
     #modules = {
         "Metadata": true,
@@ -12,14 +17,24 @@ class CopyExistingProjectWithCustomizations extends HTMLElement {
         "Layers": true
     }
 
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers */
+    renderCleanup = new CleanupRegistry()
+
     constructor() {
         super()
         this.attachShadow({ mode: 'open' })
-        TPEN.attachAuthentication(this)
     }
 
     connectedCallback() {
+        TPEN.attachAuthentication(this)
         this.load()
+    }
+
+    disconnectedCallback() {
+        this.renderCleanup.run()
+        this.cleanup.run()
     }
 
     async load() {
@@ -311,7 +326,7 @@ class CopyExistingProjectWithCustomizations extends HTMLElement {
             <div id="project-info-container"></div>
         `
 
-        this.shadowRoot.getElementById('project-select').addEventListener('change', async (event) => {
+        this.cleanup.onElement(this.shadowRoot.getElementById('project-select'), 'change', async (event) => {
             const projectSelect = event.target.value
             this.shadowRoot.getElementById('project-select').disabled = true
             this.shadowRoot.getElementById('copy-project-btn').classList.remove('hidden')
@@ -341,7 +356,7 @@ class CopyExistingProjectWithCustomizations extends HTMLElement {
                         const addWithAnnotationsBtn = layerItem.querySelector('.add-with-annotations-btn')
                         const addWithoutAnnotationsBtn = layerItem.querySelector('.add-without-annotations-btn')
                         const deleteLayerBtn = layerItem.querySelector('.delete-layer-btn')
-                        addWithAnnotationsBtn.addEventListener('click', () => {
+                        this.renderCleanup.onElement(addWithAnnotationsBtn, 'click', () => {
                             const layerName = addWithAnnotationsBtn.getAttribute('data-layer')
                             const success = document.createElement('p')
                             success.className = 'success-message'
@@ -352,7 +367,7 @@ class CopyExistingProjectWithCustomizations extends HTMLElement {
                             deleteLayerBtn.remove()
                             layersSelect.push({[layerName]: { withAnnotations: true }})
                         })
-                        addWithoutAnnotationsBtn.addEventListener('click', () => {
+                        this.renderCleanup.onElement(addWithoutAnnotationsBtn, 'click', () => {
                             const layerName = addWithoutAnnotationsBtn.getAttribute('data-layer')
                             const success = document.createElement('p')
                             success.className = 'success-message'
@@ -363,7 +378,7 @@ class CopyExistingProjectWithCustomizations extends HTMLElement {
                             deleteLayerBtn.remove()
                             layersSelect.push({[layerName]: { withAnnotations: false }})
                         })
-                        deleteLayerBtn.addEventListener('click', () => {
+                        this.renderCleanup.onElement(deleteLayerBtn, 'click', () => {
                             if (layersList.length === 1) {
                                 this.shadowRoot.getElementById("Layers").checked = false
                                 this.shadowRoot.querySelector(".project-customization[index='Layers'] .layers-list").remove()
@@ -391,7 +406,7 @@ class CopyExistingProjectWithCustomizations extends HTMLElement {
                         groupMembersListGroup.appendChild(memberItem)
                         const inviteBtn = memberItem.querySelector('.invite-btn')
                         const removeBtn = memberItem.querySelector('.remove-btn')
-                        inviteBtn.addEventListener('click', () => {
+                        this.renderCleanup.onElement(inviteBtn, 'click', () => {
                             const memberId = inviteBtn.getAttribute('data-member')
                             const memberName = inviteBtn.getAttribute('data-member-name')
                             const success = document.createElement('p')
@@ -402,7 +417,7 @@ class CopyExistingProjectWithCustomizations extends HTMLElement {
                             removeBtn.remove()
                             groupMembersSelect.push(memberId)
                         })
-                        removeBtn.addEventListener('click', () => {
+                        this.renderCleanup.onElement(removeBtn, 'click', () => {
                             if(groupMembersList.length === 1) {
                                 this.shadowRoot.getElementById("Group Members").checked = false
                                 this.shadowRoot.querySelector(".project-customization[index='Group Members'] .group-members-list").remove()
@@ -417,7 +432,7 @@ class CopyExistingProjectWithCustomizations extends HTMLElement {
         })
 
         this.shadowRoot.querySelectorAll('.toggleSwitch').forEach(toggleSwitch => {
-            toggleSwitch.addEventListener('change', function () {
+            this.cleanup.onElement(toggleSwitch, 'change', function () {
                 if (this.checked) {
                     modules[this.id] = true
                 } else {
@@ -443,7 +458,7 @@ class CopyExistingProjectWithCustomizations extends HTMLElement {
             })
         })
 
-        this.shadowRoot.getElementById('copy-project-btn').addEventListener('click', async () => {
+        this.cleanup.onElement(this.shadowRoot.getElementById('copy-project-btn'), 'click', async () => {
             this.shadowRoot.getElementById('project-info').classList.add('disabled-container')
             this.shadowRoot.getElementById('copy-project-btn').disabled = true
             const projectSelect = this.shadowRoot.getElementById('project-select')

@@ -1,4 +1,14 @@
+import { CleanupRegistry } from '../../../utilities/CleanupRegistry.js'
+
+/**
+ * Toast - A transient notification message that appears briefly.
+ * Non-dismissible toasts auto-dismiss after 3 seconds.
+ * @element tpen-toast
+ */
 class Toast extends HTMLElement {
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
+
     constructor() {
         super()
         this.attachShadow({ mode: 'open' })
@@ -16,9 +26,10 @@ class Toast extends HTMLElement {
     show() {
         this.classList.add('show')
         if (!this.classList.contains('dismissible')) {
-            setTimeout(() => {
+            const dismissTimer = setTimeout(() => {
                 this.dismiss()
             }, 3000)
+            this.cleanup.add(() => clearTimeout(dismissTimer))
         }
     }
 
@@ -27,11 +38,18 @@ class Toast extends HTMLElement {
      */
     dismiss() {
         this.classList.remove('show')
-        setTimeout(() => {
+        const removeTimer = setTimeout(() => {
             this.remove()
         }, 300)
+        this.cleanup.add(() => clearTimeout(removeTimer))
     }
 
+    disconnectedCallback() {
+        this.cleanup.run()
+    }
 }
 
-customElements.define('tpen-toast', Toast)
+// Guard against duplicate registration when module is loaded via different URL paths
+if (!customElements.get('tpen-toast')) {
+    customElements.define('tpen-toast', Toast)
+}

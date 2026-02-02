@@ -1,7 +1,20 @@
 import TPEN from "../../api/TPEN.js"
 import CheckPermissions from "../../components/check-permissions/checkPermissions.js"
+import { onProjectReady } from "../../utilities/projectReady.js"
+import { CleanupRegistry } from "../../utilities/CleanupRegistry.js"
 
+/**
+ * ManagePages - Provides UI for managing pages within a layer including reordering, editing labels, and deletion.
+ * Requires PAGE METADATA view access.
+ * @element tpen-manage-pages
+ */
 class ManagePages extends HTMLElement {
+    /** @type {Function|null} Unsubscribe function for project ready listener */
+    _unsubProject = null
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
+    /** @type {CleanupRegistry} Registry for render-specific handlers */
+    renderCleanup = new CleanupRegistry()
 
     constructor() {
         super()
@@ -10,21 +23,28 @@ class ManagePages extends HTMLElement {
 
     connectedCallback() {
         TPEN.attachAuthentication(this)
-
-        if (TPEN.activeProject?._id) {
-            this.render()
-        }
-        TPEN.eventDispatcher.on('tpen-project-loaded', this.render.bind(this))
+        this._unsubProject = onProjectReady(this, this.authgate)
     }
 
-    render() {
-        // Check if user has view permission (safe - project is loaded)
-        const hasViewAccess = CheckPermissions.checkViewAccess('PAGE', 'METADATA')
-        if (!hasViewAccess) {
+    /**
+     * Authorization gate - checks permissions before rendering.
+     * Shows permission message if user lacks PAGE METADATA view access.
+     */
+    authgate() {
+        if (!CheckPermissions.checkViewAccess('PAGE', 'METADATA')) {
             this.shadowRoot.innerHTML = `<p>You don't have permission to view pages</p>`
             return
         }
+        this.render()
+    }
 
+    disconnectedCallback() {
+        try { this._unsubProject?.() } catch {}
+        this.renderCleanup.run()
+        this.cleanup.run()
+    }
+
+    render() {
         this.shadowRoot.innerHTML = `
             <style>
                 .layer-container {
@@ -104,10 +124,13 @@ class ManagePages extends HTMLElement {
             </style>
             <button class="layer-btn manage-pages">Manage Pages</button>
         `
+        // Clear previous render-specific listeners
+        this.renderCleanup.run()
+
         const layers = TPEN.activeProject?.layers
         const pages = layers?.pages
         this.shadowRoot.querySelectorAll(".manage-pages").forEach((button) => {
-            button.addEventListener("click", () => {
+            this.renderCleanup.onElement(button, "click", () => {
                 // Check if user has edit permission for pages
                 const hasEditAccess = CheckPermissions.checkEditAccess('PAGE', 'METADATA')
                 if (!hasEditAccess) {
@@ -136,7 +159,8 @@ class ManagePages extends HTMLElement {
                     const pageIndex = labelDiv.getAttribute("data-index")
                     el.classList.add("layer-card", "layer-card-flex")
                     el.setAttribute("draggable", "true")
-
+                    // Drag listeners are added to elements in the PARENT not CleanupRegistry).
+                    // These listeners will be naturally cleaned up when the parent re-renders or the user navigates away.
                     el.addEventListener("dragstart", (event) => {
                         event.dataTransfer.setData("text/plain", el.dataset.index)
                         el_dragged = event.target
@@ -159,13 +183,13 @@ class ManagePages extends HTMLElement {
                         if (draggedIndex === targetIndex) return
                         if(draggedIndex < targetIndex) {
                             container.insertBefore(el_dragged, el_droppedOn)
-                            container.insertBefore(el_droppedOn, container.children[draggedIndex])    
+                            container.insertBefore(el_droppedOn, container.children[draggedIndex])
                         }
                         else{
                             container.insertBefore(el_dragged, el_droppedOn)
                             container.insertBefore(el_droppedOn, container.children[draggedIndex + 1])
                         }
-                        
+
                         Array.from(container.children).forEach((el, i) => {
                             el.setAttribute("position", i)
                             if (parseInt(el.getAttribute("data-index")) !== i) {
@@ -191,7 +215,6 @@ class ManagePages extends HTMLElement {
                     deleteButton.dataset.layerId = layerId
                     deleteButton.innerText = "Delete Page"
                     editPageLabelButton.after(deleteButton)
-
                     editPageLabelButton.addEventListener("click", () => {
                         const hasUpdateAccess = CheckPermissions.checkEditAccess('PAGE', 'METADATA')
                         if (!hasUpdateAccess) {

@@ -1,15 +1,27 @@
 import TPEN from '../../api/TPEN.js'
 
+/**
+ * PublicUserProfile - Displays a public user profile card with social links.
+ * Does not require authentication - displays publicly available user data.
+ * @element tpen-public-user-profile
+ */
 class PublicUserProfile extends HTMLElement {
     constructor() {
         super()
         this.attachShadow({ mode: 'open' })
     }
 
-    async connectedCallback() {
-        await this.render()
-        await this.updateProfile()
+    connectedCallback() {
         TPEN.attachAuthentication(this)
+        this.initialize()
+    }
+
+    /**
+     * Initializes the component by loading and rendering profile data.
+     */
+    async initialize() {
+        await this.loadAndRender()
+        await this.updateProfile()
     }
 
     async getProfile() {
@@ -46,7 +58,10 @@ class PublicUserProfile extends HTMLElement {
         }
     }
 
-    async render() {
+    /**
+     * Loads profile data and renders the component.
+     */
+    async loadAndRender() {
         const profile = await this.getProfile()
         const { linkedin = '', twitter = '', instagram = '', facebook = '', github = '', homepage = '' } = profile
         const displayName = profile.displayName || 'Anonymous'

@@ -7,6 +7,7 @@
  * and thanks the Annotorious development team for this open source software.
  * @see https://annotorious.dev/
  * Annotorious licensing information can be found at https://github.com/annotorious/annotorious
+ * @element tpen-line-parser
  */
 
 import TPEN from '../../api/TPEN.js'
@@ -15,9 +16,11 @@ import { getAgentIRIFromToken } from '../iiif-tools/index.js'
 import CheckPermissions from '../check-permissions/checkPermissions.js'
 import { detectTextLinesCombined } from "./detect-lines.js"
 import { v4 as uuidv4 } from "https://cdn.skypack.dev/uuid@9.0.1"
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
+import { onProjectReady } from '../../utilities/projectReady.js'
 
 class AnnotoriousAnnotator extends HTMLElement {
-  #osd 
+  #osd
   #annotoriousInstance
   #annotoriousContainer
   #userForAnnotorious
@@ -33,15 +36,33 @@ class AnnotoriousAnnotator extends HTMLElement {
   #canvasImageURL
   #canvasID
   #currentMergeSelection
+  /** @type {Set<number>} Set of pending timeout IDs for cleanup */
+  #pendingTimeouts = new Set()
+
+  /** @type {CleanupRegistry} Registry for cleanup handlers */
+  cleanup = new CleanupRegistry()
+  /** @type {CleanupRegistry} Registry for render-specific handlers */
+  renderCleanup = new CleanupRegistry()
+  /** @type {CleanupRegistry} Registry for annotation element handlers */
+  annotationCleanup = new CleanupRegistry()
+  /** @type {Function|null} Unsubscribe function for project ready listener */
+  _unsubProject = null
 
   constructor() {
     super()
-    TPEN.attachAuthentication(this)
     this.attachShadow({ mode: 'open' })
   }
 
   // Custom component setup
-  async connectedCallback() {
+  connectedCallback() {
+    TPEN.attachAuthentication(this)
+    this.initialize()
+  }
+
+  /**
+   * Initializes the annotator component.
+   */
+  initialize() {
     // Must know the User
     if (!this.#userForAnnotorious) {
       const agent = getAgentIRIFromToken(this.userToken)
@@ -57,14 +78,26 @@ class AnnotoriousAnnotator extends HTMLElement {
     }
     // Must know the Project
     this.shadowRoot.innerHTML = "Loading the Annotator.  Please provide a ?projectID= in the URL."
-    TPEN.eventDispatcher.on('tpen-project-loaded', (ev) => this.render())
-    TPEN.eventDispatcher.on('tpen-project-load-failed', (err) => {
+    this._unsubProject = onProjectReady(this, this.render)
+    this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-project-load-failed', (err) => {
       this.shadowRoot.innerHTML = `
           <h3>Project Error</h3>
           <p>The project you are looking for does not exist or you do not have access to it.</p>
           <p> ${err.detail.status}: ${err.detail.statusText} </p>
       `
     })
+  }
+
+  disconnectedCallback() {
+    try { this._unsubProject?.() } catch {}
+    // Clear any pending timeouts
+    for (const timeoutId of this.#pendingTimeouts) {
+      clearTimeout(timeoutId)
+    }
+    this.#pendingTimeouts.clear()
+    this.annotationCleanup.run()
+    this.renderCleanup.run()
+    this.cleanup.run()
   }
 
   // Initialize HTML after loading in a TPEN3 Project
@@ -314,7 +347,10 @@ class AnnotoriousAnnotator extends HTMLElement {
         <span id="sampleRuler"></span>
       </div>`
 
-      this.shadowRoot.querySelector("#autoParseBtn").addEventListener("click", async () => {
+      // Clear previous render-specific listeners before adding new ones
+      this.renderCleanup.run()
+
+      this.renderCleanup.onElement(this.shadowRoot.querySelector("#autoParseBtn"), "click", async () => {
         try {
           if (typeof cv === "undefined") {
             await new Promise((resolve, reject) => {
@@ -380,23 +416,27 @@ class AnnotoriousAnnotator extends HTMLElement {
     const mergeLinesBtn = this.shadowRoot.getElementById("mergeLinesBtn")
     const drag = this.shadowRoot.querySelectorAll(".dragMe")
 
-    drag.forEach(elem => elem.addEventListener("mousedown", (e) => this.dragging(e)))
-    addLinesBtn.addEventListener("click", (e) => this.toggleAddLines(e))
-    mergeLinesBtn.addEventListener("click", (e) => this.toggleMergeLines(e))
-    drawTool.addEventListener("change", (e) => this.toggleDrawingMode(e))
-    editTool.addEventListener("change", (e) => this.toggleEditingMode(e))
-    eraseTool.addEventListener("change", (e) => this.toggleErasingMode(e))
-    seeTool.addEventListener("change", (e) => this.toggleAnnotationVisibility(e))
-    createColumnsBtn.addEventListener("click", () =>
+    drag.forEach(elem => this.renderCleanup.onElement(elem, "mousedown", (e) => this.dragging(e)))
+    this.renderCleanup.onElement(addLinesBtn, "click", (e) => this.toggleAddLines(e))
+    this.renderCleanup.onElement(mergeLinesBtn, "click", (e) => this.toggleMergeLines(e))
+    this.renderCleanup.onElement(drawTool, "change", (e) => this.toggleDrawingMode(e))
+    this.renderCleanup.onElement(editTool, "change", (e) => this.toggleEditingMode(e))
+    this.renderCleanup.onElement(eraseTool, "change", (e) => this.toggleErasingMode(e))
+    this.renderCleanup.onElement(seeTool, "change", (e) => this.toggleAnnotationVisibility(e))
+    this.renderCleanup.onElement(createColumnsBtn, "click", () =>
       window.location.href = `/manage-columns?projectID=${TPEN.activeProject._id}&pageID=${this.#annotationPageID}`
     )
-    saveButton.addEventListener("click", (e) => {
+    this.renderCleanup.onElement(saveButton, "click", (e) => {
       this.#annotoriousInstance.cancelSelected()
       // Timeout required in order to allow the unfocus native functionality to complete for $isDirty.
-      setTimeout(() => { this.saveAnnotations() }, 500)
+      const timeoutId = setTimeout(() => {
+        this.#pendingTimeouts.delete(timeoutId)
+        this.saveAnnotations()
+      }, 500)
+      this.#pendingTimeouts.add(timeoutId)
     })
-    deleteAllBtn.addEventListener("click", async (e) => await this.deleteAllAnnotations(e))
-    window.addEventListener('beforeunload', (ev) => {
+    this.renderCleanup.onElement(deleteAllBtn, "click", async (e) => await this.deleteAllAnnotations(e))
+    this.renderCleanup.onWindow('beforeunload', (ev) => {
       if (this.#resolvedAnnotationPage?.$isDirty) {
         if (!confirm("If you leave unsaved changes will be lost.")){
           ev.preventDefault()
@@ -406,13 +446,17 @@ class AnnotoriousAnnotator extends HTMLElement {
     })
     // OSD and AnnotoriousOSD need some cycles to load, they are big files.
     this.shadowRoot.appendChild(osdScript)
-    setTimeout(() => { 
+    const outerTimeoutId = setTimeout(() => {
+      this.#pendingTimeouts.delete(outerTimeoutId)
       this.shadowRoot.appendChild(annotoriousScript)
-      setTimeout(() => { 
+      const innerTimeoutId = setTimeout(() => {
+        this.#pendingTimeouts.delete(innerTimeoutId)
         // Process the page to get the data required for the component UI
         this.processPage(this.#annotationPageID)
       }, 200)
+      this.#pendingTimeouts.add(innerTimeoutId)
     }, 200)
+    this.#pendingTimeouts.add(outerTimeoutId)
   }
 
   /**
@@ -719,7 +763,8 @@ class AnnotoriousAnnotator extends HTMLElement {
       // console.log("Annotorious clickAnnotation")
       if (!originalAnnotation) return
       if (_this.#isErasing) {
-        setTimeout(() => {
+        const timeoutId = setTimeout(() => {
+          _this.#pendingTimeouts.delete(timeoutId)
           // Timeout required in order to allow the click-and-focus native functionality to complete.
           // Also stops the goofy UX for naturally slow clickers.
           let c = confirm("Are you sure you want to remove this?")
@@ -730,6 +775,7 @@ class AnnotoriousAnnotator extends HTMLElement {
             _this.#annotoriousInstance.cancelSelected()
           }
         }, 500)
+        _this.#pendingTimeouts.add(timeoutId)
       }
     })
 
@@ -804,7 +850,7 @@ class AnnotoriousAnnotator extends HTMLElement {
     if (CheckPermissions.checkEditAccess("PROJECT")) {
       const manageProjectBtn = this.shadowRoot.querySelector("#projectManagementBtn")
       manageProjectBtn.style.display = "block"
-      manageProjectBtn.addEventListener("click", (e) => document.location.href = `/project/manage?projectID=${TPEN.activeProject._id}`)
+      this.renderCleanup.onElement(manageProjectBtn, "click", (e) => document.location.href = `/project/manage?projectID=${TPEN.activeProject._id}`)
     }
   }
 
@@ -1549,16 +1595,16 @@ class AnnotoriousAnnotator extends HTMLElement {
     }
 
     // Further cursor support when user changes edit options while an Annotation is selected.
-    elem.addEventListener('mouseenter', applyMouseEnter)
+    this.annotationCleanup.onElement(elem, 'mouseenter', applyMouseEnter)
 
     // Instead of click use mousedown and mouseup to accomodate moving a column during line editing mode
-    elem.addEventListener('mousedown', setMouseStart)
+    this.annotationCleanup.onElement(elem, 'mousedown', setMouseStart)
 
     // A click initiates a split or merge on the active line during line editing mode
-    elem.addEventListener('mouseup', applyMouseUp)
+    this.annotationCleanup.onElement(elem, 'mouseup', applyMouseUp)
 
     // Position the ruler element to be with the cursor
-    elem.addEventListener('mousemove', applyMouseMove)
+    this.annotationCleanup.onElement(elem, 'mousemove', applyMouseMove)
 
   }
 
