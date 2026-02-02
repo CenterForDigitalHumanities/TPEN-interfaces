@@ -5,7 +5,6 @@
  */
 
 import TPEN from '../../api/TPEN.js'
-import { getUserFromToken } from '../iiif-tools/index.js'
 import { escapeHtml } from '/js/utils.js'
 
 class ManifestImport extends HTMLElement {
@@ -24,6 +23,11 @@ class ManifestImport extends HTMLElement {
             TPEN.attachAuthentication(this)
         }
         this.load()
+    }
+
+    disconnectedCallback() {
+        // Cleanup - component uses innerHTML replacement for rendering,
+        // so no manual event listener cleanup needed
     }
 
     async load() {
@@ -89,8 +93,14 @@ class ManifestImport extends HTMLElement {
         })
 
         if (!response.ok) {
-            const errorData = await response.json()
-            throw new Error(errorData.message || `HTTP ${response.status}`)
+            let errorMessage = `HTTP ${response.status}`
+            try {
+                const errorData = await response.json()
+                errorMessage = errorData.message || errorMessage
+            } catch {
+                // Response was not JSON - use HTTP status
+            }
+            throw new Error(errorMessage)
         }
 
         return response.json()
@@ -536,8 +546,8 @@ class ManifestImport extends HTMLElement {
                                 </div>
                                 ${failed.map(error => `
                                     <div class="error-item">
-                                        <strong>${error.message}</strong>
-                                        <div class="error-url">${error.manifestUrl}</div>
+                                        <strong>${escapeHtml(error.message || '')}</strong>
+                                        <div class="error-url">${escapeHtml(error.manifestUrl || '')}</div>
                                     </div>
                                 `).join('')}
                             </div>
