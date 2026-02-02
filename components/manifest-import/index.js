@@ -6,11 +6,15 @@
 
 import TPEN from '../../api/TPEN.js'
 import { escapeHtml } from '/js/utils.js'
+import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 
 class ManifestImport extends HTMLElement {
     #manifests = []
     #createdProjects = []
     #authToken
+    #hasInitialized = false
+    /** @type {CleanupRegistry} Registry for cleanup handlers */
+    cleanup = new CleanupRegistry()
 
     constructor() {
         super()
@@ -18,16 +22,26 @@ class ManifestImport extends HTMLElement {
     }
 
     connectedCallback() {
+        TPEN.attachAuthentication(this)
+        this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-authenticated', () => this.authgate())
+        this.authgate()
+    }
+
+    authgate() {
+        if (this.#hasInitialized) return
+
         this.#authToken = TPEN.getAuthorization()
         if (!this.#authToken) {
-            TPEN.attachAuthentication(this)
+            this.renderNeedAuth()
+            return
         }
+
+        this.#hasInitialized = true
         this.load()
     }
 
     disconnectedCallback() {
-        // Cleanup - component uses innerHTML replacement for rendering,
-        // so no manual event listener cleanup needed
+        this.cleanup.run()
     }
 
     async load() {
@@ -65,20 +79,43 @@ class ManifestImport extends HTMLElement {
     }
 
     async #createProjects() {
-        this.#createdProjects = []
-        for (const manifestUrl of this.#manifests) {
-            try {
-                const project = await this.#importManifest(manifestUrl)
-                this.#createdProjects.push(project)
-            } catch (error) {
-                console.error(`Failed to import manifest: ${manifestUrl}`, error)
-                this.#createdProjects.push({
-                    error: true,
-                    manifestUrl,
-                    message: error.message || 'Failed to create project'
-                })
+        const manifests = this.#manifests
+        const total = manifests.length
+
+        const CONCURRENCY_LIMIT = 5
+        const results = new Array(total)
+        let nextIndex = 0
+
+        const worker = async () => {
+            while (true) {
+                const currentIndex = nextIndex++
+                if (currentIndex >= total) {
+                    break
+                }
+
+                const manifestUrl = manifests[currentIndex]
+                try {
+                    const project = await this.#importManifest(manifestUrl)
+                    results[currentIndex] = project
+                } catch (error) {
+                    console.error(`Failed to import manifest: ${manifestUrl}`, error)
+                    results[currentIndex] = {
+                        error: true,
+                        manifestUrl,
+                        message: error.message || 'Failed to create project'
+                    }
+                }
             }
         }
+
+        const workerCount = Math.min(CONCURRENCY_LIMIT, total)
+        const workers = []
+        for (let i = 0; i < workerCount; i++) {
+            workers.push(worker())
+        }
+
+        await Promise.all(workers)
+        this.#createdProjects = results
         this.renderResults()
     }
 
@@ -299,8 +336,8 @@ class ManifestImport extends HTMLElement {
                 }
             </style>
             <div class="container">
-                <div class="loader-wrapper">
-                    <div class="spinner"></div>
+                <div class="loader-wrapper" role="status" aria-live="polite" aria-busy="true">
+                    <div class="spinner" aria-label="Loading"></div>
                     <h2>Creating Projects</h2>
                     <p>Importing ${this.#manifests.length} manifest${this.#manifests.length !== 1 ? 's' : ''}...</p>
                 </div>
