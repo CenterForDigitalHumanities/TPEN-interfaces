@@ -281,9 +281,23 @@ class AnnotoriousAnnotator extends HTMLElement {
         tpen-page-selector {
           position: absolute;
           display: none;
-          top: 55px;
+          top: 60px;
           right: 10px;
           z-index: 9;
+        }
+        tpen-page-selector::part(select) {
+          font-size: clamp(0.8rem, 1vw, 1rem);
+          padding: 10px 20px;
+          border: none;
+          border-radius: 5px;
+          background-color: var(--primary-color);
+          color: var(--white);
+          cursor: pointer;
+        }
+        tpen-page-selector::part(select):hover,
+        tpen-page-selector::part(select):focus-visible {
+          outline: 2px solid var(--primary-color);
+          outline-offset: 2px;
         }
         #projectManagementBtn {
           position: absolute;

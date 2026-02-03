@@ -7,7 +7,7 @@ const eventDispatcher = TPEN.eventDispatcher
 
 /**
  * PageSelector - Dropdown for selecting pages within a project.
- * Provides navigation between manuscript pages with optional unsaved changes warning.
+ * Provides navigation between manuscript pages.
  * Requires PAGE ANY view access.
  * @element tpen-page-selector
  */
@@ -113,19 +113,12 @@ export default class PageSelector extends HTMLElement {
                     width: fit-content;
                 }
                 select {
-                    font-size: clamp(0.8rem, 1vw, 1rem);
-                    padding: 5px;
-                    border: 1px dashed var(--border-color, #ccc);
-                    border-radius: 5px;
-                    background: var(--select-bg, #fff);
-                    outline: none;
+                    font-size: inherit;
+                    font-family: inherit;
                     cursor: pointer;
                 }
-                select:focus {
-                    border-style: solid;
-                }
             </style>
-            <select aria-label="Select page">
+            <select part="select" aria-label="Select page">
                 ${optionsHtml}
             </select>
         `
