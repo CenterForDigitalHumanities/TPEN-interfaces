@@ -404,11 +404,13 @@ export default class TranscriptionBlock extends HTMLElement {
         }
 
         // QuickType shortcuts: Ctrl+Shift+1-9 for indices 10-18
-        if (e.ctrlKey && e.shiftKey && !e.altKey && /^[1-9]$/.test(e.key)) {
+        // Use e.code since e.key returns shifted characters (!, @, #, etc.) when Shift is held
+        if (e.ctrlKey && e.shiftKey && !e.altKey && /^Digit[1-9]$/.test(e.code)) {
             const quicktype = TPEN.activeProject?.interfaces?.quicktype
             if (Array.isArray(quicktype) && quicktype.length > 10) {
-                // Map digit key to array index: '1'->10, '2'->11, ..., '9'->18
-                const index = parseInt(e.key, 10) + 9
+                // Map digit key to array index: Digit1->10, Digit2->11, ..., Digit9->18
+                const digit = parseInt(e.code.charAt(5), 10)
+                const index = digit + 9
 
                 if (index < quicktype.length) {
                     e.preventDefault()
