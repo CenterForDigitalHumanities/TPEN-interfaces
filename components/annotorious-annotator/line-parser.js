@@ -362,9 +362,9 @@ class AnnotoriousAnnotator extends HTMLElement {
            <span>Annotation Visibility</span>
            <input type="checkbox" id="seeTool" checked> 
           </label>
-          <input id="deleteAllBtn" type="button" value="Delete All Annotations"/>
-          <a id="createColumnsBtn" href="#">Manage Columns</a>
-          <input id="saveBtn" type="button" value="Save Annotations"/>
+          <button id="deleteAllBtn" type="button">Delete All Annotations</button>
+          <button id="createColumnsBtn" type="button">Manage Columns</button>
+          <button id="saveBtn" type="button">Save Annotations</button>
         </div>
         <button type="button" id="autoParseBtn">Auto Parse</button>
         <tpen-page-selector></tpen-page-selector>
@@ -1058,7 +1058,7 @@ class AnnotoriousAnnotator extends HTMLElement {
     }
     const saveButton = this.shadowRoot.getElementById("saveBtn")
     saveButton.setAttribute("disabled", "true")
-    saveButton.value = "saving.  please wait..."
+    saveButton.textContent = "saving.  please wait..."
     let allAnnotations = this.#annotoriousInstance.getAnnotations()
     // Convert the Annotation selectors so that they are relative to the Canvas dimensions
     allAnnotations = this.convertSelectors(allAnnotations, false)
@@ -1090,7 +1090,7 @@ class AnnotoriousAnnotator extends HTMLElement {
         return res.json()
       })
       .catch(err => {
-        saveButton.value = "ERROR"
+        saveButton.textContent = "ERROR"
         throw err
       })
     page.items = page.items.map(i => ({
@@ -1104,7 +1104,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       status: "success"
     })
     saveButton.removeAttribute("disabled")
-    saveButton.value = "Save Annotations"
+    saveButton.textContent = "Save Annotations"
     this.#resolvedAnnotationPage.$isDirty = false
     return this.#modifiedAnnotationPage
   }
