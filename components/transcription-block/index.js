@@ -384,45 +384,8 @@ export default class TranscriptionBlock extends HTMLElement {
     }
 
     handleKeydown(e) {
-        // QuickType shortcuts: Ctrl+1-9 for indices 0-8, Ctrl+0 for index 9
-        if (e.ctrlKey && !e.shiftKey && !e.altKey && /^[0-9]$/.test(e.key)) {
-            const quicktype = TPEN.activeProject?.interfaces?.quicktype
-            if (Array.isArray(quicktype) && quicktype.length > 0) {
-                // Map digit key to array index: '1'->0, '2'->1, ..., '9'->8, '0'->9
-                const index = e.key === '0' ? 9 : parseInt(e.key, 10) - 1
-
-                if (index >= 0 && index < quicktype.length) {
-                    e.preventDefault() // Prevent browser tab switching
-                    const text = quicktype[index]
-                    const inputField = this.shadowRoot.querySelector('.transcription-input')
-                    if (inputField && text) {
-                        insertTextAtCursor(inputField, text)
-                    }
-                    return
-                }
-            }
-        }
-
-        // QuickType shortcuts: Ctrl+Shift+1-9 for indices 10-18
-        // Use e.code since e.key returns shifted characters (!, @, #, etc.) when Shift is held
-        if (e.ctrlKey && e.shiftKey && !e.altKey && /^Digit[1-9]$/.test(e.code)) {
-            const quicktype = TPEN.activeProject?.interfaces?.quicktype
-            if (Array.isArray(quicktype) && quicktype.length > 10) {
-                // Map digit key to array index: Digit1->10, Digit2->11, ..., Digit9->18
-                const digit = parseInt(e.code.charAt(5), 10)
-                const index = digit + 9
-
-                if (index < quicktype.length) {
-                    e.preventDefault()
-                    const text = quicktype[index]
-                    const inputField = this.shadowRoot.querySelector('.transcription-input')
-                    if (inputField && text) {
-                        insertTextAtCursor(inputField, text)
-                    }
-                    return
-                }
-            }
-        }
+        // QuickType shortcuts: Ctrl+0-9 and Ctrl+Shift+1-9
+        if (this.handleQuickTypeShortcut(e)) return
 
         // TAB: next line
         if (e.key === 'Tab' && !e.shiftKey) {
@@ -460,6 +423,39 @@ export default class TranscriptionBlock extends HTMLElement {
             this.moveToLastLine()
             return
         }
+    }
+
+    /**
+     * Handles QuickType keyboard shortcuts for inserting predefined text.
+     * @param {KeyboardEvent} e - The keyboard event
+     * @returns {boolean} True if a shortcut was handled, false otherwise
+     */
+    handleQuickTypeShortcut(e) {
+        if (!e.ctrlKey || e.altKey) return false
+
+        const quicktype = TPEN.activeProject?.interfaces?.quicktype
+        if (!Array.isArray(quicktype) || quicktype.length === 0) return false
+
+        let index = -1
+
+        if (!e.shiftKey && /^[0-9]$/.test(e.key)) {
+            // Ctrl+1-9 → indices 0-8, Ctrl+0 → index 9
+            index = e.key === '0' ? 9 : parseInt(e.key, 10) - 1
+        } else if (e.shiftKey && /^Digit[1-9]$/.test(e.code)) {
+            // Ctrl+Shift+1-9 → indices 10-18
+            // Use e.code since e.key returns shifted characters (!, @, #, etc.)
+            index = parseInt(e.code.charAt(5), 10) + 9
+        }
+
+        if (index >= 0 && index < quicktype.length) {
+            e.preventDefault()
+            const inputField = this.shadowRoot.querySelector('.transcription-input')
+            if (inputField && quicktype[index]) {
+                insertTextAtCursor(inputField, quicktype[index])
+            }
+            return true
+        }
+        return false
     }
 
     moveTextDown() {
