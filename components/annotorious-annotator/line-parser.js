@@ -871,7 +871,10 @@ class AnnotoriousAnnotator extends HTMLElement {
     this.#annotoriousContainer.style.backgroundImage = "none"
     this.shadowRoot.getElementById("tools-container").style.display = "block"
     this.shadowRoot.querySelector("#autoParseBtn").style.display = "block"
-    this.shadowRoot.querySelector("tpen-page-selector").style.display = "block"
+    const pageSelector = this.shadowRoot.querySelector("tpen-page-selector")
+    if (pageSelector) {
+      pageSelector.style.display = "block"
+    }
     if (CheckPermissions.checkEditAccess("PROJECT")) {
       const manageProjectBtn = this.shadowRoot.querySelector("#projectManagementBtn")
       manageProjectBtn.style.display = "block"
