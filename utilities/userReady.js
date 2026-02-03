@@ -26,7 +26,7 @@ export const onUserReady = (ctx, handler, eventName = 'tpen-user-loaded') => {
         }
     } catch (_) {}
 
-    // Subscribe to future updates
+    // Subscribe to future updates (extract user from event detail, unlike onProjectReady which passes no args)
     const eventHandler = (ev) => bound(ev.detail)
     TPEN.eventDispatcher.on(eventName, eventHandler)
 

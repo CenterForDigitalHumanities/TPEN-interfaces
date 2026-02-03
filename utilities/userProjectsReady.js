@@ -17,7 +17,7 @@ export const onUserProjectsReady = (ctx, handler) => {
 
     // Check if projects are already cached
     try {
-        if (TPEN.userProjects && TPEN.userProjects.length >= 0) {
+        if (Array.isArray(TPEN.userProjects)) {
             bound(TPEN.userProjects)
         }
     } catch (_) {}
