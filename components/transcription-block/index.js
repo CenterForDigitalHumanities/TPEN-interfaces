@@ -403,6 +403,25 @@ export default class TranscriptionBlock extends HTMLElement {
             }
         }
 
+        // QuickType shortcuts: Ctrl+Shift+1-9 for indices 10-18
+        if (e.ctrlKey && e.shiftKey && !e.altKey && /^[1-9]$/.test(e.key)) {
+            const quicktype = TPEN.activeProject?.interfaces?.quicktype
+            if (Array.isArray(quicktype) && quicktype.length > 10) {
+                // Map digit key to array index: '1'->10, '2'->11, ..., '9'->18
+                const index = parseInt(e.key, 10) + 9
+
+                if (index < quicktype.length) {
+                    e.preventDefault()
+                    const text = quicktype[index]
+                    const inputField = this.shadowRoot.querySelector('.transcription-input')
+                    if (inputField && text) {
+                        insertTextAtCursor(inputField, text)
+                    }
+                    return
+                }
+            }
+        }
+
         // TAB: next line
         if (e.key === 'Tab' && !e.shiftKey) {
             e.preventDefault()

@@ -1,6 +1,6 @@
 /**
  * Text input utilities for inserting text at cursor position.
- * @module utilities/textInput
+ * @module utilities/shortcutTextInput
  */
 
 /**
