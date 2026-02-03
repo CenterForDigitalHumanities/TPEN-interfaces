@@ -1,19 +1,26 @@
 import TPEN from '../../api/TPEN.js'
-import User from '../../api/User.js'
 import Project from '../../api/Project.js'
 import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
+import { onUserReady } from '../../utilities/userReady.js'
+import { onUserProjectsReady } from '../../utilities/userProjectsReady.js'
 
 /**
  * ReportStats - Displays summary statistics about user's projects.
  * @element report-stats
  */
 class ReportStats extends HTMLElement {
-    static get observedAttributes() {
-        return ['tpen-user-id']
-    }
-
     /** @type {CleanupRegistry} Registry for cleanup handlers */
     cleanup = new CleanupRegistry()
+    /** @type {Function|null} Unsubscribe function for user ready listener */
+    _unsubUser = null
+    /** @type {Function|null} Unsubscribe function for projects ready listener */
+    _unsubProjects = null
+    /** @type {Object|null} Cached profile data */
+    _profile = null
+    /** @type {Array|null} Cached projects data */
+    _projects = null
+    /** @type {boolean} Flag to prevent double rendering */
+    _isRendering = false
 
     constructor() {
         super()
@@ -22,14 +29,33 @@ class ReportStats extends HTMLElement {
 
     connectedCallback() {
         TPEN.attachAuthentication(this)
-        this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-user-loaded', () => this.loadAndRender())
+        this._unsubUser = onUserReady(this, (user) => {
+            this._profile = user
+            this.renderIfReady()
+        })
+        this._unsubProjects = onUserProjectsReady(this, (projects) => {
+            this._projects = projects
+            this.renderIfReady()
+        })
     }
 
     /**
-     * Loads user projects, calculates statistics, and renders the report.
+     * Renders only when both profile and projects are available.
+     * Guards against double rendering when both callbacks fire quickly.
+     */
+    renderIfReady() {
+        if (this._profile && this._projects && !this._isRendering) {
+            this._isRendering = true
+            this.loadAndRender()
+                .finally(() => { this._isRendering = false })
+        }
+    }
+
+    /**
+     * Calculates statistics from cached projects and renders the report.
      */
     async loadAndRender() {
-        const projects = await TPEN.getUserProjects(TPEN.getAuthorization())
+        const projects = this._projects
 
         const uniqueCollaborators = new Set()
         projects.forEach(project => {
@@ -56,19 +82,9 @@ class ReportStats extends HTMLElement {
     }
 
     disconnectedCallback() {
+        try { this._unsubUser?.() } catch {}
+        try { this._unsubProjects?.() } catch {}
         this.cleanup.run()
-    }
-
-    attributeChangedCallback(name, oldValue, newValue) {
-        if (name === 'tpen-user-id') {
-            if (oldValue !== newValue) {
-                const currVal = this?.user?._id
-                if (newValue === currVal) return
-                const loadedUser = new User(newValue)
-                loadedUser.authentication = TPEN.getAuthorization()
-                loadedUser.getProfile()
-            }
-        }
     }
 
     /**

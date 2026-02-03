@@ -1,19 +1,26 @@
 import TPEN from '../../api/TPEN.js'
-import User from '../../api/User.js'
 import Project from '../../api/Project.js'
 import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
+import { onUserReady } from '../../utilities/userReady.js'
+import { onUserProjectsReady } from '../../utilities/userProjectsReady.js'
 
 /**
  * UserStats - Displays user profile card with stats and collaborators.
  * @element user-stats
  */
 class UserStats extends HTMLElement {
-    static get observedAttributes() {
-        return ['tpen-user-id']
-    }
-
     /** @type {CleanupRegistry} Registry for cleanup handlers */
     cleanup = new CleanupRegistry()
+    /** @type {Function|null} Unsubscribe function for user ready listener */
+    _unsubUser = null
+    /** @type {Function|null} Unsubscribe function for projects ready listener */
+    _unsubProjects = null
+    /** @type {Object|null} Cached profile data */
+    _profile = null
+    /** @type {Array|null} Cached projects data */
+    _projects = null
+    /** @type {boolean} Flag to prevent double rendering */
+    _isRendering = false
 
     constructor() {
         super()
@@ -22,33 +29,42 @@ class UserStats extends HTMLElement {
 
     connectedCallback() {
         TPEN.attachAuthentication(this)
-        this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-user-loaded', ev => this.loadAndRender(ev.detail))
+        this._unsubUser = onUserReady(this, (user) => {
+            this._profile = user
+            this.renderIfReady()
+        })
+        this._unsubProjects = onUserProjectsReady(this, (projects) => {
+            this._projects = projects
+            this.renderIfReady()
+        })
     }
 
     /**
-     * Loads user projects and renders the stats.
-     * @param {Object} profile - User profile data
+     * Renders only when both profile and projects are available.
+     * Guards against double rendering when both callbacks fire quickly.
      */
-    async loadAndRender(profile) {
-        const projects = await TPEN.getUserProjects(TPEN.getAuthorization())
+    renderIfReady() {
+        if (this._profile && this._projects && !this._isRendering) {
+            this._isRendering = true
+            this.loadAndRender(this._profile, this._projects)
+                .finally(() => { this._isRendering = false })
+        }
+    }
+
+    /**
+     * Processes profile and project data, then renders the stats.
+     * @param {Object} profile - User profile data
+     * @param {Array} projects - Array of project data
+     */
+    async loadAndRender(profile, projects) {
         await this.processAndRender(profile, projects)
         this.updateProfile(profile)
     }
 
     disconnectedCallback() {
+        try { this._unsubUser?.() } catch {}
+        try { this._unsubProjects?.() } catch {}
         this.cleanup.run()
-    }
-
-    attributeChangedCallback(name, oldValue, newValue) {
-        if (name === 'tpen-user-id') {
-            if (oldValue !== newValue) {
-                const currVal = this?.user?._id
-                if (newValue === currVal) return
-                const loadedUser = new User(newValue)
-                loadedUser.authentication = TPEN.getAuthorization()
-                loadedUser.getProfile()
-            }
-        }
     }
 
     updateProfile(profile) {

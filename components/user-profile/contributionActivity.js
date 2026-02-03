@@ -1,21 +1,28 @@
 import TPEN from '../../api/TPEN.js'
-import User from '../../api/User.js'
 import Project from '../../api/Project.js'
 import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
+import { onUserReady } from '../../utilities/userReady.js'
+import { onUserProjectsReady } from '../../utilities/userProjectsReady.js'
 
 /**
  * ContributionActivity - Displays user's contribution activity across projects.
  * @element contribution-activity
  */
 class ContributionActivity extends HTMLElement {
-    static get observedAttributes() {
-        return ['tpen-user-id']
-    }
-
     /** @type {CleanupRegistry} Registry for cleanup handlers */
     cleanup = new CleanupRegistry()
     /** @type {CleanupRegistry} Registry for render-specific handlers */
     renderCleanup = new CleanupRegistry()
+    /** @type {Function|null} Unsubscribe function for user ready listener */
+    _unsubUser = null
+    /** @type {Function|null} Unsubscribe function for projects ready listener */
+    _unsubProjects = null
+    /** @type {Object|null} Cached profile data */
+    _profile = null
+    /** @type {Array|null} Cached projects data */
+    _projects = null
+    /** @type {boolean} Flag to prevent double rendering */
+    _isRendering = false
 
     constructor() {
         super()
@@ -24,32 +31,41 @@ class ContributionActivity extends HTMLElement {
 
     connectedCallback() {
         TPEN.attachAuthentication(this)
-        this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-user-loaded', () => this.loadAndRender())
+        this._unsubUser = onUserReady(this, (user) => {
+            this._profile = user
+            this.renderIfReady()
+        })
+        this._unsubProjects = onUserProjectsReady(this, (projects) => {
+            this._projects = projects
+            this.renderIfReady()
+        })
     }
 
     /**
-     * Loads user projects and renders the contribution activity.
+     * Renders only when both profile and projects are available.
+     * Guards against double rendering when both callbacks fire quickly.
+     */
+    renderIfReady() {
+        if (this._profile && this._projects && !this._isRendering) {
+            this._isRendering = true
+            this.loadAndRender()
+                .finally(() => { this._isRendering = false })
+        }
+    }
+
+    /**
+     * Processes cached projects and renders the contribution activity.
      */
     async loadAndRender() {
-        const projects = await TPEN.getUserProjects(TPEN.getAuthorization())
+        const projects = this._projects
         await this.processAndRender(projects)
     }
 
     disconnectedCallback() {
+        try { this._unsubUser?.() } catch {}
+        try { this._unsubProjects?.() } catch {}
         this.renderCleanup.run()
         this.cleanup.run()
-    }
-
-    attributeChangedCallback(name, oldValue, newValue) {
-        if (name === 'tpen-user-id') {
-            if (oldValue !== newValue) {
-                const currVal = this?.user?._id
-                if (newValue === currVal) return
-                const loadedUser = new User(newValue)
-                loadedUser.authentication = TPEN.getAuthorization()
-                loadedUser.getProfile()
-            }
-        }
     }
 
     /**
