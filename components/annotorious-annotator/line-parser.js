@@ -293,6 +293,9 @@ class AnnotoriousAnnotator extends HTMLElement {
           background-color: var(--primary-color);
           color: var(--white);
           cursor: pointer;
+          max-width: 300px;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
         tpen-page-selector::part(select):hover,
         tpen-page-selector::part(select):focus-visible {
