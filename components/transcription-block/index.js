@@ -441,10 +441,11 @@ export default class TranscriptionBlock extends HTMLElement {
         if (!e.shiftKey && /^[0-9]$/.test(e.key)) {
             // Ctrl+1-9 → indices 0-8, Ctrl+0 → index 9
             index = e.key === '0' ? 9 : parseInt(e.key, 10) - 1
-        } else if (e.shiftKey && /^Digit[1-9]$/.test(e.code)) {
-            // Ctrl+Shift+1-9 → indices 10-18
+        } else if (e.shiftKey && /^Digit[0-9]$/.test(e.code)) {
+            // Ctrl+Shift+1-9 → indices 10-18, Ctrl+Shift+0 → index 19
             // Use e.code since e.key returns shifted characters (!, @, #, etc.)
-            index = parseInt(e.code.charAt(5), 10) + 9
+            const digit = parseInt(e.code.charAt(5), 10)
+            index = digit === 0 ? 19 : digit + 9
         }
 
         if (index >= 0 && index < quicktype.length) {

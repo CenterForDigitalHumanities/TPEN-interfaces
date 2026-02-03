@@ -282,6 +282,8 @@ class QuickTypeEditorDialog extends HTMLElement {
             return `Ctrl+0`                   // Index 9 → Ctrl+0
         } else if (index < 19) {
             return `Ctrl+Shift+${index - 9}`  // Indices 10-18 → Ctrl+Shift+1 through Ctrl+Shift+9
+        } else if (index === 19) {
+            return `Ctrl+Shift+0`             // Index 19 → Ctrl+Shift+0
         } else {
             return `#${index + 1}`            // No keyboard shortcut, just display number
         }
