@@ -109,8 +109,8 @@ export default class PageSelector extends HTMLElement {
         this.shadowRoot.innerHTML = `
             <style>
                 :host {
-                    display: block;
-                    container-type: inline-size;
+                    display: inline-block;
+                    width: fit-content;
                 }
                 select {
                     font-size: clamp(0.8rem, 1vw, 1rem);
@@ -119,19 +119,10 @@ export default class PageSelector extends HTMLElement {
                     border-radius: 5px;
                     background: var(--select-bg, #fff);
                     outline: none;
-                    white-space: normal;
-                    word-wrap: break-word;
-                    max-width: 200px;
                     cursor: pointer;
                 }
                 select:focus {
                     border-style: solid;
-                }
-                @container (max-width: 300px) {
-                    select {
-                        font-size: 0.8rem;
-                        max-width: 150px;
-                    }
                 }
             </style>
             <select aria-label="Select page">
@@ -153,22 +144,11 @@ export default class PageSelector extends HTMLElement {
     }
 
     /**
-     * Handle page selection change with unsaved changes check.
+     * Handle page selection change.
      * @param {Event} event - Change event from select element
      */
     #handlePageChange(event) {
         const selectedPageId = event.target.value
-
-        // Check for unsaved changes via global callback (set by interfaces like line-parser)
-        if (typeof window.TPEN_CHECK_UNSAVED === 'function' && window.TPEN_CHECK_UNSAVED()) {
-            if (!confirm("You have unsaved changes. If you leave, your changes will be lost. Continue?")) {
-                // User cancelled - revert selection
-                const selectEl = this.shadowRoot.querySelector('select')
-                selectEl.value = this.#currentPageId
-                return
-            }
-        }
-
         const selectedPage = this.#pages.find(p => p.id === selectedPageId)
 
         // Dispatch event for interested components

@@ -18,6 +18,7 @@ import { detectTextLinesCombined } from "./detect-lines.js"
 import { v4 as uuidv4 } from "https://cdn.skypack.dev/uuid@9.0.1"
 import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 import { onProjectReady } from '../../utilities/projectReady.js'
+import '../page-selector/index.js'
 
 class AnnotoriousAnnotator extends HTMLElement {
   #osd
@@ -63,9 +64,6 @@ class AnnotoriousAnnotator extends HTMLElement {
    * Initializes the annotator component.
    */
   initialize() {
-    // Set up global callback for page-selector to check unsaved changes
-    window.TPEN_CHECK_UNSAVED = () => this.#resolvedAnnotationPage?.$isDirty ?? false
-
     // Must know the User
     if (!this.#userForAnnotorious) {
       const agent = getAgentIRIFromToken(this.userToken)
@@ -93,8 +91,6 @@ class AnnotoriousAnnotator extends HTMLElement {
 
   disconnectedCallback() {
     try { this._unsubProject?.() } catch {}
-    // Clean up global unsaved changes callback
-    if (window.TPEN_CHECK_UNSAVED) delete window.TPEN_CHECK_UNSAVED
     // Clear any pending timeouts
     for (const timeoutId of this.#pendingTimeouts) {
       clearTimeout(timeoutId)
@@ -282,6 +278,13 @@ class AnnotoriousAnnotator extends HTMLElement {
           outline: 2px solid var(--primary-color);
           outline-offset: 2px;
         }
+        tpen-page-selector {
+          position: absolute;
+          display: none;
+          top: 55px;
+          right: 10px;
+          z-index: 9;
+        }
         #projectManagementBtn {
           position: absolute;
           display: none;
@@ -346,6 +349,7 @@ class AnnotoriousAnnotator extends HTMLElement {
           <input id="saveBtn" type="button" value="Save Annotations"/>
         </div>
         <button type="button" id="autoParseBtn">Auto Parse</button>
+        <tpen-page-selector></tpen-page-selector>
         <button type="button" id="projectManagementBtn"><span aria-hidden="true">↪</span> Go to Project Management</button>
         <div id="annotator-container"> Loading Annotorious and getting the TPEN3 Page information... </div>
         <div id="ruler"></div>
@@ -443,10 +447,8 @@ class AnnotoriousAnnotator extends HTMLElement {
     this.renderCleanup.onElement(deleteAllBtn, "click", async (e) => await this.deleteAllAnnotations(e))
     this.renderCleanup.onWindow('beforeunload', (ev) => {
       if (this.#resolvedAnnotationPage?.$isDirty) {
-        if (!confirm("If you leave unsaved changes will be lost.")){
-          ev.preventDefault()
-          return
-        }
+        ev.preventDefault()
+        ev.returnValue = ''
       }
     })
     // OSD and AnnotoriousOSD need some cycles to load, they are big files.
@@ -852,6 +854,7 @@ class AnnotoriousAnnotator extends HTMLElement {
     this.#annotoriousContainer.style.backgroundImage = "none"
     this.shadowRoot.getElementById("tools-container").style.display = "block"
     this.shadowRoot.querySelector("#autoParseBtn").style.display = "block"
+    this.shadowRoot.querySelector("tpen-page-selector").style.display = "block"
     if (CheckPermissions.checkEditAccess("PROJECT")) {
       const manageProjectBtn = this.shadowRoot.querySelector("#projectManagementBtn")
       manageProjectBtn.style.display = "block"
