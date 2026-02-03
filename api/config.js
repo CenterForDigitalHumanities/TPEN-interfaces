@@ -22,8 +22,8 @@ export const ACTIVE_ENV = (
 
 export const ENVIRONMENTS = {
   dev: {
-    BASEURL: 'https://dev.app.t-pen.org',
-    servicesURL: 'https://dev.api.t-pen.org',
+    BASEURL: 'http://localhost:4000',
+    servicesURL: 'http://localhost:3012',
     tinyThingsURL: 'https://dev.tiny.t-pen.org',
     staticURL: 'https://dev.static.t-pen.org',
     RERUMURL: 'https://devstore.rerum.io/v1',

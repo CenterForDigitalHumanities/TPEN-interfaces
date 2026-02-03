@@ -5,6 +5,7 @@ import CheckPermissions from "/components/check-permissions/checkPermissions.js"
 import { orderPageItemsByColumns } from "/utilities/columnOrdering.js"
 import { onProjectReady } from "/utilities/projectReady.js"
 import { CleanupRegistry } from "/utilities/CleanupRegistry.js"
+import { insertTextAtCursor } from "/utilities/shortcutTextInput.js"
 
 /**
  * TranscriptionBlock - Provides the main transcription input interface with navigation.
@@ -383,6 +384,25 @@ export default class TranscriptionBlock extends HTMLElement {
     }
 
     handleKeydown(e) {
+        // QuickType shortcuts: Ctrl+1-9 for indices 0-8, Ctrl+0 for index 9
+        if (e.ctrlKey && !e.shiftKey && !e.altKey && /^[0-9]$/.test(e.key)) {
+            const quicktype = TPEN.activeProject?.interfaces?.quicktype
+            if (Array.isArray(quicktype) && quicktype.length > 0) {
+                // Map digit key to array index: '1'->0, '2'->1, ..., '9'->8, '0'->9
+                const index = e.key === '0' ? 9 : parseInt(e.key, 10) - 1
+
+                if (index >= 0 && index < quicktype.length) {
+                    e.preventDefault() // Prevent browser tab switching
+                    const text = quicktype[index]
+                    const inputField = this.shadowRoot.querySelector('.transcription-input')
+                    if (inputField && text) {
+                        insertTextAtCursor(inputField, text)
+                    }
+                    return
+                }
+            }
+        }
+
         // TAB: next line
         if (e.key === 'Tab' && !e.shiftKey) {
             e.preventDefault()
