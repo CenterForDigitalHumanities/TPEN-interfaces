@@ -288,12 +288,11 @@ class AnnotoriousAnnotator extends HTMLElement {
         tpen-page-selector::part(select) {
           font-size: clamp(0.8rem, 1vw, 1rem);
           padding: 10px 15px;
-          border: none;
+          border: 2px outset buttonborder;
           border-radius: 5px;
           background-color: var(--primary-color);
           color: var(--white);
           cursor: pointer;
-          border: 2px outset buttonborder;
         }
         tpen-page-selector::part(select):hover,
         tpen-page-selector::part(select):focus-visible {

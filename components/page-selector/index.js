@@ -3,8 +3,6 @@ import CheckPermissions from "../check-permissions/checkPermissions.js"
 import { onProjectReady } from "../../utilities/projectReady.js"
 import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 
-const eventDispatcher = TPEN.eventDispatcher
-
 /**
  * PageSelector - Dropdown for selecting pages within a project.
  * Provides navigation between manuscript pages.
@@ -64,14 +62,19 @@ export default class PageSelector extends HTMLElement {
     #buildPagesList() {
         this.#pages = []
         const layers = TPEN.activeProject?.layers || []
+        const seenIds = new Set()
 
         layers.forEach(layer => {
             (layer.pages || []).forEach(page => {
-                this.#pages.push({
-                    id: page.id.split('/').pop(),
-                    fullId: page.id,
-                    label: this.#getLabel(page)
-                })
+                const id = page.id.split('/').pop()
+                if (!seenIds.has(id)) {
+                    seenIds.add(id)
+                    this.#pages.push({
+                        id: id,
+                        fullId: page.id,
+                        label: this.#getLabel(page)
+                    })
+                }
             })
         })
 
@@ -145,7 +148,7 @@ export default class PageSelector extends HTMLElement {
         const selectedPage = this.#pages.find(p => p.id === selectedPageId)
 
         // Dispatch event for interested components
-        eventDispatcher.dispatch('tpen-page-selected', {
+        TPEN.eventDispatcher.dispatch('tpen-page-selected', {
             pageId: selectedPageId,
             pageIndex: this.#pages.indexOf(selectedPage),
             page: selectedPage
