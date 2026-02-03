@@ -280,8 +280,6 @@ class QuickTypeEditorDialog extends HTMLElement {
             return `Ctrl+${index + 1}`  // Indices 0-8 → Ctrl+1 through Ctrl+9
         } else if (index === 9) {
             return `Ctrl+0`             // Index 9 → Ctrl+0
-        } else if (index < 19) {
-            return `Ctrl+Shift+${index - 9}`  // Indices 10-18 → Ctrl+Shift+1 through Ctrl+Shift+9
         } else {
             return `#${index + 1}`      // No keyboard shortcut, just display number
         }
