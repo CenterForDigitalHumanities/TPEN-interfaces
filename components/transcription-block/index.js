@@ -384,7 +384,7 @@ export default class TranscriptionBlock extends HTMLElement {
     }
 
     handleKeydown(e) {
-        // QuickType shortcuts: Ctrl+0-9 and Ctrl+Shift+1-9
+        // QuickType shortcuts: Ctrl+0-9 and Ctrl+Shift+0-9
         if (this.handleQuickTypeShortcut(e)) return
 
         // TAB: next line
