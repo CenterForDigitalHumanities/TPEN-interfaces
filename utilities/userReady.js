@@ -40,6 +40,9 @@ export const onUserReady = (ctx, handler, eventName = 'tpen-user-loaded') => {
                 const user = new User(userId)
                 user.authentication = token
                 user.getProfile()
+                    .catch((error) => {
+                        console.error("Failed to load user profile:", error)
+                    })
                     .finally(() => { isFetchingUser = false })
             }
         }

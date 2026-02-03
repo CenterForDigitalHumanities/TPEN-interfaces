@@ -36,6 +36,9 @@ export const onUserProjectsReady = (ctx, handler) => {
         const token = TPEN.getAuthorization()
         if (token) {
             TPEN.getUserProjects(token)
+                .catch((error) => {
+                    console.error("Failed to load user projects:", error)
+                })
                 .finally(() => { isFetching = false })
         } else {
             isFetching = false
