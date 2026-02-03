@@ -63,6 +63,9 @@ class AnnotoriousAnnotator extends HTMLElement {
    * Initializes the annotator component.
    */
   initialize() {
+    // Set up global callback for page-selector to check unsaved changes
+    window.TPEN_CHECK_UNSAVED = () => this.#resolvedAnnotationPage?.$isDirty ?? false
+
     // Must know the User
     if (!this.#userForAnnotorious) {
       const agent = getAgentIRIFromToken(this.userToken)
@@ -90,6 +93,8 @@ class AnnotoriousAnnotator extends HTMLElement {
 
   disconnectedCallback() {
     try { this._unsubProject?.() } catch {}
+    // Clean up global unsaved changes callback
+    if (window.TPEN_CHECK_UNSAVED) delete window.TPEN_CHECK_UNSAVED
     // Clear any pending timeouts
     for (const timeoutId of this.#pendingTimeouts) {
       clearTimeout(timeoutId)
