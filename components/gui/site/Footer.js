@@ -5,7 +5,6 @@ class TpenFooter extends HTMLElement {
     links = [
         { href: '/index', text: 'Home' },
         { href: '/account', text: 'Account' },
-        { href: '/contact', text: 'Contact' },
         { href: '/about', text: 'About Us' },
     ]
 
