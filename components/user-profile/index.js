@@ -1,20 +1,19 @@
 import TPEN from '../../api/TPEN.js'
-import User from '../../api/User.js'
 import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
+import { onUserReady } from '../../utilities/userReady.js'
 
 /**
  * UserProfile - Displays and allows editing of user profile information.
  * @element tpen-user-profile
  */
 class UserProfile extends HTMLElement {
-    static get observedAttributes() {
-        return ['tpen-user-id']
-    }
     user = TPEN.currentUser
     /** @type {CleanupRegistry} Registry for cleanup handlers */
     cleanup = new CleanupRegistry()
     /** @type {CleanupRegistry} Registry for render-specific handlers */
     renderCleanup = new CleanupRegistry()
+    /** @type {Function|null} Unsubscribe function for user ready listener */
+    _unsubUser = null
 
     constructor() {
         super()
@@ -23,28 +22,23 @@ class UserProfile extends HTMLElement {
 
     connectedCallback() {
         TPEN.attachAuthentication(this)
-        this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-user-loaded', ev => {
-            this.render(ev.detail)
-            this.updateProfile(ev.detail)
-            this.user = ev.detail
-        })
+        this._unsubUser = onUserReady(this, this.handleUserReady)
     }
 
     disconnectedCallback() {
+        try { this._unsubUser?.() } catch {}
         this.renderCleanup.run()
         this.cleanup.run()
     }
 
-    attributeChangedCallback(name, oldValue, newValue) {
-        if (name === 'tpen-user-id') {
-            if (oldValue !== newValue) {
-                const currVal = this?.user?._id
-                if (newValue === currVal) return
-                const loadedUser = new User(newValue)
-                loadedUser.authentication = TPEN.getAuthorization()
-                loadedUser.getProfile()
-            }
-        }
+    /**
+     * Handler for when user data is ready.
+     * @param {Object} user - The loaded user object
+     */
+    handleUserReady(user) {
+        this.user = user
+        this.render(user)
+        this.updateProfile(user)
     }
 
     updateProfile(profile) {
