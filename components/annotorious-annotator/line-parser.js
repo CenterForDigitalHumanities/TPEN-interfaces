@@ -571,8 +571,17 @@ class AnnotoriousAnnotator extends HTMLElement {
       `
       return
     }
-    // Use the Annotations and Image on the Canvas for inititalizing the Annotorious portion of the component.
-    this.loadAnnotorious(resolvedCanvas)
+    // Use the Annotations and Image on the Canvas for initializing the Annotorious portion of the component.
+    try {
+      await this.loadAnnotorious(resolvedCanvas)
+    } catch (err) {
+      // Canvas resolved but image extraction failed
+      this.shadowRoot.innerHTML = `
+        <h3>Image Error</h3>
+        <p>The Canvas loaded but the image could not be extracted.</p>
+        <p style="font-size: 0.875rem; color: #666;">${err.message}</p>
+      `
+    }
   }
 
   async validateImageUrl(url) {
@@ -602,7 +611,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       throw new Error("Cannot Resolve Canvas Image", { "cause": "The Image is 404 or unresolvable." })
     }
     let imgx = resolvedCanvas?.items?.[0]?.items?.[0]?.body?.width
-    if (!imgx) imgx = resolvedCanvas?.images[0]?.resource?.width
+    if (!imgx) imgx = resolvedCanvas?.images?.[0]?.resource?.width
     let imgy = resolvedCanvas?.items?.[0]?.items?.[0]?.body?.height
     if (!imgy) imgy = resolvedCanvas?.images?.[0]?.resource?.height
     this.#imageDims = [imgx, imgy]

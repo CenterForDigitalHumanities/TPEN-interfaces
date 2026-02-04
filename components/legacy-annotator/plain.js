@@ -341,7 +341,15 @@ class LegacyAnnotator extends HTMLElement {
         }
         // Note this will process the id from embedded Canvas objects to pass forward and be resolved.
         const canvasURI = this.processPageTarget(targetCanvas)
-        this.loadCanvas(canvasURI)
+        try {
+            await this.loadCanvas(canvasURI)
+        } catch (err) {
+            // Canvas or image loading failed
+            this.shadowRoot.innerHTML = `
+                <h3>Canvas Error</h3>
+                <p>${err.message}</p>
+            `
+        }
         // Note this does not load and draw the existing Annotations.  That functionality was not present at the time of componentizing.
     }
 
