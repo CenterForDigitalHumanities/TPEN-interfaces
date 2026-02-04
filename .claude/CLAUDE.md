@@ -389,6 +389,7 @@ TPEN.eventDispatcher.on('tpen-project-loaded', (ev) => {
 // - tpen-project-loaded: Project data loaded
 // - tpen-project-saved: Project saved
 // - tpen-project-load-failed: Project load failed
+// - tpen-page-selected: Page selected in page selector ({ pageId, pageIndex, page })
 // - tpen-toast: Show toast message ({ status, message })
 // - token-expiration: Auth token expired
 

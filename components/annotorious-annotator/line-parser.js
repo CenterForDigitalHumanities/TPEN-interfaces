@@ -18,6 +18,7 @@ import { detectTextLinesCombined } from "./detect-lines.js"
 import { v4 as uuidv4 } from "https://cdn.skypack.dev/uuid@9.0.1"
 import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 import { onProjectReady } from '../../utilities/projectReady.js'
+import '../page-selector/index.js'
 
 class AnnotoriousAnnotator extends HTMLElement {
   #osd
@@ -102,7 +103,8 @@ class AnnotoriousAnnotator extends HTMLElement {
 
   // Initialize HTML after loading in a TPEN3 Project
   render() {
-    if (!CheckPermissions.checkAllAccess("LINE", "SELECTOR")) {
+    // Check that user can create AND update selectors on lines (required for the annotator)
+    if (!(CheckPermissions.checkEditAccess("LINE", "SELECTOR") && CheckPermissions.checkCreateAccess("LINE", "SELECTOR"))) {
       this.shadowRoot.innerHTML = "You do not have the proper project permissions to use this interface."
       return
     }
@@ -277,6 +279,30 @@ class AnnotoriousAnnotator extends HTMLElement {
           outline: 2px solid var(--primary-color);
           outline-offset: 2px;
         }
+        tpen-page-selector {
+          position: absolute;
+          display: none;
+          top: 60px;
+          right: 10px;
+          z-index: 9;
+        }
+        tpen-page-selector::part(select) {
+          font-size: clamp(0.8rem, 1vw, 1rem);
+          padding: 10px 15px;
+          border: 2px outset buttonborder;
+          border-radius: 5px;
+          background-color: var(--primary-color);
+          color: var(--white);
+          cursor: pointer;
+          max-width: 300px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        tpen-page-selector::part(select):hover,
+        tpen-page-selector::part(select):focus-visible {
+          outline: 2px solid var(--primary-color);
+          outline-offset: 2px;
+        }
         #projectManagementBtn {
           position: absolute;
           display: none;
@@ -336,11 +362,12 @@ class AnnotoriousAnnotator extends HTMLElement {
            <span>Annotation Visibility</span>
            <input type="checkbox" id="seeTool" checked> 
           </label>
-          <input id="deleteAllBtn" type="button" value="Delete All Annotations"/>
-          <a id="createColumnsBtn" href="#">Manage Columns</a>
-          <input id="saveBtn" type="button" value="Save Annotations"/>
+          <button id="deleteAllBtn" type="button">Delete All Annotations</button>
+          <button id="createColumnsBtn" type="button">Manage Columns</button>
+          <button id="saveBtn" type="button">Save Annotations</button>
         </div>
         <button type="button" id="autoParseBtn">Auto Parse</button>
+        <tpen-page-selector></tpen-page-selector>
         <button type="button" id="projectManagementBtn"><span aria-hidden="true">↪</span> Go to Project Management</button>
         <div id="annotator-container"> Loading Annotorious and getting the TPEN3 Page information... </div>
         <div id="ruler"></div>
@@ -438,10 +465,8 @@ class AnnotoriousAnnotator extends HTMLElement {
     this.renderCleanup.onElement(deleteAllBtn, "click", async (e) => await this.deleteAllAnnotations(e))
     this.renderCleanup.onWindow('beforeunload', (ev) => {
       if (this.#resolvedAnnotationPage?.$isDirty) {
-        if (!confirm("If you leave unsaved changes will be lost.")){
-          ev.preventDefault()
-          return
-        }
+        ev.preventDefault()
+        ev.returnValue = ''
       }
     })
     // OSD and AnnotoriousOSD need some cycles to load, they are big files.
@@ -847,6 +872,10 @@ class AnnotoriousAnnotator extends HTMLElement {
     this.#annotoriousContainer.style.backgroundImage = "none"
     this.shadowRoot.getElementById("tools-container").style.display = "block"
     this.shadowRoot.querySelector("#autoParseBtn").style.display = "block"
+    const pageSelector = this.shadowRoot.querySelector("tpen-page-selector")
+    if (pageSelector) {
+      pageSelector.style.display = "block"
+    }
     if (CheckPermissions.checkEditAccess("PROJECT")) {
       const manageProjectBtn = this.shadowRoot.querySelector("#projectManagementBtn")
       manageProjectBtn.style.display = "block"
@@ -1029,7 +1058,7 @@ class AnnotoriousAnnotator extends HTMLElement {
     }
     const saveButton = this.shadowRoot.getElementById("saveBtn")
     saveButton.setAttribute("disabled", "true")
-    saveButton.value = "saving.  please wait..."
+    saveButton.textContent = "saving.  please wait..."
     let allAnnotations = this.#annotoriousInstance.getAnnotations()
     // Convert the Annotation selectors so that they are relative to the Canvas dimensions
     allAnnotations = this.convertSelectors(allAnnotations, false)
@@ -1061,7 +1090,7 @@ class AnnotoriousAnnotator extends HTMLElement {
         return res.json()
       })
       .catch(err => {
-        saveButton.value = "ERROR"
+        saveButton.textContent = "ERROR"
         throw err
       })
     page.items = page.items.map(i => ({
@@ -1075,7 +1104,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       status: "success"
     })
     saveButton.removeAttribute("disabled")
-    saveButton.value = "Save Annotations"
+    saveButton.textContent = "Save Annotations"
     this.#resolvedAnnotationPage.$isDirty = false
     return this.#modifiedAnnotationPage
   }
