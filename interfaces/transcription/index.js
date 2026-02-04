@@ -49,6 +49,20 @@ export default class TranscriptionInterface extends HTMLElement {
     this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-transcription-previous-line', () => this.updateLines())
     this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-transcription-next-line', () => this.updateLines())
 
+    // Listen for canvas resolution failures to show toast
+    this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-canvas-resolution-failed', (event) => {
+      const { errorType, message, canvasUri } = event.detail ?? {}
+      let userMessage = 'Failed to load canvas image.'
+      if (errorType === 'not_found') {
+        userMessage = 'Canvas not found. The image may have been moved or deleted.'
+      } else if (errorType === 'unauthorized' || errorType === 'forbidden') {
+        userMessage = 'Access denied to canvas image.'
+      } else if (errorType === 'network') {
+        userMessage = 'Network error loading canvas. Check your connection.'
+      }
+      TPEN.eventDispatcher.dispatch('tpen-toast', { status: 'error', message: userMessage })
+    })
+
     // Listen for navigation messages from tools
     this.cleanup.onWindow('message', this.#handleToolMessages.bind(this))
   }
@@ -611,10 +625,9 @@ export default class TranscriptionInterface extends HTMLElement {
     if (bottomImage) bottomImage.moveUnder(x, y, width, height, topImage)
   }
 
-  getImage(project) {
+  async getImage(project) {
     const imageCanvas = this.shadowRoot.querySelector('.canvas-image')
     let canvasID
-    let err = {}
     const allPages = project.layers.flatMap(layer => layer.pages)
     if (TPEN?.screen?.pageInQuery) {
       const matchingPage = allPages.find(
@@ -625,33 +638,25 @@ export default class TranscriptionInterface extends HTMLElement {
       canvasID = allPages[0]?.target
     }
 
-    fetch(canvasID)
-      .then(response => {
-        if (response.status === 404) {
-          err = { "status": 404, "statusText": "Canvas not found" }
-          throw err
-        }
-        return response.json()
-      })
-      .then(canvas => {
-        // Handle both Presentation API v3 (items) and v2 (images) formats
-        const imageId = canvas.items?.[0]?.items?.[0]?.body?.id ?? canvas.images?.[0]?.resource?.id
-        if (imageId) {
-          imageCanvas.src = imageId
-        }
-        else {
-          err = { "status": 500, "statusText": "Image could not be found in Canvas" }
-          throw err
-        }
-      })
-      .catch(error => {
-        if (error?.status === 404) {
-          imageCanvas.src = "../../assets/images/404_PageNotFound.jpeg"
-        }
-        else {
-          imageCanvas.src = "../../assets/images/noimage.jpg"
-        }
-      })
+    if (!canvasID) {
+      imageCanvas.src = "../../assets/images/noimage.jpg"
+      return
+    }
+
+    const canvas = await vault.get(canvasID, 'canvas', false, 'transcription-interface')
+    if (!canvas) {
+      // Event already dispatched by vault, show placeholder
+      imageCanvas.src = "../../assets/images/404_PageNotFound.jpeg"
+      return
+    }
+
+    // Handle both Presentation API v3 (items) and v2 (images) formats
+    const imageId = canvas.items?.[0]?.items?.[0]?.body?.id ?? canvas.images?.[0]?.resource?.id ?? canvas.images?.[0]?.resource?.['@id']
+    if (imageId) {
+      imageCanvas.src = imageId
+    } else {
+      imageCanvas.src = "../../assets/images/noimage.jpg"
+    }
   }
 
   setCanvasAndSelector(thisLine, page) {
@@ -680,7 +685,13 @@ export default class TranscriptionInterface extends HTMLElement {
       // Get canvas from page target even when there are no lines
       const { canvasID } = this.setCanvasAndSelector(null, this.#page)
       if (!canvasID) return
-      const canvas = this.#canvas = await vault.get(canvasID, 'canvas')
+      const canvas = this.#canvas = await vault.get(canvasID, 'canvas', false, 'transcription-interface')
+      if (!canvas) {
+        // Canvas resolution failed - event already dispatched by vault
+        // Show placeholder for the canvas area
+        topImage.setAttribute('region', '0,0,1000,100')
+        return
+      }
       // Show full page when there are no lines
       const regionValue = `0,0,${canvas?.width ?? 'full'},${(canvas?.height && canvas?.height / 10) ?? 120}`
       topImage.canvas = canvasID
@@ -697,7 +708,14 @@ export default class TranscriptionInterface extends HTMLElement {
     
     if (!(thisLine?.body)) thisLine = await vault.get(thisLine, 'annotation', true)
     const { canvasID, region } = this.setCanvasAndSelector(thisLine, this.#page)
-    const canvas = this.#canvas = await vault.get(canvasID, 'canvas')
+    const canvas = this.#canvas = await vault.get(canvasID, 'canvas', false, 'transcription-interface')
+    if (!canvas) {
+      // Canvas resolution failed - event already dispatched by vault
+      // Use placeholder region dimensions
+      topImage.canvas = canvasID
+      topImage.setAttribute('region', region ?? '0,0,1000,100')
+      return
+    }
     const regionValue = region ?? `0,0,${canvas?.width ?? 'full'},${(canvas?.height && canvas?.height / 10) ?? 120}`
     topImage.canvas = canvasID
     bottomImage.canvas = canvas

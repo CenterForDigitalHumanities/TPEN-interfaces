@@ -18,6 +18,7 @@ import { detectTextLinesCombined } from "./detect-lines.js"
 import { v4 as uuidv4 } from "https://cdn.skypack.dev/uuid@9.0.1"
 import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 import { onProjectReady } from '../../utilities/projectReady.js'
+import vault from '../../js/vault.js'
 import '../page-selector/index.js'
 
 class AnnotoriousAnnotator extends HTMLElement {
@@ -553,40 +554,22 @@ class AnnotoriousAnnotator extends HTMLElement {
 
   /**
    * Fetch a Canvas URI and check that it is a Canvas object.  Pass it forward to render the Image into the interface.
-   * Be prepared to recieve presentation api 2+
-   *
-   * FIXME
-   * Give users a path when Canvas URIs do not resolve or resolve to something unexpected.
+   * Be prepared to receive presentation api 2+.
+   * Uses vault for consistent caching and error handling.
    *
    * @param uri A String Canvas URI
    */
   async processCanvas(uri) {
     if (!uri) return
-      // TODO Vault me?
-    const resolvedCanvas = await fetch(uri)
-      .then(r => {
-        if (!r.ok) throw r
-        return r.json()
-      })
-      .catch(e => {
-        this.shadowRoot.innerHTML = `
-          <h3>Canvas Error</h3>
-          <p>The Canvas within this Page could not be loaded.</p>
-          <p> ${e.status ?? e.code}: ${e.statusText ?? e.message} </p>
-        `
-        throw e
-      })
-    const context = resolvedCanvas["@context"]
-    if (!context?.includes("iiif.io/api/presentation/3/context.json")) {
-      console.warn("The Canvas object did not have the IIIF Presentation API 3 context and may not be parseable.")
-    }
-    const id = resolvedCanvas["@id"] ?? resolvedCanvas.id
-    if (!id) {
-      throw new Error("Cannot Resolve Canvas or Image", { "cause": "The Canvas is 404 or unresolvable." })
-    }
-    const type = resolvedCanvas["@type"] ?? resolvedCanvas.type
-    if (!(type === "Canvas" || type === "sc:Canvas")) {
-      throw new Error(`Provided URI did not resolve a 'Canvas'.  It resolved a '${type}'`, { "cause": "URI must point to a Canvas." })
+    const resolvedCanvas = await vault.get(uri, 'canvas', false, 'tpen-line-parser')
+    if (!resolvedCanvas) {
+      // Canvas resolution failed - event already dispatched by vault
+      this.shadowRoot.innerHTML = `
+        <h3>Canvas Error</h3>
+        <p>The Canvas within this Page could not be loaded.</p>
+        <p style="word-break: break-all; font-size: 0.875rem; color: #666;">${uri}</p>
+      `
+      return
     }
     // Use the Annotations and Image on the Canvas for inititalizing the Annotorious portion of the component.
     this.loadAnnotorious(resolvedCanvas)
