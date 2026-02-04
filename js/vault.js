@@ -219,7 +219,8 @@ class Vault {
                     const type = value?.['@type'] ?? value?.type
                     if (id && type && !visited.has(id)) {
                         visited.add(id)
-                        this.get(id, type)
+                        // Fire-and-forget for background caching - errors are non-fatal
+                        this.get(id, type).catch(() => {})
                         // Project embedded object to minimal form
                         const label = value?.label ?? value?.title
                         obj[key] = { id, type, ...(label && { label }) }
@@ -267,14 +268,14 @@ class Vault {
         if (!typeStore.has(id)) return
         typeStore.delete(id)
         const cacheKey = this._cacheKey(type, id)
-        localStorage.removeItem(cacheKey)
+        try { localStorage.removeItem(cacheKey) } catch {}
     }
 
     clear(itemType) {
         const type = this._normalizeType(itemType)
         for (const key of Object.keys(localStorage)) {
             if (key.startsWith(`vault:${type}:`)) {
-                localStorage.removeItem(key)
+                try { localStorage.removeItem(key) } catch {}
             }
         }
         this.store.delete(type)
