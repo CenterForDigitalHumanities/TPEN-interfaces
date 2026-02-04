@@ -22,7 +22,7 @@ export const ACTIVE_ENV = (
 
 export const ENVIRONMENTS = {
   dev: {
-    BASEURL: 'http://localhost:4000',
+    BASEURL: 'https://dev.app.t-pen.org',
     servicesURL: 'https://dev.api.t-pen.org',
     tinyThingsURL: 'https://dev.tiny.t-pen.org',
     staticURL: 'https://dev.static.t-pen.org',
