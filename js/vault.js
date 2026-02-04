@@ -73,7 +73,9 @@ class Vault {
         if (context) {
             const validContexts = [
                 'http://iiif.io/api/presentation/2/context.json',
-                'http://iiif.io/api/presentation/3/context.json'
+                'https://iiif.io/api/presentation/2/context.json',
+                'http://iiif.io/api/presentation/3/context.json',
+                'https://iiif.io/api/presentation/3/context.json'
             ]
             const contexts = Array.isArray(context) ? context : [context]
             const hasValidContext = contexts.some(c => validContexts.includes(c))
@@ -134,7 +136,7 @@ class Vault {
                     if (validationError) {
                         validationError.component = component
                         this._dispatchCanvasError(validationError)
-                        localStorage.removeItem(cacheKey)
+                        try { localStorage.removeItem(cacheKey) } catch {}
                         return null
                     }
                 }
@@ -142,7 +144,7 @@ class Vault {
                 return parsed
             } catch {
                 // Invalid JSON in cache, remove it
-                localStorage.removeItem(cacheKey)
+                try { localStorage.removeItem(cacheKey) } catch {}
             }
         }
 

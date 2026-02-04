@@ -430,9 +430,9 @@ class ReadOnlyViewTranscribe extends HTMLElement {
         }
         // Handle both Presentation API v3 (items) and v2 (images) formats
         let fullImage = embeddedCanvas?.items?.[0]?.items?.[0]?.body?.id ?? embeddedCanvas?.images?.[0]?.resource?.id ?? embeddedCanvas?.images?.[0]?.resource?.['@id']
-        let imageService = embeddedCanvas?.items?.[0]?.items?.[0]?.body?.service?.id
-        let imgx = embeddedCanvas?.items?.[0]?.items?.[0]?.body?.width
-        let imgy = embeddedCanvas?.items?.[0]?.items?.[0]?.body?.height
+        let imageService = embeddedCanvas?.items?.[0]?.items?.[0]?.body?.service?.id ?? embeddedCanvas?.images?.[0]?.resource?.service?.['@id']
+        let imgx = embeddedCanvas?.items?.[0]?.items?.[0]?.body?.width ?? embeddedCanvas?.images?.[0]?.resource?.width
+        let imgy = embeddedCanvas?.items?.[0]?.items?.[0]?.body?.height ?? embeddedCanvas?.images?.[0]?.resource?.height
         this.#imageDims = [imgx || 0, imgy || 0]
         this.#canvasDims = [embeddedCanvas?.width || 0, embeddedCanvas?.height || 0]
 

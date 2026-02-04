@@ -51,7 +51,7 @@ export default class TranscriptionInterface extends HTMLElement {
 
     // Listen for canvas resolution failures to show toast
     this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-canvas-resolution-failed', (event) => {
-      const { errorType, message, canvasUri } = event.detail ?? {}
+      const { errorType } = event.detail ?? {}
       let userMessage = 'Failed to load canvas image.'
       if (errorType === 'not_found') {
         userMessage = 'Canvas not found. The image may have been moved or deleted.'
@@ -59,6 +59,10 @@ export default class TranscriptionInterface extends HTMLElement {
         userMessage = 'Access denied to canvas image.'
       } else if (errorType === 'network') {
         userMessage = 'Network error loading canvas. Check your connection.'
+      } else if (errorType === 'server_error') {
+        userMessage = 'Server error loading canvas. Please try again later.'
+      } else if (errorType === 'invalid_json' || errorType === 'invalid_type' || errorType === 'missing_id') {
+        userMessage = 'The canvas data is invalid or incomplete.'
       }
       TPEN.eventDispatcher.dispatch('tpen-toast', { status: 'error', message: userMessage })
     })
