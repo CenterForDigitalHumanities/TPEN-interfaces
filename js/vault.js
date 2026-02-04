@@ -29,16 +29,16 @@ class Vault {
      * @param {string} message - Human-readable error message
      * @param {number|null} httpStatus - HTTP status code (if applicable)
      * @param {string} canvasUri - The canvas URI that failed
-     * @param {string} [context] - Which component triggered the fetch
+     * @param {string} [component] - Which component triggered the fetch
      * @returns {Object} Standardized error object
      */
-    _createCanvasError(errorType, message, httpStatus, canvasUri, context) {
+    _createCanvasError(errorType, message, httpStatus, canvasUri, component) {
         return {
             errorType,
             message,
             httpStatus,
             canvasUri,
-            context
+            component
         }
     }
 
@@ -112,10 +112,10 @@ class Vault {
      * @param {string|Object} item - Item ID or object with id property
      * @param {string} itemType - Type of item ('canvas', 'manifest', etc.)
      * @param {boolean} [noCache=false] - Skip cache lookup
-     * @param {string} [context] - Context string for error reporting (which component triggered the fetch)
+     * @param {string} [component] - Component name for error reporting (which component triggered the fetch)
      * @returns {Promise<Object|null>} The fetched resource or null on failure
      */
-    async get(item, itemType, noCache = false, context) {
+    async get(item, itemType, noCache = false, component) {
         const type = this._normalizeType(itemType ?? item?.type ?? item?.['@type'])
         const id = this._getId(item)
         const isCanvas = type === 'canvas'
@@ -132,7 +132,7 @@ class Vault {
                 if (isCanvas) {
                     const validationError = this._validateCanvas(parsed, id)
                     if (validationError) {
-                        validationError.context = context
+                        validationError.component = component
                         this._dispatchCanvasError(validationError)
                         localStorage.removeItem(cacheKey)
                         return null
@@ -162,7 +162,7 @@ class Vault {
                         `HTTP ${response.status}: ${response.statusText}`,
                         response.status,
                         uri,
-                        context
+                        component
                     )
                     this._dispatchCanvasError(error)
                 }
@@ -179,7 +179,7 @@ class Vault {
                         'Response is not valid JSON',
                         response.status,
                         uri,
-                        context
+                        component
                     )
                     this._dispatchCanvasError(error)
                 }
@@ -190,7 +190,7 @@ class Vault {
             if (isCanvas) {
                 const validationError = this._validateCanvas(data, uri)
                 if (validationError) {
-                    validationError.context = context
+                    validationError.component = component
                     this._dispatchCanvasError(validationError)
                     return null
                 }
@@ -236,7 +236,7 @@ class Vault {
                     err.message || 'Network error',
                     null,
                     id,
-                    context
+                    component
                 )
                 this._dispatchCanvasError(error)
             }
