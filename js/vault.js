@@ -34,10 +34,10 @@ class Vault {
      */
     _createCanvasError(errorType, message, httpStatus, canvasUri, context) {
         return {
-            canvasUri,
             errorType,
-            httpStatus,
             message,
+            httpStatus,
+            canvasUri,
             context
         }
     }
@@ -83,28 +83,6 @@ class Vault {
         }
 
         return null // Valid canvas
-    }
-
-    /**
-     * Extracts the primary image URL from a Canvas.
-     * Supports both IIIF Presentation API v2 and v3 formats.
-     * @param {Object} canvas - The canvas object
-     * @returns {string|null} The image URL or null if not found
-     */
-    _extractImageUrl(canvas) {
-        // IIIF v3: canvas.items[0].items[0].body.id
-        const v3Image = canvas?.items?.[0]?.items?.[0]?.body
-        if (v3Image) {
-            return v3Image.id ?? v3Image['@id'] ?? null
-        }
-
-        // IIIF v2: canvas.images[0].resource.id or canvas.images[0].resource['@id']
-        const v2Resource = canvas?.images?.[0]?.resource
-        if (v2Resource) {
-            return v2Resource.id ?? v2Resource['@id'] ?? null
-        }
-
-        return null
     }
 
     /**
