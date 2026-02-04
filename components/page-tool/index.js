@@ -271,6 +271,8 @@ export default class PageTool extends HTMLElement {
     resetFilters() {
       this.contrast = 100
       this.brightness = 100
+      this.grayscaleActive = false
+      this.invertActive = false
       const contrastSlider = this.shadowRoot.querySelector('.contrast-slider')
       const brightnessSlider = this.shadowRoot.querySelector('.brightness-slider')
       if (contrastSlider) contrastSlider.value = 100
