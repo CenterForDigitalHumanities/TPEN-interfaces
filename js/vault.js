@@ -126,7 +126,8 @@ class Vault {
         if (result) return result
 
         const cacheKey = this._cacheKey(type, id)
-        const cached = localStorage.getItem(cacheKey)
+        let cached
+        try { cached = localStorage.getItem(cacheKey) } catch {}
         if (cached && !noCache) {
             try {
                 const parsed = JSON.parse(cached)
@@ -273,11 +274,13 @@ class Vault {
 
     clear(itemType) {
         const type = this._normalizeType(itemType)
-        for (const key of Object.keys(localStorage)) {
-            if (key.startsWith(`vault:${type}:`)) {
-                try { localStorage.removeItem(key) } catch {}
+        try {
+            for (const key of Object.keys(localStorage)) {
+                if (key.startsWith(`vault:${type}:`)) {
+                    localStorage.removeItem(key)
+                }
             }
-        }
+        } catch {}
         this.store.delete(type)
     }
 
