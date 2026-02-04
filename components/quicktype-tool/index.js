@@ -4,6 +4,7 @@ const eventDispatcher = TPEN.eventDispatcher
 import CheckPermissions from "../check-permissions/checkPermissions.js"
 import { onProjectReady } from "../../utilities/projectReady.js"
 import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
+import { insertTextAtCursor } from '../../utilities/shortcutTextInput.js'
 import "./quicktype-editor-dialog.js"
 
 /**
@@ -74,18 +75,10 @@ class QuickTypeTool extends HTMLElement {
                 const char = btn.textContent
                 const iface = document.querySelector('[data-interface-type="transcription"]')
                 const block = iface?.shadowRoot?.querySelector('tpen-transcription-block')?.shadowRoot
-                let textAreaContent = block?.querySelector('.transcription-input')
+                const textAreaContent = block?.querySelector('.transcription-input')
 
-                if (textAreaContent && textAreaContent instanceof HTMLInputElement) {
-                    const start = textAreaContent.selectionStart
-                    const end = textAreaContent.selectionEnd
-                    const value = textAreaContent.value
-
-                    textAreaContent.value = value.slice(0, start) + char + value.slice(end)
-
-                    textAreaContent.selectionStart = textAreaContent.selectionEnd = start + char.length
-                    textAreaContent.focus()
-                    textAreaContent.dispatchEvent(new Event('input', { bubbles: true }))
+                if (textAreaContent) {
+                    insertTextAtCursor(textAreaContent, char)
                 }
             })
         })

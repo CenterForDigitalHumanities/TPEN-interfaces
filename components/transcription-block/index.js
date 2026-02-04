@@ -5,6 +5,7 @@ import CheckPermissions from "/components/check-permissions/checkPermissions.js"
 import { orderPageItemsByColumns } from "/utilities/columnOrdering.js"
 import { onProjectReady } from "/utilities/projectReady.js"
 import { CleanupRegistry } from "/utilities/CleanupRegistry.js"
+import { insertTextAtCursor } from "/utilities/shortcutTextInput.js"
 
 /**
  * TranscriptionBlock - Provides the main transcription input interface with navigation.
@@ -383,6 +384,9 @@ export default class TranscriptionBlock extends HTMLElement {
     }
 
     handleKeydown(e) {
+        // QuickType shortcuts: Ctrl+0-9 and Ctrl+Shift+0-9
+        if (this.handleQuickTypeShortcut(e)) return
+
         // TAB: next line
         if (e.key === 'Tab' && !e.shiftKey) {
             e.preventDefault()
@@ -419,6 +423,40 @@ export default class TranscriptionBlock extends HTMLElement {
             this.moveToLastLine()
             return
         }
+    }
+
+    /**
+     * Handles QuickType keyboard shortcuts for inserting predefined text.
+     * @param {KeyboardEvent} e - The keyboard event
+     * @returns {boolean} True if a shortcut was handled, false otherwise
+     */
+    handleQuickTypeShortcut(e) {
+        if (!e.ctrlKey || e.altKey) return false
+
+        const quicktype = TPEN.activeProject?.interfaces?.quicktype
+        if (!Array.isArray(quicktype) || quicktype.length === 0) return false
+
+        let index = -1
+
+        if (!e.shiftKey && /^[0-9]$/.test(e.key)) {
+            // Ctrl+1-9 → indices 0-8, Ctrl+0 → index 9
+            index = e.key === '0' ? 9 : parseInt(e.key, 10) - 1
+        } else if (e.shiftKey && /^Digit[0-9]$/.test(e.code)) {
+            // Ctrl+Shift+1-9 → indices 10-18, Ctrl+Shift+0 → index 19
+            // Use e.code since e.key returns shifted characters (!, @, #, etc.)
+            const digit = parseInt(e.code.charAt(5), 10)
+            index = digit === 0 ? 19 : digit + 9
+        }
+
+        if (index >= 0 && index < quicktype.length) {
+            e.preventDefault()
+            const inputField = this.shadowRoot.querySelector('.transcription-input')
+            if (inputField && quicktype[index]) {
+                insertTextAtCursor(inputField, quicktype[index])
+            }
+            return true
+        }
+        return false
     }
 
     moveTextDown() {
