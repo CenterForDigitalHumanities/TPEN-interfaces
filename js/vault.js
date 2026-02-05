@@ -3,7 +3,7 @@ import TPEN from "../api/TPEN.js"
 import { urlFromIdAndType } from "../js/utils.js"
 
 /** Types that are too large for localStorage (manifests can be megabytes). */
-const SKIP_LOCAL_STORAGE_TYPES = new Set(['manifest', 'sc:manifest', 'collection', 'sc:collection'])
+const SKIP_LOCAL_STORAGE_TYPES = new Set(['manifest', 'collection'])
 
 /**
  * Vault - Client-side caching utility for IIIF resources.
@@ -18,8 +18,15 @@ class Vault {
         this.canvasToManifest = new Map()
     }
 
+    /**
+     * Normalizes a IIIF type string to a canonical lowercase form.
+     * Strips the 'sc:' prefix from IIIF v2 types so v2 and v3 share a single cache namespace.
+     * @param {string} type - Raw type string (e.g., 'Canvas', 'sc:Canvas', 'Manifest')
+     * @returns {string} Normalized type (e.g., 'canvas', 'manifest')
+     */
     _normalizeType(type) {
-        return (type ?? '').toString().toLowerCase() || 'none'
+        const normalized = (type ?? '').toString().toLowerCase() || 'none'
+        return normalized.startsWith('sc:') ? normalized.slice(3) : normalized
     }
 
     _getId(item) {
@@ -156,27 +163,22 @@ class Vault {
         const manifestId = this.canvasToManifest.get(canvasId)
         if (!manifestId) return null
 
-        // Search all manifest-like types in the store
-        for (const type of ['manifest', 'sc:manifest']) {
-            const manifest = this.store.get(type)?.get(manifestId)
-            if (!manifest) continue
+        const manifest = this.store.get('manifest')?.get(manifestId)
+        if (!manifest) return null
 
-            // v3: search manifest.items
-            const v3Canvas = manifest.items?.find(c => {
-                const id = c?.id ?? c?.['@id']
-                return id === canvasId
-            })
-            if (v3Canvas) return v3Canvas
+        // v3: search manifest.items
+        const v3Canvas = manifest.items?.find(c => {
+            const id = c?.id ?? c?.['@id']
+            return id === canvasId
+        })
+        if (v3Canvas) return v3Canvas
 
-            // v2: search manifest.sequences[0].canvases
-            const v2Canvas = manifest.sequences?.[0]?.canvases?.find(c => {
-                const id = c?.['@id'] ?? c?.id
-                return id === canvasId
-            })
-            if (v2Canvas) return v2Canvas
-        }
-
-        return null
+        // v2: search manifest.sequences[0].canvases
+        const v2Canvas = manifest.sequences?.[0]?.canvases?.find(c => {
+            const id = c?.['@id'] ?? c?.id
+            return id === canvasId
+        })
+        return v2Canvas ?? null
     }
 
     /**
@@ -236,9 +238,11 @@ class Vault {
         const type = this._normalizeType(itemType ?? item?.type ?? item?.['@type'])
         const id = this._getId(item)
         const isCanvas = type === 'canvas'
-        const typeStore = this.store.get(type)
-        let result = typeStore?.get(id)
-        if (result) return result
+        if (!noCache) {
+            const typeStore = this.store.get(type)
+            const result = typeStore?.get(id)
+            if (result) return result
+        }
 
         const cacheKey = this._cacheKey(type, id)
         let cached
@@ -379,12 +383,12 @@ class Vault {
 
         // Canvas URI resolution failed — attempt manifest fallback
         if (isCanvas && canvasError) {
-            console.log(`[vault] Canvas URI failed for ${id}, attempting manifest fallback...`)
+            console.debug(`[vault] Canvas URI failed for ${id}, attempting manifest fallback...`)
             const fallback = await this._resolveCanvasFromManifest(id, component)
             if (fallback) {
                 const validationError = this._validateCanvas(fallback, id)
                 if (!validationError) {
-                    console.log(`[vault] Manifest fallback succeeded for ${id}`)
+                    console.debug(`[vault] Manifest fallback succeeded for ${id}`)
                     this.set(fallback, 'canvas')
                     return fallback
                 }
@@ -413,7 +417,7 @@ class Vault {
         this.store.get(type).set(id, item)
 
         // Index manifest canvases for fallback lookup
-        if (type === 'manifest' || type === 'sc:manifest') {
+        if (type === 'manifest') {
             this._indexManifest(item)
         }
 
@@ -435,6 +439,12 @@ class Vault {
         typeStore.delete(id)
         const cacheKey = this._cacheKey(type, id)
         try { localStorage.removeItem(cacheKey) } catch {}
+        // Clean up canvasToManifest entries pointing to this manifest
+        if (type === 'manifest') {
+            for (const [canvasId, manifestId] of this.canvasToManifest) {
+                if (manifestId === id) this.canvasToManifest.delete(canvasId)
+            }
+        }
     }
 
     clear(itemType) {
@@ -447,6 +457,10 @@ class Vault {
             }
         } catch {}
         this.store.delete(type)
+        // Clean up canvasToManifest entries when clearing manifests
+        if (type === 'manifest') {
+            this.canvasToManifest.clear()
+        }
     }
 
     all() {

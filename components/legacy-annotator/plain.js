@@ -312,14 +312,11 @@ class LegacyAnnotator extends HTMLElement {
 
     async processAnnotationPage(page) {
         if(!page) return
-        const resolvedPage = await fetch(page)
-            .then(r => {
-                if(!r.ok) throw r
-                return r.json()
-            })
-            .catch(e => {
-                throw e
-            })
+        const resolvedPage = await vault.get(page, 'annotationpage', false, 'tpen-legacy-annotator')
+        if(!resolvedPage) {
+            throw new Error("Cannot Resolve AnnotationPage",
+             {"cause":"The AnnotationPage is 404 or unresolvable."})
+        }
         const context = resolvedPage["@context"]
         if(!(context.includes("iiif.io/api/presentation/3/context.json") || context.includes("w3.org/ns/anno.jsonld"))){
             console.warn("The AnnotationPage object did not have the IIIF Presentation API 3 context and may not be parseable.")

@@ -3,7 +3,7 @@
  * Displays line text and images for an annotation page.
  * @element tpen-transcription
  */
-import { userMessage, encodeContentState } from "../iiif-tools/index.js"
+import { userMessage } from "../iiif-tools/index.js"
 import "../line-image/index.js"
 import "../line-text/index.js"
 import vault from '../../js/vault.js'
@@ -89,6 +89,7 @@ class TpenTranscriptionElement extends HTMLElement {
             const lineElem = document.createElement('tpen-line-text')
             const lineImg = document.createElement('tpen-line-image')
             lineElem.line = await vault.get(l.id, 'annotation', false, 'tpen-transcription')
+            if (!lineElem.line) return []
             if (!Array.isArray(lineElem.line.body)) {
                 lineElem.line.body = [lineElem.line.body]
             }
