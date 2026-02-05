@@ -64,7 +64,9 @@ class Tpen {
             // Pre-load manifest into vault so embedded canvases are available for fallback
             const manifestUri = ev.detail?.manifest?.[0]
             if (manifestUri) {
-                import('../js/vault.js').then(m => m.default.get(manifestUri, 'manifest').catch(() => {}))
+                import('../js/vault.js')
+                    .then(m => m.default.get(manifestUri, 'manifest').catch(() => {}))
+                    .catch(() => {})
             }
         })
 

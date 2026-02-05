@@ -331,7 +331,7 @@ class ReadOnlyViewTranscribe extends HTMLElement {
         }
         this.#staticManifest = manifest
 
-        this.shadowRoot.querySelector(".transcribe-title").textContent = `Transcription for ${manifest.label.none?.[0]}`
+        this.shadowRoot.querySelector(".transcribe-title").textContent = `Transcription for ${manifest.label?.none?.[0] ?? 'Unknown'}`
 
         for (const canvas of manifest.items) {
             const imgUrl = canvas.items[0].items.find(i => i.motivation === "painting").body.id

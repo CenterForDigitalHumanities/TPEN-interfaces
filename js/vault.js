@@ -284,7 +284,7 @@ class Vault {
                 pageId: TPEN.screen?.pageInQuery,
                 layerId: TPEN.screen?.layerInQuery
             })
-            const response = await fetch(uri)
+            const response = await fetch(uri, noCache ? { cache: 'no-store' } : undefined)
 
             if (!response.ok) {
                 if (isCanvas) {
@@ -344,12 +344,16 @@ class Vault {
                                     for (const arrItem of value) {
                                         if (arrItem && typeof arrItem === 'object') {
                                             queue.push({ obj: arrItem, depth: depth + 1 })
-                                            // Cache array items that have id+type directly
+                                            // Cache array items that have id+type and meaningful data
                                             const arrItemId = arrItem?.['@id'] ?? arrItem?.id
                                             const arrItemType = arrItem?.['@type'] ?? arrItem?.type
                                             if (arrItemId && arrItemType && !visited.has(arrItemId)) {
                                                 visited.add(arrItemId)
-                                                try { this.set(structuredClone(arrItem), arrItemType) } catch {}
+                                                // Skip bare references (only id+type) — they pollute cache with incomplete data
+                                                const dataKeys = Object.keys(arrItem).filter(k => !['id', '@id', 'type', '@type'].includes(k))
+                                                if (dataKeys.length > 0) {
+                                                    try { this.set(structuredClone(arrItem), arrItemType) } catch {}
+                                                }
                                             }
                                         }
                                     }

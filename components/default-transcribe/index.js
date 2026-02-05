@@ -69,22 +69,9 @@ class TpenTranscriptionElement extends HTMLElement {
     }
 
     async #loadPage(annotationPageID) {
-        let page
-        try {
-            page = await vault.get(annotationPageID, 'annotationpage', true, 'tpen-transcription')
-        } catch (err) {
-            switch (err.status ?? err.code) {
-                case 401:
-                    return userMessage('Unauthorized')
-                case 403:
-                    return userMessage('Forbidden')
-                case 404:
-                    return userMessage('Project not found')
-                default:
-                    return userMessage(err.message ?? err.statusText ?? err.text ?? 'Unknown error')
-            }
-        }
-        if (!page?.items) return userMessage('No annotations found on this page')
+        const page = await vault.get(annotationPageID, 'annotationpage', true, 'tpen-transcription')
+        if (!page) return userMessage('Unable to load annotation page. It may not exist or you may lack access.')
+        if (!page.items) return userMessage('No annotations found on this page')
         let lines = await Promise.all(page.items.flatMap(async l => {
             const lineElem = document.createElement('tpen-line-text')
             const lineImg = document.createElement('tpen-line-image')
@@ -93,10 +80,13 @@ class TpenTranscriptionElement extends HTMLElement {
             if (!Array.isArray(lineElem.line.body)) {
                 lineElem.line.body = [lineElem.line.body]
             }
+            const target = lineElem.line.target
+            const source = target?.source ?? target
+            const canvasId = (typeof source === 'string') ? source.split('#')[0] : (source?.id ?? source?.['@id'])
             lineElem.setAttribute('tpen-line-id', l.id)
             lineImg.setAttribute('tpen-line-id', l.id)
-            lineImg.setAttribute('iiif-canvas', lineElem.line.target.source.id)
-            lineImg.setAttribute('region', lineElem.line.target.selector.value)
+            lineImg.setAttribute('iiif-canvas', canvasId)
+            lineImg.setAttribute('region', target?.selector?.value ?? '')
             lineImg.setAttribute('iiif-manifest', this.manifest)
             return [lineElem, lineImg]
         })).then(results => results.flat())
