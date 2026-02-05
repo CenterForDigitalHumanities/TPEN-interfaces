@@ -20,13 +20,16 @@ class Vault {
 
     /**
      * Normalizes a IIIF type string to a canonical lowercase form.
-     * Strips the 'sc:' prefix from IIIF v2 types so v2 and v3 share a single cache namespace.
-     * @param {string} type - Raw type string (e.g., 'Canvas', 'sc:Canvas', 'Manifest')
-     * @returns {string} Normalized type (e.g., 'canvas', 'manifest')
+     * Strips namespace prefixes from IIIF v2 types (sc:, oa:, dctypes:, etc.)
+     * so v2 and v3 share a single cache namespace.
+     * @param {string} type - Raw type string (e.g., 'Canvas', 'sc:Canvas', 'oa:Annotation')
+     * @returns {string} Normalized type (e.g., 'canvas', 'annotation', 'manifest')
      */
     _normalizeType(type) {
         const normalized = (type ?? '').toString().toLowerCase() || 'none'
-        return normalized.startsWith('sc:') ? normalized.slice(3) : normalized
+        // Strip IIIF v2 namespace prefixes (sc:, oa:, dctypes:, etc.)
+        const colonIndex = normalized.indexOf(':')
+        return colonIndex >= 0 ? normalized.slice(colonIndex + 1) : normalized
     }
 
     _getId(item) {

@@ -542,7 +542,8 @@ class AnnotoriousAnnotator extends HTMLElement {
       for await (const anno_ref of this.#resolvedAnnotationPage.items) {
         i++
         if (anno_ref.hasOwnProperty("body")) continue
-        const anno_res = await fetch(anno_ref.id).then(res => res.json()).catch(err => { throw err })
+        const anno_res = await vault.get(anno_ref.id, 'annotation', false, 'tpen-line-parser')
+        if (!anno_res) throw new Error(`Failed to resolve Annotation: ${anno_ref.id}`)
         this.#resolvedAnnotationPage.items[i] = anno_res
       }
     }
