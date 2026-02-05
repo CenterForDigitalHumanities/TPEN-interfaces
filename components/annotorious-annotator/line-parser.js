@@ -104,7 +104,7 @@ class AnnotoriousAnnotator extends HTMLElement {
 
   // Initialize HTML after loading in a TPEN3 Project
   render() {
-    // Check that user can create AND update selectors on lines (required for the annotator)
+    // Check that user can create OR update line selectors.  This is lax, as it is likely the annotator requires both.
     if (!(CheckPermissions.checkEditAccess("LINE", "SELECTOR") || CheckPermissions.checkCreateAccess("LINE", "SELECTOR"))) {
       this.shadowRoot.innerHTML = "You do not have the proper project permissions to use this interface."
       return

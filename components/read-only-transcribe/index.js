@@ -334,7 +334,9 @@ class ReadOnlyViewTranscribe extends HTMLElement {
         this.shadowRoot.querySelector(".transcribe-title").textContent = `Transcription for ${manifest.label?.none?.[0] ?? 'Unknown'}`
 
         for (const canvas of manifest.items) {
-            const imgUrl = canvas.items[0].items.find(i => i.motivation === "painting").body.id
+            const paintingAnno = canvas.items?.[0]?.items?.find(i => i.motivation === "painting")
+            const imgUrl = paintingAnno?.body?.id
+            if (!imgUrl) continue
             const annotations = canvas.annotations
 
             if (!annotations || annotations.length === 0) {
@@ -349,7 +351,7 @@ class ReadOnlyViewTranscribe extends HTMLElement {
                 if (!output[layerLabel]) {
                     output[layerLabel] = {}
                 }
-                output[layerLabel][imgUrl] = { id: annoPage.id, label: annoPage.label.none[0], lines: [] }
+                output[layerLabel][imgUrl] = { id: annoPage.id, label: annoPage.label?.none?.[0] ?? '', lines: [] }
 
                 output[layerLabel][imgUrl].lines = await Promise.all(
                     annoPage?.items.map(async (anno) => {
