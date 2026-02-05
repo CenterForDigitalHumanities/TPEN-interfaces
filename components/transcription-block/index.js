@@ -37,7 +37,11 @@ export default class TranscriptionBlock extends HTMLElement {
         if (!Array.isArray(items)) return []
         const results = []
         for (const item of items) {
-            const annotation = await vault.get(item, 'annotation')
+            let annotation = await vault.get(item, 'annotation')
+            // BFS may cache annotation references without bodies; refetch full annotation from source
+            if (annotation && !annotation.body && !annotation.resource) {
+                annotation = await vault.get(item, 'annotation', true)
+            }
             let text = ''
             switch (true) {
                 case typeof annotation?.body === 'string':
@@ -508,6 +512,7 @@ export default class TranscriptionBlock extends HTMLElement {
     }
 
     updateTranscriptionUI() {
+        if (!this.#transcriptions) return
         const previousLineText = this.#transcriptions[TPEN.activeLineIndex - 1] || 'No previous line'
         const currentLineText = this.#transcriptions[TPEN.activeLineIndex] || ''
         const prevLineElem = this.shadowRoot?.querySelector('.transcription-line')

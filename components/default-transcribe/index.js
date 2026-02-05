@@ -76,6 +76,10 @@ class TpenTranscriptionElement extends HTMLElement {
             const lineElem = document.createElement('tpen-line-text')
             const lineImg = document.createElement('tpen-line-image')
             lineElem.line = await vault.get(l.id, 'annotation', false, 'tpen-transcription')
+            // BFS may cache annotation references without bodies; refetch full annotation from source
+            if (lineElem.line && !lineElem.line.body && !lineElem.line.resource) {
+                lineElem.line = await vault.get(l.id, 'annotation', true, 'tpen-transcription')
+            }
             if (!lineElem.line) return []
             if (!Array.isArray(lineElem.line.body)) {
                 lineElem.line.body = [lineElem.line.body]
