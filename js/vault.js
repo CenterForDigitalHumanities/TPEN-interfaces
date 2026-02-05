@@ -3,7 +3,7 @@ import TPEN from "../api/TPEN.js"
 import { urlFromIdAndType } from "../js/utils.js"
 
 /** Types that are too large for localStorage (manifests can be megabytes). */
-const SKIP_LOCAL_STORAGE_TYPES = new Set(['manifest', 'collection'])
+const SKIP_LOCAL_STORAGE_TYPES = new Set(['manifest', 'collection', 'annotationcollection'])
 
 /**
  * Vault - Client-side caching utility for IIIF resources.
@@ -211,7 +211,11 @@ class Vault {
             return null
         }
 
-        // 4. Try again after manifest is cached
+        // 4. Prefer the individually-cached canvas (full structuredClone from BFS)
+        const canvasStore = this.store.get('canvas')
+        if (canvasStore?.has(canvasId)) return canvasStore.get(canvasId)
+
+        // 5. Fallback: search manifest's items directly
         return this._getEmbeddedCanvas(canvasId)
     }
 
@@ -467,7 +471,7 @@ class Vault {
     }
 
     all() {
-        return Object.values(this.store)
+        return [...this.store.values()]
     }
 }
 

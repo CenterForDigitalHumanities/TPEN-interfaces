@@ -343,7 +343,8 @@ class ReadOnlyViewTranscribe extends HTMLElement {
 
             for (const annoPage of annotations) {
                 const partOfId = await vault.get(annoPage.partOf[0].id, 'annotationcollection', false, 'tpen-read-only-view-transcribe')
-                const layerLabel = partOfId.label.none[0]
+                if (!partOfId) continue
+                const layerLabel = partOfId.label?.none?.[0] ?? 'Unknown Layer'
 
                 if (!output[layerLabel]) {
                     output[layerLabel] = {}
