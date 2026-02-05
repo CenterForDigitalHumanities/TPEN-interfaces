@@ -202,21 +202,47 @@ class Vault {
         // 2. Determine manifest URI — prefer registered hint, fall back to active project
         const manifestUri = this.canvasToManifest.get(canvasId) ?? TPEN.activeProject?.manifest?.[0]
 
-        if (!manifestUri) return null
+        if (!manifestUri) {
+            console.debug(`[vault] No manifest URI available for canvas ${canvasId}`)
+            return null
+        }
 
-        // 3. Fetch the manifest (this will cache + index it via BFS and _indexManifest)
+        // 3. Fetch the manifest — deduplicate concurrent fetches for the same URI
         try {
-            await this.get(manifestUri, 'manifest')
+            if (this._pendingManifests?.has(manifestUri)) {
+                await this._pendingManifests.get(manifestUri)
+            } else {
+                const fetchPromise = this.get(manifestUri, 'manifest')
+                if (!this._pendingManifests) this._pendingManifests = new Map()
+                this._pendingManifests.set(manifestUri, fetchPromise)
+                try {
+                    await fetchPromise
+                } finally {
+                    this._pendingManifests.delete(manifestUri)
+                }
+            }
         } catch {
+            console.debug(`[vault] Manifest fetch failed for ${manifestUri}`)
             return null
         }
 
         // 4. Prefer the individually-cached canvas (full structuredClone from BFS)
         const canvasStore = this.store.get('canvas')
-        if (canvasStore?.has(canvasId)) return canvasStore.get(canvasId)
+        if (canvasStore?.has(canvasId)) {
+            console.debug(`[vault] Found canvas in BFS cache: ${canvasId}`)
+            return canvasStore.get(canvasId)
+        }
 
         // 5. Fallback: search manifest's items directly
-        return this._getEmbeddedCanvas(canvasId)
+        const directMatch = this._getEmbeddedCanvas(canvasId)
+        if (directMatch) {
+            console.debug(`[vault] Found canvas in manifest items: ${canvasId}`)
+        } else {
+            const manifestId = this.canvasToManifest.get(canvasId)
+            const manifest = manifestId ? this.store.get('manifest')?.get(manifestId) : null
+            console.debug(`[vault] Canvas not found in manifest. canvasToManifest entry: ${manifestId}, manifest cached: ${!!manifest}, manifest items count: ${manifest?.items?.length ?? 0}`)
+        }
+        return directMatch
     }
 
     /**
@@ -403,6 +429,9 @@ class Vault {
                     this.set(fallback, 'canvas')
                     return fallback
                 }
+                console.debug(`[vault] Manifest fallback found canvas but validation failed:`, validationError)
+            } else {
+                console.debug(`[vault] Manifest fallback returned null for ${id}`)
             }
             // Both URI and manifest fallback failed — now dispatch the error
             console.warn(`[vault] Canvas resolution failed for ${id} (URI and manifest fallback)`)

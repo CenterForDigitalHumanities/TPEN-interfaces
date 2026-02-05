@@ -177,11 +177,26 @@ class ContinueWorking extends HTMLElement {
             const canvasId = annotationPage.target
             if (!canvasId) return this.generateProjectPlaceholder(project)
 
-            // Register manifest hint so vault can fall back to embedded canvas data
-            const manifestUrl = project.manifest?.[0]
-            if (manifestUrl && canvasId) vault.registerManifestHint(canvasId, manifestUrl)
+            // Determine manifest URL — handle both array and string formats
+            let manifestUrl = Array.isArray(project.manifest) ? project.manifest[0] : project.manifest
+            // Project summaries from getUserProjects may omit manifest; fetch full project if needed
+            if (!manifestUrl) {
+                try {
+                    const token = TPEN.getAuthorization()
+                    const fullProject = await fetch(`${TPEN.servicesURL}/project/${project._id}`, {
+                        headers: token ? { Authorization: `Bearer ${token}` } : {}
+                    }).then(r => r.ok ? r.json() : null)
+                    manifestUrl = Array.isArray(fullProject?.manifest) ? fullProject.manifest[0] : fullProject?.manifest
+                } catch { /* proceed without manifest */ }
+            }
 
-            // Use vault for canvas fetching — vault handles manifest fallback internally
+            // Pre-load manifest so embedded canvases are BFS-cached in vault
+            if (manifestUrl) {
+                vault.registerManifestHint(canvasId, manifestUrl)
+                await vault.get(manifestUrl, 'manifest').catch(() => {})
+            }
+
+            // Use vault for canvas fetching — canvas may already be in BFS cache from manifest pre-load
             const canvas = await vault.get(canvasId, 'canvas', false, 'tpen-continue-working')
             if (!canvas) return this.generateProjectPlaceholder(project)
 
