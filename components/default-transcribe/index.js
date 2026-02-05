@@ -6,9 +6,7 @@
 import { userMessage, encodeContentState } from "../iiif-tools/index.js"
 import "../line-image/index.js"
 import "../line-text/index.js"
-import { Vault } from 'https://cdn.jsdelivr.net/npm/@iiif/helpers/+esm'
-
-const vault = new Vault()
+import vault from '../../js/vault.js'
 
 class TpenTranscriptionElement extends HTMLElement {
     #transcriptionContainer
@@ -71,9 +69,9 @@ class TpenTranscriptionElement extends HTMLElement {
     }
 
     async #loadPage(annotationPageID) {
-        let page = { id: annotationPageID }
+        let page
         try {
-            page = vault.get({id:annotationPageID,type:"AnnotationPage"}) ?? await vault.load(annotationPageID)
+            page = await vault.get(annotationPageID, 'annotationpage', true, 'tpen-transcription')
         } catch (err) {
             switch (err.status ?? err.code) {
                 case 401:
@@ -86,11 +84,14 @@ class TpenTranscriptionElement extends HTMLElement {
                     return userMessage(err.message ?? err.statusText ?? err.text ?? 'Unknown error')
             }
         }
+        if (!page?.items) return userMessage('No annotations found on this page')
         let lines = await Promise.all(page.items.flatMap(async l => {
             const lineElem = document.createElement('tpen-line-text')
             const lineImg = document.createElement('tpen-line-image')
-            lineElem.line = vault.get({id:l.id,type:"Annotation"}) ?? await vault.load(l.id)
-            lineElem.line.body[0] = vault.get({id:lineElem.line.body[0].id,type:"ContentResource"})
+            lineElem.line = await vault.get(l.id, 'annotation', false, 'tpen-transcription')
+            if (!Array.isArray(lineElem.line.body)) {
+                lineElem.line.body = [lineElem.line.body]
+            }
             lineElem.setAttribute('tpen-line-id', l.id)
             lineImg.setAttribute('tpen-line-id', l.id)
             lineImg.setAttribute('iiif-canvas', lineElem.line.target.source.id)
@@ -99,7 +100,7 @@ class TpenTranscriptionElement extends HTMLElement {
             return [lineElem, lineImg]
         })).then(results => results.flat())
         this.#transcriptionContainer.append(...lines)
-        this.activeLine = lines[0].line
+        this.activeLine = lines[0]?.line
     }
 
     getAllLines(canvas = TPEN.activeCanvas) {

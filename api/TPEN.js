@@ -59,7 +59,14 @@ class Tpen {
         this.activeProject
 
         eventDispatcher.on("tpen-user-loaded", ev => this.currentUser = ev.detail)
-        eventDispatcher.on("tpen-project-loaded", ev => this.activeProject = ev.detail)
+        eventDispatcher.on("tpen-project-loaded", ev => {
+            this.activeProject = ev.detail
+            // Pre-load manifest into vault so embedded canvases are available for fallback
+            const manifestUri = ev.detail?.manifest?.[0]
+            if (manifestUri) {
+                import('../js/vault.js').then(m => m.default.get(manifestUri, 'manifest').catch(() => {}))
+            }
+        })
 
         if (this.screen.projectInQuery) {
             try {

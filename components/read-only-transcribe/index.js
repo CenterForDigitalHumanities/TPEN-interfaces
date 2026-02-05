@@ -332,6 +332,7 @@ class ReadOnlyViewTranscribe extends HTMLElement {
         }
         const manifest = await response.json()
         this.#staticManifest = manifest
+        vault.set(manifest, 'manifest')
 
         this.shadowRoot.querySelector(".transcribe-title").textContent = `Transcription for ${manifest.label.none?.[0]}`
 

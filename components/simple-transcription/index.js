@@ -515,7 +515,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
         canvasID = target.source
       }
 
-      const fetchedCanvas = await vault.get(canvasID, 'canvas')
+      const fetchedCanvas = await vault.get(canvasID, 'canvas', false, 'tpen-simple-transcription')
       if (!fetchedCanvas) {
         TPEN.eventDispatcher.dispatch("tpen-toast", {
           message: "Could not load canvas. Please try again.",

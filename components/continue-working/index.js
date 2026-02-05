@@ -177,28 +177,17 @@ class ContinueWorking extends HTMLElement {
             const canvasId = annotationPage.target
             if (!canvasId) return this.generateProjectPlaceholder(project)
 
-            let canvas, isV3
-            // Use vault for canvas fetching - silent failure for thumbnails
-            canvas = await vault.get(canvasId, 'canvas', false, 'tpen-continue-working')
-            if (canvas) {
-                const context = canvas['@context']
-                isV3 = Array.isArray(context)
-                    ? context.some(ctx => typeof ctx === 'string' && ctx.includes('iiif.io/api/presentation/3'))
-                    : typeof context === 'string' && context.includes('iiif.io/api/presentation/3')
-            } else {
-                // Canvas fetch failed - fallback to manifest
-                const manifestUrl = project.manifest?.[0]
-                if (!manifestUrl) return this.generateProjectPlaceholder(project)
+            // Register manifest hint so vault can fall back to embedded canvas data
+            const manifestUrl = project.manifest?.[0]
+            if (manifestUrl && canvasId) vault.registerManifestHint(canvasId, manifestUrl)
 
-                const manifest = await fetch(manifestUrl).then(r => r.json())
-                const context = manifest['@context']
-                isV3 = Array.isArray(context)
-                    ? context.some(ctx => typeof ctx === 'string' && ctx.includes('iiif.io/api/presentation/3'))
-                    : typeof context === 'string' && context.includes('iiif.io/api/presentation/3')
-                const canvases = isV3 ? manifest.items : manifest.sequences?.[0]?.canvases
-                canvas = canvases?.find(c => (isV3 ? c.id : c['@id']) === canvasId)
-                if (!canvas) return this.generateProjectPlaceholder(project)
-            }
+            // Use vault for canvas fetching — vault handles manifest fallback internally
+            const canvas = await vault.get(canvasId, 'canvas', false, 'tpen-continue-working')
+            if (!canvas) return this.generateProjectPlaceholder(project)
+
+            // Detect IIIF version: v3 uses type "Canvas", v2 uses @type "sc:Canvas"
+            const canvasType = canvas.type ?? canvas['@type']
+            const isV3 = canvasType === 'Canvas'
             
             // Get thumbnail from canvas
             let thumbnailUrl = canvas.thumbnail?.id ?? canvas.thumbnail?.['@id'] ?? canvas.thumbnail
