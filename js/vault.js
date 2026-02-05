@@ -257,6 +257,8 @@ class Vault {
         }
     }
 
+
+
     /**
      * Fetches and caches a resource by ID and type.
      * For canvas type, performs validation and attempts manifest fallback on failure.
@@ -439,6 +441,71 @@ class Vault {
         }
 
         return null
+    }
+
+    async getorig(item, itemType, noCache = false) {
+        const type = this._normalizeType(itemType ?? item?.type ?? item?.['@type'])
+        const id = this._getId(item)
+        const typeStore = this.store.get(type)
+        let result = typeStore?.get(id)
+        if (result) return result
+
+        const cacheKey = this._cacheKey(type, id)
+        const cached = localStorage.getItem(cacheKey)
+        if (cached && !noCache) {
+            try {
+                const parsed = JSON.parse(cached)
+                this.set(parsed, type)
+                return parsed
+            } catch {}
+        }
+
+        try {
+            const uri = urlFromIdAndType(id, type, {
+                projectId: TPEN.screen?.projectInQuery,
+                pageId: TPEN.screen?.pageInQuery,
+                layerId: TPEN.screen?.layerInQuery
+            })
+            const response = await fetch(uri)
+            if (!response.ok) return null
+
+            const data = await response.json()
+            const queue = [{ obj: data, depth: 0 }]
+            const visited = new Set()
+
+            while (queue.length) {
+                const { obj, depth } = queue.shift()
+                if (depth >= 4 || !obj || typeof obj !== 'object') continue
+
+                for (const key of Object.keys(obj)) {
+                    const value = obj[key]
+                    if (Array.isArray(value)) {
+                        for (const item of value) {
+                            if (item && typeof item === 'object') queue.push({ obj: item, depth: depth + 1 })
+                        }
+                    } else if (value && typeof value === 'object') {
+                        queue.push({ obj: value, depth: depth + 1 })
+                    }
+
+                    const id = value?.['@id'] ?? value?.id
+                    const type = value?.['@type'] ?? value?.type
+                    if (id && type && !visited.has(id)) {
+                        visited.add(id)
+                        this.get(id, type)
+                        // Project embedded object to minimal form
+                        const label = value?.label ?? value?.title
+                        obj[key] = { id, type, ...(label && { label }) }
+                    }
+                }
+            }
+            this.set(data, itemType)
+            try {
+                localStorage.setItem(cacheKey, JSON.stringify(data))
+            } catch {}
+            return data
+        } catch {
+            return
+        }
     }
 
     /**
