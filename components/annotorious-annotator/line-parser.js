@@ -18,6 +18,7 @@ import { detectTextLinesCombined } from "./detect-lines.js"
 import { v4 as uuidv4 } from "https://cdn.skypack.dev/uuid@9.0.1"
 import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 import { onProjectReady } from '../../utilities/projectReady.js'
+import vault from '../../js/vault.js'
 import '../page-selector/index.js'
 
 class AnnotoriousAnnotator extends HTMLElement {
@@ -104,7 +105,7 @@ class AnnotoriousAnnotator extends HTMLElement {
   // Initialize HTML after loading in a TPEN3 Project
   render() {
     // Check that user can create AND update selectors on lines (required for the annotator)
-    if (!(CheckPermissions.checkEditAccess("LINE", "SELECTOR") && CheckPermissions.checkCreateAccess("LINE", "SELECTOR"))) {
+    if (!(CheckPermissions.checkEditAccess("LINE", "SELECTOR") || CheckPermissions.checkCreateAccess("LINE", "SELECTOR"))) {
       this.shadowRoot.innerHTML = "You do not have the proper project permissions to use this interface."
       return
     }
@@ -553,43 +554,34 @@ class AnnotoriousAnnotator extends HTMLElement {
 
   /**
    * Fetch a Canvas URI and check that it is a Canvas object.  Pass it forward to render the Image into the interface.
-   * Be prepared to recieve presentation api 2+
-   *
-   * FIXME
-   * Give users a path when Canvas URIs do not resolve or resolve to something unexpected.
+   * Be prepared to receive presentation api 2+.
+   * Uses vault for consistent caching and error handling.
    *
    * @param uri A String Canvas URI
    */
   async processCanvas(uri) {
     if (!uri) return
-      // TODO Vault me?
-    const resolvedCanvas = await fetch(uri)
-      .then(r => {
-        if (!r.ok) throw r
-        return r.json()
-      })
-      .catch(e => {
-        this.shadowRoot.innerHTML = `
-          <h3>Canvas Error</h3>
-          <p>The Canvas within this Page could not be loaded.</p>
-          <p> ${e.status ?? e.code}: ${e.statusText ?? e.message} </p>
-        `
-        throw e
-      })
-    const context = resolvedCanvas["@context"]
-    if (!context?.includes("iiif.io/api/presentation/3/context.json")) {
-      console.warn("The Canvas object did not have the IIIF Presentation API 3 context and may not be parseable.")
+    const resolvedCanvas = await vault.get(uri, 'canvas', false, 'tpen-line-parser')
+    if (!resolvedCanvas) {
+      // Canvas resolution failed - event already dispatched by vault
+      this.shadowRoot.innerHTML = `
+        <h3>Canvas Error</h3>
+        <p>The Canvas within this Page could not be loaded.</p>
+        <p style="word-break: break-all; font-size: 0.875rem; color: #666;">${uri}</p>
+      `
+      return
     }
-    const id = resolvedCanvas["@id"] ?? resolvedCanvas.id
-    if (!id) {
-      throw new Error("Cannot Resolve Canvas or Image", { "cause": "The Canvas is 404 or unresolvable." })
+    // Use the Annotations and Image on the Canvas for initializing the Annotorious portion of the component.
+    try {
+      await this.loadAnnotorious(resolvedCanvas)
+    } catch (err) {
+      // Canvas resolved but image extraction failed
+      this.shadowRoot.innerHTML = `
+        <h3>Image Error</h3>
+        <p>The Canvas loaded but the image could not be extracted.</p>
+        <p style="font-size: 0.875rem; color: #666;">${err.message}</p>
+      `
     }
-    const type = resolvedCanvas["@type"] ?? resolvedCanvas.type
-    if (!(type === "Canvas" || type === "sc:Canvas")) {
-      throw new Error(`Provided URI did not resolve a 'Canvas'.  It resolved a '${type}'`, { "cause": "URI must point to a Canvas." })
-    }
-    // Use the Annotations and Image on the Canvas for inititalizing the Annotorious portion of the component.
-    this.loadAnnotorious(resolvedCanvas)
   }
 
   async validateImageUrl(url) {
@@ -619,7 +611,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       throw new Error("Cannot Resolve Canvas Image", { "cause": "The Image is 404 or unresolvable." })
     }
     let imgx = resolvedCanvas?.items?.[0]?.items?.[0]?.body?.width
-    if (!imgx) imgx = resolvedCanvas?.images[0]?.resource?.width
+    if (!imgx) imgx = resolvedCanvas?.images?.[0]?.resource?.width
     let imgy = resolvedCanvas?.items?.[0]?.items?.[0]?.body?.height
     if (!imgy) imgy = resolvedCanvas?.images?.[0]?.resource?.height
     this.#imageDims = [imgx, imgy]

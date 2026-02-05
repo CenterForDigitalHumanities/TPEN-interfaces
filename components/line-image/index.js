@@ -1,5 +1,6 @@
 import { decodeContentState } from '../iiif-tools/index.js'
 import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
+import vault from '../../js/vault.js'
 
 const CANVAS_PANEL_SCRIPT = document.createElement('script')
 CANVAS_PANEL_SCRIPT.src = "https://cdn.jsdelivr.net/npm/@digirati/canvas-panel-web-components@latest"
@@ -204,18 +205,19 @@ class TpenImageFragment extends HTMLElement {
     }
 
     connectedCallback() {
-        this.cleanup.onDocument('canvas-change', (event) => {
-            fetch(event.detail.canvasId)
-                .then(res => res.json())
-                .then(canvas => {
-                    this.#canvas = canvas
-                    this.setContainerStyle()
-                    const imageResource = canvas?.items?.[0]?.items?.[0]?.body?.id ?? canvas?.images?.[0]?.resource?.id
-                    if (imageResource) {
-                        this.#lineImage.src = imageResource
-                    }
-                })
-                .catch(console.error)
+        this.cleanup.onDocument('canvas-change', async (event) => {
+            const canvas = await vault.get(event.detail.canvasId, 'canvas', false, 'tpen-image-fragment')
+            if (!canvas) {
+                // Canvas resolution failed - event dispatched by vault, parent handles errors
+                return
+            }
+            this.#canvas = canvas
+            this.setContainerStyle()
+            // Handle both IIIF v3 (items) and v2 (images) formats
+            const imageResource = canvas?.items?.[0]?.items?.[0]?.body?.id ?? canvas?.images?.[0]?.resource?.id ?? canvas?.images?.[0]?.resource?.['@id']
+            if (imageResource) {
+                this.#lineImage.src = imageResource
+            }
         })
     }
 

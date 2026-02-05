@@ -14,6 +14,7 @@
 import TPEN from '../../api/TPEN.js'
 import User from '../../api/User.js'
 import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
+import vault from '../../js/vault.js'
 
 class AnnotoriousAnnotator extends HTMLElement {
     #osd
@@ -147,17 +148,18 @@ class AnnotoriousAnnotator extends HTMLElement {
     async renderCanvas(resolvedCanvas) {
       this.shadowRoot.getElementById('annotator-container').innerHTML = ""
       const canvasID = resolvedCanvas["@id"] ?? resolvedCanvas.id
-      const fullImage = resolvedCanvas?.items[0]?.items[0]?.body?.id
-      const imageService = resolvedCanvas?.items[0]?.items[0]?.body?.service?.id
-      
+      // Handle both IIIF v3 (items) and v2 (images) formats
+      const fullImage = resolvedCanvas?.items?.[0]?.items?.[0]?.body?.id ?? resolvedCanvas?.images?.[0]?.resource?.id ?? resolvedCanvas?.images?.[0]?.resource?.['@id']
+      const imageService = resolvedCanvas?.items?.[0]?.items?.[0]?.body?.service?.id ?? resolvedCanvas?.images?.[0]?.resource?.service?.['@id']
+
       if(!fullImage) {
-          throw new Error("Cannot Resolve Canvas Image", 
+          throw new Error("Cannot Resolve Canvas Image",
             {"cause":"The Image is 404 or unresolvable."})
       }
 
       this.#imageDims = [
-        resolvedCanvas?.items[0]?.items[0]?.body?.width,
-        resolvedCanvas?.items[0]?.items[0]?.body?.height
+        resolvedCanvas?.items?.[0]?.items?.[0]?.body?.width ?? resolvedCanvas?.images?.[0]?.resource?.width,
+        resolvedCanvas?.items?.[0]?.items?.[0]?.body?.height ?? resolvedCanvas?.images?.[0]?.resource?.height
       ]
       this.#canvasDims = [
         resolvedCanvas?.width,
@@ -325,38 +327,43 @@ class AnnotoriousAnnotator extends HTMLElement {
 
     /**
      * Fetch a Canvas URI and check that it is a Canvas object.  Pass it forward to render the Image into the interface.
-     *
-     * FIXME
-     * Give users a path when Canvas URIs do not resolve or resolve to something unexpected.
+     * Uses vault for consistent caching and error handling.
      *
      * @param uri A String Canvas URI
     */
     async processCanvas(uri) {
-      const canvas = uri
-      if(!canvas) return
-      const resolvedCanvas = await fetch(canvas)
-        .then(r => {
-            if(!r.ok) throw r
-            return r.json()
-        })
-        .catch(e => {
-            throw e
-        })
-      const context = resolvedCanvas["@context"]
-      if(!context.includes("iiif.io/api/presentation/3/context.json")) {
-        console.warn("The Canvas object did not have the IIIF Presentation API 3 context and may not be parseable.")
+      if(!uri) return
+      const resolvedCanvas = await vault.get(uri, 'canvas', false, 'tpen-plain-annotator')
+      if(!resolvedCanvas) {
+        // Canvas resolution failed - event already dispatched by vault
+        this.renderCanvasError(uri)
+        return
       }
-      const id = resolvedCanvas["@id"] ?? resolvedCanvas.id
-      if(!id) {
-          throw new Error("Cannot Resolve Canvas or Image",
-            {"cause":"The Canvas is 404 or unresolvable."})
+      try {
+        await this.renderCanvas(resolvedCanvas)
+      } catch (err) {
+        // Canvas resolved but image extraction failed
+        this.renderCanvasError(uri, err.message)
       }
-      const type = resolvedCanvas["@type"] ?? resolvedCanvas.type
-      if(type !== "Canvas") {
-          throw new Error(`Provided URI did not resolve a 'Canvas'.  It resolved a '${type}'`, 
-            {"cause":"URI must point to a Canvas."})
+    }
+
+    /**
+     * Renders an error message when canvas resolution fails.
+     * @param {string} uri - The canvas URI that failed to resolve
+     * @param {string} [errorMessage] - Optional error message to display
+     */
+    renderCanvasError(uri, errorMessage) {
+      const container = this.shadowRoot.querySelector('#annotoriousContainer') ?? this.shadowRoot
+      if (container) {
+        const message = errorMessage ?? 'The canvas image could not be loaded.'
+        container.innerHTML = `
+          <div style="padding: 2rem; text-align: center; background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; margin: 1rem;">
+            <h3 style="color: #856404; margin-bottom: 1rem;">Canvas Not Available</h3>
+            <p style="color: #856404; margin-bottom: 0.5rem;">${message}</p>
+            <p style="color: #666; font-size: 0.875rem; word-break: break-all;">${uri}</p>
+          </div>
+        `
       }
-      this.renderCanvas(resolvedCanvas)
     }
 
     /**
