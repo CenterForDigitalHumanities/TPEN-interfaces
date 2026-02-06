@@ -29,6 +29,19 @@ class Vault {
     }
 
     /**
+     * Maps HTTP status codes to error types.
+     * @param {number} status - HTTP status code
+     * @returns {string} Error type
+     */
+    _httpStatusToErrorType(status) {
+        if (status === 404) return 'not_found'
+        if (status === 401) return 'unauthorized'
+        if (status === 403) return 'forbidden'
+        if (status >= 500) return 'server_error'
+        return 'server_error'
+    }
+
+    /**
      * Creates a standardized canvas error object.
      * @param {string} errorType - Error type: 'network' | 'server_error' | 'not_found' | 'forbidden' | 'unauthorized' | 'invalid_json' | 'invalid_type' | 'missing_id'
      * @param {string} message - Human-readable error message
@@ -76,8 +89,10 @@ class Vault {
     async get(item, itemType, noCache = false) {
         const type = this._normalizeType(itemType ?? item?.type ?? item?.['@type'])
         const id = this._getId(item)
+        if (typeof item === "string") item = {id, type}
         const isCanvas = (type === 'canvas' || type === "sc:canvas")
         const isManifest =  (type === 'manifest' || type === "sc:manifest")
+        let canvasError = null
         if (!noCache) {
             const typeStore = this.store.get(type)
             const result = typeStore?.get(id)
@@ -121,24 +136,34 @@ class Vault {
             let data = item
             const response = await fetch(uri, noCache ? { cache: 'no-store' } : undefined)
             if (!response.ok) {
-                // Do I have the thing I tried to fetch in localstorage/memory already
                 if (isCanvas) {
-                    console.log("Canvas did not resolve.")
-                    console.log("Where is the manifest to check?")
+                    const errorType = this._httpStatusToErrorType(response.status)
+                    canvasError = this._createCanvasError(
+                        errorType,
+                        `HTTP ${response.status}: ${response.statusText}`,
+                        response.status,
+                        id
+                    )
                 }
                 // return null
             }
-            if (response.ok) data = await response.json()
+            if (response.ok) {
+                try {
+                    data = await response.json()
+                }
+                catch (err) {}
+            }
             const queue = [{ obj: data, depth: 0 }]
             const visited = new Set()
-            if (isCanvas) {
-                console.log("queue when canvas did not resolve")
-                console.log(queue)
+            if (itemType === "manifest") {
+                console.log("grind through manifest")
+            }
+            if (itemType === "canvas") {
+                console.log("grind through canvas")
             }
             while (queue.length) {
                 const { obj, depth } = queue.shift()
                 if (depth >= 4 || !obj || typeof obj !== 'object') continue
-
                 for (const key of Object.keys(obj)) {
                     const value = obj[key]
                     if (Array.isArray(value)) {
@@ -160,18 +185,13 @@ class Vault {
                     }
                 }
             }
-            if (isCanvas) {
-                console.log("canvas data after looping through queue")
-                console.log(data)
-            }
             this.set(data, itemType)
             try {
-                // console.log("set item in cache")
-                // console.log(data)
-                if (isManifest) console.log("putting manifest into localStorage")
-                if (isCanvas) console.log("putting canvas into localStorage")
                 localStorage.setItem(cacheKey, JSON.stringify(data))
             } catch {}
+            if (canvasError !== null) {
+                this._dispatchCanvasError(canvasError)
+            }
             return data
         } catch {
             return
