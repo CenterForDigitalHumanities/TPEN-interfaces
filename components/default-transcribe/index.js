@@ -2,11 +2,14 @@
  * TpenTranscriptionElement - Default transcription view component.
  * Displays line text and images for an annotation page.
  * @element tpen-transcription
+ * @deprecated in favor of simple-transcription
  */
-import { userMessage } from "../iiif-tools/index.js"
+import { userMessage, encodeContentState } from "../iiif-tools/index.js"
 import "../line-image/index.js"
 import "../line-text/index.js"
-import vault from '../../js/vault.js'
+import { Vault } from 'https://cdn.jsdelivr.net/npm/@iiif/helpers/+esm'
+
+const vault = new Vault()
 
 class TpenTranscriptionElement extends HTMLElement {
     #transcriptionContainer
@@ -28,6 +31,7 @@ class TpenTranscriptionElement extends HTMLElement {
     }
 
     constructor() {
+        console.warn("The <tpen-transcription> component is deprecated and may not function properly.  See <tpen-simple-transcription>.")
         super()
         this.attachShadow({ mode: 'open' })
         this.#transcriptionContainer = document.createElement('div')
@@ -69,33 +73,35 @@ class TpenTranscriptionElement extends HTMLElement {
     }
 
     async #loadPage(annotationPageID) {
-        const page = await vault.get(annotationPageID, 'annotationpage', true, 'tpen-transcription')
-        if (!page) return userMessage('Unable to load annotation page. It may not exist or you may lack access.')
-        if (!page.items) return userMessage('No annotations found on this page')
+        let page = { id: annotationPageID }
+        try {
+            page = vault.get({id:annotationPageID,type:"AnnotationPage"}) ?? await vault.load(annotationPageID)
+        } catch (err) {
+            switch (err.status ?? err.code) {
+                case 401:
+                    return userMessage('Unauthorized')
+                case 403:
+                    return userMessage('Forbidden')
+                case 404:
+                    return userMessage('Project not found')
+                default:
+                    return userMessage(err.message ?? err.statusText ?? err.text ?? 'Unknown error')
+            }
+        }
         let lines = await Promise.all(page.items.flatMap(async l => {
             const lineElem = document.createElement('tpen-line-text')
             const lineImg = document.createElement('tpen-line-image')
-            lineElem.line = await vault.get(l.id, 'annotation', false, 'tpen-transcription')
-            // BFS may cache annotation references without bodies; refetch full annotation from source
-            if (lineElem.line && !lineElem.line.body && !lineElem.line.resource) {
-                lineElem.line = await vault.get(l.id, 'annotation', true, 'tpen-transcription')
-            }
-            if (!lineElem.line) return []
-            if (!Array.isArray(lineElem.line.body)) {
-                lineElem.line.body = [lineElem.line.body]
-            }
-            const target = lineElem.line.target
-            const source = target?.source ?? target
-            const canvasId = (typeof source === 'string') ? source.split('#')[0] : (source?.id ?? source?.['@id'])
+            lineElem.line = vault.get({id:l.id,type:"Annotation"}) ?? await vault.load(l.id)
+            lineElem.line.body[0] = vault.get({id:lineElem.line.body[0].id,type:"ContentResource"})
             lineElem.setAttribute('tpen-line-id', l.id)
             lineImg.setAttribute('tpen-line-id', l.id)
-            lineImg.setAttribute('iiif-canvas', canvasId)
-            lineImg.setAttribute('region', target?.selector?.value ?? '')
+            lineImg.setAttribute('iiif-canvas', lineElem.line.target.source.id)
+            lineImg.setAttribute('region', lineElem.line.target.selector.value)
             lineImg.setAttribute('iiif-manifest', this.manifest)
             return [lineElem, lineImg]
         })).then(results => results.flat())
         this.#transcriptionContainer.append(...lines)
-        this.activeLine = lines[0]?.line
+        this.activeLine = lines[0].line
     }
 
     getAllLines(canvas = TPEN.activeCanvas) {

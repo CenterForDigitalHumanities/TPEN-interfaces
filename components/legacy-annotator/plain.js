@@ -6,13 +6,14 @@
  *
  * It is exposed to the user through /interfaces/annotator/legacy.html
  * @element tpen-legacy-annotator
+ * 
+ * @deprecated use /components/annotorious-annotation/ components instead.
  */
 
 import { eventDispatcher } from '../../api/events.js'
 import TPEN from '../../api/TPEN.js'
 import User from '../../api/User.js'
 import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
-import vault from '../../js/vault.js'
 
 class LegacyAnnotator extends HTMLElement {
     #isDrawing = false
@@ -312,13 +313,16 @@ class LegacyAnnotator extends HTMLElement {
 
     async processAnnotationPage(page) {
         if(!page) return
-        const resolvedPage = await vault.get(page, 'annotationpage', false, 'tpen-legacy-annotator')
-        if(!resolvedPage) {
-            throw new Error("Cannot Resolve AnnotationPage",
-             {"cause":"The AnnotationPage is 404 or unresolvable."})
-        }
+        const resolvedPage = await fetch(page)
+            .then(r => {
+                if(!r.ok) throw r
+                return r.json()
+            })
+            .catch(e => {
+                throw e
+            })
         const context = resolvedPage["@context"]
-        if(context && !(context.includes("iiif.io/api/presentation/3/context.json") || context.includes("w3.org/ns/anno.jsonld"))){
+        if(!(context.includes("iiif.io/api/presentation/3/context.json") || context.includes("w3.org/ns/anno.jsonld"))){
             console.warn("The AnnotationPage object did not have the IIIF Presentation API 3 context and may not be parseable.")
         }
         const id = resolvedPage["@id"] ?? resolvedPage.id
@@ -338,15 +342,7 @@ class LegacyAnnotator extends HTMLElement {
         }
         // Note this will process the id from embedded Canvas objects to pass forward and be resolved.
         const canvasURI = this.processPageTarget(targetCanvas)
-        try {
-            await this.loadCanvas(canvasURI)
-        } catch (err) {
-            // Canvas or image loading failed
-            this.shadowRoot.innerHTML = `
-                <h3>Canvas Error</h3>
-                <p>${err.message}</p>
-            `
-        }
+        this.loadCanvas(canvasURI)
         // Note this does not load and draw the existing Annotations.  That functionality was not present at the time of componentizing.
     }
 
@@ -400,14 +396,31 @@ class LegacyAnnotator extends HTMLElement {
         const imageCanvas = this.shadowRoot.getElementById("imageCanvas")
         const uploadedImage = this.shadowRoot.getElementById("uploadedImage")
         const ctx = imageCanvas.getContext("2d")
+        let err
         if(!canvas) return
-        const resolvedCanvas = await vault.get(canvas, 'canvas', false, 'tpen-legacy-annotator')
-        if (!resolvedCanvas) {
-            // Canvas resolution failed - event already dispatched by vault
-            throw new Error("Cannot Resolve Canvas or Image", {"cause":"The Canvas is 404 or unresolvable."})
+        const resolvedCanvas = await fetch(canvas)
+            .then(r => {
+                if(!r.ok) throw r
+                return r.json()
+            })
+            .catch(e => {
+                throw e
+            })
+        const context = resolvedCanvas["@context"]
+        if(!context.includes("iiif.io/api/presentation/3/context.json")){
+            console.warn("The Canvas object did not have the IIIF Presentation API 3 context and may not be parseable.")
         }
-        // Handle both IIIF v3 and v2 image formats
-        let image = resolvedCanvas?.items?.[0]?.items?.[0]?.body?.id ?? resolvedCanvas?.images?.[0]?.resource?.id ?? resolvedCanvas?.images?.[0]?.resource?.['@id']
+        const id = resolvedCanvas["@id"] ?? resolvedCanvas.id
+        if(!id) {
+            throw new Error("Cannot Resolve Canvas or Image",
+             {"cause":"The Canvas is 404 or unresolvable."})
+        }
+        const type = resolvedCanvas["@type"] ?? resolvedCanvas.type
+        if(type !== "Canvas"){
+           throw new Error(`Provided URI did not resolve a 'Canvas'.  It resolved a '${type}'`, 
+            {"cause":"URI must point to a Canvas."})
+        }
+        let image = resolvedCanvas?.items[0]?.items[0]?.body?.id
         if(!image){
             throw new Error("Cannot Resolve Canvas or Image", 
              {"cause":"The Image is 404 or unresolvable."})
