@@ -248,10 +248,11 @@ class RolesHandler extends HTMLElement {
             const data = await TPEN.activeProject.removeMember(memberID)
             if (data) {
                 document.querySelector(`[data-member-id="${memberID}"]`)?.remove()
-                alert('Member removed successfully')
+                TPEN.eventDispatcher.dispatch('tpen-toast', { message: 'Member removed successfully', status: 'success' })
             }
         } catch (error) {
             console.error("Error removing member:", error)
+            TPEN.eventDispatcher.dispatch('tpen-toast', { message: 'Error removing member', status: 'error', dismissible: true })
         }
     }
 
@@ -261,8 +262,16 @@ class RolesHandler extends HTMLElement {
             `Add or remove roles for ${TPEN.activeProject.collaborators[memberID]?.profile?.displayName ?? " contributor " + memberID}`,
             async (selectedRoles) => {
                 if (selectedRoles.length > 0) {
-                    const response = await TPEN.activeProject.cherryPickRoles(memberID, selectedRoles)
-                    if (response) alert("Roles updated successfully.")
+                    try {
+                        const response = await TPEN.activeProject.cherryPickRoles(memberID, selectedRoles)
+                        if (response) {
+                            TPEN.eventDispatcher.dispatch('tpen-toast', { message: 'Roles updated successfully.', status: 'success' })
+                            this.refreshCollaborators()
+                        }
+                    } catch (error) {
+                        console.error("Error updating roles:", error)
+                        TPEN.eventDispatcher.dispatch('tpen-toast', { message: 'Error updating roles', status: 'error', dismissible: true })
+                    }
                 }
             }
         )
@@ -270,22 +279,46 @@ class RolesHandler extends HTMLElement {
 
     async handleSetToViewerButton(memberID) {
         if (window.confirm(`Are you sure you want to remove all write access for ${memberID}? The user will become a VIEWER.`)) {
-            const response = await TPEN.activeProject.setToViewer(memberID)
-            if (response) alert("User role updated to VIEWER.")
+            try {
+                const response = await TPEN.activeProject.setToViewer(memberID)
+                if (response) {
+                    TPEN.eventDispatcher.dispatch('tpen-toast', { message: 'User role updated to VIEWER.', status: 'success' })
+                    this.refreshCollaborators()
+                }
+            } catch (error) {
+                console.error("Error updating user role:", error)
+                TPEN.eventDispatcher.dispatch('tpen-toast', { message: 'Error updating user role', status: 'error', dismissible: true })
+            }
         }
     }
 
     async handleMakeLeaderButton(memberID) {
         if (window.confirm(`Are you sure you want to promote collaborator ${memberID} to LEADER?`)) {
-            const response = await TPEN.activeProject.makeLeader(memberID)
-            if (response) alert("User promoted to LEADER.")
+            try {
+                const response = await TPEN.activeProject.makeLeader(memberID)
+                if (response) {
+                    TPEN.eventDispatcher.dispatch('tpen-toast', { message: 'User promoted to LEADER.', status: 'success' })
+                    this.refreshCollaborators()
+                }
+            } catch (error) {
+                console.error("Error promoting user:", error)
+                TPEN.eventDispatcher.dispatch('tpen-toast', { message: 'Error promoting user', status: 'error', dismissible: true })
+            }
         }
     }
 
     async handleDemoteLeaderButton(memberID) {
         if (window.confirm(`Are you sure you want to demote collaborator ${memberID} from LEADER?`)) {
-            const response = await TPEN.activeProject.demoteLeader(memberID)
-            if (response) alert("User demoted from LEADER.")
+            try {
+                const response = await TPEN.activeProject.demoteLeader(memberID)
+                if (response) {
+                    TPEN.eventDispatcher.dispatch('tpen-toast', { message: 'User demoted from LEADER.', status: 'success' })
+                    this.refreshCollaborators()
+                }
+            } catch (error) {
+                console.error("Error demoting user:", error)
+                TPEN.eventDispatcher.dispatch('tpen-toast', { message: 'Error demoting user', status: 'error', dismissible: true })
+            }
         }
     }
 
@@ -353,6 +386,17 @@ class RolesHandler extends HTMLElement {
 
     closeRoleModal() {
         this.shadowRoot.querySelector("#roleModal").classList.add("hidden")
+    }
+
+    /**
+     * Refreshes the project collaborators display by calling the refresh method
+     * on the project-collaborators component.
+     */
+    refreshCollaborators() {
+        const collaboratorsComponent = document.querySelector("project-collaborators")
+        if (collaboratorsComponent?.refreshCollaborators) {
+            collaboratorsComponent.refreshCollaborators()
+        }
     }
 }
 
