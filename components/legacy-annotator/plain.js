@@ -396,14 +396,10 @@ class LegacyAnnotator extends HTMLElement {
         const ctx = imageCanvas.getContext("2d")
         let err
         if(!canvas) return
-        const resolvedCanvas = await fetch(canvas)
-            .then(r => {
-                if(!r.ok) throw r
-                return r.json()
-            })
-            .catch(e => {
-                throw e
-            })
+        const resolvedCanvas = await vault.get(canvas, 'canvas')
+        if (!resolvedCanvas) {
+            throw new Error("Canvas Error", {cause: "The Canvas could not be resolved"})
+        }
         const context = resolvedCanvas["@context"]
         if(!context.includes("iiif.io/api/presentation/3/context.json")){
             console.warn("The Canvas object did not have the IIIF Presentation API 3 context and may not be parseable.")

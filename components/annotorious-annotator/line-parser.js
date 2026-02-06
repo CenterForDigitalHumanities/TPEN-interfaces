@@ -18,6 +18,7 @@ import { detectTextLinesCombined } from "./detect-lines.js"
 import { v4 as uuidv4 } from "https://cdn.skypack.dev/uuid@9.0.1"
 import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 import { onProjectReady } from '../../utilities/projectReady.js'
+import vault from '../../js/vault.js'
 import '../page-selector/index.js'
 
 class AnnotoriousAnnotator extends HTMLElement {
@@ -52,6 +53,7 @@ class AnnotoriousAnnotator extends HTMLElement {
   constructor() {
     super()
     this.attachShadow({ mode: 'open' })
+    this.vault = vault
   }
 
   // Custom component setup
@@ -553,7 +555,7 @@ class AnnotoriousAnnotator extends HTMLElement {
 
   /**
    * Fetch a Canvas URI and check that it is a Canvas object.  Pass it forward to render the Image into the interface.
-   * Be prepared to recieve presentation api 2+
+   * Be prepared to receive presentation api 2+
    *
    * FIXME
    * Give users a path when Canvas URIs do not resolve or resolve to something unexpected.
@@ -562,20 +564,15 @@ class AnnotoriousAnnotator extends HTMLElement {
    */
   async processCanvas(uri) {
     if (!uri) return
-      // TODO Vault me?
-    const resolvedCanvas = await fetch(uri)
-      .then(r => {
-        if (!r.ok) throw r
-        return r.json()
-      })
-      .catch(e => {
-        this.shadowRoot.innerHTML = `
-          <h3>Canvas Error</h3>
-          <p>The Canvas within this Page could not be loaded.</p>
-          <p> ${e.status ?? e.code}: ${e.statusText ?? e.message} </p>
-        `
-        throw e
-      })
+    const resolvedCanvas = await this.vault.get(uri, 'canvas')
+    if (!resolvedCanvas) {
+      this.shadowRoot.innerHTML = `
+        <h3>Canvas Error</h3>
+        <p>The Canvas within this Page could not be loaded.</p>
+        <p>The Canvas could not be resolved or is invalid.</p>
+      `
+      return
+    }
     const context = resolvedCanvas["@context"]
     if (!context?.includes("iiif.io/api/presentation/3/context.json")) {
       console.warn("The Canvas object did not have the IIIF Presentation API 3 context and may not be parseable.")

@@ -204,18 +204,18 @@ class TpenImageFragment extends HTMLElement {
     }
 
     connectedCallback() {
-        this.cleanup.onDocument('canvas-change', (event) => {
-            fetch(event.detail.canvasId)
-                .then(res => res.json())
-                .then(canvas => {
-                    this.#canvas = canvas
-                    this.setContainerStyle()
-                    const imageResource = canvas?.items?.[0]?.items?.[0]?.body?.id ?? canvas?.images?.[0]?.resource?.id
-                    if (imageResource) {
-                        this.#lineImage.src = imageResource
-                    }
-                })
-                .catch(console.error)
+        this.cleanup.onDocument('canvas-change', async (event) => {
+            const canvas = await vault.get(event.detail.canvasId, 'canvas')
+            if (!canvas) {
+                console.error('Failed to resolve canvas:', event.detail.canvasId)
+                return
+            }
+            this.#canvas = canvas
+            this.setContainerStyle()
+            const imageResource = canvas?.items?.[0]?.items?.[0]?.body?.id ?? canvas?.images?.[0]?.resource?.id
+            if (imageResource) {
+                this.#lineImage.src = imageResource
+            }
         })
     }
 

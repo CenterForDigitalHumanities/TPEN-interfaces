@@ -324,12 +324,10 @@ class ReadOnlyViewTranscribe extends HTMLElement {
             return
         }
         
-        const response = await fetch(manifestUrl)
-        if (!response.ok) {
-            const errText = await response.text()
-            throw new Error(`GitHub read failed: ${response.status} - ${errText}`)
+        const manifest = await vault.get(manifestUrl, 'manifest')
+        if (!manifest) {
+            throw new Error('Manifest could not be resolved')
         }
-        const manifest = await response.json()
         this.#staticManifest = manifest
 
         this.shadowRoot.querySelector(".transcribe-title").textContent = `Transcription for ${manifest.label.none?.[0]}`
