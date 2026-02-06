@@ -129,6 +129,19 @@ class Vault {
     all() {
         return Object.values(this.store)
     }
+
+    async prefetchDocuments(items) {
+        if (!Array.isArray(items)) items = [items]
+        const errors = []
+        const promises = items.map(item =>
+            this.get(item).catch(err => {
+                errors.push({ item, error: err })
+                return null
+            })
+        )
+        await Promise.all(promises)
+        return errors
+    }
 }
 
 const vault = new Vault()

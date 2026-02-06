@@ -93,6 +93,13 @@ export default class TranscriptionBlock extends HTMLElement {
     async initializeAsync() {
         const pageID = TPEN.screen?.pageInQuery
         this.#page = await vault.get(pageID, 'annotationpage', true)
+        if (!this.#page && TPEN.activeProject?.manifest) {
+          // Try to hydrate from all manifests
+          const manifestUrls = TPEN.activeProject?.manifest
+          await vault.prefetchDocuments(manifestUrls)
+          // After manifests are cached, try again
+          this.#page = await vault.get(pageID, 'annotationpage', true)
+        }
         const projectPage = TPEN.activeProject.layers.flatMap(layer => layer.pages || []).find(p => p.id.split('/').pop() === pageID.split('/').pop())
         if (!this.#page || !projectPage) return
 

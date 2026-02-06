@@ -611,7 +611,7 @@ export default class TranscriptionInterface extends HTMLElement {
     if (bottomImage) bottomImage.moveUnder(x, y, width, height, topImage)
   }
 
-  getImage(project) {
+  async getImage(project) {
     const imageCanvas = this.shadowRoot.querySelector('.canvas-image')
     let canvasID
     let err = {}
@@ -625,33 +625,24 @@ export default class TranscriptionInterface extends HTMLElement {
       canvasID = allPages[0]?.target
     }
 
-    fetch(canvasID)
-      .then(response => {
-        if (response.status === 404) {
-          err = { "status": 404, "statusText": "Canvas not found" }
-          throw err
-        }
-        return response.json()
-      })
-      .then(canvas => {
-        // Handle both Presentation API v3 (items) and v2 (images) formats
-        const imageId = canvas.items?.[0]?.items?.[0]?.body?.id ?? canvas.images?.[0]?.resource?.id
-        if (imageId) {
-          imageCanvas.src = imageId
-        }
-        else {
-          err = { "status": 500, "statusText": "Image could not be found in Canvas" }
-          throw err
-        }
-      })
-      .catch(error => {
-        if (error?.status === 404) {
-          imageCanvas.src = "../../assets/images/404_PageNotFound.jpeg"
-        }
-        else {
-          imageCanvas.src = "../../assets/images/noimage.jpg"
-        }
-      })
+    let canvas = await vault.get(canvasID, 'canvas')
+    if (!canvas && TPEN.activeProject?.manifest) {
+      // Canvas not directly resolvable, try to hydrate from all manifests
+      await vault.prefetchDocuments(TPEN.activeProject.manifest)
+      // After manifests are cached, try again
+      canvas = await vault.get(canvasID, 'canvas')
+    }
+    if (!canvas) {
+      imageCanvas.src = "../../assets/images/404_PageNotFound.jpeg"
+      return
+    }
+    // Handle both Presentation API v3 (items) and v2 (images) formats
+    const imageId = canvas.items?.[0]?.items?.[0]?.body?.id ?? canvas.images?.[0]?.resource?.id
+    if (imageId) {
+      imageCanvas.src = imageId
+    } else {
+      imageCanvas.src = "../../assets/images/noimage.jpg"
+    }
   }
 
   setCanvasAndSelector(thisLine, page) {
@@ -669,6 +660,13 @@ export default class TranscriptionInterface extends HTMLElement {
     const bottomImage = this.shadowRoot.querySelector('#bottomImage')
     topImage.manifest = bottomImage.manifest = TPEN.activeProject?.manifest[0]
     this.#page = await vault.get(pageID, 'annotationpage', true)
+    if (!this.#page && TPEN.activeProject?.manifest) {
+      // Try to hydrate from all manifests
+      const manifestUrls = TPEN.activeProject?.manifest
+      await vault.prefetchDocuments(manifestUrls)
+      // After manifests are cached, try again
+      this.#page = await vault.get(pageID, 'annotationpage', true)
+    }
     const projectPage = TPEN.activeProject.layers.flatMap(layer => layer.pages || []).find(p => p.id.split('/').pop() === pageID.split('/').pop())
     if (!this.#page || !projectPage) return
     const { orderedItems, columnsInPage } = orderPageItemsByColumns(projectPage, this.#page)

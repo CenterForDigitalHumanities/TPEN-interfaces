@@ -178,27 +178,19 @@ class ContinueWorking extends HTMLElement {
             
             let canvas, isV3
             canvas = await vault.get(canvasId, 'canvas')
-            if (!canvas) {
-                // Try to get canvas from manifest
-                const manifestUrl = project.manifest?.[0]
-                if (!manifestUrl) return this.generateProjectPlaceholder(project)
-                
-                const manifest = await vault.get(manifestUrl, 'manifest')
-                if (!manifest) return this.generateProjectPlaceholder(project)
-                
-                const context = manifest['@context']
-                isV3 = Array.isArray(context)
-                    ? context.some(ctx => typeof ctx === 'string' && ctx.includes('iiif.io/api/presentation/3'))
-                    : typeof context === 'string' && context.includes('iiif.io/api/presentation/3')
-                const canvases = isV3 ? manifest.items : manifest.sequences?.[0]?.canvases
-                canvas = canvases?.find(c => (isV3 ? c.id : c['@id']) === canvasId)
-                if (!canvas) return this.generateProjectPlaceholder(project)
-            } else {
-                const context = canvas['@context']
-                isV3 = Array.isArray(context)
-                    ? context.some(ctx => typeof ctx === 'string' && ctx.includes('iiif.io/api/presentation/3'))
-                    : typeof context === 'string' && context.includes('iiif.io/api/presentation/3')
+            if (!canvas && project.manifest?.[0]) {
+                // Try to hydrate from all manifests
+                await vault.prefetchDocuments(project.manifest)
+                // After manifests are cached, try again
+                canvas = await vault.get(canvasId, 'canvas')
             }
+            
+            if (!canvas) return this.generateProjectPlaceholder(project)
+            
+            const context = canvas['@context']
+            isV3 = Array.isArray(context)
+                ? context.some(ctx => typeof ctx === 'string' && ctx.includes('iiif.io/api/presentation/3'))
+                : typeof context === 'string' && context.includes('iiif.io/api/presentation/3')
             
             // Get thumbnail from canvas
             let thumbnailUrl = canvas.thumbnail?.id ?? canvas.thumbnail?.['@id'] ?? canvas.thumbnail
