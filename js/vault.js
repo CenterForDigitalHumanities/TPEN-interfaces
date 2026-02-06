@@ -35,16 +35,8 @@ class Vault {
             } catch {}
         }
 
-        try {
-            const uri = urlFromIdAndType(id, type, {
-                projectId: TPEN.screen?.projectInQuery,
-                pageId: TPEN.screen?.pageInQuery,
-                layerId: TPEN.screen?.layerInQuery
-            })
-            const response = await fetch(uri)
-            if (!response.ok) return null
-
-            const data = await response.json()
+        const seed = item && typeof item === 'object' ? item : null
+        const hydrateFromObject = (data) => {
             const queue = [{ obj: data, depth: 0 }]
             const visited = new Set()
 
@@ -66,19 +58,36 @@ class Vault {
                     const type = value?.['@type'] ?? value?.type
                     if (id && type && !visited.has(id)) {
                         visited.add(id)
-                        this.get(id, type)
+                        this.get(value, type)
                         // Project embedded object to minimal form
                         const label = value?.label ?? value?.title
                         obj[key] = { id, type, ...(label && { label }) }
                     }
                 }
             }
-            this.set(data, itemType)
+            this.set(data, type)
             try {
                 localStorage.setItem(cacheKey, JSON.stringify(data))
             } catch {}
             return data
+        }
+
+        try {
+            const uri = urlFromIdAndType(id, type, {
+                projectId: TPEN.screen?.projectInQuery,
+                pageId: TPEN.screen?.pageInQuery,
+                layerId: TPEN.screen?.layerInQuery
+            })
+            const response = await fetch(uri)
+            if (!response.ok) {
+                if (seed) return hydrateFromObject(seed)
+                return null
+            }
+
+            const data = await response.json()
+            return hydrateFromObject(data)
         } catch {
+            if (seed) return hydrateFromObject(seed)
             return
         }
     }
