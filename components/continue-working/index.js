@@ -1,4 +1,5 @@
 import TPEN from '../../api/TPEN.js'
+import vault from '../../js/vault.js'
 import { stringFromDate } from '/js/utils.js'
 import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 

@@ -69,6 +69,11 @@ export default class ColumnSelector extends HTMLElement {
         })
 
         this.#page = await vault.get(pageId, 'annotationpage', true)
+        if (!this.#page && TPEN.activeProject?.manifest) {
+            await vault.prefetchDocuments(TPEN.activeProject.manifest)
+            this.#page = await vault.get(pageId, 'annotationpage', true)
+        }
+        if (!this.#page) return
         const { orderedItems, columnsInPage, allColumnLines } = orderPageItemsByColumns(
             { columns: this.columns, items: page?.items },
             this.#page

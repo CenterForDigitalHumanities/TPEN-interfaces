@@ -1,4 +1,5 @@
 import { decodeContentState } from '../iiif-tools/index.js'
+import vault from '../../js/vault.js'
 import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 
 const CANVAS_PANEL_SCRIPT = document.createElement('script')
@@ -205,7 +206,11 @@ class TpenImageFragment extends HTMLElement {
 
     connectedCallback() {
         this.cleanup.onDocument('canvas-change', async (event) => {
-            const canvas = await vault.get(event.detail.canvasId, 'canvas')
+            let canvas = await vault.get(event.detail.canvasId, 'canvas')
+            if (!canvas && TPEN.activeProject?.manifest) {
+                await vault.prefetchDocuments(TPEN.activeProject.manifest)
+                canvas = await vault.get(event.detail.canvasId, 'canvas')
+            }
             if (!canvas) {
                 console.error('Failed to resolve canvas:', event.detail.canvasId)
                 return

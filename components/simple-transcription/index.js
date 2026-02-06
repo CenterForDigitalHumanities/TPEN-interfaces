@@ -481,7 +481,11 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       }
 
       // Use vault.get to fetch the page properly
-      const fetchedPage = await vault.get(pageID, 'annotationpage', true)
+      let fetchedPage = await vault.get(pageID, 'annotationpage', true)
+      if (!fetchedPage && TPEN.activeProject?.manifest) {
+        await vault.prefetchDocuments(TPEN.activeProject.manifest)
+        fetchedPage = await vault.get(pageID, 'annotationpage', true)
+      }
       if (!fetchedPage) {
         TPEN.eventDispatcher.dispatch("tpen-toast", {
           message: "Failed to load page. Please try again.",
@@ -515,7 +519,11 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
         canvasID = target.source
       }
 
-      const fetchedCanvas = await vault.get(canvasID, 'canvas')
+      let fetchedCanvas = await vault.get(canvasID, 'canvas')
+      if (!fetchedCanvas && TPEN.activeProject?.manifest) {
+        await vault.prefetchDocuments(TPEN.activeProject.manifest)
+        fetchedCanvas = await vault.get(canvasID, 'canvas')
+      }
       if (!fetchedCanvas) {
         TPEN.eventDispatcher.dispatch("tpen-toast", {
           message: "Could not load canvas. Please try again.",
@@ -523,12 +531,9 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
         })
         return
       }
-
       this.#canvas = fetchedCanvas
-
-      // Get canvas dimensions (these are the authoritative dimensions for XYWH calculations)
-      this.#imgTopOriginalHeight = fetchedCanvas.height ?? 1000
-      this.#imgTopOriginalWidth = fetchedCanvas.width ?? 1000
+      this.#imgTopOriginalHeight = this.#canvas.height ?? 1000
+      this.#imgTopOriginalWidth = this.#canvas.width ?? 1000
 
       // Get the image resource from the canvas
       // Handle both Presentation API v3 (items) and v2 (images) formats

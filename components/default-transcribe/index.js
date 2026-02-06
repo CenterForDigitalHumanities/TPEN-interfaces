@@ -4,11 +4,9 @@
  * @element tpen-transcription
  */
 import { userMessage, encodeContentState } from "../iiif-tools/index.js"
+import vault from "../../js/vault.js"
 import "../line-image/index.js"
 import "../line-text/index.js"
-import { Vault } from 'https://cdn.jsdelivr.net/npm/@iiif/helpers/+esm'
-
-const vault = new Vault()
 
 class TpenTranscriptionElement extends HTMLElement {
     #transcriptionContainer
@@ -71,26 +69,22 @@ class TpenTranscriptionElement extends HTMLElement {
     }
 
     async #loadPage(annotationPageID) {
-        let page = { id: annotationPageID }
-        try {
-            page = vault.get({id:annotationPageID,type:"AnnotationPage"}) ?? await vault.load(annotationPageID)
-        } catch (err) {
-            switch (err.status ?? err.code) {
-                case 401:
-                    return userMessage('Unauthorized')
-                case 403:
-                    return userMessage('Forbidden')
-                case 404:
-                    return userMessage('Project not found')
-                default:
-                    return userMessage(err.message ?? err.statusText ?? err.text ?? 'Unknown error')
-            }
+        let page = await vault.get(annotationPageID, 'annotationpage')
+        if (!page && TPEN.activeProject?.manifest) {
+            await vault.prefetchDocuments(TPEN.activeProject.manifest)
+            page = await vault.get(annotationPageID, 'annotationpage')
+        }
+        if (!page) {
+            return userMessage('Failed to load page. Please try again.')
         }
         let lines = await Promise.all(page.items.flatMap(async l => {
             const lineElem = document.createElement('tpen-line-text')
             const lineImg = document.createElement('tpen-line-image')
-            lineElem.line = vault.get({id:l.id,type:"Annotation"}) ?? await vault.load(l.id)
-            lineElem.line.body[0] = vault.get({id:lineElem.line.body[0].id,type:"ContentResource"})
+            lineElem.line = await vault.get(l.id, 'annotation')
+            if (!lineElem.line) {
+                lineElem.line = await vault.get(l.id, 'annotation', true)
+            }
+            lineElem.line.body[0] = await vault.get(lineElem.line.body[0].id, 'contentresource')
             lineElem.setAttribute('tpen-line-id', l.id)
             lineImg.setAttribute('tpen-line-id', l.id)
             lineImg.setAttribute('iiif-canvas', lineElem.line.target.source.id)

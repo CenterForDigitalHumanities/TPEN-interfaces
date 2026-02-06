@@ -4,14 +4,31 @@ import { urlFromIdAndType } from "../js/utils.js"
 class Vault {
     constructor() {
         this.store = new Map()
+        this.inFlightPromises = new Map()
     }
 
     _normalizeType(type) {
         return (type ?? '').toString().toLowerCase() || 'none'
     }
 
+    _isMongoHexString(str) {
+        return typeof str === 'string' && /^[a-f0-9]{24}$/i.test(str)
+    }
+
+    _normalizeId(id) {
+        if (typeof id !== 'string') return id
+        
+        let normalized = id.includes('#') ? id.split('#')[0] : id
+        
+        if (!normalized.startsWith('http') && this._isMongoHexString(normalized)) {
+            normalized = `${TPEN.RERUMURL}/id/${normalized}`
+        }
+        
+        return normalized
+    }
+
     _getId(item) {
-        return item?._id ?? item?.id ?? item?.['@id'] ?? item
+        return this._normalizeId(item?._id ?? item?.id ?? item?.['@id'] ?? item)
     }
 
     _cacheKey(itemType, id) {
@@ -21,6 +38,13 @@ class Vault {
     async get(item, itemType, noCache = false) {
         const type = this._normalizeType(itemType ?? item?.type ?? item?.['@type'])
         const id = this._getId(item)
+        
+        const promiseKey = `${type}:${id}`
+        
+        if (this.inFlightPromises.has(promiseKey)) {
+            return this.inFlightPromises.get(promiseKey)
+        }
+        
         const typeStore = this.store.get(type)
         let result = typeStore?.get(id)
         if (result) return result
@@ -35,8 +59,47 @@ class Vault {
             } catch {}
         }
 
+        const fetchPromise = this._fetchAndHydrate(item, type, id, cacheKey, itemType)
+        this.inFlightPromises.set(promiseKey, fetchPromise)
+        
+        try {
+            return await fetchPromise
+        } finally {
+            this.inFlightPromises.delete(promiseKey)
+        }
+    }
+
+    async _fetchAndHydrate(item, type, id, cacheKey, itemType) {
         const seed = item && typeof item === 'object' ? item : null
-        const hydrateFromObject = (data) => {
+        const hydrateFromObject = async (data) => {
+            if (!data || typeof data !== 'object') {
+                if (seed) this.set(seed, type)
+                return seed
+            }
+            
+            const skipProperties = new Set([
+                'id', '@id', 'type', '@type', '@context', 'context', 
+                'metadata', 'label', 'summary', 'requiredStatement',
+                'rights', 'navDate', 'language', 'format',
+                'duration', 'width', 'height', 
+                'viewingDirection', 'behavior', 'motivation',
+                'timeMode', 'thumbnail', 'placeholderCanvas',
+                'accompanyingCanvas', 'provider', 'homepage',
+                'logo', 'rendering', 'partOf', 'seeAlso', 'service',
+                'prev', 'next',
+                'selector', 'conformsTo', 'value',
+                'motivation', 'purpose', 'profile'
+            ])
+            
+            const iiifResourceTypes = new Set([
+                'manifest', 'collection', 'canvas', 'annotation', 
+                'annotationpage', 'annotationcollection', 'range',
+                'agent', 'annotationlist', 'sc:manifest', 'oa:annotationlist',
+                'oa:annotation'
+            ])
+            
+            const dataType = this._normalizeType(data?.['@type'] ?? data?.type ?? type)
+            const hasKnownType = dataType && dataType !== 'none'
             const queue = [{ obj: data, depth: 0 }]
             const visited = new Set()
 
@@ -45,7 +108,17 @@ class Vault {
                 if (depth >= 4 || !obj || typeof obj !== 'object') continue
 
                 for (const key of Object.keys(obj)) {
+                    // Skip known non-resource properties
+                    if (skipProperties.has(key)) continue
+                    
                     const value = obj[key]
+                    
+                    // Skip if we've already processed this value
+                    const valueId = this._normalizeId(value?.['@id'] ?? value?.id)
+                    if ((valueId && visited.has(valueId)) || (typeof value === 'string' && visited.has(value))) {
+                        continue
+                    }
+                    
                     if (Array.isArray(value)) {
                         for (const item of value) {
                             if (item && typeof item === 'object') queue.push({ obj: item, depth: depth + 1 })
@@ -54,20 +127,37 @@ class Vault {
                         queue.push({ obj: value, depth: depth + 1 })
                     }
 
-                    const id = value?.['@id'] ?? value?.id
-                    const type = value?.['@type'] ?? value?.type
-                    if (id && type && !visited.has(id)) {
-                        visited.add(id)
-                        this.get(value, type)
-                        // Project embedded object to minimal form
+                    // Handle objects with id and type properties
+                    const valueType = value?.['@type'] ?? value?.type
+                    const normalizedValueType = this._normalizeType(valueType)
+                    
+                    if (valueId && valueType && iiifResourceTypes.has(normalizedValueType)) {
+                        visited.add(valueId)
+                        await this.get(value, valueType)
                         const label = value?.label ?? value?.title
-                        obj[key] = { id, type, ...(label && { label }) }
+                        obj[key] = { id: valueId, type: valueType, ...(label && { label }) }
+                    } else
+
+                    if (typeof value === 'string') {
+                        const normalizedValue = this._normalizeId(value)
+                        let isValidUrl = false
+                        try {
+                            new URL(normalizedValue)
+                            isValidUrl = true
+                        } catch {}
+                        
+                        if (isValidUrl) {
+                            visited.add(normalizedValue)
+                            await this.get(normalizedValue)
+                        }
                     }
                 }
             }
-            this.set(data, type)
+            const storageType = hasKnownType ? dataType : type
+            this.set(data, storageType)
+            const cacheKeyToUse = hasKnownType ? this._cacheKey(dataType, id) : cacheKey
             try {
-                localStorage.setItem(cacheKey, JSON.stringify(data))
+                localStorage.setItem(cacheKeyToUse, JSON.stringify(data))
             } catch {}
             return data
         }
@@ -86,9 +176,9 @@ class Vault {
 
             const data = await response.json()
             return hydrateFromObject(data)
-        } catch {
+        } catch (err) {
             if (seed) return hydrateFromObject(seed)
-            return
+            return null
         }
     }
 
@@ -133,13 +223,17 @@ class Vault {
     async prefetchDocuments(items) {
         if (!Array.isArray(items)) items = [items]
         const errors = []
-        const promises = items.map(item =>
-            this.get(item).catch(err => {
-                errors.push({ item, error: err })
-                return null
-            })
-        )
-        await Promise.all(promises)
+        const promises = items.map(item => {
+            return this.get(item, item?.['@type'] ?? item?.type)
+                .catch(err => {
+                    errors.push({ item, error: err?.message || String(err) })
+                    return null
+                })
+        })
+        try {
+            await Promise.all(promises)
+        } catch (err) {
+        }
         return errors
     }
 }
@@ -147,21 +241,6 @@ class Vault {
 const vault = new Vault()
 if (typeof window !== 'undefined') {
     window.Vault = vault
-    window.runVaultTest = async (item, itemType = 'manifest') => {
-        const data = await vault.get(item, itemType)
-        const keys = Object.keys(localStorage).filter((key) => key.startsWith('vault:'))
-        const entries = keys.map((key) => ({
-            key,
-            size: localStorage.getItem(key)?.length ?? 0
-        }))
-        console.log('Vault test complete', {
-            item,
-            itemType,
-            keys,
-            entries
-        })
-        return { data, keys, entries }
-    }
 }
 
 export default vault
