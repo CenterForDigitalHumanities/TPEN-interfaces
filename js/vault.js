@@ -134,6 +134,21 @@ class Vault {
 const vault = new Vault()
 if (typeof window !== 'undefined') {
     window.Vault = vault
+    window.runVaultTest = async (item, itemType = 'manifest') => {
+        const data = await vault.get(item, itemType)
+        const keys = Object.keys(localStorage).filter((key) => key.startsWith('vault:'))
+        const entries = keys.map((key) => ({
+            key,
+            size: localStorage.getItem(key)?.length ?? 0
+        }))
+        console.log('Vault test complete', {
+            item,
+            itemType,
+            keys,
+            entries
+        })
+        return { data, keys, entries }
+    }
 }
 
 export default vault
