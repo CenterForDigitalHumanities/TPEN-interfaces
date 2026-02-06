@@ -2,6 +2,7 @@
  * TpenTranscriptionElement - Default transcription view component.
  * Displays line text and images for an annotation page.
  * @element tpen-transcription
+ * @deprecated in favor of simple-transcription
  */
 import { userMessage, encodeContentState } from "../iiif-tools/index.js"
 import "../line-image/index.js"
@@ -30,6 +31,7 @@ class TpenTranscriptionElement extends HTMLElement {
     }
 
     constructor() {
+        console.warn("The <tpen-transcription> component is deprecated and may not function properly.  See <tpen-simple-transcription>.")
         super()
         this.attachShadow({ mode: 'open' })
         this.#transcriptionContainer = document.createElement('div')

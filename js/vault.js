@@ -2,9 +2,14 @@
 import TPEN from "../api/TPEN.js"
 import { urlFromIdAndType } from "../js/utils.js"
 
+/** Types that are too large for localStorage (manifests can be megabytes). */
+const SKIP_LOCAL_STORAGE_TYPES = new Set(['manifest', 'collection', 'annotationcollection'])
+
 /**
  * Vault - Client-side caching utility for IIIF resources.
  * Provides memory and localStorage caching with type-specific validation.
+ * When a Canvas URI fails to resolve, automatically attempts to find the
+ * Canvas as embedded data within a parent Manifest.
  */
 class Vault {
     constructor() {
@@ -24,78 +29,6 @@ class Vault {
     }
 
     /**
-     * Creates a standardized canvas error object.
-     * @param {string} errorType - Error type: 'network' | 'server_error' | 'not_found' | 'forbidden' | 'unauthorized' | 'invalid_json' | 'invalid_type' | 'missing_id'
-     * @param {string} message - Human-readable error message
-     * @param {number|null} httpStatus - HTTP status code (if applicable)
-     * @param {string} canvasUri - The canvas URI that failed
-     * @param {string} [component] - Which component triggered the fetch
-     * @returns {Object} Standardized error object
-     */
-    _createCanvasError(errorType, message, httpStatus, canvasUri, component) {
-        return {
-            errorType,
-            message,
-            httpStatus,
-            canvasUri,
-            component
-        }
-    }
-
-    /**
-     * Validates that a fetched object is a valid IIIF Canvas.
-     * Supports both IIIF Presentation API v2 and v3 formats.
-     * @param {Object} canvas - The fetched canvas data
-     * @param {string} uri - The canvas URI (for error reporting)
-     * @returns {Object|null} Error object if invalid, null if valid
-     */
-    _validateCanvas(canvas, uri) {
-        // Check for id (v3: id, v2: @id)
-        const canvasId = canvas?.id ?? canvas?.['@id']
-        if (!canvasId) {
-            return this._createCanvasError('missing_id', 'Canvas has no id field', null, uri)
-        }
-
-        // Check for type (v3: type, v2: @type)
-        const canvasType = canvas?.type ?? canvas?.['@type']
-        if (!canvasType) {
-            return this._createCanvasError('invalid_type', 'Canvas has no type field', null, uri)
-        }
-
-        // Valid Canvas types: 'Canvas' (v3) or 'sc:Canvas' (v2)
-        const validTypes = ['Canvas', 'sc:Canvas']
-        if (!validTypes.includes(canvasType)) {
-            return this._createCanvasError('invalid_type', `Expected Canvas type, got '${canvasType}'`, null, uri)
-        }
-
-        // Check IIIF context - only warn, don't fail
-        const context = canvas?.['@context']
-        if (context) {
-            const validContexts = [
-                'http://iiif.io/api/presentation/2/context.json',
-                'https://iiif.io/api/presentation/2/context.json',
-                'http://iiif.io/api/presentation/3/context.json',
-                'https://iiif.io/api/presentation/3/context.json'
-            ]
-            const contexts = Array.isArray(context) ? context : [context]
-            const hasValidContext = contexts.some(c => validContexts.includes(c))
-            if (!hasValidContext) {
-                console.warn(`Canvas ${uri} has non-standard IIIF context:`, context)
-            }
-        }
-
-        return null // Valid canvas
-    }
-
-    /**
-     * Dispatches a canvas resolution failure event.
-     * @param {Object} error - The error object from _createCanvasError
-     */
-    _dispatchCanvasError(error) {
-        TPEN.eventDispatcher?.dispatch('tpen-canvas-resolution-failed', error)
-    }
-
-    /**
      * Maps HTTP status codes to error types.
      * @param {number} status - HTTP status code
      * @returns {string} Error type
@@ -109,38 +42,84 @@ class Vault {
     }
 
     /**
+     * Creates a standardized canvas error object.
+     * @param {string} errorType - Error type: 'network' | 'server_error' | 'not_found' | 'forbidden' | 'unauthorized' | 'invalid_json' | 'invalid_type' | 'missing_id'
+     * @param {string} message - Human-readable error message
+     * @param {number|null} httpStatus - HTTP status code (if applicable)
+     * @param {string} canvasUri - The canvas URI that failed
+     * @returns {Object} Standardized error object
+     */
+    _createCanvasError(errorType, message, httpStatus, canvasUri) {
+        return {
+            errorType,
+            message,
+            httpStatus,
+            canvasUri
+        }
+    }
+
+    /**
+     * Dispatches a canvas resolution failure event.
+     * @param {Object} error - The error object from _createCanvasError
+     */
+    _dispatchCanvasError(error) {
+        TPEN.eventDispatcher?.dispatch('tpen-canvas-resolution-failed', error)
+    }
+
+    /**
+     * Core fallback orchestrator: attempts to find a canvas from its parent manifest.
+     * Used so that if a Canvas URI does not resolve the canvas object from within the mainfest can be returned in its stead. 
+     * @param {string} canvasId - The canvas ID to resolve
+     * @returns {Promise<Object|null>} The embedded canvas or null
+     */
+    async _getCanvasFromManifest(canvasId) {
+        console.log("TODO get canvas from manifest if possible.  Assume fail return null for now.")
+        return null
+    }
+
+    /**
      * Fetches and caches a resource by ID and type.
-     * For canvas type, performs validation and dispatches events on failure.
+     * For canvas type, performs validation and attempts manifest fallback on failure.
+     * Error events are only dispatched if BOTH URI resolution AND manifest fallback fail.
      * @param {string|Object} item - Item ID or object with id property
      * @param {string} itemType - Type of item ('canvas', 'manifest', etc.)
      * @param {boolean} [noCache=false] - Skip cache lookup
-     * @param {string} [component] - Component name for error reporting (which component triggered the fetch)
      * @returns {Promise<Object|null>} The fetched resource or null on failure
      */
-    async get(item, itemType, noCache = false, component) {
+    async get(item, itemType, noCache = false) {
         const type = this._normalizeType(itemType ?? item?.type ?? item?.['@type'])
         const id = this._getId(item)
-        const isCanvas = type === 'canvas'
-        const typeStore = this.store.get(type)
-        let result = typeStore?.get(id)
-        if (result) return result
-
+        if (typeof item === "string") item = {id, type}
+        const isCanvas = (type === 'canvas' || type === "sc:canvas")
+        const isManifest =  (type === 'manifest' || type === "sc:manifest")
+        let canvasError = null
+        if (!noCache) {
+            const typeStore = this.store.get(type)
+            const result = typeStore?.get(id)
+            if (result) return result
+        }
+        if (isManifest) {
+            console.log("fetch this manifest uri")
+            console.log(id)  
+        }
+        if (isCanvas) {
+            console.log("fetch this canvas uri")
+            console.log(id)  
+        }
         const cacheKey = this._cacheKey(type, id)
         let cached
         try { cached = localStorage.getItem(cacheKey) } catch {}
         if (cached && !noCache) {
             try {
-                const parsed = JSON.parse(cached)
-                // Validate cached canvas data
-                if (isCanvas) {
-                    const validationError = this._validateCanvas(parsed, id)
-                    if (validationError) {
-                        validationError.component = component
-                        this._dispatchCanvasError(validationError)
-                        try { localStorage.removeItem(cacheKey) } catch {}
-                        return null
-                    }
+                if (isManifest) {
+                    console.log("manifest was already cached")
+                    console.log(cached)  
                 }
+                if (isCanvas) {
+                    console.log("canvas was already cached")
+                    console.log(cached)  
+                }
+                const parsed = JSON.parse(cached)
                 this.set(parsed, type)
                 return parsed
             } catch {
@@ -148,64 +127,43 @@ class Vault {
                 try { localStorage.removeItem(cacheKey) } catch {}
             }
         }
-
         try {
             const uri = urlFromIdAndType(id, type, {
                 projectId: TPEN.screen?.projectInQuery,
                 pageId: TPEN.screen?.pageInQuery,
                 layerId: TPEN.screen?.layerInQuery
             })
-            const response = await fetch(uri)
-
+            let data = item
+            const response = await fetch(uri, noCache ? { cache: 'no-store' } : undefined)
             if (!response.ok) {
                 if (isCanvas) {
                     const errorType = this._httpStatusToErrorType(response.status)
-                    const error = this._createCanvasError(
+                    canvasError = this._createCanvasError(
                         errorType,
                         `HTTP ${response.status}: ${response.statusText}`,
                         response.status,
-                        uri,
-                        component
+                        id
                     )
-                    this._dispatchCanvasError(error)
                 }
-                return null
+                // return null
             }
-
-            let data
-            try {
-                data = await response.json()
-            } catch (jsonError) {
-                if (isCanvas) {
-                    const error = this._createCanvasError(
-                        'invalid_json',
-                        'Response is not valid JSON',
-                        response.status,
-                        uri,
-                        component
-                    )
-                    this._dispatchCanvasError(error)
+            if (response.ok) {
+                try {
+                    data = await response.json()
                 }
-                return null
+                catch (err) {}
             }
-
-            // Validate canvas structure
-            if (isCanvas) {
-                const validationError = this._validateCanvas(data, uri)
-                if (validationError) {
-                    validationError.component = component
-                    this._dispatchCanvasError(validationError)
-                    return null
-                }
-            }
-
             const queue = [{ obj: data, depth: 0 }]
             const visited = new Set()
-
+            if (itemType === "manifest") {
+                console.log("grind through manifest")
+            }
+            if (itemType === "canvas") {
+                console.log("grind through canvas")
+            }
             while (queue.length) {
                 const { obj, depth } = queue.shift()
                 if (depth >= 4 || !obj || typeof obj !== 'object') continue
-
                 for (const key of Object.keys(obj)) {
                     const value = obj[key]
                     if (Array.isArray(value)) {
@@ -220,8 +178,7 @@ class Vault {
                     const type = value?.['@type'] ?? value?.type
                     if (id && type && !visited.has(id)) {
                         visited.add(id)
-                        // Fire-and-forget for background caching - errors are non-fatal
-                        this.get(id, type).catch(() => {})
+                        this.get(id, type)
                         // Project embedded object to minimal form
                         const label = value?.label ?? value?.title
                         obj[key] = { id, type, ...(label && { label }) }
@@ -232,22 +189,22 @@ class Vault {
             try {
                 localStorage.setItem(cacheKey, JSON.stringify(data))
             } catch {}
-            return data
-        } catch (err) {
-            if (isCanvas) {
-                const error = this._createCanvasError(
-                    'network',
-                    err.message || 'Network error',
-                    null,
-                    id,
-                    component
-                )
-                this._dispatchCanvasError(error)
+            if (canvasError !== null) {
+                this._dispatchCanvasError(canvasError)
             }
-            return null
+            return data
+        } catch {
+            return
         }
     }
 
+    /**
+     * Stores a resource in memory cache and localStorage.
+     * For manifest types, indexes embedded canvases and skips localStorage
+     * (manifests can be megabytes, localStorage has ~5MB quota).
+     * @param {Object} item - The item to store
+     * @param {string} itemType - Type of item
+     */
     set(item, itemType) {
         const type = this._normalizeType(itemType ?? item?.type ?? item?.['@type'])
         const id = this._getId(item)
@@ -270,6 +227,12 @@ class Vault {
         typeStore.delete(id)
         const cacheKey = this._cacheKey(type, id)
         try { localStorage.removeItem(cacheKey) } catch {}
+        // Clean up canvasToManifest entries pointing to this manifest
+        if (type === 'manifest') {
+            for (const [canvasId, manifestId] of this.canvasToManifest) {
+                if (manifestId === id) this.canvasToManifest.delete(canvasId)
+            }
+        }
     }
 
     clear(itemType) {
@@ -282,10 +245,14 @@ class Vault {
             }
         } catch {}
         this.store.delete(type)
+        // Clean up canvasToManifest entries when clearing manifests
+        if (type === 'manifest') {
+            this.canvasToManifest.clear()
+        }
     }
 
     all() {
-        return Object.values(this.store)
+        return [...this.store.values()]
     }
 }
 

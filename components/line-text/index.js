@@ -1,5 +1,6 @@
 import {decodeContentState} from '../iiif-tools/index.js'
 import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
+import vault from '../../js/vault.js'
 
 const LINE_TEXT_HTML = `<span>
     <span style="border-radius: 1em; background-color: lightgrey; width: 100%; min-width:14em;min-height: 1em; display: inline-block;">
@@ -91,11 +92,9 @@ class TpenLineText extends HTMLElement {
         }
     }
     
-    async #loadAnnotation(url){   
+    async #loadAnnotation(url){
         try {
-            const response = await fetch(url)
-            if(!response.ok) throw new Error("failed to fetch")
-            return await response.json()
+            return await vault.get(url, 'annotation', false, 'tpen-line-text')
         } catch (error) {
             console.error(error)
         }

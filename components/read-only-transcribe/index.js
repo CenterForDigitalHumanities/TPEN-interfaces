@@ -325,18 +325,18 @@ class ReadOnlyViewTranscribe extends HTMLElement {
             return
         }
         
-        const response = await fetch(manifestUrl)
-        if (!response.ok) {
-            const errText = await response.text()
-            throw new Error(`GitHub read failed: ${response.status} - ${errText}`)
+        const manifest = await vault.get(manifestUrl, 'manifest', true, 'tpen-read-only-view-transcribe')
+        if (!manifest) {
+            throw new Error(`Failed to load manifest: ${manifestUrl}`)
         }
-        const manifest = await response.json()
         this.#staticManifest = manifest
 
-        this.shadowRoot.querySelector(".transcribe-title").textContent = `Transcription for ${manifest.label.none?.[0]}`
+        this.shadowRoot.querySelector(".transcribe-title").textContent = `Transcription for ${manifest.label?.none?.[0] ?? 'Unknown'}`
 
         for (const canvas of manifest.items) {
-            const imgUrl = canvas.items[0].items.find(i => i.motivation === "painting").body.id
+            const paintingAnno = canvas.items?.[0]?.items?.find(i => i.motivation === "painting")
+            const imgUrl = paintingAnno?.body?.id
+            if (!imgUrl) continue
             const annotations = canvas.annotations
 
             if (!annotations || annotations.length === 0) {
@@ -344,13 +344,14 @@ class ReadOnlyViewTranscribe extends HTMLElement {
             }
 
             for (const annoPage of annotations) {
-                const partOfId = await fetch(annoPage.partOf[0].id).then(res => res.json())
-                const layerLabel = partOfId.label.none[0]
+                const partOfId = await vault.get(annoPage.partOf[0].id, 'annotationcollection', false, 'tpen-read-only-view-transcribe')
+                if (!partOfId) continue
+                const layerLabel = partOfId.label?.none?.[0] ?? 'Unknown Layer'
 
                 if (!output[layerLabel]) {
                     output[layerLabel] = {}
                 }
-                output[layerLabel][imgUrl] = { id: annoPage.id, label: annoPage.label.none[0], lines: [] }
+                output[layerLabel][imgUrl] = { id: annoPage.id, label: annoPage.label?.none?.[0] ?? '', lines: [] }
 
                 output[layerLabel][imgUrl].lines = await Promise.all(
                     annoPage?.items.map(async (anno) => {

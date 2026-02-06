@@ -104,7 +104,7 @@ class AnnotoriousAnnotator extends HTMLElement {
 
   // Initialize HTML after loading in a TPEN3 Project
   render() {
-    // Check that user can create AND update selectors on lines (required for the annotator)
+    // Check that user can create OR update line selectors.  This is lax, as it is likely the annotator requires both.
     if (!(CheckPermissions.checkEditAccess("LINE", "SELECTOR") || CheckPermissions.checkCreateAccess("LINE", "SELECTOR"))) {
       this.shadowRoot.innerHTML = "You do not have the proper project permissions to use this interface."
       return
@@ -542,7 +542,8 @@ class AnnotoriousAnnotator extends HTMLElement {
       for await (const anno_ref of this.#resolvedAnnotationPage.items) {
         i++
         if (anno_ref.hasOwnProperty("body")) continue
-        const anno_res = await fetch(anno_ref.id).then(res => res.json()).catch(err => { throw err })
+        const anno_res = await vault.get(anno_ref.id, 'annotation', false, 'tpen-line-parser')
+        if (!anno_res) throw new Error(`Failed to resolve Annotation: ${anno_ref.id}`)
         this.#resolvedAnnotationPage.items[i] = anno_res
       }
     }
