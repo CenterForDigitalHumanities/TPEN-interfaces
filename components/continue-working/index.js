@@ -1,6 +1,7 @@
 import TPEN from '../../api/TPEN.js'
 import { stringFromDate } from '/js/utils.js'
 import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
+import vault from '../../js/vault.js'
 
 /**
  * ContinueWorking - Displays recent projects with thumbnails for quick access.
@@ -175,19 +176,20 @@ class ContinueWorking extends HTMLElement {
             const annotationPage = await fetch(`${TPEN.servicesURL}/project/${project._id}/page/${annotationPageId}`).then(r => r.json())
             const canvasId = annotationPage.target
             if (!canvasId) return this.generateProjectPlaceholder(project)
-            
+
             let canvas, isV3
-            try {
-                canvas = await fetch(canvasId).then(r => r.json())
+            // Use vault for canvas fetching - silent failure for thumbnails
+            canvas = await vault.get(canvasId, 'canvas', false, 'tpen-continue-working')
+            if (canvas) {
                 const context = canvas['@context']
                 isV3 = Array.isArray(context)
                     ? context.some(ctx => typeof ctx === 'string' && ctx.includes('iiif.io/api/presentation/3'))
                     : typeof context === 'string' && context.includes('iiif.io/api/presentation/3')
-            } catch {
-                // Fetch manifest
+            } else {
+                // Canvas fetch failed - fallback to manifest
                 const manifestUrl = project.manifest?.[0]
                 if (!manifestUrl) return this.generateProjectPlaceholder(project)
-                
+
                 const manifest = await fetch(manifestUrl).then(r => r.json())
                 const context = manifest['@context']
                 isV3 = Array.isArray(context)

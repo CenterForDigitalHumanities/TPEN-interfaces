@@ -1,5 +1,6 @@
 import { checkIfUrlExists } from '../../utilities/checkIfUrlExists.js'
 import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
+import vault from '../../js/vault.js'
 
 /**
  * ReadOnlyViewTranscribe - Public read-only view of transcription data from static manifest.
@@ -411,12 +412,27 @@ class ReadOnlyViewTranscribe extends HTMLElement {
 
     async processCanvas(uri) {
         if (!uri) return
-        let embeddedCanvas = this.#staticManifest?.items.find(c => (c.id ?? c['@id']) === uri)
+        // Try to find canvas embedded in manifest first
+        let embeddedCanvas = this.#staticManifest?.items?.find(c => (c.id ?? c['@id']) === uri)
+        // Fallback to vault fetch if not found in manifest
+        if (!embeddedCanvas) {
+            embeddedCanvas = await vault.get(uri, 'canvas', false, 'tpen-read-only-view-transcribe')
+        }
+        if (!embeddedCanvas) {
+            // Canvas resolution failed - show error message
+            this.shadowRoot.getElementById('annotator-container').innerHTML = `
+                <div style="padding: 2rem; text-align: center;">
+                    <h3>Canvas Not Available</h3>
+                    <p>The canvas image could not be loaded.</p>
+                </div>
+            `
+            return
+        }
         // Handle both Presentation API v3 (items) and v2 (images) formats
-        let fullImage = embeddedCanvas?.items?.[0]?.items?.[0]?.body?.id ?? embeddedCanvas?.images?.[0]?.resource?.id
-        let imageService = embeddedCanvas?.items?.[0]?.items?.[0]?.body?.service?.id
-        let imgx = embeddedCanvas?.items?.[0]?.items?.[0]?.body?.width
-        let imgy = embeddedCanvas?.items?.[0]?.items?.[0]?.body?.height
+        let fullImage = embeddedCanvas?.items?.[0]?.items?.[0]?.body?.id ?? embeddedCanvas?.images?.[0]?.resource?.id ?? embeddedCanvas?.images?.[0]?.resource?.['@id']
+        let imageService = embeddedCanvas?.items?.[0]?.items?.[0]?.body?.service?.id ?? embeddedCanvas?.images?.[0]?.resource?.service?.['@id']
+        let imgx = embeddedCanvas?.items?.[0]?.items?.[0]?.body?.width ?? embeddedCanvas?.images?.[0]?.resource?.width
+        let imgy = embeddedCanvas?.items?.[0]?.items?.[0]?.body?.height ?? embeddedCanvas?.images?.[0]?.resource?.height
         this.#imageDims = [imgx || 0, imgy || 0]
         this.#canvasDims = [embeddedCanvas?.width || 0, embeddedCanvas?.height || 0]
 

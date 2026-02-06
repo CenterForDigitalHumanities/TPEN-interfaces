@@ -391,6 +391,7 @@ TPEN.eventDispatcher.on('tpen-project-loaded', (ev) => {
 // - tpen-project-load-failed: Project load failed
 // - tpen-page-selected: Page selected in page selector ({ pageId, pageIndex, page })
 // - tpen-toast: Show toast message ({ status, message })
+// - tpen-canvas-resolution-failed: Canvas fetch failed ({ errorType, message, httpStatus, canvasUri, component })
 // - token-expiration: Auth token expired
 
 // DOM custom events for component communication
