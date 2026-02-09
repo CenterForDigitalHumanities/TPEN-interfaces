@@ -17,14 +17,7 @@ class Vault {
 
     _normalizeId(id) {
         if (typeof id !== 'string') return id
-        
-        let normalized = id.includes('#') ? id.split('#')[0] : id
-        
-        if (!normalized.startsWith('http') && this._isMongoHexString(normalized)) {
-            normalized = `${TPEN.RERUMURL}/id/${normalized}`
-        }
-        
-        return normalized
+        return id.split('#')[0]
     }
 
     _getId(item) {
@@ -67,6 +60,19 @@ class Vault {
         } finally {
             this.inFlightPromises.delete(promiseKey)
         }
+    }
+
+    async _processIIIFResource(resource, visited, iiifResourceTypes) {
+        const resourceId = this._normalizeId(resource?.['@id'] ?? resource?.id)
+        const resourceType = resource?.['@type'] ?? resource?.type
+        const normalizedType = this._normalizeType(resourceType)
+        
+        if (resourceId && resourceType && iiifResourceTypes.has(normalizedType) && !visited.has(resourceId)) {
+            visited.add(resourceId)
+            await this.get(resource, resourceType)
+            return { id: resourceId, type: resourceType, label: resource?.label ?? resource?.title }
+        }
+        return null
     }
 
     async _fetchAndHydrate(item, type, id, cacheKey, itemType) {
@@ -121,35 +127,20 @@ class Vault {
                     
                     if (Array.isArray(value)) {
                         for (const item of value) {
-                            if (item && typeof item === 'object') queue.push({ obj: item, depth: depth + 1 })
+                            if (item && typeof item === 'object') {
+                                queue.push({ obj: item, depth: depth + 1 })
+                                // Process IIIF resources in arrays (e.g., canvases in manifest.items)
+                                await this._processIIIFResource(item, visited, iiifResourceTypes)
+                            }
                         }
                     } else if (value && typeof value === 'object') {
                         queue.push({ obj: value, depth: depth + 1 })
                     }
 
-                    // Handle objects with id and type properties
-                    const valueType = value?.['@type'] ?? value?.type
-                    const normalizedValueType = this._normalizeType(valueType)
-                    
-                    if (valueId && valueType && iiifResourceTypes.has(normalizedValueType)) {
-                        visited.add(valueId)
-                        await this.get(value, valueType)
-                        const label = value?.label ?? value?.title
-                        obj[key] = { id: valueId, type: valueType, ...(label && { label }) }
-                    } else
-
-                    if (typeof value === 'string') {
-                        const normalizedValue = this._normalizeId(value)
-                        let isValidUrl = false
-                        try {
-                            new URL(normalizedValue)
-                            isValidUrl = true
-                        } catch {}
-                        
-                        if (isValidUrl) {
-                            visited.add(normalizedValue)
-                            await this.get(normalizedValue)
-                        }
+                    // Handle objects with id and type properties (non-array values)
+                    const processed = await this._processIIIFResource(value, visited, iiifResourceTypes)
+                    if (processed) {
+                        obj[key] = processed
                     }
                 }
             }

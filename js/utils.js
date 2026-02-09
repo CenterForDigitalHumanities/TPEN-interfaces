@@ -31,6 +31,13 @@ export function urlFromIdAndType(id, type, { projectId, pageId, layerId}) {
         case 'annotationcollection':
             if (!projectId) return ''
             return `${TPEN.servicesURL}/project/${projectId}/layer/${id}`
+        case 'canvas':
+        case 'manifest':
+        case 'collection':
+            // These should come from external IIIF manifests or be full URLs already
+            // If they're hex strings without a URL, they're embedded and shouldn't be fetched
+            // Return empty string to trigger fetch failure and fallback to seed/embedded
+            return ''
         default:
             return `${TPEN.RERUMURL}/id/${id}`
     }
