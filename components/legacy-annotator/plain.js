@@ -314,7 +314,7 @@ class LegacyAnnotator extends HTMLElement {
         if(!page) return
         let resolvedPage = await vault.get(page, 'annotationpage')
         if (!resolvedPage && TPEN.activeProject?.manifest) {
-            await vault.prefetchDocuments(TPEN.activeProject.manifest)
+            await vault.prefetchManifests(TPEN.activeProject.manifest)
             resolvedPage = await vault.get(page, 'annotationpage')
         }
         if (!resolvedPage) {
@@ -400,7 +400,7 @@ class LegacyAnnotator extends HTMLElement {
         let resolvedCanvas = await vault.get(canvas, 'canvas')
         if (!resolvedCanvas && TPEN.activeProject?.manifest) {
             // Try to hydrate from all manifests
-            await vault.prefetchDocuments(TPEN.activeProject.manifest)
+            await vault.prefetchManifests(TPEN.activeProject.manifest)
             // After manifests are cached, try again
             resolvedCanvas = await vault.get(canvas, 'canvas')
         }

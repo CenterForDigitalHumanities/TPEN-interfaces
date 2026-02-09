@@ -216,11 +216,12 @@ class Vault {
         return Object.values(this.store)
     }
 
-    async prefetchDocuments(items) {
+    async prefetchDocuments(items, docType) {
         if (!Array.isArray(items)) items = [items]
         const errors = []
         const promises = items.map(item => {
-            return this.get(item, item?.['@type'] ?? item?.type)
+            const type = docType ?? item?.['@type'] ?? item?.type
+            return this.get(item, type)
                 .catch(err => {
                     errors.push({ item, error: err?.message || String(err) })
                     return null
@@ -231,6 +232,14 @@ class Vault {
         } catch (err) {
         }
         return errors
+    }
+
+    async prefetchManifests(items) {
+        return this.prefetchDocuments(items, 'manifest')
+    }
+
+    async prefetchCollections(items) {
+        return this.prefetchDocuments(items, 'collection')
     }
 }
 
