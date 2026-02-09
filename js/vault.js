@@ -70,8 +70,12 @@ class Vault {
         if (resourceId && resourceType && iiifResourceTypes.has(normalizedType) && !visited.has(resourceId)) {
             visited.add(resourceId)
             
-            // Check if resource is a full embedded object (has properties beyond id/type)
-            // or just a minimal reference (only id/type or just a string)
+            // Check if resource is a full embedded object vs a minimal reference.
+            // A minimal reference (e.g., {id, type, label}) should be fetched to get full details.
+            // An embedded object (e.g., Canvas with height/width/items) should be cached directly.
+            // We exclude id/type (identity), label/title (descriptive metadata that appears in both)
+            // and check for any other properties (like height, width, items, body, target, etc.)
+            // that indicate this is a complete embedded resource rather than just a reference.
             const isEmbeddedObject = typeof resource === 'object' && resource !== null &&
                 Object.keys(resource).some(key => 
                     key !== 'id' && key !== '@id' && 
