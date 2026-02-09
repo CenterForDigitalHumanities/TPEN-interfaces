@@ -71,7 +71,7 @@ class TpenTranscriptionElement extends HTMLElement {
     async #loadPage(annotationPageID) {
         let page = await vault.get(annotationPageID, 'annotationpage')
         if (!page && TPEN.activeProject?.manifest) {
-            await vault.prefetchDocuments(TPEN.activeProject.manifest)
+            await vault.prefetchManifests(TPEN.activeProject.manifest)
             page = await vault.get(annotationPageID, 'annotationpage')
         }
         if (!page) {

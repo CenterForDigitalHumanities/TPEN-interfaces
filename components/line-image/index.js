@@ -208,7 +208,7 @@ class TpenImageFragment extends HTMLElement {
         this.cleanup.onDocument('canvas-change', async (event) => {
             let canvas = await vault.get(event.detail.canvasId, 'canvas')
             if (!canvas && TPEN.activeProject?.manifest) {
-                await vault.prefetchDocuments(TPEN.activeProject.manifest)
+                await vault.prefetchManifests(TPEN.activeProject.manifest)
                 canvas = await vault.get(event.detail.canvasId, 'canvas')
             }
             if (!canvas) {

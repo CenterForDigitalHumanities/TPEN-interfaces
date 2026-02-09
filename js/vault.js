@@ -65,7 +65,31 @@ class Vault {
         
         if (resourceId && resourceType && iiifResourceTypes.has(normalizedType) && !visited.has(resourceId)) {
             visited.add(resourceId)
-            await this.get(resource, resourceType)
+            
+            // Check if resource is a full embedded object vs a minimal stub/reference.
+            // A stub with just {id, type, label} should be fetched to get full content.
+            // An embedded object has properties that indicate substantial content:
+            // - items/annotations: arrays containing child resources (Canvas, Manifest, AnnotationPage, Collection)
+            // - body/target: core annotation properties (at least one present)
+            // - height+width: Canvas dimensions (both must be present)
+            // Stubs may have other metadata (label, summary, thumbnail) but lack content properties.
+            const hasItems = Array.isArray(resource?.items) && resource.items.length > 0
+            const hasAnnotations = Array.isArray(resource?.annotations) && resource.annotations.length > 0
+            const hasBody = resource?.body !== undefined
+            const hasTarget = resource?.target !== undefined
+            const hasCanvasDimensions = resource?.height !== undefined && resource?.width !== undefined
+            
+            const isEmbeddedObject = typeof resource === 'object' && resource !== null &&
+                (hasItems || hasAnnotations || hasBody || hasTarget || hasCanvasDimensions)
+            
+            if (isEmbeddedObject) {
+                // For embedded objects, cache directly without fetching
+                this.set(resource, normalizedType)
+            } else {
+                // For ID strings or minimal references, fetch the full resource
+                await this.get(resource, resourceType)
+            }
+            
             return { id: resourceId, type: resourceType, label: resource?.label ?? resource?.title }
         }
         return null
@@ -93,11 +117,19 @@ class Vault {
                 'motivation', 'purpose', 'profile'
             ])
             
+            // IIIF resource types for both Presentation API v2 (prefixed) and v3 (unprefixed)
+            // v2 types use prefixes: sc: (Shared Canvas), oa: (Open Annotation)
+            // v3 types are unprefixed
             const iiifResourceTypes = new Set([
+                // IIIF Presentation API v3 (unprefixed)
                 'manifest', 'collection', 'canvas', 'annotation', 
                 'annotationpage', 'annotationcollection', 'range',
-                'agent', 'annotationlist', 'sc:manifest', 'oa:annotationlist',
-                'oa:annotation'
+                'agent', // v3 metadata type for providers/creators
+                // IIIF Presentation API v2 (sc: prefix for Shared Canvas types)
+                'sc:manifest', 'sc:collection', 'sc:canvas', 'sc:sequence',
+                'sc:range', 'sc:layer',
+                // Open Annotation (oa: prefix) - v2 annotation types
+                'oa:annotation', 'oa:annotationlist' // annotationlist is v2; becomes annotationpage in v3
             ])
             
             const dataType = this._normalizeType(data?.['@type'] ?? data?.type ?? type)
@@ -155,6 +187,11 @@ class Vault {
                 pageId: TPEN.screen?.pageInQuery,
                 layerId: TPEN.screen?.layerInQuery
             })
+            // Guard against empty/falsy URIs to avoid fetching the current page
+            if (!uri) {
+                if (seed) return hydrateFromObject(seed)
+                return null
+            }
             const response = await fetch(uri)
             if (!response.ok) {
                 if (seed) return hydrateFromObject(seed)
@@ -207,11 +244,12 @@ class Vault {
         return Object.values(this.store)
     }
 
-    async prefetchDocuments(items) {
+    async prefetchDocuments(items, docType) {
         if (!Array.isArray(items)) items = [items]
         const errors = []
         const promises = items.map(item => {
-            return this.get(item, item?.['@type'] ?? item?.type)
+            const type = docType ?? item?.['@type'] ?? item?.type
+            return this.get(item, type)
                 .catch(err => {
                     errors.push({ item, error: err?.message || String(err) })
                     return null
@@ -222,6 +260,14 @@ class Vault {
         } catch (err) {
         }
         return errors
+    }
+
+    async prefetchManifests(items) {
+        return this.prefetchDocuments(items, 'manifest')
+    }
+
+    async prefetchCollections(items) {
+        return this.prefetchDocuments(items, 'collection')
     }
 }
 

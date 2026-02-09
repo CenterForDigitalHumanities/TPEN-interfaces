@@ -614,7 +614,6 @@ export default class TranscriptionInterface extends HTMLElement {
   async getImage(project) {
     const imageCanvas = this.shadowRoot.querySelector('.canvas-image')
     let canvasID
-    let err = {}
     const allPages = project.layers.flatMap(layer => layer.pages)
     if (TPEN?.screen?.pageInQuery) {
       const matchingPage = allPages.find(
@@ -628,7 +627,7 @@ export default class TranscriptionInterface extends HTMLElement {
     let canvas = await vault.get(canvasID, 'canvas')
     if (!canvas && TPEN.activeProject?.manifest) {
       // Canvas not directly resolvable, try to hydrate from all manifests
-      await vault.prefetchDocuments(TPEN.activeProject.manifest)
+      await vault.prefetchManifests(TPEN.activeProject.manifest)
       // After manifests are cached, try again
       canvas = await vault.get(canvasID, 'canvas')
     }
@@ -663,7 +662,7 @@ export default class TranscriptionInterface extends HTMLElement {
     if (!this.#page && TPEN.activeProject?.manifest) {
       // Try to hydrate from all manifests
       const manifestUrls = TPEN.activeProject?.manifest
-      await vault.prefetchDocuments(manifestUrls)
+      await vault.prefetchManifests(manifestUrls)
       // After manifests are cached, try again
       this.#page = await vault.get(pageID, 'annotationpage', true)
     }

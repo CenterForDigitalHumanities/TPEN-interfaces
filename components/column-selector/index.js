@@ -70,7 +70,7 @@ export default class ColumnSelector extends HTMLElement {
 
         this.#page = await vault.get(pageId, 'annotationpage', true)
         if (!this.#page && TPEN.activeProject?.manifest) {
-            await vault.prefetchDocuments(TPEN.activeProject.manifest)
+            await vault.prefetchManifests(TPEN.activeProject.manifest)
             this.#page = await vault.get(pageId, 'annotationpage', true)
         }
         if (!this.#page) return
