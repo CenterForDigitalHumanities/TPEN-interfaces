@@ -326,7 +326,7 @@ class ReadOnlyViewTranscribe extends HTMLElement {
         
         const manifest = await vault.get(manifestUrl, 'manifest')
         if (!manifest) {
-            throw new Error('Manifest could not be resolved')
+            throw new Error(`Manifest could not be resolved for URL: ${manifestUrl}`)
         }
         this.#staticManifest = manifest
 
