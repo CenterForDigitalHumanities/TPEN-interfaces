@@ -614,7 +614,6 @@ export default class TranscriptionInterface extends HTMLElement {
   async getImage(project) {
     const imageCanvas = this.shadowRoot.querySelector('.canvas-image')
     let canvasID
-    let err = {}
     const allPages = project.layers.flatMap(layer => layer.pages)
     if (TPEN?.screen?.pageInQuery) {
       const matchingPage = allPages.find(
