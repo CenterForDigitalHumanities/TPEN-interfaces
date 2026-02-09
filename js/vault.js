@@ -159,6 +159,11 @@ class Vault {
                 pageId: TPEN.screen?.pageInQuery,
                 layerId: TPEN.screen?.layerInQuery
             })
+            // Guard against empty/falsy URIs to avoid fetching the current page
+            if (!uri) {
+                if (seed) return hydrateFromObject(seed)
+                return null
+            }
             const response = await fetch(uri)
             if (!response.ok) {
                 if (seed) return hydrateFromObject(seed)
