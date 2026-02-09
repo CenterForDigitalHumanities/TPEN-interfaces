@@ -174,10 +174,6 @@ class Vault {
             }
             const storageType = hasKnownType ? dataType : type
             this.set(data, storageType)
-            const cacheKeyToUse = hasKnownType ? this._cacheKey(dataType, id) : cacheKey
-            try {
-                localStorage.setItem(cacheKeyToUse, JSON.stringify(data))
-            } catch {}
             return data
         }
 
@@ -187,7 +183,7 @@ class Vault {
                 pageId: TPEN.screen?.pageInQuery,
                 layerId: TPEN.screen?.layerInQuery
             })
-            // Guard against empty/falsy URIs to avoid fetching the current page
+            // Guard against null/falsy URIs (e.g., for IIIF resources without URLs)
             if (!uri) {
                 if (seed) return hydrateFromObject(seed)
                 return null
@@ -241,7 +237,7 @@ class Vault {
     }
 
     all() {
-        return Object.values(this.store)
+        return [...this.store.values()]
     }
 
     async prefetchDocuments(items, docType) {
@@ -255,10 +251,7 @@ class Vault {
                     return null
                 })
         })
-        try {
-            await Promise.all(promises)
-        } catch (err) {
-        }
+        await Promise.all(promises)
         return errors
     }
 
