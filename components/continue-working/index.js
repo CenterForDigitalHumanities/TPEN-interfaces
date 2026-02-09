@@ -181,7 +181,7 @@ class ContinueWorking extends HTMLElement {
             canvas = await vault.get(canvasId, 'canvas')
             if (!canvas && project.manifest?.[0]) {
                 // Try to hydrate from all manifests
-                await vault.prefetchDocuments(project.manifest)
+                await vault.prefetchManifests(project.manifest)
                 // After manifests are cached, try again
                 canvas = await vault.get(canvasId, 'canvas')
             }

@@ -483,7 +483,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       // Use vault.get to fetch the page properly
       let fetchedPage = await vault.get(pageID, 'annotationpage', true)
       if (!fetchedPage && TPEN.activeProject?.manifest) {
-        await vault.prefetchDocuments(TPEN.activeProject.manifest)
+        await vault.prefetchManifests(TPEN.activeProject.manifest)
         fetchedPage = await vault.get(pageID, 'annotationpage', true)
       }
       if (!fetchedPage) {
@@ -521,7 +521,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
 
       let fetchedCanvas = await vault.get(canvasID, 'canvas')
       if (!fetchedCanvas && TPEN.activeProject?.manifest) {
-        await vault.prefetchDocuments(TPEN.activeProject.manifest)
+        await vault.prefetchManifests(TPEN.activeProject.manifest)
         fetchedCanvas = await vault.get(canvasID, 'canvas')
       }
       if (!fetchedCanvas) {

@@ -96,7 +96,7 @@ export default class TranscriptionBlock extends HTMLElement {
         if (!this.#page && TPEN.activeProject?.manifest) {
           // Try to hydrate from all manifests
           const manifestUrls = TPEN.activeProject?.manifest
-          await vault.prefetchDocuments(manifestUrls)
+          await vault.prefetchManifests(manifestUrls)
           // After manifests are cached, try again
           this.#page = await vault.get(pageID, 'annotationpage', true)
         }

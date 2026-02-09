@@ -227,6 +227,40 @@ class Vault {
         }
         return errors
     }
+
+    async prefetchManifests(items) {
+        if (!Array.isArray(items)) items = [items]
+        const errors = []
+        const promises = items.map(item => {
+            return this.get(item, 'manifest')
+                .catch(err => {
+                    errors.push({ item, error: err?.message || String(err) })
+                    return null
+                })
+        })
+        try {
+            await Promise.all(promises)
+        } catch (err) {
+        }
+        return errors
+    }
+
+    async prefetchCollections(items) {
+        if (!Array.isArray(items)) items = [items]
+        const errors = []
+        const promises = items.map(item => {
+            return this.get(item, 'collection')
+                .catch(err => {
+                    errors.push({ item, error: err?.message || String(err) })
+                    return null
+                })
+        })
+        try {
+            await Promise.all(promises)
+        } catch (err) {
+        }
+        return errors
+    }
 }
 
 const vault = new Vault()

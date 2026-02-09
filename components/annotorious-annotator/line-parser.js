@@ -567,7 +567,7 @@ class AnnotoriousAnnotator extends HTMLElement {
     let resolvedCanvas = await this.vault.get(uri, 'canvas')
     if (!resolvedCanvas && TPEN.activeProject?.manifest) {
       // Canvas not directly resolvable, try to hydrate from all manifests
-      await this.vault.prefetchDocuments(TPEN.activeProject.manifest)
+      await this.vault.prefetchManifests(TPEN.activeProject.manifest)
       // After manifests are cached, try again
       resolvedCanvas = await this.vault.get(uri, 'canvas')
     }
