@@ -1,5 +1,4 @@
 import { decodeContentState } from '../iiif-tools/index.js'
-import vault from '../../js/vault.js'
 import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 
 const CANVAS_PANEL_SCRIPT = document.createElement('script')
@@ -206,20 +205,19 @@ class TpenImageFragment extends HTMLElement {
 
     connectedCallback() {
         this.cleanup.onDocument('canvas-change', async (event) => {
-            let canvas = await vault.get(event.detail.canvasId, 'canvas')
-            if (!canvas && TPEN.activeProject?.manifest) {
-                await vault.prefetchManifests(TPEN.activeProject.manifest)
-                canvas = await vault.get(event.detail.canvasId, 'canvas')
-            }
-            if (!canvas) {
-                console.error('Failed to resolve canvas:', event.detail.canvasId)
-                return
-            }
-            this.#canvas = canvas
+            const canvasId = event.detail.canvasId
+            if (!canvasId) return
+
+            this.#canvas = { id: canvasId }
             this.setContainerStyle()
-            const imageResource = canvas?.items?.[0]?.items?.[0]?.body?.id ?? canvas?.images?.[0]?.resource?.id
-            if (imageResource) {
-                this.#lineImage.src = imageResource
+            
+            // If canvas data is provided, extract image resource
+            if (event.detail.canvas) {
+                this.#canvas = event.detail.canvas
+                const imageResource = event.detail.canvas?.items?.[0]?.items?.[0]?.body?.id ?? event.detail.canvas?.images?.[0]?.resource?.id
+                if (imageResource) {
+                    this.#lineImage.src = imageResource
+                }
             }
         })
     }
