@@ -69,7 +69,24 @@ class Vault {
         
         if (resourceId && resourceType && iiifResourceTypes.has(normalizedType) && !visited.has(resourceId)) {
             visited.add(resourceId)
-            await this.get(resource, resourceType)
+            
+            // Check if resource is a full embedded object (has properties beyond id/type)
+            // or just a minimal reference (only id/type or just a string)
+            const isEmbeddedObject = typeof resource === 'object' && resource !== null &&
+                Object.keys(resource).some(key => 
+                    key !== 'id' && key !== '@id' && 
+                    key !== 'type' && key !== '@type' &&
+                    key !== 'label' && key !== 'title'
+                )
+            
+            if (isEmbeddedObject) {
+                // For embedded objects, cache directly without fetching
+                this.set(resource, normalizedType)
+            } else {
+                // For ID strings or minimal references, fetch the full resource
+                await this.get(resource, resourceType)
+            }
+            
             return { id: resourceId, type: resourceType, label: resource?.label ?? resource?.title }
         }
         return null
