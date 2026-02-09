@@ -624,13 +624,7 @@ export default class TranscriptionInterface extends HTMLElement {
       canvasID = allPages[0]?.target
     }
 
-    let canvas = await vault.get(canvasID, 'canvas')
-    if (!canvas && TPEN.activeProject?.manifest) {
-      // Canvas not directly resolvable, try to hydrate from all manifests
-      await vault.prefetchManifests(TPEN.activeProject.manifest)
-      // After manifests are cached, try again
-      canvas = await vault.get(canvasID, 'canvas')
-    }
+    let canvas = await vault.getWithFallback(canvasID, 'canvas', TPEN.activeProject?.manifest)
     if (!canvas) {
       imageCanvas.src = "../../assets/images/404_PageNotFound.jpeg"
       return
@@ -658,14 +652,7 @@ export default class TranscriptionInterface extends HTMLElement {
     const topImage = this.shadowRoot.querySelector('#topImage')
     const bottomImage = this.shadowRoot.querySelector('#bottomImage')
     topImage.manifest = bottomImage.manifest = TPEN.activeProject?.manifest?.[0]
-    this.#page = await vault.get(pageID, 'annotationpage', true)
-    if (!this.#page && TPEN.activeProject?.manifest) {
-      // Try to hydrate from all manifests
-      const manifestUrls = TPEN.activeProject?.manifest
-      await vault.prefetchManifests(manifestUrls)
-      // After manifests are cached, try again
-      this.#page = await vault.get(pageID, 'annotationpage', true)
-    }
+    this.#page = await vault.getWithFallback(pageID, 'annotationpage', TPEN.activeProject?.manifest, true)
     const projectPage = TPEN.activeProject.layers.flatMap(layer => layer.pages || []).find(p => p.id.split('/').pop() === pageID.split('/').pop())
     if (!this.#page || !projectPage) return
     const { orderedItems, columnsInPage } = orderPageItemsByColumns(projectPage, this.#page)

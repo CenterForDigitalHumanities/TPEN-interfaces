@@ -178,13 +178,7 @@ class ContinueWorking extends HTMLElement {
             if (!canvasId) return this.generateProjectPlaceholder(project)
             
             let canvas, isV3
-            canvas = await vault.get(canvasId, 'canvas')
-            if (!canvas && project.manifest?.[0]) {
-                // Try to hydrate from all manifests
-                await vault.prefetchManifests(project.manifest)
-                // After manifests are cached, try again
-                canvas = await vault.get(canvasId, 'canvas')
-            }
+            canvas = await vault.getWithFallback(canvasId, 'canvas', project.manifest)
             
             if (!canvas) return this.generateProjectPlaceholder(project)
             

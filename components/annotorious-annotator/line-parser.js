@@ -563,13 +563,7 @@ class AnnotoriousAnnotator extends HTMLElement {
    */
   async processCanvas(uri) {
     if (!uri) return
-    let resolvedCanvas = await vault.get(uri, 'canvas')
-    if (!resolvedCanvas && TPEN.activeProject?.manifest) {
-      // Canvas not directly resolvable, try to hydrate from all manifests
-      await vault.prefetchManifests(TPEN.activeProject.manifest)
-      // After manifests are cached, try again
-      resolvedCanvas = await vault.get(uri, 'canvas')
-    }
+    let resolvedCanvas = await vault.getWithFallback(uri, 'canvas', TPEN.activeProject?.manifest)
     if (!resolvedCanvas) {
       this.shadowRoot.innerHTML = `
         <h3>Canvas Error</h3>

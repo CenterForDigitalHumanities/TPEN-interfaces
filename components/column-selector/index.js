@@ -68,11 +68,7 @@ export default class ColumnSelector extends HTMLElement {
             return { ...col, label: isAuto ? `Unnamed ${i + 1}` : col.label }
         })
 
-        this.#page = await vault.get(pageId, 'annotationpage', true)
-        if (!this.#page && TPEN.activeProject?.manifest) {
-            await vault.prefetchManifests(TPEN.activeProject.manifest)
-            this.#page = await vault.get(pageId, 'annotationpage', true)
-        }
+        this.#page = await vault.getWithFallback(pageId, 'annotationpage', TPEN.activeProject?.manifest, true)
         if (!this.#page) return
         const { orderedItems, columnsInPage, allColumnLines } = orderPageItemsByColumns(
             { columns: this.columns, items: page?.items },

@@ -314,11 +314,7 @@ class LegacyAnnotator extends HTMLElement {
 
     async processAnnotationPage(page) {
         if(!page) return
-        let resolvedPage = await vault.get(page, 'annotationpage')
-        if (!resolvedPage && TPEN.activeProject?.manifest) {
-            await vault.prefetchManifests(TPEN.activeProject.manifest)
-            resolvedPage = await vault.get(page, 'annotationpage')
-        }
+        let resolvedPage = await vault.getWithFallback(page, 'annotationpage', TPEN.activeProject?.manifest)
         if (!resolvedPage) {
             throw new Error("Cannot Resolve AnnotationPage", {cause: "The AnnotationPage is 404 or unresolvable."})
         }
@@ -399,13 +395,7 @@ class LegacyAnnotator extends HTMLElement {
         const ctx = imageCanvas.getContext("2d")
         let err
         if(!canvas) return
-        let resolvedCanvas = await vault.get(canvas, 'canvas')
-        if (!resolvedCanvas && TPEN.activeProject?.manifest) {
-            // Try to hydrate from all manifests
-            await vault.prefetchManifests(TPEN.activeProject.manifest)
-            // After manifests are cached, try again
-            resolvedCanvas = await vault.get(canvas, 'canvas')
-        }
+        let resolvedCanvas = await vault.getWithFallback(canvas, 'canvas', TPEN.activeProject?.manifest)
         if (!resolvedCanvas) {
             throw new Error("Canvas Error", {cause: "The Canvas could not be resolved"})
         }
