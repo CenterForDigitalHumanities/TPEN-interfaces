@@ -121,11 +121,19 @@ class Vault {
                 'motivation', 'purpose', 'profile'
             ])
             
+            // IIIF resource types for both Presentation API v2 (prefixed) and v3 (unprefixed)
+            // v2 types use prefixes: sc: (Shared Canvas), oa: (Open Annotation)
+            // v3 types are unprefixed
             const iiifResourceTypes = new Set([
+                // IIIF Presentation API v3 (unprefixed)
                 'manifest', 'collection', 'canvas', 'annotation', 
                 'annotationpage', 'annotationcollection', 'range',
-                'agent', 'annotationlist', 'sc:manifest', 'oa:annotationlist',
-                'oa:annotation'
+                'agent', // v3 metadata type for providers/creators
+                // IIIF Presentation API v2 (sc: prefix for Shared Canvas types)
+                'sc:manifest', 'sc:collection', 'sc:canvas', 'sc:sequence',
+                'sc:range', 'sc:layer',
+                // Open Annotation (oa: prefix) - v2 annotation types
+                'oa:annotation', 'oa:annotationlist' // annotationlist is v2; becomes annotationpage in v3
             ])
             
             const dataType = this._normalizeType(data?.['@type'] ?? data?.type ?? type)
