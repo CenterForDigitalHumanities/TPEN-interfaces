@@ -3,6 +3,7 @@ import CheckPermissions from "../../components/check-permissions/checkPermission
 import { renderPermissionError } from "../../utilities/renderPermissionError.js"
 import { onProjectReady } from "../../utilities/projectReady.js"
 import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
+import vault from '../../js/vault.js'
 
 /**
  * TpenManageColumns - Interface for managing column assignments on annotation pages.
@@ -633,27 +634,15 @@ class TpenManageColumns extends HTMLElement {
         return { x: xywh[0], y: xywh[1], w: xywh[2], h: xywh[3] }
     }
 
-    isValidUrl(str) {
-        try {
-            new URL(str)
-            return true
-        } catch {
-            return false
-        }
-    }
-
-    async getSpecificTypeData(type) {
-        if (!type) throw new Error("No IIIF resource provided")
-        if (typeof type === "string" && this.isValidUrl(type)) {
-            const res = await fetch(type, { cache: "no-store" })
-            if (!res.ok) throw new Error(`Fetch failed: ${res.status}`)
-            return await res.json()
-        }
-    }
-
     async fetchPageViewerData(pageID = null) {
-        const annotationPageData = pageID ? await this.getSpecificTypeData(pageID) : null
-        const canvasData = await this.getSpecificTypeData(annotationPageData.target)
+        const annotationPageData = pageID
+            ? await vault.getWithFallback(pageID, 'annotationpage', TPEN.activeProject?.manifest, true)
+            : null
+        if (!annotationPageData) throw new Error("Failed to load annotation page")
+        const canvasData = await vault.getWithFallback(
+            annotationPageData.target, 'canvas', TPEN.activeProject?.manifest
+        )
+        if (!canvasData) throw new Error("Failed to load canvas data")
         return await this.processDirectCanvasData(canvasData, annotationPageData)
     }
 
@@ -667,8 +656,11 @@ class TpenManageColumns extends HTMLElement {
         if (!annotationPageData?.items) return []
         const results = await Promise.all(annotationPageData.items.map(async anno => {
             try {
-                const res = await fetch(anno.id, { cache: "no-store" })
-                const data = await res.json()
+                let data = anno
+                if (!data?.target) {
+                    data = await vault.get(anno.id ?? anno, 'annotation', true)
+                }
+                if (!data) return null
                 return { target: data?.target?.selector?.value ?? data?.target, lineId: data?.id }
             } catch { return null }
         }))
