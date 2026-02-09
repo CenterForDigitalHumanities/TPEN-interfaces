@@ -188,10 +188,8 @@ class ContinueWorking extends HTMLElement {
             
             if (!canvas) return this.generateProjectPlaceholder(project)
             
-            const context = canvas['@context']
-            isV3 = Array.isArray(context)
-                ? context.some(ctx => typeof ctx === 'string' && ctx.includes('iiif.io/api/presentation/3'))
-                : typeof context === 'string' && context.includes('iiif.io/api/presentation/3')
+            // Structure-based detection
+            isV3 = Array.isArray(canvas.items) || canvas.type === "Canvas"
             
             // Get thumbnail from canvas
             let thumbnailUrl = canvas.thumbnail?.id ?? canvas.thumbnail?.['@id'] ?? canvas.thumbnail
