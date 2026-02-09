@@ -515,6 +515,7 @@ export default class TranscriptionBlock extends HTMLElement {
     }
 
     updateTranscriptionUI() {
+        if (!this.#transcriptions) return
         const previousLineText = this.#transcriptions[TPEN.activeLineIndex - 1] || 'No previous line'
         const currentLineText = this.#transcriptions[TPEN.activeLineIndex] || ''
         const prevLineElem = this.shadowRoot?.querySelector('.transcription-line')
