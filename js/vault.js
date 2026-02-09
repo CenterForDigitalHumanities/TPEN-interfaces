@@ -2,24 +2,13 @@
 import TPEN from "../api/TPEN.js"
 import { urlFromIdAndType } from "../js/utils.js"
 class Vault {
-    // Regex pattern to match and strip known IIIF and RDF prefixes
-    // Compiled once to avoid overhead on repeated calls
-    static PREFIX_PATTERN = /^(sc|oa|as|dcterms|exif|iiif|cnt|dctypes|foaf|rdf|rdfs|svcs|xsd):/i
-    
     constructor() {
         this.store = new Map()
         this.inFlightPromises = new Map()
     }
 
     _normalizeType(type) {
-        if (!type) return 'none'
-        let normalized = type.toString()
-        
-        // Strip known IIIF prefixes (sc:, oa:, as:, etc.) before lowercasing
-        // This ensures both 'sc:Canvas' and 'Canvas' normalize to 'canvas'
-        normalized = normalized.replace(Vault.PREFIX_PATTERN, '')
-        
-        return normalized.toLowerCase() || 'none'
+        return (type ?? '').toString().toLowerCase() || 'none'
     }
 
     _isMongoHexString(str) {
@@ -108,18 +97,19 @@ class Vault {
                 'motivation', 'purpose', 'profile'
             ])
             
-            // IIIF resource types that should be fetched and hydrated
-            // Includes types from both IIIF Presentation API v2 and v3:
-            // - Core types: manifest, collection, canvas, range
-            // - Annotation types: annotation, annotationpage, annotationcollection, annotationlist
-            // - v2 specific: sequence, layer (structural constructs)
-            // - Content types: content, choice, specificresource (for media content and targeting)
-            // - Other: agent (metadata about people/organizations)
+            // IIIF resource types for both Presentation API v2 (prefixed) and v3 (unprefixed)
+            // v3 types: manifest, collection, canvas, annotation, annotationpage, etc.
+            // v2 types use prefixes: sc: (Shared Canvas), oa: (Open Annotation)
             const iiifResourceTypes = new Set([
+                // IIIF Presentation API v3 (unprefixed)
                 'manifest', 'collection', 'canvas', 'annotation', 
                 'annotationpage', 'annotationcollection', 'range',
-                'agent', 'annotationlist', 'layer', 'sequence',
-                'content', 'choice', 'specificresource'
+                'agent', 'annotationlist',
+                // IIIF Presentation API v2 (sc: prefix for Shared Canvas types)
+                'sc:manifest', 'sc:collection', 'sc:canvas', 'sc:sequence',
+                'sc:range', 'sc:layer',
+                // Open Annotation (oa: prefix)
+                'oa:annotation', 'oa:annotationlist'
             ])
             
             const dataType = this._normalizeType(data?.['@type'] ?? data?.type ?? type)
