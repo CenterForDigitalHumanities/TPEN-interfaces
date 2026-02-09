@@ -8,7 +8,15 @@ class Vault {
     }
 
     _normalizeType(type) {
-        return (type ?? '').toString().toLowerCase() || 'none'
+        if (!type) return 'none'
+        let normalized = type.toString()
+        
+        // Strip known IIIF prefixes (sc:, oa:, as:, etc.) before lowercasing
+        // This ensures both 'sc:Canvas' and 'Canvas' normalize to 'canvas'
+        const prefixPattern = /^(sc|oa|as|dcterms|exif|iiif|cnt|dctypes|foaf|rdf|rdfs|svcs|xsd):/i
+        normalized = normalized.replace(prefixPattern, '')
+        
+        return normalized.toLowerCase() || 'none'
     }
 
     _isMongoHexString(str) {
@@ -100,8 +108,8 @@ class Vault {
             const iiifResourceTypes = new Set([
                 'manifest', 'collection', 'canvas', 'annotation', 
                 'annotationpage', 'annotationcollection', 'range',
-                'agent', 'annotationlist', 'sc:manifest', 'oa:annotationlist',
-                'oa:annotation'
+                'agent', 'annotationlist', 'layer', 'sequence',
+                'content', 'choice', 'specificresource'
             ])
             
             const dataType = this._normalizeType(data?.['@type'] ?? data?.type ?? type)
