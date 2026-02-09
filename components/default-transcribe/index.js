@@ -71,11 +71,7 @@ class TpenTranscriptionElement extends HTMLElement {
     }
 
     async #loadPage(annotationPageID) {
-        let page = await vault.get(annotationPageID, 'annotationpage')
-        if (!page && TPEN.activeProject?.manifest) {
-            await vault.prefetchManifests(TPEN.activeProject.manifest)
-            page = await vault.get(annotationPageID, 'annotationpage')
-        }
+        let page = await vault.getWithFallback(annotationPageID, 'annotationpage', TPEN.activeProject?.manifest)
         if (!page) {
             return userMessage('Failed to load page. Please try again.')
         }

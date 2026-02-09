@@ -481,11 +481,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       }
 
       // Use vault.get to fetch the page properly
-      let fetchedPage = await vault.get(pageID, 'annotationpage', true)
-      if (!fetchedPage && TPEN.activeProject?.manifest) {
-        await vault.prefetchManifests(TPEN.activeProject.manifest)
-        fetchedPage = await vault.get(pageID, 'annotationpage', true)
-      }
+      let fetchedPage = await vault.getWithFallback(pageID, 'annotationpage', TPEN.activeProject?.manifest, true)
       if (!fetchedPage) {
         TPEN.eventDispatcher.dispatch("tpen-toast", {
           message: "Failed to load page. Please try again.",
@@ -519,11 +515,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
         canvasID = target.source
       }
 
-      let fetchedCanvas = await vault.get(canvasID, 'canvas')
-      if (!fetchedCanvas && TPEN.activeProject?.manifest) {
-        await vault.prefetchManifests(TPEN.activeProject.manifest)
-        fetchedCanvas = await vault.get(canvasID, 'canvas')
-      }
+      let fetchedCanvas = await vault.getWithFallback(canvasID, 'canvas', TPEN.activeProject?.manifest)
       if (!fetchedCanvas) {
         TPEN.eventDispatcher.dispatch("tpen-toast", {
           message: "Could not load canvas. Please try again.",
