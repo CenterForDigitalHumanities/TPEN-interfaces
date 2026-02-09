@@ -1,4 +1,5 @@
 import { checkIfUrlExists } from '../../utilities/checkIfUrlExists.js'
+import vault from '../../js/vault.js'
 import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 
 /**
