@@ -69,7 +69,31 @@ class Vault {
         
         if (resourceId && resourceType && iiifResourceTypes.has(normalizedType) && !visited.has(resourceId)) {
             visited.add(resourceId)
-            await this.get(resource, resourceType)
+            
+            // Check if resource is a full embedded object vs a minimal stub/reference.
+            // A stub with just {id, type, label} should be fetched to get full content.
+            // An embedded object has properties that indicate substantial content:
+            // - items/annotations: arrays containing child resources (Canvas, Manifest, AnnotationPage, Collection)
+            // - body/target: core annotation properties (at least one present)
+            // - height+width: Canvas dimensions (both must be present)
+            // Stubs may have other metadata (label, summary, thumbnail) but lack content properties.
+            const hasItems = Array.isArray(resource?.items) && resource.items.length > 0
+            const hasAnnotations = Array.isArray(resource?.annotations) && resource.annotations.length > 0
+            const hasBody = resource?.body !== undefined
+            const hasTarget = resource?.target !== undefined
+            const hasCanvasDimensions = resource?.height !== undefined && resource?.width !== undefined
+            
+            const isEmbeddedObject = typeof resource === 'object' && resource !== null &&
+                (hasItems || hasAnnotations || hasBody || hasTarget || hasCanvasDimensions)
+            
+            if (isEmbeddedObject) {
+                // For embedded objects, cache directly without fetching
+                this.set(resource, normalizedType)
+            } else {
+                // For ID strings or minimal references, fetch the full resource
+                await this.get(resource, resourceType)
+            }
+            
             return { id: resourceId, type: resourceType, label: resource?.label ?? resource?.title }
         }
         return null
