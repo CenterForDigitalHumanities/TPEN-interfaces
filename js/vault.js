@@ -11,10 +11,6 @@ class Vault {
         return (type ?? '').toString().toLowerCase() || 'none'
     }
 
-    _isMongoHexString(str) {
-        return typeof str === 'string' && /^[a-f0-9]{24}$/i.test(str)
-    }
-
     _normalizeId(id) {
         if (typeof id !== 'string') return id
         return id.split('#')[0]
