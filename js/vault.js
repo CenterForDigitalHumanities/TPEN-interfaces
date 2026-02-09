@@ -2,6 +2,10 @@
 import TPEN from "../api/TPEN.js"
 import { urlFromIdAndType } from "../js/utils.js"
 class Vault {
+    // Regex pattern to match and strip known IIIF and RDF prefixes
+    // Compiled once to avoid overhead on repeated calls
+    static PREFIX_PATTERN = /^(sc|oa|as|dcterms|exif|iiif|cnt|dctypes|foaf|rdf|rdfs|svcs|xsd):/i
+    
     constructor() {
         this.store = new Map()
         this.inFlightPromises = new Map()
@@ -13,8 +17,7 @@ class Vault {
         
         // Strip known IIIF prefixes (sc:, oa:, as:, etc.) before lowercasing
         // This ensures both 'sc:Canvas' and 'Canvas' normalize to 'canvas'
-        const prefixPattern = /^(sc|oa|as|dcterms|exif|iiif|cnt|dctypes|foaf|rdf|rdfs|svcs|xsd):/i
-        normalized = normalized.replace(prefixPattern, '')
+        normalized = normalized.replace(Vault.PREFIX_PATTERN, '')
         
         return normalized.toLowerCase() || 'none'
     }
@@ -105,6 +108,13 @@ class Vault {
                 'motivation', 'purpose', 'profile'
             ])
             
+            // IIIF resource types that should be fetched and hydrated
+            // Includes types from both IIIF Presentation API v2 and v3:
+            // - Core types: manifest, collection, canvas, range
+            // - Annotation types: annotation, annotationpage, annotationcollection, annotationlist
+            // - v2 specific: sequence, layer (structural constructs)
+            // - Content types: content, choice, specificresource (for media content and targeting)
+            // - Other: agent (metadata about people/organizations)
             const iiifResourceTypes = new Set([
                 'manifest', 'collection', 'canvas', 'annotation', 
                 'annotationpage', 'annotationcollection', 'range',
