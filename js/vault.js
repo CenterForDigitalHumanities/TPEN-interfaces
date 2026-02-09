@@ -70,18 +70,21 @@ class Vault {
         if (resourceId && resourceType && iiifResourceTypes.has(normalizedType) && !visited.has(resourceId)) {
             visited.add(resourceId)
             
-            // Check if resource is a full embedded object vs a minimal reference.
-            // A minimal reference (e.g., {id, type, label}) should be fetched to get full details.
-            // An embedded object (e.g., Canvas with height/width/items) should be cached directly.
-            // We exclude id/type (identity), label/title (descriptive metadata that appears in both)
-            // and check for any other properties (like height, width, items, body, target, etc.)
-            // that indicate this is a complete embedded resource rather than just a reference.
+            // Check if resource is a full embedded object vs a minimal stub/reference.
+            // A stub with just {id, type, label} should be fetched to get full content.
+            // An embedded object has properties that indicate substantial content:
+            // - items/annotations: arrays containing child resources (Canvas, Manifest, AnnotationPage, Collection)
+            // - body/target: core annotation properties
+            // - height+width: Canvas dimensions (both must be present)
+            // Stubs may have other metadata (label, summary, thumbnail) but lack content properties.
+            const hasItems = Array.isArray(resource?.items) && resource.items.length > 0
+            const hasAnnotations = Array.isArray(resource?.annotations) && resource.annotations.length > 0
+            const hasBody = resource?.body !== undefined
+            const hasTarget = resource?.target !== undefined
+            const hasCanvasDimensions = resource?.height !== undefined && resource?.width !== undefined
+            
             const isEmbeddedObject = typeof resource === 'object' && resource !== null &&
-                Object.keys(resource).some(key => 
-                    key !== 'id' && key !== '@id' && 
-                    key !== 'type' && key !== '@type' &&
-                    key !== 'label' && key !== 'title'
-                )
+                (hasItems || hasAnnotations || (hasBody && hasTarget) || hasCanvasDimensions)
             
             if (isEmbeddedObject) {
                 // For embedded objects, cache directly without fetching
