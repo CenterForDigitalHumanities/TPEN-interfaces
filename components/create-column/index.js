@@ -565,9 +565,8 @@ class TpenCreateColumn extends HTMLElement {
     }
 
     async fetchPageViewerData(pageID = null) {
-        const annotationPageData = pageID
-            ? await vault.getWithFallback(pageID, 'annotationpage', TPEN.activeProject?.manifest, true)
-            : null
+        if (!pageID) throw new Error("No page ID provided")
+        const annotationPageData = await vault.getWithFallback(pageID, 'annotationpage', TPEN.activeProject?.manifest, true)
         if (!annotationPageData) throw new Error("Failed to load annotation page")
         const canvasData = await vault.getWithFallback(
             annotationPageData.target, 'canvas', TPEN.activeProject?.manifest
