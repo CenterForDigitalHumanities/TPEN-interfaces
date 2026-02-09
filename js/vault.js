@@ -211,11 +211,12 @@ class Vault {
         return Object.values(this.store)
     }
 
-    async prefetchDocuments(items) {
+    async prefetchDocuments(items, docType) {
         if (!Array.isArray(items)) items = [items]
         const errors = []
         const promises = items.map(item => {
-            return this.get(item, item?.['@type'] ?? item?.type)
+            const type = docType ?? item?.['@type'] ?? item?.type
+            return this.get(item, type)
                 .catch(err => {
                     errors.push({ item, error: err?.message || String(err) })
                     return null
@@ -229,37 +230,11 @@ class Vault {
     }
 
     async prefetchManifests(items) {
-        if (!Array.isArray(items)) items = [items]
-        const errors = []
-        const promises = items.map(item => {
-            return this.get(item, 'manifest')
-                .catch(err => {
-                    errors.push({ item, error: err?.message || String(err) })
-                    return null
-                })
-        })
-        try {
-            await Promise.all(promises)
-        } catch (err) {
-        }
-        return errors
+        return this.prefetchDocuments(items, 'manifest')
     }
 
     async prefetchCollections(items) {
-        if (!Array.isArray(items)) items = [items]
-        const errors = []
-        const promises = items.map(item => {
-            return this.get(item, 'collection')
-                .catch(err => {
-                    errors.push({ item, error: err?.message || String(err) })
-                    return null
-                })
-        })
-        try {
-            await Promise.all(promises)
-        } catch (err) {
-        }
-        return errors
+        return this.prefetchDocuments(items, 'collection')
     }
 }
 
