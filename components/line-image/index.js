@@ -214,7 +214,7 @@ class TpenImageFragment extends HTMLElement {
             // If canvas data is provided, extract image resource
             if (event.detail.canvas) {
                 this.#canvas = event.detail.canvas
-                const imageResource = event.detail.canvas?.items?.[0]?.items?.[0]?.body?.id ?? event.detail.canvas?.images?.[0]?.resource?.id
+                const imageResource = event.detail.canvas?.items?.[0]?.items?.[0]?.body?.id ?? event.detail.canvas?.images?.[0]?.resource?.["@id"]
                 if (imageResource) {
                     this.#lineImage.src = imageResource
                 }

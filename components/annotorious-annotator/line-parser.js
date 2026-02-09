@@ -621,7 +621,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       throw new Error("Cannot Resolve Canvas Image", { "cause": "The Image is 404 or unresolvable." })
     }
     let imgx = resolvedCanvas?.items?.[0]?.items?.[0]?.body?.width
-    if (!imgx) imgx = resolvedCanvas?.images[0]?.resource?.width
+    if (!imgx) imgx = resolvedCanvas?.images?.[0]?.resource?.width
     let imgy = resolvedCanvas?.items?.[0]?.items?.[0]?.body?.height
     if (!imgy) imgy = resolvedCanvas?.images?.[0]?.resource?.height
     this.#imageDims = [imgx, imgy]

@@ -636,7 +636,7 @@ export default class TranscriptionInterface extends HTMLElement {
       return
     }
     // Handle both Presentation API v3 (items) and v2 (images) formats
-    const imageId = canvas.items?.[0]?.items?.[0]?.body?.id ?? canvas.images?.[0]?.resource?.id
+    const imageId = canvas.items?.[0]?.items?.[0]?.body?.id ?? canvas.images?.[0]?.resource?.["@id"]
     if (imageId) {
       imageCanvas.src = imageId
     } else {
@@ -657,7 +657,7 @@ export default class TranscriptionInterface extends HTMLElement {
   async updateTranscriptionImages(pageID) {
     const topImage = this.shadowRoot.querySelector('#topImage')
     const bottomImage = this.shadowRoot.querySelector('#bottomImage')
-    topImage.manifest = bottomImage.manifest = TPEN.activeProject?.manifest[0]
+    topImage.manifest = bottomImage.manifest = TPEN.activeProject?.manifest?.[0]
     this.#page = await vault.get(pageID, 'annotationpage', true)
     if (!this.#page && TPEN.activeProject?.manifest) {
       // Try to hydrate from all manifests
