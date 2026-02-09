@@ -35,8 +35,12 @@ class TpenLineImage extends HTMLElement {
 
     set canvas(value) {
         this.setCanvas(value)
+        const canvasId = typeof value === 'string' ? value : (value?.id ?? value?.['@id'])
         document.dispatchEvent?.(new CustomEvent('canvas-change', {
-            detail: { canvasId: value },
+            detail: { 
+                canvasId,
+                ...(typeof value === 'object' && { canvas: value })
+            },
         }))
     }
 
@@ -204,18 +208,27 @@ class TpenImageFragment extends HTMLElement {
     }
 
     connectedCallback() {
-        this.cleanup.onDocument('canvas-change', (event) => {
-            fetch(event.detail.canvasId)
-                .then(res => res.json())
-                .then(canvas => {
-                    this.#canvas = canvas
-                    this.setContainerStyle()
-                    const imageResource = canvas?.items?.[0]?.items?.[0]?.body?.id ?? canvas?.images?.[0]?.resource?.id
-                    if (imageResource) {
-                        this.#lineImage.src = imageResource
-                    }
-                })
-                .catch(console.error)
+        this.cleanup.onDocument('canvas-change', async (event) => {
+            const canvasId = event.detail.canvasId
+            if (!canvasId) return
+
+            let canvas = event.detail.canvas
+            if (!canvas) {
+                try {
+                    const res = await fetch(canvasId)
+                    canvas = await res.json()
+                } catch (error) {
+                    console.error(error)
+                    return
+                }
+            }
+
+            this.#canvas = canvas
+            this.setContainerStyle()
+            const imageResource = canvas?.items?.[0]?.items?.[0]?.body?.id ?? canvas?.images?.[0]?.resource?.id
+            if (imageResource) {
+                this.#lineImage.src = imageResource
+            }
         })
     }
 
