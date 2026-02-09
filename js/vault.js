@@ -1,6 +1,36 @@
 // Local simulacrum vault for use in client without something like webpack
 import TPEN from "../api/TPEN.js"
 import { urlFromIdAndType } from "../js/utils.js"
+
+// Module-level constants to avoid recreating on every fetch
+const SKIP_PROPERTIES = new Set([
+    'id', '@id', 'type', '@type', '@context', 'context', 
+    'metadata', 'label', 'summary', 'requiredStatement',
+    'rights', 'navDate', 'language', 'format',
+    'duration', 'width', 'height', 
+    'viewingDirection', 'behavior', 'motivation',
+    'timeMode', 'thumbnail', 'placeholderCanvas',
+    'accompanyingCanvas', 'provider', 'homepage',
+    'logo', 'rendering', 'partOf', 'seeAlso', 'service',
+    'prev', 'next',
+    'selector', 'conformsTo', 'value', 'purpose', 'profile'
+])
+
+// IIIF resource types for both Presentation API v2 (prefixed) and v3 (unprefixed)
+// v2 types use prefixes: sc: (Shared Canvas), oa: (Open Annotation)
+// v3 types are unprefixed
+const IIIF_RESOURCE_TYPES = new Set([
+    // IIIF Presentation API v3 (unprefixed)
+    'manifest', 'collection', 'canvas', 'annotation', 
+    'annotationpage', 'annotationcollection', 'range',
+    'agent', // v3 metadata type for providers/creators
+    // IIIF Presentation API v2 (sc: prefix for Shared Canvas types)
+    'sc:manifest', 'sc:collection', 'sc:canvas', 'sc:sequence',
+    'sc:range', 'sc:layer',
+    // Open Annotation (oa: prefix) - v2 annotation types
+    'oa:annotation', 'oa:annotationlist' // annotationlist is v2; becomes annotationpage in v3
+])
+
 class Vault {
     constructor() {
         this.store = new Map()
@@ -34,9 +64,12 @@ class Vault {
             return this.inFlightPromises.get(promiseKey)
         }
         
-        const typeStore = this.store.get(type)
-        let result = typeStore?.get(id)
-        if (result) return result
+        // Skip in-memory store when noCache is true
+        if (!noCache) {
+            const typeStore = this.store.get(type)
+            let result = typeStore?.get(id)
+            if (result) return result
+        }
 
         const cacheKey = this._cacheKey(type, id)
         const cached = localStorage.getItem(cacheKey)
@@ -103,34 +136,8 @@ class Vault {
                 return seed
             }
             
-            const skipProperties = new Set([
-                'id', '@id', 'type', '@type', '@context', 'context', 
-                'metadata', 'label', 'summary', 'requiredStatement',
-                'rights', 'navDate', 'language', 'format',
-                'duration', 'width', 'height', 
-                'viewingDirection', 'behavior', 'motivation',
-                'timeMode', 'thumbnail', 'placeholderCanvas',
-                'accompanyingCanvas', 'provider', 'homepage',
-                'logo', 'rendering', 'partOf', 'seeAlso', 'service',
-                'prev', 'next',
-                'selector', 'conformsTo', 'value',
-                'motivation', 'purpose', 'profile'
-            ])
-            
-            // IIIF resource types for both Presentation API v2 (prefixed) and v3 (unprefixed)
-            // v2 types use prefixes: sc: (Shared Canvas), oa: (Open Annotation)
-            // v3 types are unprefixed
-            const iiifResourceTypes = new Set([
-                // IIIF Presentation API v3 (unprefixed)
-                'manifest', 'collection', 'canvas', 'annotation', 
-                'annotationpage', 'annotationcollection', 'range',
-                'agent', // v3 metadata type for providers/creators
-                // IIIF Presentation API v2 (sc: prefix for Shared Canvas types)
-                'sc:manifest', 'sc:collection', 'sc:canvas', 'sc:sequence',
-                'sc:range', 'sc:layer',
-                // Open Annotation (oa: prefix) - v2 annotation types
-                'oa:annotation', 'oa:annotationlist' // annotationlist is v2; becomes annotationpage in v3
-            ])
+            // Clone data before mutating to avoid corrupting caller's object
+            data = structuredClone(data)
             
             const dataType = this._normalizeType(data?.['@type'] ?? data?.type ?? type)
             const hasKnownType = dataType && dataType !== 'none'
@@ -143,7 +150,7 @@ class Vault {
 
                 for (const key of Object.keys(obj)) {
                     // Skip known non-resource properties
-                    if (skipProperties.has(key)) continue
+                    if (SKIP_PROPERTIES.has(key)) continue
                     
                     const value = obj[key]
                     
@@ -158,7 +165,7 @@ class Vault {
                             if (item && typeof item === 'object') {
                                 queue.push({ obj: item, depth: depth + 1 })
                                 // Process IIIF resources in arrays (e.g., canvases in manifest.items)
-                                await this._processIIIFResource(item, visited, iiifResourceTypes)
+                                await this._processIIIFResource(item, visited, IIIF_RESOURCE_TYPES)
                             }
                         }
                     } else if (value && typeof value === 'object') {
@@ -166,7 +173,7 @@ class Vault {
                     }
 
                     // Handle objects with id and type properties (non-array values)
-                    const processed = await this._processIIIFResource(value, visited, iiifResourceTypes)
+                    const processed = await this._processIIIFResource(value, visited, IIIF_RESOURCE_TYPES)
                     if (processed) {
                         obj[key] = processed
                     }
@@ -238,6 +245,25 @@ class Vault {
 
     all() {
         return [...this.store.values()]
+    }
+
+    /**
+     * Get a resource with fallback to prefetch manifests if not found.
+     * This consolidates the common pattern of retrying after prefetching manifests.
+     * @param {*} item - Resource ID or object to fetch
+     * @param {string} itemType - Resource type (e.g., 'canvas', 'annotationpage')
+     * @param {string|string[]} manifestUrls - Manifest URL(s) to prefetch if resource not found
+     * @param {boolean} noCache - Force fresh fetch (bypasses all caches)
+     * @returns {Promise<*>} The resolved resource or null
+     */
+    async getWithFallback(item, itemType, manifestUrls, noCache = false) {
+        let result = await this.get(item, itemType, noCache)
+        if (!result && manifestUrls) {
+            const urls = Array.isArray(manifestUrls) ? manifestUrls : [manifestUrls]
+            await this.prefetchManifests(urls)
+            result = await this.get(item, itemType, noCache)
+        }
+        return result
     }
 
     async prefetchDocuments(items, docType) {
