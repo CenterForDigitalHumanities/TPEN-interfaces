@@ -53,7 +53,6 @@ class AnnotoriousAnnotator extends HTMLElement {
   constructor() {
     super()
     this.attachShadow({ mode: 'open' })
-    this.vault = vault
   }
 
   // Custom component setup
@@ -564,12 +563,12 @@ class AnnotoriousAnnotator extends HTMLElement {
    */
   async processCanvas(uri) {
     if (!uri) return
-    let resolvedCanvas = await this.vault.get(uri, 'canvas')
+    let resolvedCanvas = await vault.get(uri, 'canvas')
     if (!resolvedCanvas && TPEN.activeProject?.manifest) {
       // Canvas not directly resolvable, try to hydrate from all manifests
-      await this.vault.prefetchManifests(TPEN.activeProject.manifest)
+      await vault.prefetchManifests(TPEN.activeProject.manifest)
       // After manifests are cached, try again
-      resolvedCanvas = await this.vault.get(uri, 'canvas')
+      resolvedCanvas = await vault.get(uri, 'canvas')
     }
     if (!resolvedCanvas) {
       this.shadowRoot.innerHTML = `
