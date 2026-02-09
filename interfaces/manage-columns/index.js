@@ -290,7 +290,11 @@ class TpenManageColumns extends HTMLElement {
         TPEN.attachAuthentication(this)
         localStorage.removeItem('annotationsState')
         const params = new URLSearchParams(window.location.search)
-        this.pageID = `${TPEN.RERUMURL}/id/${params.get("pageID")}`
+        if (!TPEN.screen.pageInQuery) {
+            this.showError("No page id provided")
+            return
+        }
+        this.pageID = `${TPEN.RERUMURL}/id/${TPEN.screen.pageInQuery}`
         this.projectID = params.get("projectID")
         this.annotationPageID = this.pageID.split("/").pop()
         this._unsubProject = onProjectReady(this, this.authgate)
@@ -635,7 +639,6 @@ class TpenManageColumns extends HTMLElement {
     }
 
     async fetchPageViewerData(pageID = null) {
-        if (!pageID) throw new Error("No page ID provided")
         const annotationPageData = await vault.getWithFallback(pageID, 'annotationpage', TPEN.activeProject?.manifest, true)
         if (!annotationPageData) throw new Error("Failed to load annotation page")
         const canvasData = await vault.getWithFallback(
