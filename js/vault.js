@@ -103,17 +103,18 @@ class Vault {
             // A stub with just {id, type, label} should be fetched to get full content.
             // An embedded object has properties that indicate substantial content:
             // - items/annotations: arrays containing child resources (Canvas, Manifest, AnnotationPage, Collection)
-            // - body/target: core annotation properties (at least one present)
+            // - body: annotation content (target alone is insufficient — it only indicates
+            //   WHERE on the canvas, not WHAT the content is; page endpoints may return
+            //   annotations with target but without body for efficiency)
             // - height+width: Canvas dimensions (both must be present)
             // Stubs may have other metadata (label, summary, thumbnail) but lack content properties.
             const hasItems = Array.isArray(resource?.items) && resource.items.length > 0
             const hasAnnotations = Array.isArray(resource?.annotations) && resource.annotations.length > 0
             const hasBody = resource?.body !== undefined
-            const hasTarget = resource?.target !== undefined
             const hasCanvasDimensions = resource?.height !== undefined && resource?.width !== undefined
-            
+
             const isEmbeddedObject = typeof resource === 'object' && resource !== null &&
-                (hasItems || hasAnnotations || hasBody || hasTarget || hasCanvasDimensions)
+                (hasItems || hasAnnotations || hasBody || hasCanvasDimensions)
             
             if (isEmbeddedObject) {
                 // For embedded objects, cache directly without fetching
