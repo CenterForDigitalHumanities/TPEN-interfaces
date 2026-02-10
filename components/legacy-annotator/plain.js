@@ -13,7 +13,6 @@
 import { eventDispatcher } from '../../api/events.js'
 import TPEN from '../../api/TPEN.js'
 import User from '../../api/User.js'
-import vault from '../../js/vault.js'
 import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 
 class LegacyAnnotator extends HTMLElement {
@@ -314,10 +313,14 @@ class LegacyAnnotator extends HTMLElement {
 
     async processAnnotationPage(page) {
         if(!page) return
-        let resolvedPage = await vault.getWithFallback(page, 'annotationpage', TPEN.activeProject?.manifest)
-        if (!resolvedPage) {
-            throw new Error("Cannot Resolve AnnotationPage", {cause: "The AnnotationPage is 404 or unresolvable."})
-        }
+        const resolvedPage = await fetch(page)
+            .then(r => {
+                if(!r.ok) throw r
+                return r.json()
+            })
+            .catch(e => {
+                throw e
+            })
         const context = resolvedPage["@context"]
         if(!(context.includes("iiif.io/api/presentation/3/context.json") || context.includes("w3.org/ns/anno.jsonld"))){
             console.warn("The AnnotationPage object did not have the IIIF Presentation API 3 context and may not be parseable.")
@@ -395,10 +398,14 @@ class LegacyAnnotator extends HTMLElement {
         const ctx = imageCanvas.getContext("2d")
         let err
         if(!canvas) return
-        let resolvedCanvas = await vault.getWithFallback(canvas, 'canvas', TPEN.activeProject?.manifest)
-        if (!resolvedCanvas) {
-            throw new Error("Canvas Error", {cause: "The Canvas could not be resolved"})
-        }
+        const resolvedCanvas = await fetch(canvas)
+            .then(r => {
+                if(!r.ok) throw r
+                return r.json()
+            })
+            .catch(e => {
+                throw e
+            })
         const context = resolvedCanvas["@context"]
         if(!context.includes("iiif.io/api/presentation/3/context.json")){
             console.warn("The Canvas object did not have the IIIF Presentation API 3 context and may not be parseable.")
