@@ -22,11 +22,9 @@ permalink: /project/manage
             <div slot="body">
                 <tpen-project-details></tpen-project-details>
                 <div class="action-links">
-                    <tpen-can tpen-view="*_SELECTOR_LINE"> 
-                        <a id="goParse" title="Go Parse Lines" class="left"><img src="../../assets/icons/parse-lines.svg" alt="icon"/>
+                    <a id="goParse" title="Go Parse Lines" class="left" hidden><img src="../../assets/icons/parse-lines.svg" alt="icon"/>
                             <span>Parse Lines</span>
                         </a>
-                    </tpen-can>
                     <tpen-can tpen-view="READ_TEXT_LINE"> 
                         <a id="goTranscribe" title="Go Transcribe" class="right">
                             <span>Transcribe Text</span>
@@ -84,7 +82,11 @@ permalink: /project/manage
         TPEN.eventDispatcher.on('tpen-project-loaded', ev => {
             const goParse = document.getElementById("goParse")
             const goTranscribe = document.getElementById("goTranscribe")
-            if(goParse) goParse.setAttribute("href", `/annotator?projectID=${ev.detail._id}`)
+            if (goParse && CheckPermissions.checkEditAccess("LINE", "SELECTOR")
+                && CheckPermissions.checkCreateAccess("LINE", "SELECTOR")) {
+                goParse.setAttribute("href", `/annotator?projectID=${ev.detail._id}`)
+                goParse.hidden = false
+            }
             if(goTranscribe) goTranscribe.setAttribute("href", `/transcribe?projectID=${ev.detail._id}`)
 
             const cards = document.querySelectorAll('tpen-card')

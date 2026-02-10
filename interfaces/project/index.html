@@ -69,11 +69,9 @@ permalink: /project
                 <div slot="body">
                     <tpen-project-details class="card"></tpen-project-details>
                     <div class="action-links">
-                        <tpen-can tpen-view="*_SELECTOR_LINE">
-                            <a id="goParse" title="Go Parse Lines" class="left"><img src="../../assets/icons/parse-lines.svg"/>
+                        <a id="goParse" title="Go Parse Lines" class="left" hidden><img src="../../assets/icons/parse-lines.svg"/>
                                 <span>Parse Lines</span>
                             </a>
-                        </tpen-can>
                         <tpen-can tpen-view="READ_TEXT_LINE">
                             <a id="goTranscribe" title="Go Transcribe" class="right">
                                 <span>Transcribe Text</span>
@@ -98,7 +96,11 @@ permalink: /project
         if (leaveProject) {
             leaveProject.href = `/project/leave?projectID=${ev.detail._id}`
         }
-        if (goParse) goParse.setAttribute("href", `/annotator?projectID=${ev.detail._id}`)
+        if (goParse && CheckPermissions.checkEditAccess("LINE", "SELECTOR")
+            && CheckPermissions.checkCreateAccess("LINE", "SELECTOR")) {
+            goParse.setAttribute("href", `/annotator?projectID=${ev.detail._id}`)
+            goParse.hidden = false
+        }
         if (goTranscribe) goTranscribe.setAttribute("href", `/transcribe?projectID=${ev.detail._id}`)
         if (CheckPermissions.checkEditAccess('PROJECT')) {
             const goManage = document.getElementById("projectManagementBtn")
