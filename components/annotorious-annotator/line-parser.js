@@ -379,6 +379,8 @@ class AnnotoriousAnnotator extends HTMLElement {
       this.renderCleanup.run()
 
       this.renderCleanup.onElement(this.shadowRoot.querySelector("#autoParseBtn"), "click", async () => {
+        // TODO this needs testing before we are ready for users to use it
+        return
         try {
           if (typeof cv === "undefined") {
             await new Promise((resolve, reject) => {
@@ -867,7 +869,8 @@ class AnnotoriousAnnotator extends HTMLElement {
     this.#annotoriousInstance.setAnnotations(allAnnotations, false)
     this.#annotoriousContainer.style.backgroundImage = "none"
     this.shadowRoot.getElementById("tools-container").style.display = "block"
-    this.shadowRoot.querySelector("#autoParseBtn").style.display = "block"
+    // TODO This needs testing before we are ready for users to use it.
+    // this.shadowRoot.querySelector("#autoParseBtn").style.display = "block"
     const pageSelector = this.shadowRoot.querySelector("tpen-page-selector")
     if (pageSelector) {
       pageSelector.style.display = "block"
