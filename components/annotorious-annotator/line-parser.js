@@ -283,7 +283,7 @@ class AnnotoriousAnnotator extends HTMLElement {
         tpen-page-selector {
           position: absolute;
           display: none;
-          top: 60px;
+          top: 10px;
           right: 10px;
           z-index: 9;
         }
