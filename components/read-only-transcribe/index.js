@@ -293,7 +293,11 @@ class ReadOnlyViewTranscribe extends HTMLElement {
         
         const manifest = await vault.get(manifestUrl, 'manifest')
         if (!manifest) {
-            throw new Error(`Manifest could not be resolved for URL: ${manifestUrl}`)
+            this.shadowRoot.querySelector(".transcribe-title").textContent = "Manifest could not be loaded. Please try again later."
+            this.shadowRoot.getElementById("annotator-container").classList.add("hidden")
+            this.shadowRoot.querySelector(".transcribed-text").classList.add("hidden")
+            this.shadowRoot.querySelector(".layer-container").classList.add("hidden")
+            return
         }
         this.#staticManifest = manifest
 
