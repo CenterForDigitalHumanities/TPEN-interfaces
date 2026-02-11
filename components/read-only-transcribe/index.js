@@ -454,6 +454,8 @@ class ReadOnlyViewTranscribe extends HTMLElement {
                 tileSources: imageInfo,
                 prefixUrl: "../../interfaces/annotator/images/",
                 showFullPageControl: false,
+                gestureSettingsMouse: { clickToZoom: false, dblClickToZoom: true },
+                gestureSettingsTouch: { clickToZoom: false, dblClickToZoom: true },
             })
         } else {
             this.#osd.open(imageInfo)
