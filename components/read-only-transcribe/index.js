@@ -333,8 +333,10 @@ class ReadOnlyViewTranscribe extends HTMLElement {
 
         this.shadowRoot.querySelector(".transcribe-title").textContent = `Transcription for ${manifest.label.none?.[0]}`
 
-        for (const canvas of manifest.items) {
-            const imgUrl = canvas.items[0].items.find(i => i.motivation === "painting").body.id
+        for (const canvasRef of manifest.items) {
+            const canvas = await vault.get(canvasRef, 'canvas')
+            if (!canvas) continue
+            const imgUrl = canvas.items?.[0]?.items?.find(i => i.motivation === "painting")?.body?.id
             const annotations = canvas.annotations
 
             if (!annotations || annotations.length === 0) {
@@ -342,17 +344,19 @@ class ReadOnlyViewTranscribe extends HTMLElement {
             }
 
             for (const annoPage of annotations) {
-                const partOfId = await fetch(annoPage.partOf[0].id).then(res => res.json())
+                const fullAnnoPage = await vault.get(annoPage, 'annotationpage') ?? annoPage
+                const partOfId = await fetch(fullAnnoPage.partOf[0].id).then(res => res.json())
                 const layerLabel = partOfId.label.none[0]
 
                 if (!output[layerLabel]) {
                     output[layerLabel] = {}
                 }
-                output[layerLabel][imgUrl] = { id: annoPage.id, label: annoPage.label.none[0], lines: [] }
+                output[layerLabel][imgUrl] = { id: fullAnnoPage.id, label: fullAnnoPage.label?.none?.[0], lines: [] }
 
                 output[layerLabel][imgUrl].lines = await Promise.all(
-                    annoPage?.items.map(async (anno) => {
-                        return { text: anno.body?.value ?? '' }
+                    (fullAnnoPage?.items ?? []).map(async (anno) => {
+                        const fullAnno = await vault.get(anno, 'annotation') ?? anno
+                        return { text: fullAnno.body?.value ?? '' }
                     })
                 )
             }
