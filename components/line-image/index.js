@@ -162,6 +162,14 @@ class TpenImageFragment extends HTMLElement {
     set canvas(value) {
         this.#canvas = value
         this.setContainerStyle()
+        // Extract and load image resource when full canvas data is provided
+        if (value && typeof value === 'object') {
+            const imageResource = value?.items?.[0]?.items?.[0]?.body?.id
+                ?? value?.images?.[0]?.resource?.["@id"]
+            if (imageResource) {
+                this.#lineImage.src = imageResource
+            }
+        }
     }
 
     set line(annotation) {
@@ -204,21 +212,11 @@ class TpenImageFragment extends HTMLElement {
     }
 
     connectedCallback() {
-        this.cleanup.onDocument('canvas-change', async (event) => {
+        this.cleanup.onDocument('canvas-change', (event) => {
             const canvasId = event.detail.canvasId
             if (!canvasId) return
-
             this.#canvas = { id: canvasId }
             this.setContainerStyle()
-            
-            // If canvas data is provided, extract image resource
-            if (event.detail.canvas) {
-                this.#canvas = event.detail.canvas
-                const imageResource = event.detail.canvas?.items?.[0]?.items?.[0]?.body?.id ?? event.detail.canvas?.images?.[0]?.resource?.["@id"]
-                if (imageResource) {
-                    this.#lineImage.src = imageResource
-                }
-            }
         })
     }
 

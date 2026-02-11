@@ -60,17 +60,13 @@ class Vault {
         
         const promiseKey = `${type}:${id}`
         
-        if (this.inFlightPromises.has(promiseKey)) {
-            return this.inFlightPromises.get(promiseKey)
-        }
-        
         // Skip in-memory store when noCache is true
         if (!noCache) {
+            if (this.inFlightPromises.has(promiseKey)) return this.inFlightPromises.get(promiseKey)
             const typeStore = this.store.get(type)
             let result = typeStore?.get(id)
             if (result) return result
         }
-
         const cacheKey = this._cacheKey(type, id)
         const cached = localStorage.getItem(cacheKey)
         if (cached && !noCache) {
@@ -262,7 +258,8 @@ class Vault {
         if (!result && manifestUrls) {
             const urls = Array.isArray(manifestUrls) ? manifestUrls : [manifestUrls]
             await this.prefetchManifests(urls)
-            result = await this.get(item, itemType, noCache)
+            // Always check fresh cache after prefetch
+            result = await this.get(item, itemType)
         }
         return result
     }
