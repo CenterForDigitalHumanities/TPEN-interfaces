@@ -23,14 +23,12 @@ permalink: /project/manage
                 <tpen-project-details></tpen-project-details>
                 <div class="action-links">
                     <a id="goParse" title="Go Identify Lines" class="left"><img src="../../assets/icons/parse-lines.svg" alt="Identify lines icon"/>
-                            <span>Identify Lines</span>
-                        </a>
-                    <tpen-can tpen-view="READ_TEXT_LINE"> 
-                        <a id="goTranscribe" title="Go Transcribe" class="right">
-                            <span>Transcribe Text</span>
-                            <img src="../../assets/icons/transcribe.png" alt="icon"/>
-                        </a>
-                    </tpen-can>
+                        <span>Identify Lines</span>
+                    </a>
+                    <a id="goTranscribe" title="Go Transcribe" class="right">
+                        <span>Transcribe Text</span>
+                        <img src="../../assets/icons/transcribe.png" alt="Transcribe icon"/>
+                    </a>
                 </div>
             </div>
             <a id="leave-project-btn" slot="footer" class="default-btn" href="#" role="button">LEAVE PROJECT</a>
@@ -87,7 +85,10 @@ permalink: /project/manage
                 goParse.setAttribute("href", `/annotator?projectID=${ev.detail._id}`)
                 goParse.hidden = false
             }
-            if(goTranscribe) goTranscribe.setAttribute("href", `/transcribe?projectID=${ev.detail._id}`)
+            if(goTranscribe && CheckPermissions.checkEditAccess("LINE", "TEXT")) {
+                goTranscribe.setAttribute("href", `/transcribe?projectID=${ev.detail._id}`)
+                goTranscribe.hidden = false
+            }
 
             const cards = document.querySelectorAll('tpen-card')
             for (const card of cards) {
