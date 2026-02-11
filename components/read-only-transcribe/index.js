@@ -389,7 +389,13 @@ class ReadOnlyViewTranscribe extends HTMLElement {
             return
         }
         
-        this.#resolvedAnnotationPage = this.#staticManifest?.items.flatMap(c => c.annotations || []).find(ap => (ap.id ?? ap['@id'] ?? '').endsWith(pageID))
+        const allCanvasRefs = this.#staticManifest?.items ?? []
+        const allAnnotationPages = []
+        for (const ref of allCanvasRefs) {
+            const canvas = await vault.get(ref, 'canvas')
+            if (canvas?.annotations) allAnnotationPages.push(...canvas.annotations)
+        }
+        this.#resolvedAnnotationPage = allAnnotationPages.find(ap => (ap.id ?? ap['@id'] ?? '').endsWith(pageID))
         if (!this.#resolvedAnnotationPage) {
             this.shadowRoot.getElementById('annotator-container').innerHTML = `<h3>Could not find AnnotationPage with ID: ${pageID}</h3>`
             return
@@ -414,7 +420,10 @@ class ReadOnlyViewTranscribe extends HTMLElement {
 
     async processCanvas(uri) {
         if (!uri) return
-        let embeddedCanvas = this.#staticManifest?.items?.find(c => (c.id ?? c['@id']) === uri)
+        let embeddedCanvas = await vault.get(uri, 'canvas')
+        if (!embeddedCanvas) {
+            embeddedCanvas = this.#staticManifest?.items?.find(c => (c.id ?? c['@id']) === uri)
+        }
         // Handle both Presentation API v3 (items) and v2 (images) formats
         let fullImage = embeddedCanvas?.items?.[0]?.items?.[0]?.body?.id ?? embeddedCanvas?.images?.[0]?.resource?.["@id"]
         let imageService = embeddedCanvas?.items?.[0]?.items?.[0]?.body?.service?.id
