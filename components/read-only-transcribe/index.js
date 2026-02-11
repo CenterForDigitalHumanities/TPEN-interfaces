@@ -569,12 +569,6 @@ class ReadOnlyViewTranscribe extends HTMLElement {
         this.#annotationPageID = currentCanvasUrl.split('/').pop() ?? ''
         this.processPage(this.#annotationPageID)
         this.renderRightPanel()
-        const pageNumberEl = this.shadowRoot.getElementById("pageNumber")
-        if (pageNumberEl) pageNumberEl.textContent = `Page ${this.currentPage + 1} of ${this.pages.length}`
-        const prevBtn = this.shadowRoot.getElementById("prevPage")
-        const nextBtn = this.shadowRoot.getElementById("nextPage")
-        if (prevBtn) prevBtn.disabled = this.currentPage === 0
-        if (nextBtn) nextBtn.disabled = this.currentPage === this.pages.length - 1
     }
 
     formatAnnotations(annotations) {
