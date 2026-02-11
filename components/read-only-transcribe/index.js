@@ -165,35 +165,6 @@ class ReadOnlyViewTranscribe extends HTMLElement {
                     color: #111;
                 }
 
-                .page-controls {
-                    text-align: center;
-                    padding: 10px 18px;
-                }
-
-                .page-controls button {
-                    padding: 8px 14px;
-                    margin: 0 6px;
-                    border-radius: 6px;
-                    border: none;
-                    background: var(--primary-color, #ff6f3d);
-                    color: white;
-                    cursor: pointer;
-                    font-size: 14px;
-                    font-weight: 500;
-                    transition: background 0.2s, transform 0.2s;
-                }
-                
-                .page-controls button:hover:not(:disabled) {
-                    background: #e85d2d;
-                    transform: translateY(-1px);
-                }
-                
-                .page-controls button:disabled {
-                    background: #ccc;
-                    cursor: default;
-                    transform: none;
-                }
-
                 .hidden {
                     display: none;
                 }
@@ -316,7 +287,6 @@ class ReadOnlyViewTranscribe extends HTMLElement {
             this.shadowRoot.querySelector(".transcribe-title").textContent = "Transcription not available yet. Please check back later."
             this.shadowRoot.getElementById("annotator-container").classList.add("hidden")
             this.shadowRoot.querySelector(".transcribed-text").classList.add("hidden")
-            this.shadowRoot.querySelector(".page-controls").classList.add("hidden")
             this.shadowRoot.querySelector(".layer-container").classList.add("hidden")
             return
         }
@@ -327,7 +297,7 @@ class ReadOnlyViewTranscribe extends HTMLElement {
         }
         this.#staticManifest = manifest
 
-        this.shadowRoot.querySelector(".transcribe-title").textContent = `Transcription for ${manifest.label.none?.[0]}`
+        this.shadowRoot.querySelector(".transcribe-title").textContent = `Transcription for ${manifest.label?.none?.[0] ?? 'Unknown'}`
 
         for (const canvasRef of manifest.items) {
             const canvas = await vault.get(canvasRef, 'canvas')
@@ -341,8 +311,18 @@ class ReadOnlyViewTranscribe extends HTMLElement {
 
             for (const annoPage of annotations) {
                 const fullAnnoPage = await vault.get(annoPage, 'annotationpage') ?? annoPage
-                const partOfId = await fetch(fullAnnoPage.partOf[0].id).then(res => res.json())
-                const layerLabel = partOfId.label.none[0]
+                const partOfUrl = fullAnnoPage.partOf?.[0]?.id
+                if (!partOfUrl) continue
+                let layerLabel = 'Unnamed Layer'
+                try {
+                    const partOfData = await fetch(partOfUrl).then(res => {
+                        if (!res.ok) throw new Error(`Failed: ${res.status}`)
+                        return res.json()
+                    })
+                    layerLabel = partOfData?.label?.none?.[0] ?? 'Unnamed Layer'
+                } catch (err) {
+                    console.warn('Could not resolve layer label:', err)
+                }
 
                 if (!output[layerLabel]) {
                     output[layerLabel] = {}
