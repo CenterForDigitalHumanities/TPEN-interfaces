@@ -227,13 +227,6 @@ class ReadOnlyViewTranscribe extends HTMLElement {
                 <div id="annotator-container"></div>
                 <div class="transcribed-text"></div>
             </div>
-            <!--
-            <div class="page-controls">
-                <button id="prevPage">Previous Page</button>
-                <span id="pageNumber"></span>
-                <button id="nextPage">Next Page</button>
-            </div>
-            -->
         `
     }
 
@@ -241,9 +234,6 @@ class ReadOnlyViewTranscribe extends HTMLElement {
      * Sets up event listeners for the component.
      */
     addEventListeners() {
-        this.cleanup.onElement(this.shadowRoot.getElementById("nextPage"), "click", () => this.openPage(this.currentPage + 1))
-        this.cleanup.onElement(this.shadowRoot.getElementById("prevPage"), "click", () => this.openPage(this.currentPage - 1))
-
         this.cleanup.onElement(this.shadowRoot.getElementById("layerSelect"), "change", (e) => {
             this.currentLayer = e.target.value
             this.populateCanvasDropdown()

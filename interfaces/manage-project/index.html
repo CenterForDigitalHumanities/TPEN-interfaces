@@ -22,10 +22,10 @@ permalink: /project/manage
             <div slot="body">
                 <tpen-project-details></tpen-project-details>
                 <div class="action-links">
-                    <a id="goParse" title="Go Identify Lines" class="left"><img src="../../assets/icons/parse-lines.svg" alt="Identify lines icon"/>
+                    <a id="goParse" title="Go Identify Lines" class="left" hidden><img src="../../assets/icons/parse-lines.svg" alt="Identify lines icon"/>
                         <span>Identify Lines</span>
                     </a>
-                    <a id="goTranscribe" title="Go Transcribe" class="right">
+                    <a id="goTranscribe" title="Go Transcribe" class="right" hidden>
                         <span>Transcribe Text</span>
                         <img src="../../assets/icons/transcribe.png" alt="Transcribe icon"/>
                     </a>
@@ -80,7 +80,8 @@ permalink: /project/manage
         TPEN.eventDispatcher.on('tpen-project-loaded', ev => {
             const goParse = document.getElementById("goParse")
             const goTranscribe = document.getElementById("goTranscribe")
-            if (goParse && CheckPermissions.checkEditAccess("LINE", "SELECTOR")
+            if (goParse 
+                && CheckPermissions.checkEditAccess("LINE", "SELECTOR")
                 && CheckPermissions.checkCreateAccess("LINE", "SELECTOR")) {
                 goParse.setAttribute("href", `/annotator?projectID=${ev.detail._id}`)
                 goParse.hidden = false
