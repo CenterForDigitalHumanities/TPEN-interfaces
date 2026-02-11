@@ -463,6 +463,19 @@ class ReadOnlyViewTranscribe extends HTMLElement {
                 gestureSettingsMouse: { clickToZoom: false, dblClickToZoom: true },
                 gestureSettingsTouch: { clickToZoom: false, dblClickToZoom: true },
             })
+
+            // Double right-click to zoom out
+            let lastRightClickTime = 0
+            this.cleanup.onElement(this.shadowRoot.getElementById('annotator-container'), 'contextmenu', (e) => {
+                e.preventDefault()
+                const now = Date.now()
+                if (now - lastRightClickTime < 400) {
+                    this.#osd.viewport.zoomBy(0.5)
+                    lastRightClickTime = 0
+                } else {
+                    lastRightClickTime = now
+                }
+            })
         } else {
             this.#osd.open(imageInfo)
         }
