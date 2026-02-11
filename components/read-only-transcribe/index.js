@@ -59,13 +59,17 @@ class ReadOnlyViewTranscribe extends HTMLElement {
             <style>
                 @import "../../components/annotorious-annotator/AnnotoriousOSD.min.css";
                 :host {
-                    display: block;
+                    display: flex;
+                    flex-direction: column;
+                    flex: 1;
+                    min-height: 0;
                     font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
                     color: #222;
                 }
 
                 .transcribe-container {
                     display: flex;
+                    flex-shrink: 0;
                     align-items: center;
                     gap: 20px;
                     padding: 12px 18px;
@@ -108,13 +112,14 @@ class ReadOnlyViewTranscribe extends HTMLElement {
 
                 .main {
                     display: flex;
+                    flex: 1;
+                    min-height: 0;
                     gap: 18px;
                     padding: 10px 18px;
                 }
 
                 #annotator-container {
                     width: 70%;
-                    height: 80vh;
                     background-image: url(https://t-pen.org/TPEN/images/loading2.gif);
                     background-repeat: no-repeat;
                     background-position: center;
@@ -126,7 +131,6 @@ class ReadOnlyViewTranscribe extends HTMLElement {
 
                 .transcribed-text {
                     width: 30%;
-                    height: 80vh;
                     overflow: auto;
                     padding: 12px;
                     box-sizing: border-box;
@@ -223,11 +227,13 @@ class ReadOnlyViewTranscribe extends HTMLElement {
                 <div id="annotator-container"></div>
                 <div class="transcribed-text"></div>
             </div>
+            <!--
             <div class="page-controls">
                 <button id="prevPage">Previous Page</button>
                 <span id="pageNumber"></span>
                 <button id="nextPage">Next Page</button>
             </div>
+            -->
         `
     }
 
