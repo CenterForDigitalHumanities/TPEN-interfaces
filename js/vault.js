@@ -54,6 +54,24 @@ class Vault {
         return `vault:${itemType}:${id}`
     }
 
+    /**
+     * Retrieve a resource from the vault, checking in-memory cache, localStorage,
+     * and finally fetching from the network. Fetched resources are hydrated via BFS
+     * traversal — embedded IIIF sub-resources are cached individually and replaced
+     * with minimal stubs in the parent object.
+     *
+     * When an in-flight request for the same resource already exists and noCache is
+     * false, the existing promise is returned to avoid duplicate network calls.
+     *
+     * @param {string|object} item - Resource ID (URI string) or an object with id/type properties.
+     *   If an object is passed, it serves as a seed — when the network fetch fails,
+     *   the seed is hydrated and cached as a fallback.
+     * @param {string} [itemType] - IIIF resource type (e.g. 'canvas', 'manifest', 'annotationpage').
+     *   Falls back to item.type or item['@type'] if omitted.
+     * @param {boolean} [noCache=false] - When true, bypasses in-memory and localStorage caches
+     *   and forces a fresh network fetch.
+     * @returns {Promise<object|null>} The resolved resource object, or null if unresolvable.
+     */
     async get(item, itemType, noCache = false) {
         const type = this._normalizeType(itemType ?? item?.type ?? item?.['@type'])
         const id = this._getId(item)
@@ -207,6 +225,16 @@ class Vault {
         }
     }
 
+    /**
+     * Store a resource in both the in-memory cache and localStorage.
+     * No-ops silently if the item has no resolvable id or type.
+     * localStorage writes that exceed quota are silently caught.
+     *
+     * @param {object} item - The resource object to cache. Must contain an id
+     *   (via `id`, `@id`, or `_id`) and a type (via `type` or `@type`).
+     * @param {string} [itemType] - Explicit type override. Falls back to
+     *   item.type or item['@type'].
+     */
     set(item, itemType) {
         const type = this._normalizeType(itemType ?? item?.type ?? item?.['@type'])
         const id = this._getId(item)
@@ -221,6 +249,14 @@ class Vault {
         } catch {}
     }
 
+    /**
+     * Remove a single resource from both the in-memory cache and localStorage.
+     * No-ops silently if the item is not found or has no resolvable id/type.
+     *
+     * @param {string|object} item - Resource ID or object to remove.
+     * @param {string} [itemType] - Explicit type override. Falls back to
+     *   item.type or item['@type'].
+     */
     delete(item, itemType) {
         const type = this._normalizeType(itemType ?? item?.type ?? item?.['@type'])
         const id = this._getId(item)
@@ -233,6 +269,12 @@ class Vault {
         localStorage.removeItem(cacheKey)
     }
 
+    /**
+     * Remove all cached resources of a given type from both the in-memory
+     * cache and localStorage.
+     *
+     * @param {string} itemType - The resource type to purge (e.g. 'canvas', 'manifest').
+     */
     clear(itemType) {
         const type = this._normalizeType(itemType)
         for (const key of Object.keys(localStorage)) {

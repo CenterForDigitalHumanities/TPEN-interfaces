@@ -315,10 +315,7 @@ class ReadOnlyViewTranscribe extends HTMLElement {
                 if (!partOfUrl) continue
                 let layerLabel = 'Unnamed Layer'
                 try {
-                    const partOfData = await fetch(partOfUrl).then(res => {
-                        if (!res.ok) throw new Error(`Failed: ${res.status}`)
-                        return res.json()
-                    })
+                    const partOfData = await vault.get(partOfUrl, 'annotationcollection')
                     layerLabel = partOfData?.label?.none?.[0] ?? 'Unnamed Layer'
                 } catch (err) {
                     console.warn('Could not resolve layer label:', err)
