@@ -86,7 +86,7 @@ permalink: /project/manage
                 goParse.setAttribute("href", `/annotator?projectID=${ev.detail._id}`)
                 goParse.hidden = false
             }
-            if(goTranscribe && CheckPermissions.checkEditAccess("LINE", "TEXT")) {
+            if (goTranscribe && CheckPermissions.checkEditAccess("LINE", "TEXT")) {
                 goTranscribe.setAttribute("href", `/transcribe?projectID=${ev.detail._id}`)
                 goTranscribe.hidden = false
             }

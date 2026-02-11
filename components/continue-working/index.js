@@ -173,7 +173,12 @@ class ContinueWorking extends HTMLElement {
     async getProjectThumbnail(project, annotationPageId) {
         try {
             if (!annotationPageId) return this.generateProjectPlaceholder(project)
-            const annotationPage = await fetch(`${TPEN.servicesURL}/project/${project._id}/page/${annotationPageId}`).then(r => r.json())
+            const annotationPage = await vault.get(
+                `${TPEN.servicesURL}/project/${project._id}/page/${annotationPageId}`,
+                'annotationpage',
+                true
+            )
+            if (!annotationPage) return this.generateProjectPlaceholder(project)
             const canvasId = annotationPage.target
             if (!canvasId) return this.generateProjectPlaceholder(project)
             
