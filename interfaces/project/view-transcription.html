@@ -14,6 +14,33 @@ permalink: /project/view-transcription
     <meta property="og:url" content="https://app.t-pen.org/components/read-only-transcribe/?projectID=">
     <meta property="og:type" content="website">
     <link rel="stylesheet" href="/components/gui/site/index.css">
+    <style>
+        html {
+            height: 100vh;
+            overflow: hidden;
+        }
+        body {
+            height: 100vh;
+            min-height: unset;
+            margin: 0;
+            padding: 0;
+            border-radius: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .page-content {
+            flex: 1;
+            min-height: 0;
+            margin: 0 !important;
+            padding: 4em 0 0 0 !important;
+            display: flex !important;
+            flex-direction: column !important;
+        }
+        tpen-footer {
+            flex-shrink: 0;
+        }
+    </style>
     <script type="module" src="/components/gui/site/NoAuthHeader.js"></script>
     <script type="module" src="/components/gui/site/Footer.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/openseadragon/4.1.1/openseadragon.min.js"></script>
@@ -21,7 +48,7 @@ permalink: /project/view-transcription
 </head>
 <body>
     <tpen-no-auth-header></tpen-no-auth-header>
-    <div class="page-content" style="padding: 1em; margin: 0 auto; min-height: 40vh; margin-top: 2.5em !important; display: block;">
+    <div class="page-content">
         <tpen-read-only-view-transcribe></tpen-read-only-view-transcribe>
     </div>
     <tpen-footer></tpen-footer>

@@ -611,49 +611,6 @@ export default class TranscriptionInterface extends HTMLElement {
     if (bottomImage) bottomImage.moveUnder(x, y, width, height, topImage)
   }
 
-  getImage(project) {
-    const imageCanvas = this.shadowRoot.querySelector('.canvas-image')
-    let canvasID
-    let err = {}
-    const allPages = project.layers.flatMap(layer => layer.pages)
-    if (TPEN?.screen?.pageInQuery) {
-      const matchingPage = allPages.find(
-        page => page.id.split('/').pop() === TPEN.screen.pageInQuery
-      )
-      canvasID = matchingPage?.target
-    } else {
-      canvasID = allPages[0]?.target
-    }
-
-    fetch(canvasID)
-      .then(response => {
-        if (response.status === 404) {
-          err = { "status": 404, "statusText": "Canvas not found" }
-          throw err
-        }
-        return response.json()
-      })
-      .then(canvas => {
-        // Handle both Presentation API v3 (items) and v2 (images) formats
-        const imageId = canvas.items?.[0]?.items?.[0]?.body?.id ?? canvas.images?.[0]?.resource?.id
-        if (imageId) {
-          imageCanvas.src = imageId
-        }
-        else {
-          err = { "status": 500, "statusText": "Image could not be found in Canvas" }
-          throw err
-        }
-      })
-      .catch(error => {
-        if (error?.status === 404) {
-          imageCanvas.src = "../../assets/images/404_PageNotFound.jpeg"
-        }
-        else {
-          imageCanvas.src = "../../assets/images/noimage.jpg"
-        }
-      })
-  }
-
   setCanvasAndSelector(thisLine, page) {
     let targetString, canvasID, region
     targetString = thisLine?.target?.id ?? thisLine?.target?.['@id']
@@ -667,8 +624,8 @@ export default class TranscriptionInterface extends HTMLElement {
   async updateTranscriptionImages(pageID) {
     const topImage = this.shadowRoot.querySelector('#topImage')
     const bottomImage = this.shadowRoot.querySelector('#bottomImage')
-    topImage.manifest = bottomImage.manifest = TPEN.activeProject?.manifest[0]
-    this.#page = await vault.get(pageID, 'annotationpage', true)
+    topImage.manifest = bottomImage.manifest = TPEN.activeProject?.manifest?.[0]
+    this.#page = await vault.getWithFallback(pageID, 'annotationpage', TPEN.activeProject?.manifest, true)
     const projectPage = TPEN.activeProject.layers.flatMap(layer => layer.pages || []).find(p => p.id.split('/').pop() === pageID.split('/').pop())
     if (!this.#page || !projectPage) return
     const { orderedItems, columnsInPage } = orderPageItemsByColumns(projectPage, this.#page)

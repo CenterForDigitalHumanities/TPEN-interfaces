@@ -1,4 +1,5 @@
 import TPEN from '../../api/TPEN.js'
+import vault from '../../js/vault.js'
 import { stringFromDate } from '/js/utils.js'
 import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 
@@ -172,31 +173,22 @@ class ContinueWorking extends HTMLElement {
     async getProjectThumbnail(project, annotationPageId) {
         try {
             if (!annotationPageId) return this.generateProjectPlaceholder(project)
-            const annotationPage = await fetch(`${TPEN.servicesURL}/project/${project._id}/page/${annotationPageId}`).then(r => r.json())
+            const annotationPage = await vault.get(
+                `${TPEN.servicesURL}/project/${project._id}/page/${annotationPageId}`,
+                'annotationpage',
+                true
+            )
+            if (!annotationPage) return this.generateProjectPlaceholder(project)
             const canvasId = annotationPage.target
             if (!canvasId) return this.generateProjectPlaceholder(project)
             
             let canvas, isV3
-            try {
-                canvas = await fetch(canvasId).then(r => r.json())
-                const context = canvas['@context']
-                isV3 = Array.isArray(context)
-                    ? context.some(ctx => typeof ctx === 'string' && ctx.includes('iiif.io/api/presentation/3'))
-                    : typeof context === 'string' && context.includes('iiif.io/api/presentation/3')
-            } catch {
-                // Fetch manifest
-                const manifestUrl = project.manifest?.[0]
-                if (!manifestUrl) return this.generateProjectPlaceholder(project)
-                
-                const manifest = await fetch(manifestUrl).then(r => r.json())
-                const context = manifest['@context']
-                isV3 = Array.isArray(context)
-                    ? context.some(ctx => typeof ctx === 'string' && ctx.includes('iiif.io/api/presentation/3'))
-                    : typeof context === 'string' && context.includes('iiif.io/api/presentation/3')
-                const canvases = isV3 ? manifest.items : manifest.sequences?.[0]?.canvases
-                canvas = canvases?.find(c => (isV3 ? c.id : c['@id']) === canvasId)
-                if (!canvas) return this.generateProjectPlaceholder(project)
-            }
+            canvas = await vault.getWithFallback(canvasId, 'canvas', project.manifest)
+            
+            if (!canvas) return this.generateProjectPlaceholder(project)
+            
+            // Structure-based detection
+            isV3 = Array.isArray(canvas.items) || canvas.type === "Canvas"
             
             // Get thumbnail from canvas
             let thumbnailUrl = canvas.thumbnail?.id ?? canvas.thumbnail?.['@id'] ?? canvas.thumbnail
