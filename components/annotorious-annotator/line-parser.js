@@ -687,6 +687,20 @@ class AnnotoriousAnnotator extends HTMLElement {
         dblClickToZoom: true
       }
     })
+
+    // Double right-click to zoom out
+    let lastRightClickTime = 0
+    this.renderCleanup.onElement(this.#annotoriousContainer, 'contextmenu', (e) => {
+      e.preventDefault()
+      const now = Date.now()
+      if (now - lastRightClickTime < 400) {
+        this.#osd.viewport.zoomBy(0.5)
+        lastRightClickTime = 0
+      } else {
+        lastRightClickTime = now
+      }
+    })
+
     // Link to transcribe if they have view permissions for it
     if (CheckPermissions.checkViewAccess("LINE", "TEXT") || CheckPermissions.checkEditAccess("LINE", "TEXT")) {
       let parsingRedirectButton = new OpenSeadragon.Button({
