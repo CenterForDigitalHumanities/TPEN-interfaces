@@ -611,33 +611,6 @@ export default class TranscriptionInterface extends HTMLElement {
     if (bottomImage) bottomImage.moveUnder(x, y, width, height, topImage)
   }
 
-  async getImage(project) {
-    const imageCanvas = this.shadowRoot.querySelector('.canvas-image')
-    let canvasID
-    const allPages = project.layers.flatMap(layer => layer.pages)
-    if (TPEN?.screen?.pageInQuery) {
-      const matchingPage = allPages.find(
-        page => page.id.split('/').pop() === TPEN.screen.pageInQuery
-      )
-      canvasID = matchingPage?.target
-    } else {
-      canvasID = allPages[0]?.target
-    }
-
-    let canvas = await vault.getWithFallback(canvasID, 'canvas', TPEN.activeProject?.manifest)
-    if (!canvas) {
-      imageCanvas.src = "../../assets/images/404_PageNotFound.jpeg"
-      return
-    }
-    // Handle both Presentation API v3 (items) and v2 (images) formats
-    const imageId = canvas.items?.[0]?.items?.[0]?.body?.id ?? canvas.images?.[0]?.resource?.["@id"] ?? canvas.images?.[0]?.resource?.id
-    if (imageId) {
-      imageCanvas.src = imageId
-    } else {
-      imageCanvas.src = "../../assets/images/noimage.jpg"
-    }
-  }
-
   setCanvasAndSelector(thisLine, page) {
     let targetString, canvasID, region
     targetString = thisLine?.target?.id ?? thisLine?.target?.['@id']
