@@ -1,5 +1,6 @@
 import { decodeContentState } from '../iiif-tools/index.js'
 import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
+import vault from '../../js/vault.js'
 
 const CANVAS_PANEL_SCRIPT = document.createElement('script')
 CANVAS_PANEL_SCRIPT.src = "https://cdn.jsdelivr.net/npm/@digirati/canvas-panel-web-components@latest"
@@ -213,11 +214,11 @@ class TpenImageFragment extends HTMLElement {
     }
 
     connectedCallback() {
-        this.cleanup.onDocument('canvas-change', (event) => {
+        this.cleanup.onDocument('canvas-change', async (event) => {
             const canvasId = event.detail.canvasId
             if (!canvasId) return
-            this.#canvas = { id: canvasId }
-            this.setContainerStyle()
+            const canvas = await vault.getWithFallback(canvasId, 'canvas')
+            this.canvas = canvas ?? { id: canvasId }
         })
     }
 

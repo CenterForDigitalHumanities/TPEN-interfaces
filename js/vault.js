@@ -57,7 +57,8 @@ class Vault {
     async get(item, itemType, noCache = false) {
         const type = this._normalizeType(itemType ?? item?.type ?? item?.['@type'])
         const id = this._getId(item)
-        
+        if (!id || type === 'none') return null
+
         const promiseKey = `${type}:${id}`
         
         // Skip in-memory store when noCache is true
@@ -209,6 +210,7 @@ class Vault {
     set(item, itemType) {
         const type = this._normalizeType(itemType ?? item?.type ?? item?.['@type'])
         const id = this._getId(item)
+        if (!id || type === 'none') return
         if (!this.store.has(type)) {
             this.store.set(type, new Map())
         }
@@ -222,6 +224,7 @@ class Vault {
     delete(item, itemType) {
         const type = this._normalizeType(itemType ?? item?.type ?? item?.['@type'])
         const id = this._getId(item)
+        if (!id || type === 'none') return
         if (!this.store.has(type)) return
         const typeStore = this.store.get(type)
         if (!typeStore.has(id)) return
