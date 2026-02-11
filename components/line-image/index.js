@@ -36,8 +36,12 @@ class TpenLineImage extends HTMLElement {
 
     set canvas(value) {
         this.setCanvas(value)
+        const canvasId = typeof value === 'string' ? value : (value?.id ?? value?.['@id'])
         document.dispatchEvent?.(new CustomEvent('canvas-change', {
-            detail: { canvasId: value },
+            detail: { 
+                canvasId,
+                ...(typeof value === 'object' && { canvas: value })
+            },
         }))
     }
 
