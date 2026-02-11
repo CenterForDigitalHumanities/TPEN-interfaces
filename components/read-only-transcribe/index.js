@@ -401,7 +401,7 @@ class ReadOnlyViewTranscribe extends HTMLElement {
             embeddedCanvas = this.#staticManifest?.items?.find(c => (c.id ?? c['@id']) === uri)
         }
         // Handle both Presentation API v3 (items) and v2 (images) formats
-        let fullImage = embeddedCanvas?.items?.[0]?.items?.[0]?.body?.id ?? embeddedCanvas?.images?.[0]?.resource?.["@id"]
+        let fullImage = embeddedCanvas?.items?.[0]?.items?.[0]?.body?.id ?? embeddedCanvas?.images?.[0]?.resource?.["@id"] ?? embeddedCanvas?.images?.[0]?.resource?.id
         let imageService = embeddedCanvas?.items?.[0]?.items?.[0]?.body?.service?.id
         let imgx = embeddedCanvas?.items?.[0]?.items?.[0]?.body?.width
         let imgy = embeddedCanvas?.items?.[0]?.items?.[0]?.body?.height

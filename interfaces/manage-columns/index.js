@@ -670,7 +670,7 @@ class TpenManageColumns extends HTMLElement {
     }
 
     async extractImageInfo(canvasData) {
-        const imgUrl = canvasData?.items?.[0]?.items?.[0]?.body?.id ?? canvasData?.images?.[0]?.resource?.["@id"]
+        const imgUrl = canvasData?.items?.[0]?.items?.[0]?.body?.id ?? canvasData?.images?.[0]?.resource?.["@id"] ?? canvasData?.images?.[0]?.resource?.id
         const imgWidth = canvasData?.width
         const imgHeight = canvasData?.height
         if (!imgUrl || !imgWidth || !imgHeight) throw new Error("Missing image data")

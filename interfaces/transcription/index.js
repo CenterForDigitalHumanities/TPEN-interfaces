@@ -630,7 +630,7 @@ export default class TranscriptionInterface extends HTMLElement {
       return
     }
     // Handle both Presentation API v3 (items) and v2 (images) formats
-    const imageId = canvas.items?.[0]?.items?.[0]?.body?.id ?? canvas.images?.[0]?.resource?.["@id"]
+    const imageId = canvas.items?.[0]?.items?.[0]?.body?.id ?? canvas.images?.[0]?.resource?.["@id"] ?? canvas.images?.[0]?.resource?.id
     if (imageId) {
       imageCanvas.src = imageId
     } else {

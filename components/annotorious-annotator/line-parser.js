@@ -610,7 +610,7 @@ class AnnotoriousAnnotator extends HTMLElement {
     const canvasID = resolvedCanvas["@id"] ?? resolvedCanvas.id
     this.#canvasID = canvasID
     let fullImage = resolvedCanvas?.items?.[0]?.items?.[0]?.body?.id
-    if (!fullImage) fullImage = resolvedCanvas?.images?.[0]?.resource?.["@id"]
+    if (!fullImage) fullImage = resolvedCanvas?.images?.[0]?.resource?.["@id"] ?? resolvedCanvas?.images?.[0]?.resource?.id
     let imageService = resolvedCanvas?.items?.[0]?.items?.[0]?.body?.service?.id
     if (!imageService) imageService = resolvedCanvas?.images?.[0]?.resource?.service?.["@id"]
     if (!fullImage) {

@@ -166,6 +166,7 @@ class TpenImageFragment extends HTMLElement {
         if (value && typeof value === 'object') {
             const imageResource = value?.items?.[0]?.items?.[0]?.body?.id
                 ?? value?.images?.[0]?.resource?.["@id"]
+                ?? value?.images?.[0]?.resource?.id
             if (imageResource) {
                 this.#lineImage.src = imageResource
             }
