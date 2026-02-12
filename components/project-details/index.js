@@ -137,7 +137,7 @@ class ProjectDetails extends HTMLElement {
         const displayTitle = isManagePage ? `Manage Project "${TPEN.screen.title}"` : TPEN.screen.title
         TPEN.eventDispatcher.dispatch('tpen-gui-title', displayTitle)
         const isProjectEditor = CheckPermissions.checkEditAccess('PROJECT', 'METADATA')
-        const editTitle = isProjectEditor ? `<button type="button" id="edit-project-title">✏️</button>` : ``
+        const editTitle = isProjectEditor ? `<button type="button" id="edit-project-title" title="Edit Title">✏️</button>` : ``
 
         this.shadowRoot.innerHTML = `
             <style>${this.style}</style>
