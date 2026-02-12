@@ -124,10 +124,6 @@ export default class PageSelector extends HTMLElement {
                     background-color: white;
                     color: #333;
                 }
-                select option:checked {
-                    background-color: #005a8c;
-                    color: white;
-                }
             </style>
             <select part="select" aria-label="Select page">
                 ${optionsHtml}
