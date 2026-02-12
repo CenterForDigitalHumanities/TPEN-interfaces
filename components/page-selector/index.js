@@ -121,8 +121,8 @@ export default class PageSelector extends HTMLElement {
                     cursor: pointer;
                 }
                 select option {
-                    background-color: white;
-                    color: #333;
+                    background-color: Canvas;
+                    color: CanvasText;
                 }
             </style>
             <select part="select" aria-label="Select page">
