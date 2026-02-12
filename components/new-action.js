@@ -71,7 +71,7 @@ class NewAction extends HTMLElement {
                 <span class="icon">📄</span>
                 <span>Import Image</span>
             </a>
-            <a href="#" id="link-tpen-2.8">
+            <a id="link-tpen-2.8">
                 <span class="icon">🔗</span>
                 <span>Import a TPEN 2.8 Project</span>
             </a>
@@ -87,8 +87,7 @@ class NewAction extends HTMLElement {
         this.cleanup.onElement(this.shadowRoot.getElementById("link-tpen-2.8"), "click", this.TPEN2ImportHandler.bind(this))
     }
 
-    TPEN2ImportHandler = async (event) => {
-        event.preventDefault()
+    TPEN2ImportHandler = async () => {
         const userToken = localStorage.getItem("userToken")
         let tokenDomain
         let isProdTPEN

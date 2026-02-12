@@ -111,7 +111,7 @@ export default class ProjectsListNavigation extends HTMLElement {
         placeholderItem.setAttribute('aria-hidden', 'true')
         placeholderItem.setAttribute('role', 'presentation')
         placeholderItem.setAttribute('tabindex', '-1')
-        placeholderItem.innerHTML = `<a href="#">Loading...</a>`
+        placeholderItem.innerHTML = `<span>Loading...</span>`
         projectList.append(...Array.from({ length: 5 }, () => placeholderItem.cloneNode(true)))
         this.shadowRoot.prepend(style, projectList)
     }

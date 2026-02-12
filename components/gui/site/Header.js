@@ -50,7 +50,7 @@ class TpenHeader extends HTMLElement {
                     <ul>
                         <li><a href="/index">Home</a></li>
                         <li><a href="/about">About</a></li>
-                        <li class="logout-btn"><a href="#">Logout</a></li>
+                        <li class="logout-btn"><a>Logout</a></li>
                     </ul>
                 </nav>
             </header>
