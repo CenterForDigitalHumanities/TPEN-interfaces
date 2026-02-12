@@ -1,5 +1,6 @@
 import { decodeContentState } from '../iiif-tools/index.js'
 import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
+import vault from '../../js/vault.js'
 
 const CANVAS_PANEL_SCRIPT = document.createElement('script')
 CANVAS_PANEL_SCRIPT.src = "https://cdn.jsdelivr.net/npm/@digirati/canvas-panel-web-components@latest"
@@ -166,6 +167,15 @@ class TpenImageFragment extends HTMLElement {
     set canvas(value) {
         this.#canvas = value
         this.setContainerStyle()
+        // Extract and load image resource when full canvas data is provided
+        if (value && typeof value === 'object') {
+            const imageResource = value?.items?.[0]?.items?.[0]?.body?.id
+                ?? value?.images?.[0]?.resource?.["@id"]
+                ?? value?.images?.[0]?.resource?.id
+            if (imageResource) {
+                this.#lineImage.src = imageResource
+            }
+        }
     }
 
     set line(annotation) {
@@ -211,24 +221,8 @@ class TpenImageFragment extends HTMLElement {
         this.cleanup.onDocument('canvas-change', async (event) => {
             const canvasId = event.detail.canvasId
             if (!canvasId) return
-
-            let canvas = event.detail.canvas
-            if (!canvas) {
-                try {
-                    const res = await fetch(canvasId)
-                    canvas = await res.json()
-                } catch (error) {
-                    console.error(error)
-                    return
-                }
-            }
-
-            this.#canvas = canvas
-            this.setContainerStyle()
-            const imageResource = canvas?.items?.[0]?.items?.[0]?.body?.id ?? canvas?.images?.[0]?.resource?.id
-            if (imageResource) {
-                this.#lineImage.src = imageResource
-            }
+            const canvas = await vault.getWithFallback(canvasId, 'canvas')
+            this.canvas = canvas ?? { id: canvasId }
         })
     }
 

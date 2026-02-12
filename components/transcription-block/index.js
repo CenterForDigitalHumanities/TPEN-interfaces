@@ -92,7 +92,7 @@ export default class TranscriptionBlock extends HTMLElement {
      */
     async initializeAsync() {
         const pageID = TPEN.screen?.pageInQuery
-        this.#page = await vault.get(pageID, 'annotationpage', true)
+        this.#page = await vault.getWithFallback(pageID, 'annotationpage', TPEN.activeProject?.manifest, true)
         const projectPage = TPEN.activeProject.layers.flatMap(layer => layer.pages || []).find(p => p.id.split('/').pop() === pageID.split('/').pop())
         if (!this.#page || !projectPage) return
 
@@ -508,6 +508,7 @@ export default class TranscriptionBlock extends HTMLElement {
     }
 
     updateTranscriptionUI() {
+        if (!this.#transcriptions) return
         const previousLineText = this.#transcriptions[TPEN.activeLineIndex - 1] || 'No previous line'
         const currentLineText = this.#transcriptions[TPEN.activeLineIndex] || ''
         const prevLineElem = this.shadowRoot?.querySelector('.transcription-line')

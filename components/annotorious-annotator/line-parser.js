@@ -18,6 +18,7 @@ import { detectTextLinesCombined } from "./detect-lines.js"
 import { v4 as uuidv4 } from "https://cdn.skypack.dev/uuid@9.0.1"
 import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 import { onProjectReady } from '../../utilities/projectReady.js'
+import vault from '../../js/vault.js'
 import '../page-selector/index.js'
 
 class AnnotoriousAnnotator extends HTMLElement {
@@ -282,7 +283,7 @@ class AnnotoriousAnnotator extends HTMLElement {
         tpen-page-selector {
           position: absolute;
           display: none;
-          top: 60px;
+          top: 10px;
           right: 10px;
           z-index: 9;
         }
@@ -378,6 +379,8 @@ class AnnotoriousAnnotator extends HTMLElement {
       this.renderCleanup.run()
 
       this.renderCleanup.onElement(this.shadowRoot.querySelector("#autoParseBtn"), "click", async () => {
+        // TODO this needs testing before we are ready for users to use it
+        return
         try {
           if (typeof cv === "undefined") {
             await new Promise((resolve, reject) => {
@@ -553,7 +556,7 @@ class AnnotoriousAnnotator extends HTMLElement {
 
   /**
    * Fetch a Canvas URI and check that it is a Canvas object.  Pass it forward to render the Image into the interface.
-   * Be prepared to recieve presentation api 2+
+   * Be prepared to receive presentation api 2+
    *
    * FIXME
    * Give users a path when Canvas URIs do not resolve or resolve to something unexpected.
@@ -562,20 +565,15 @@ class AnnotoriousAnnotator extends HTMLElement {
    */
   async processCanvas(uri) {
     if (!uri) return
-      // TODO Vault me?
-    const resolvedCanvas = await fetch(uri)
-      .then(r => {
-        if (!r.ok) throw r
-        return r.json()
-      })
-      .catch(e => {
-        this.shadowRoot.innerHTML = `
-          <h3>Canvas Error</h3>
-          <p>The Canvas within this Page could not be loaded.</p>
-          <p> ${e.status ?? e.code}: ${e.statusText ?? e.message} </p>
-        `
-        throw e
-      })
+    let resolvedCanvas = await vault.getWithFallback(uri, 'canvas', TPEN.activeProject?.manifest)
+    if (!resolvedCanvas) {
+      this.shadowRoot.innerHTML = `
+        <h3>Canvas Error</h3>
+        <p>The Canvas within this Page could not be loaded.</p>
+        <p>The Canvas could not be resolved or is invalid.</p>
+      `
+      return
+    }
     const context = resolvedCanvas["@context"]
     if (!context?.includes("iiif.io/api/presentation/3/context.json")) {
       console.warn("The Canvas object did not have the IIIF Presentation API 3 context and may not be parseable.")
@@ -612,14 +610,14 @@ class AnnotoriousAnnotator extends HTMLElement {
     const canvasID = resolvedCanvas["@id"] ?? resolvedCanvas.id
     this.#canvasID = canvasID
     let fullImage = resolvedCanvas?.items?.[0]?.items?.[0]?.body?.id
-    if (!fullImage) fullImage = resolvedCanvas?.images?.[0]?.resource?.["@id"]
+    if (!fullImage) fullImage = resolvedCanvas?.images?.[0]?.resource?.["@id"] ?? resolvedCanvas?.images?.[0]?.resource?.id
     let imageService = resolvedCanvas?.items?.[0]?.items?.[0]?.body?.service?.id
     if (!imageService) imageService = resolvedCanvas?.images?.[0]?.resource?.service?.["@id"]
     if (!fullImage) {
       throw new Error("Cannot Resolve Canvas Image", { "cause": "The Image is 404 or unresolvable." })
     }
     let imgx = resolvedCanvas?.items?.[0]?.items?.[0]?.body?.width
-    if (!imgx) imgx = resolvedCanvas?.images[0]?.resource?.width
+    if (!imgx) imgx = resolvedCanvas?.images?.[0]?.resource?.width
     let imgy = resolvedCanvas?.items?.[0]?.items?.[0]?.body?.height
     if (!imgy) imgy = resolvedCanvas?.images?.[0]?.resource?.height
     this.#imageDims = [imgx, imgy]
@@ -689,6 +687,20 @@ class AnnotoriousAnnotator extends HTMLElement {
         dblClickToZoom: true
       }
     })
+
+    // Double right-click to zoom out
+    let lastRightClickTime = 0
+    this.renderCleanup.onElement(this.#annotoriousContainer, 'contextmenu', (e) => {
+      e.preventDefault()
+      const now = Date.now()
+      if (now - lastRightClickTime < 400) {
+        this.#osd.viewport.zoomBy(0.5)
+        lastRightClickTime = 0
+      } else {
+        lastRightClickTime = now
+      }
+    })
+
     // Link to transcribe if they have view permissions for it
     if (CheckPermissions.checkViewAccess("LINE", "TEXT") || CheckPermissions.checkEditAccess("LINE", "TEXT")) {
       let parsingRedirectButton = new OpenSeadragon.Button({
@@ -871,7 +883,8 @@ class AnnotoriousAnnotator extends HTMLElement {
     this.#annotoriousInstance.setAnnotations(allAnnotations, false)
     this.#annotoriousContainer.style.backgroundImage = "none"
     this.shadowRoot.getElementById("tools-container").style.display = "block"
-    this.shadowRoot.querySelector("#autoParseBtn").style.display = "block"
+    // TODO This needs testing before we are ready for users to use it.
+    // this.shadowRoot.querySelector("#autoParseBtn").style.display = "block"
     const pageSelector = this.shadowRoot.querySelector("tpen-page-selector")
     if (pageSelector) {
       pageSelector.style.display = "block"

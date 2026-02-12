@@ -19,18 +19,24 @@ export function stringFromDate(date) {
 }
 
 export function urlFromIdAndType(id, type, { projectId, pageId, layerId}) {
-    if (!id || !type) return ''
+    if (!id || !type) return null
     if (typeof id === 'string' && (id.startsWith('http://') || id.startsWith('https://'))) return id
     switch (type) {
         case 'annotationpage':
-            if (!projectId) return ''
+            if (!projectId) return null
             return `${TPEN.servicesURL}/project/${projectId}/page/${id}`
         case 'annotation':
-            if (!projectId || !pageId) return ''
+            if (!projectId || !pageId) return null
             return `${TPEN.servicesURL}/project/${projectId}/page/${pageId}/line/${id}`
         case 'annotationcollection':
-            if (!projectId) return ''
+            if (!projectId) return null
             return `${TPEN.servicesURL}/project/${projectId}/layer/${id}`
+        case 'canvas':
+        case 'manifest':
+        case 'collection':
+            // These should come from external IIIF manifests or be full URLs already.
+            // If they're hex strings without a URL, they're embedded and shouldn't be fetched.
+            return null
         default:
             return `${TPEN.RERUMURL}/id/${id}`
     }

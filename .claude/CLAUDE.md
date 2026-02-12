@@ -44,7 +44,7 @@ TPEN3 Interfaces is a JavaScript library that provides web components and API cl
 │   ├── index.css            # Main stylesheet
 │   ├── manage/              # Management page styles
 │   └── collaborators/       # Collaborator styles
-├── js/                      # Utility scripts (redirect, vault)
+├── js/                      # Utility scripts (redirect, vault, utils)
 ├── assets/                  # Static assets (icons, images, logos)
 ├── _classes/                # Jekyll class documentation
 ├── _cookbook/               # Jekyll cookbook examples
@@ -168,6 +168,43 @@ CONFIG.TPEN3URL     // TPEN 3 main URL
 // 3. process.env.TPEN_ENV
 // 4. Defaults to 'dev'
 ```
+
+### Vault (`js/vault.js`)
+Singleton caching layer for IIIF resources. **This is a custom utility, not the `@iiif/helpers` Vault.**
+All components should use the vault instead of raw `fetch()` for IIIF resources (canvases, manifests, annotation pages, annotations, etc.).
+
+```javascript
+import vault from '../../js/vault.js'
+
+// Core methods:
+vault.get(item, itemType, noCache)                       // Fetch with dual-layer cache (memory + localStorage)
+vault.set(item, itemType)                                // Store in both caches
+vault.delete(item, itemType)                             // Remove from both caches
+vault.clear(itemType)                                    // Purge all of a given type
+vault.all()                                              // Get all cached resources
+
+// Fallback methods:
+vault.getWithFallback(item, itemType, manifestUrls, noCache) // get() + prefetch manifests on miss
+vault.prefetchManifests(urls)                                // Batch prefetch manifests
+vault.prefetchDocuments(items, docType)                      // Batch prefetch any document type
+vault.prefetchCollections(items)                             // Batch prefetch collections
+```
+
+**Key behaviors:**
+- **Dual-layer cache**: in-memory `Map` for speed + `localStorage` for persistence across reloads
+- **BFS hydration**: when a resource is fetched, embedded IIIF sub-resources are recursively cached individually via `structuredClone()`. The parent stores minimal stubs (`{id, type, label}`) for non-array properties.
+- **In-flight deduplication**: concurrent `get()` calls for the same resource share a single network request
+- **Seed fallback**: when `item` is an object and the network fetch fails, the object is hydrated and cached as a fallback
+- **IIIF v2 + v3 types**: recognizes both unprefixed (v3: `Canvas`, `Manifest`) and prefixed (v2: `sc:Canvas`, `sc:Manifest`) types
+- **`noCache` flag**: bypasses in-memory and localStorage lookups to force a fresh fetch
+
+### URL Resolution (`js/utils.js`)
+`urlFromIdAndType(id, type, { projectId, pageId, layerId })` resolves resource IDs to fetchable URLs.
+
+- Full URLs (http/https) are returned as-is
+- TPEN resources (`annotationpage`, `annotation`, `annotationcollection`) are resolved to the services API
+- **External IIIF types (`canvas`, `manifest`, `collection`) return `null`** — these must already be full URLs or will be found as embedded data via manifest prefetch
+- Returns `null` (not empty string) when resolution is impossible
 
 ## API Endpoints
 
@@ -458,14 +495,7 @@ node --test api/__tests__/project.test.js  # Run specific test
 ## Configuration & Deployment
 
 ### Environment Configuration
-Configuration is managed via `api/config.js`:
-- **Development** (`dev`): Uses dev.api.t-pen.org, devstore.rerum.io
-- **Production** (`prod`): Uses api.t-pen.org, store.rerum.io
-
-Set environment via:
-1. `globalThis.TPEN_ENV = 'prod'` before importing
-2. `<meta name="tpen-env" content="prod">` in HTML
-3. `process.env.TPEN_ENV` for server-side
+See [Configuration (`api/config.js`)](#configuration-apiconfigjs) above for environment detection and URLs.
 
 ### Jekyll Configuration (`_config.yml`)
 ```yaml
@@ -524,7 +554,31 @@ Automated deployment pipeline:
 
 ## Common Patterns & Best Practices
 
-### Error Handling
+### IIIF Resource Fetching
+Always use `vault` for IIIF resources. Never use raw `fetch()` for canvases, manifests, annotation pages, or annotations.
+
+```javascript
+import vault from '../../js/vault.js'
+
+// Simple fetch — checks cache, then network
+const canvas = await vault.get(canvasURI, 'canvas')
+
+// Fetch with manifest fallback — if not found, prefetches project manifests
+// and retries (useful when canvas/page might be embedded in manifest)
+const page = await vault.getWithFallback(pageID, 'annotationpage', TPEN.activeProject?.manifest, true)
+const canvas = await vault.getWithFallback(canvasID, 'canvas', TPEN.activeProject?.manifest)
+
+// Force fresh fetch (bypass cache) with noCache=true
+const freshPage = await vault.get(pageID, 'annotationpage', true)
+
+// Resolve annotations that may be stubs (have target but no body)
+let annotation = item
+if (!annotation?.body) {
+    annotation = await vault.get(item, 'annotation', true)
+}
+```
+
+### Error Handling (TPEN API)
 ```javascript
 try {
     const response = await fetch(url)
@@ -571,18 +625,19 @@ try {
 1. **Authentication is Critical**: Always ensure authentication is properly handled before making API calls
 2. **Web Components Lifecycle**: Respect the component lifecycle - initialization in connectedCallback, cleanup in disconnectedCallback
 3. **Event Bubbling**: Use bubbles: true and composed: true for events that need to cross shadow DOM boundaries
-4. **IIIF Standards**: When working with manifests, follow IIIF Presentation API standards
+4. **IIIF Resources via Vault**: Always use `vault.get()` or `vault.getWithFallback()` for IIIF resources — never raw `fetch()`. The vault handles caching, fallback to manifest data, and IIIF v2/v3 compatibility
 5. **Project Context**: Projects are the central organizing unit - users create projects, add manifests, and collaborate
 6. **Error Messages**: Provide clear, user-friendly error messages, not raw API errors
 7. **Testing**: Always write tests for new functionality, especially for API interactions
 8. **CSS Encapsulation**: Remember that shadow DOM encapsulates styles - use CSS custom properties for theming
 
 ### Common Issues to Avoid:
-- Don't forget to attach authentication to fetch requests
+- Don't forget to attach authentication to fetch requests for TPEN API calls
 - Don't manipulate DOM directly in components - use render() method
 - Don't store sensitive data in localStorage beyond auth tokens
 - Don't make synchronous API calls - always use async/await
 - Don't forget to clean up event listeners in disconnectedCallback
+- Don't import `@iiif/helpers` Vault — `components/default-transcribe` still uses it and is `@deprecated`
 
 ### Development Tips:
 - Use the browser's Developer Tools to inspect web components
