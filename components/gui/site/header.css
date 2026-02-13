@@ -89,12 +89,23 @@ ul {
 li {
     margin-right: 1em;
 }
-a {
+a, .logout-btn button {
     color: var(--primary-light);
     text-decoration: none;
 }
-a:hover {
+a:hover, .logout-btn button:hover {
     text-decoration: underline;
+}
+.logout-btn button {
+    background: none;
+    border: none;
+    font: inherit;
+    cursor: pointer;
+    padding: 0;
+}
+.logout-btn button:hover {
+    background: none;
+    color: var(--primary-light);
 }
 .action-button {
     background-color: var(--primary-color);

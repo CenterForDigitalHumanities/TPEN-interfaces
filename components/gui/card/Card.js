@@ -61,7 +61,7 @@ class TPENCard extends HTMLElement {
                 padding: 0.5em 1em !important;
                 transition: all 0.3s;
             }
-            ::slotted(a:hover) {
+            ::slotted(a:hover), ::slotted(a:focus-visible) {
                 background-color: var(--primary-light);
                 outline: var(--primary-color) 1px solid;
                 outline-offset: -1.5px;
@@ -75,7 +75,7 @@ class TPENCard extends HTMLElement {
                 border-radius: 5px;
                 transition: all 0.3s;
             }
-            ::slotted(button:hover) {
+            ::slotted(button:hover), ::slotted(button:focus-visible) {
                 background-color: var(--primary-light) !important;
                 text-transform: capitalize;
                 outline: var(--primary-color) 1px solid;

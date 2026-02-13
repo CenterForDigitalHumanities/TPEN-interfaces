@@ -35,7 +35,7 @@ class NewAction extends HTMLElement {
             justify-items: center;
             align-items: center;
             }
-            a {
+            a, button.action-tile {
             text-decoration: none;
             color: var(--dark);
             font-size: 14px;
@@ -50,10 +50,16 @@ class NewAction extends HTMLElement {
             width: 100%;
             box-sizing: border-box;
             }
-            a span.icon {
+            button.action-tile {
+            background: none;
+            border: none;
+            font: inherit;
+            cursor: pointer;
+            }
+            a span.icon, button.action-tile span.icon {
             font-size: 32px; /* Large icon */
             }
-            a:hover {
+            a:hover, button.action-tile:hover {
             background-color: var(--light-gray);
             color: var(--primary-color);
             }
@@ -71,10 +77,10 @@ class NewAction extends HTMLElement {
                 <span class="icon">📄</span>
                 <span>Import Image</span>
             </a>
-            <a href="#" id="link-tpen-2.8">
+            <button type="button" class="action-tile" id="link-tpen-2.8">
                 <span class="icon">🔗</span>
                 <span>Import a TPEN 2.8 Project</span>
-            </a>
+            </button>
             <a href="/profile" id="profile-link">
                 <span class="icon">👤</span>
                 <span>Manage Profile</span>
@@ -87,8 +93,7 @@ class NewAction extends HTMLElement {
         this.cleanup.onElement(this.shadowRoot.getElementById("link-tpen-2.8"), "click", this.TPEN2ImportHandler.bind(this))
     }
 
-    TPEN2ImportHandler = async (event) => {
-        event.preventDefault()
+    TPEN2ImportHandler = async () => {
         const userToken = localStorage.getItem("userToken")
         let tokenDomain
         let isProdTPEN
