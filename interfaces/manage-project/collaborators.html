@@ -19,6 +19,10 @@ permalink: /project/manage/collaborators
     <link rel="stylesheet" href="/css/collaborators/index.css">
     <link href="/components/gui/site/index.css" rel="stylesheet" type="text/css" />
     <style>
+        tpen-card {
+            grid-column: 1 / -1;
+        }
+
         #projectManagementBtn {
             background-color: var(--primary-color);
             padding: 10px 20px;
@@ -27,6 +31,9 @@ permalink: /project/manage/collaborators
             cursor: pointer;
             transition: background-color 0.3s;
             border: none;
+            margin-top: 1em;
+            grid-column: 1 / -1;
+            justify-self: start;
         }
 
         #projectManagementBtn:hover,
