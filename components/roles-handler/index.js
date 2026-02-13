@@ -35,7 +35,7 @@ class RolesHandler extends HTMLElement {
         styleEl.id = 'roles-handler-manage-button-styles'
         styleEl.textContent = `
             project-collaborators::part(manage-button) {
-                background: linear-gradient(135deg, var(--primary-color, #1976d2) 0%, var(--primary-dark, #1565c0) 100%);
+                background: var(--primary-color, #1976d2);
                 color: var(--white, white);
                 border: none;
                 padding: 8px 16px;
@@ -47,6 +47,7 @@ class RolesHandler extends HTMLElement {
                 box-shadow: 0 2px 6px var(--interface-primary-shadow, rgba(25, 118, 210, 0.25));
             }
             project-collaborators::part(manage-button):hover {
+                background: var(--primary-dark, #1565c0);
                 box-shadow: 0 4px 10px var(--interface-primary-shadow, rgba(25, 118, 210, 0.4));
                 transform: translateY(-1px);
             }
@@ -277,6 +278,56 @@ class RolesHandler extends HTMLElement {
             transform: translateY(0);
             box-shadow: 0 2px 4px rgba(25, 118, 210, 0.3);
         }
+        .custom-roles-section {
+            margin: 20px 0;
+            padding: 16px;
+            border: 1px solid var(--border-color, #e0e0e0);
+            border-radius: 6px;
+            background: var(--gray-50, #fafafa);
+        }
+        .custom-roles-section h3 {
+            margin: 0 0 12px 0;
+            font-size: 1rem;
+            color: var(--color-text, #333);
+        }
+        .custom-roles-toggles {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .custom-role-toggle {
+            min-width: 100px;
+            padding: 6px 12px;
+            border: 2px solid var(--border-color, #ddd);
+            background: linear-gradient(to right, var(--primary-color, #1976d2) 50%, var(--color-white, white) 50%);
+            background-size: 200% 100%;
+            background-position: 100% 0;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.875rem;
+            transition: background-position 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+            color: var(--color-text, #333);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .custom-role-toggle::before {
+            content: '☐';
+            font-size: 1.1em;
+            flex-shrink: 0;
+        }
+        .custom-role-toggle:hover {
+            border-color: var(--primary-color, #1976d2);
+        }
+        .custom-role-toggle.active {
+            background-position: 0 0;
+            border-color: var(--primary-color, #1976d2);
+            color: var(--color-white, white);
+        }
+        .custom-role-toggle.active::before {
+            content: '☑';
+        }
         </style>
         <dialog id="roleModal" aria-labelledby="modalTitle">
             <button id="roleCloseButton" aria-label="Close dialog">✕</button>
@@ -292,6 +343,12 @@ class RolesHandler extends HTMLElement {
                     <button class="role-toggle-btn" id="contributorToggle">Contributor</button>
                     <span class="role-help-text">Describe and annotate</span>
                 </div>
+            </div>
+            
+            <!-- Custom Roles Section -->
+            <div class="custom-roles-section" id="customRolesSection" style="display: none;">
+                <h3>Custom Roles</h3>
+                <div class="custom-roles-toggles" id="customRolesToggles"></div>
             </div>
             
             <!-- Action Buttons Row -->
@@ -367,7 +424,7 @@ class RolesHandler extends HTMLElement {
         return memberElement
     }
 
-    openManageModal(memberID) {
+    async openManageModal(memberID) {
         if (!memberID) return
         const collaborator = TPEN.activeProject?.collaborators?.[memberID]
         if (!collaborator) return
@@ -423,6 +480,39 @@ class RolesHandler extends HTMLElement {
         const memberName = collaborator.profile?.displayName ?? memberID
 
         modalTitle.textContent = title
+        
+        // Get custom roles from project.roles (anything not a default role)
+        const defaultRoles = ['OWNER', 'LEADER', 'CONTRIBUTOR', 'VIEWER']
+        const customRoleIds = Object.keys(TPEN.activeProject?.roles || {}).filter(roleId => 
+            !defaultRoles.includes(roleId.toUpperCase())
+        )
+        
+        // Render custom roles toggle buttons
+        const customRolesSection = this.shadowRoot.querySelector("#customRolesSection")
+        const customRolesToggles = this.shadowRoot.querySelector("#customRolesToggles")
+        
+        if (customRoleIds.length > 0) {
+            customRolesSection.style.display = 'block'
+            customRolesToggles.innerHTML = ''
+            
+            customRoleIds.forEach(roleId => {
+                const isActive = collaborator.roles.some(r => r.toUpperCase() === roleId.toUpperCase())
+                const button = document.createElement('button')
+                button.className = `custom-role-toggle ${isActive ? 'active' : ''}`
+                button.setAttribute('data-role-id', roleId.toUpperCase())
+                button.setAttribute('aria-pressed', isActive)
+                button.textContent = roleId
+                
+                button.onclick = () => {
+                    button.classList.toggle('active')
+                    button.setAttribute('aria-pressed', button.classList.contains('active'))
+                }
+                
+                customRolesToggles.appendChild(button)
+            })
+        } else {
+            customRolesSection.style.display = 'none'
+        }
         
         // Set initial toggle states
         const updateToggleStates = () => {
@@ -521,8 +611,15 @@ class RolesHandler extends HTMLElement {
         if (leaderToggle.classList.contains("active")) selectedRoles.push("LEADER")
         if (contributorToggle.classList.contains("active")) selectedRoles.push("CONTRIBUTOR")
         
+        // Collect custom roles from toggle buttons
+        const customRoleToggles = this.shadowRoot.querySelectorAll(".custom-role-toggle.active")
+        customRoleToggles.forEach(button => {
+            const roleId = button.getAttribute('data-role-id')
+            if (roleId) selectedRoles.push(roleId)
+        })
+        
         // If no Leader or Contributor, they become VIEWER
-        if (selectedRoles.length === 0) {
+        if (!selectedRoles.includes("LEADER") && !selectedRoles.includes("CONTRIBUTOR")) {
             selectedRoles.push("VIEWER")
         }
         
@@ -551,10 +648,20 @@ class RolesHandler extends HTMLElement {
         const currentRoles = []
         if (leaderToggle.classList.contains("active")) currentRoles.push("LEADER")
         if (contributorToggle.classList.contains("active")) currentRoles.push("CONTRIBUTOR")
-        if (currentRoles.length === 0) currentRoles.push("VIEWER")
+        
+        // Collect custom roles from toggle buttons
+        const customRoleToggles = this.shadowRoot.querySelectorAll(".custom-role-toggle.active")
+        customRoleToggles.forEach(button => {
+            const roleId = button.getAttribute('data-role-id')
+            if (roleId) currentRoles.push(roleId)
+        })
+        
+        if (!currentRoles.includes("LEADER") && !currentRoles.includes("CONTRIBUTOR") && customRoleToggles.length === 0) {
+            currentRoles.push("VIEWER")
+        }
         
         const currentSelection = currentRoles.sort().join(",")
-        const originalSelection = this.originalRoles.filter(r => ["LEADER", "CONTRIBUTOR", "VIEWER"].includes(r)).sort().join(",") || "VIEWER"
+        const originalSelection = this.originalRoles.sort().join(",")
         
         if (currentSelection !== originalSelection) {
             if (confirm("You have unsaved changes. Discard changes and close?")) {
