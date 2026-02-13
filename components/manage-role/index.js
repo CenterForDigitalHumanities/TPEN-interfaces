@@ -534,7 +534,7 @@ class ManageRole extends HTMLElement {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${TPEN.getAuthorization()}`
                 },
-                body: JSON.stringify({ roles: group })
+                body: JSON.stringify({ roles: this.group })
             })
 
             if (response.ok) {

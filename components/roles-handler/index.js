@@ -35,8 +35,8 @@ class RolesHandler extends HTMLElement {
         styleEl.id = 'roles-handler-manage-button-styles'
         styleEl.textContent = `
             project-collaborators::part(manage-button) {
-                background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
-                color: white;
+                background: linear-gradient(135deg, var(--primary-color, #1976d2) 0%, var(--primary-dark, #1565c0) 100%);
+                color: var(--white, white);
                 border: none;
                 padding: 8px 16px;
                 border-radius: 4px;
@@ -44,19 +44,21 @@ class RolesHandler extends HTMLElement {
                 font-weight: 500;
                 font-size: 0.9rem;
                 transition: all 0.2s ease;
-                box-shadow: 0 2px 6px rgba(25, 118, 210, 0.25);
+                box-shadow: 0 2px 6px var(--interface-primary-shadow, rgba(25, 118, 210, 0.25));
             }
             project-collaborators::part(manage-button):hover {
-                box-shadow: 0 4px 10px rgba(25, 118, 210, 0.4);
+                box-shadow: 0 4px 10px var(--interface-primary-shadow, rgba(25, 118, 210, 0.4));
                 transform: translateY(-1px);
             }
             project-collaborators::part(manage-button):active {
                 transform: translateY(0);
-                box-shadow: 0 2px 4px rgba(25, 118, 210, 0.25);
+                box-shadow: 0 2px 4px var(--interface-primary-shadow, rgba(25, 118, 210, 0.25));
             }
         `
         document.head.appendChild(styleEl)
-        this.cleanup.onElement(styleEl, 'remove', () => {})
+        this.cleanup.add(() => {
+            document.getElementById('roles-handler-manage-button-styles')?.remove()
+        })
     }
 
     /**
@@ -276,7 +278,7 @@ class RolesHandler extends HTMLElement {
             box-shadow: 0 2px 4px rgba(25, 118, 210, 0.3);
         }
         </style>
-        <dialog id="roleModal">
+        <dialog id="roleModal" aria-labelledby="modalTitle">
             <button id="roleCloseButton" aria-label="Close dialog">✕</button>
             <h2 id="modalTitle"></h2>
             
@@ -336,6 +338,11 @@ class RolesHandler extends HTMLElement {
             const groupMembersActionsElement = child.querySelector(".actions")
             for (const collaboratorId in collaborators) {
                 if (groupMembersActionsElement?.getAttribute("data-member-id") == collaboratorId) {
+                    // Clear any previously injected manage buttons to prevent duplicates
+                    groupMembersActionsElement.querySelectorAll(".manage-button").forEach(btn => {
+                        btn.closest("div")?.remove()
+                    })
+                    
                     let memberHTML
                     if(userHasEditAccess){
                         memberHTML = this.createMemberHTML(collaboratorId)
@@ -384,12 +391,10 @@ class RolesHandler extends HTMLElement {
             const { memberId } = button.dataset
             if (!memberId) return console.warn("Button does not have a valid member ID")
 
-            switch (true) {
-                case button.classList.contains("manage-button"):
-                    this.openManageModal(memberId)
-                    break
-                default:
-                    break
+            if (button.classList.contains("manage-button")) {
+                // Store trigger element for focus restoration
+                this.triggerElement = button
+                this.openManageModal(memberId)
             }
         } catch (error) {
             console.error("Error handling button action:", error)
@@ -464,6 +469,8 @@ class RolesHandler extends HTMLElement {
         readonlyBtn.onclick = () => {
             leaderToggle.classList.remove("active")
             contributorToggle.classList.remove("active")
+            leaderToggle.setAttribute("aria-pressed", "false")
+            contributorToggle.setAttribute("aria-pressed", "false")
             updateToggleStates()
         }
 
@@ -508,6 +515,7 @@ class RolesHandler extends HTMLElement {
     }
 
     async saveRoleChanges(memberID, leaderToggle, contributorToggle) {
+        const saveButton = this.shadowRoot.querySelector("#modalSaveButton")
         const selectedRoles = []
         
         if (leaderToggle.classList.contains("active")) selectedRoles.push("LEADER")
@@ -517,6 +525,10 @@ class RolesHandler extends HTMLElement {
         if (selectedRoles.length === 0) {
             selectedRoles.push("VIEWER")
         }
+        
+        // Disable button and show loading state
+        saveButton.disabled = true
+        saveButton.textContent = "Saving..."
         
         try {
             const response = await TPEN.activeProject.cherryPickRoles(memberID, selectedRoles)
@@ -528,6 +540,10 @@ class RolesHandler extends HTMLElement {
         } catch (error) {
             console.error("Error updating roles:", error)
             TPEN.eventDispatcher.dispatch('tpen-toast', { message: 'Error updating roles', status: 'error', dismissible: true })
+        } finally {
+            // Re-enable button and restore text
+            saveButton.disabled = false
+            saveButton.textContent = "Save Changes"
         }
     }
 
@@ -551,12 +567,17 @@ class RolesHandler extends HTMLElement {
 
     async handleTransferOwnership(memberID, memberName) {
         const confirmMessage = `You are about to transfer ownership of this project to ${memberName}. This action is irreversible. Please confirm if you want to proceed.`
-        if (window.confirm(confirmMessage)) {
+        if (!window.confirm(confirmMessage)) return
+        
+        try {
             const response = await TPEN.activeProject.transferOwnership(memberID)
             if (response) {
-                alert("Ownership transferred successfully.")
+                TPEN.eventDispatcher.dispatch('tpen-toast', { message: 'Ownership transferred successfully.', status: 'success' })
                 location.reload()
             }
+        } catch (error) {
+            console.error("Error transferring ownership:", error)
+            TPEN.eventDispatcher.dispatch('tpen-toast', { message: 'Error transferring ownership', status: 'error', dismissible: true })
         }
     }
 
@@ -581,6 +602,12 @@ class RolesHandler extends HTMLElement {
         this.currentMemberID = null
         this.currentMemberName = null
         this.originalRoles = []
+        
+        // Restore focus to the trigger element
+        if (this.triggerElement) {
+            this.triggerElement.focus()
+            this.triggerElement = null
+        }
     }
 
     /**
