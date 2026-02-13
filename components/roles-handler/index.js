@@ -111,7 +111,7 @@ class RolesHandler extends HTMLElement {
         const userHasEditAccess = CheckPermissions.checkEditAccess("member", "*")
         const groupMembersElement = document.querySelector("project-collaborators")?.shadowRoot?.querySelector(".group-members") 
         if(!groupMembersElement) return
-        Array.from(groupMembersElement.children).filter(child => {
+        Array.from(groupMembersElement.children).forEach(child => {
             const groupMembersActionsElement = child.querySelector(".actions")
             for (const collaboratorId in collaborators) {
                 if (groupMembersActionsElement?.getAttribute("data-member-id") == collaboratorId) {
@@ -124,9 +124,9 @@ class RolesHandler extends HTMLElement {
                         memberHTML.innerHTML = "You do not have permission to edit member roles"
                     }
                     groupMembersActionsElement.appendChild(memberHTML)
-                }  
+                }
             }
-        })        
+        })
     }
 
     createMemberHTML(collaboratorId) {
@@ -179,34 +179,80 @@ class RolesHandler extends HTMLElement {
         const currentUserIsOwner = TPEN.activeProject.collaborators[currentUserID]?.roles.includes("OWNER")
 
         const memberID = button.memberId
-        const memberName = collaborator.profile?.displayName
+        const memberName = collaborator.profile?.displayName ?? memberID
         const hasDeleteAccess = CheckPermissions.checkDeleteAccess("member", "*")
+        const isOwner = collaborator.roles.includes("OWNER")
+        const isLeader = collaborator.roles.includes("LEADER")
+        const isViewer = collaborator.roles.includes("VIEWER")
+
+        const buildButton = ({ part, className, label, dataAttrs }) => {
+            const attrs = Object.entries(dataAttrs ?? {})
+                .map(([key, value]) => `data-${key}="${value}"`)
+                .join(" ")
+            const attrString = attrs ? ` ${attrs}` : ""
+            return `<button part="${part}" class="${className}"${attrString}>${label}</button>`
+        }
 
         const buttons = []
 
-        if (!collaborator.roles.includes("OWNER") && currentUserIsOwner) {
-            buttons.push(`<button part="transfer-ownership-button" class="transfer-ownership-button" data-member-id=${memberID}> Transfer Ownership</button>`)
+        if (!isOwner && currentUserIsOwner) {
+            buttons.push(buildButton({
+                part: "transfer-ownership-button",
+                className: "transfer-ownership-button",
+                label: "Transfer Ownership",
+                dataAttrs: { "member-id": memberID }
+            }))
         }
 
-        if (!collaborator.roles.includes("LEADER")) {
-            buttons.push(`<button part="make-leader-button" class="make-leader-button" data-member-id=${memberID}>Promote to Leader</button>`)
+        if (!isLeader) {
+            buttons.push(buildButton({
+                part: "make-leader-button",
+                className: "make-leader-button",
+                label: "Promote to Leader",
+                dataAttrs: { "member-id": memberID }
+            }))
         }
 
-        if (collaborator.roles.includes("LEADER")) {
-            buttons.push(`<button part="demote-leader-button" class="demote-leader-button" data-member-id=${memberID}>Demote from Leader</button>`)
+        if (isLeader) {
+            buttons.push(buildButton({
+                part: "demote-leader-button",
+                className: "demote-leader-button",
+                label: "Demote from Leader",
+                dataAttrs: { "member-id": memberID }
+            }))
         }
 
-        if (!collaborator.roles.includes("VIEWER")) {
-            buttons.push(`<button part="set-to-viewer-button" class="set-to-viewer-button" data-member-id=${memberID}>Revoke Write Access</button>`)
+        if (!isViewer) {
+            buttons.push(buildButton({
+                part: "set-to-viewer-button",
+                className: "set-to-viewer-button",
+                label: "Revoke Write Access",
+                dataAttrs: { "member-id": memberID }
+            }))
         }
 
-        buttons.push(`<button part="set-role-button" class="set-role-button" data-member-id=${memberID}>Set Role</button>`)
+        buttons.push(buildButton({
+            part: "set-role-button",
+            className: "set-role-button",
+            label: "Set Role",
+            dataAttrs: { "member-id": memberID }
+        }))
 
         if (hasDeleteAccess) {
-            buttons.push(`<button part="remove-button" class="remove-button" data-member-id=${memberID} data-member-name=${memberName}>Remove User</button>`)
+            buttons.push(buildButton({
+                part: "remove-button",
+                className: "remove-button",
+                label: "Remove User",
+                dataAttrs: { "member-id": memberID, "member-name": memberName }
+            }))
         }
 
-        buttons.push(`<button part="close-role-management-button" class="close-role-management-button" data-member-id=${memberID}>Close</button>`)
+        buttons.push(buildButton({
+            part: "close-role-management-button",
+            className: "close-role-management-button",
+            label: "Close",
+            dataAttrs: { "member-id": memberID }
+        }))
 
         return buttons
     }
