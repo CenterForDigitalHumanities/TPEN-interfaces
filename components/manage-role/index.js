@@ -18,6 +18,8 @@ class ManageRole extends HTMLElement {
 
     permissions = []
     isExistingRole = false
+    /** @type {Object} Local cache of roles for this component */
+    group = {}
 
     constructor() {
         super()
@@ -55,10 +57,11 @@ class ManageRole extends HTMLElement {
                 'Authorization': `Bearer ${TPEN.getAuthorization()}`
             }
         }).then(response => response.json())
-        this.render(group)
+        this.group = group || {}
+        this.render(this.group)
     }
 
-    render(group) {
+    render(group = this.group) {
         this.shadowRoot.innerHTML = `
             <style>
                 h3 {
@@ -454,17 +457,26 @@ class ManageRole extends HTMLElement {
                     this.shadowRoot.getElementById('role-name').value = ''
                     this.permissions = []
                     const roleId = roleLi.querySelector("#roleID").textContent.toUpperCase()
-                    await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/removeCustomRoles`, {
-                        method: 'DELETE',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${TPEN.getAuthorization()}`
-                        },
-                        body: JSON.stringify({ roles: [roleId] })
-                    }).then(response => {
-                        TPEN.eventDispatcher.dispatch("tpen-toast", response.ok ? { status: "info", message: 'Successfully Removed Role' } : { status: "error", message: 'Error Removing Role' })
-                    })
-                    this.render()
+                    try {
+                        const response = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/removeCustomRoles`, {
+                            method: 'DELETE',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${TPEN.getAuthorization()}`
+                            },
+                            body: JSON.stringify({ roles: [roleId] })
+                        })
+
+                        if (response.ok) {
+                            delete this.group[roleId]
+                            TPEN.eventDispatcher.dispatch("tpen-toast", { status: "info", message: 'Successfully Removed Role' })
+                        } else {
+                            TPEN.eventDispatcher.dispatch("tpen-toast", { status: "error", message: 'Error Removing Role' })
+                        }
+                    } catch (err) {
+                        TPEN.eventDispatcher.dispatch("tpen-toast", { status: "error", message: `Error Removing Role: ${err.message}` })
+                    }
+                    this.render(this.group)
                 })
             })
 
@@ -474,7 +486,7 @@ class ManageRole extends HTMLElement {
         })
     }
 
-    updateRolePermissions(group, selectedRole) {
+    updateRolePermissions(group = this.group, selectedRole) {
         this.shadowRoot.getElementById('role-name').value = selectedRole.querySelector('#roleID').textContent
         this.permissions = []
         this.isExistingRole = true
@@ -509,33 +521,34 @@ class ManageRole extends HTMLElement {
         const role = this.shadowRoot.getElementById('role-name')
         if (!role.value) return TPEN.eventDispatcher.dispatch("tpen-toast", { status: "error", message: 'No role selected for update' })
 
-        Object.keys(group || {}).forEach(key => {
+        Object.keys(this.group || {}).forEach(key => {
             if (key.toUpperCase() === role.value.toUpperCase()) {
-                group[key] = this.permissions
+                this.group[key] = [...this.permissions]
             }
         })
 
-        await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/updateCustomRoles`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${TPEN.getAuthorization()}`
-            },
-            body: JSON.stringify({ roles: group })
-        }).then(response => {
+        try {
+            const response = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/updateCustomRoles`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${TPEN.getAuthorization()}`
+                },
+                body: JSON.stringify({ roles: group })
+            })
+
             if (response.ok) {
                 TPEN.eventDispatcher.dispatch("tpen-toast", { status: "info", message: 'Successfully Updated Role' })
-                this.render()
+                // Reset internal state before rendering
+                this.permissions = []
+                this.isExistingRole = false
+                this.render(this.group)
             } else {
                 TPEN.eventDispatcher.dispatch("tpen-toast", { status: "error", message: 'Error Updating Role' })
             }
-        }).catch(error => {
+        } catch (error) {
             TPEN.eventDispatcher.dispatch("tpen-toast", { status: "error", message: `Error updating role: ${error.message}` })
-        })
-
-        this.resetPermissions()
-        role.value = ''
-        this.permissions = []
+        }
     }
 
 
@@ -644,6 +657,7 @@ class ManageRole extends HTMLElement {
     }
 
     addPermissions(group) {
+        group = group || this.group
         let permissionString = this.shadowRoot.getElementById('permission')
         const permissionsDiv = this.shadowRoot.getElementById('permissions')
         const role = this.shadowRoot.getElementById('role-name')
@@ -751,6 +765,7 @@ class ManageRole extends HTMLElement {
 
     async addRole(group) {
         const role = this.shadowRoot.getElementById('role-name')
+        group = group || this.group
  
         if (!role.value) {
             return TPEN.eventDispatcher.dispatch("tpen-toast", { status: "error", message: 'Role name is required' })
@@ -770,29 +785,35 @@ class ManageRole extends HTMLElement {
             return TPEN.eventDispatcher.dispatch("tpen-toast", { status: "error", message: 'At least one permission is required' })
         }
 
-        await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/addCustomRoles`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${TPEN.getAuthorization()}`
-            },
-            body: JSON.stringify({
-                roles: {
-                    [role.value.toUpperCase()]: this.permissions
-                }
+        try {
+            const response = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/addCustomRoles`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${TPEN.getAuthorization()}`
+                },
+                body: JSON.stringify({
+                    roles: {
+                        [role.value.toUpperCase()]: this.permissions
+                    }
+                })
             })
-        })
-        .then(response => {
-            if (response.ok) {
-                return TPEN.eventDispatcher.dispatch("tpen-toast", { status: "info", message: 'Custom role added successfully' })
-            }
-        })
-        .catch(error => {
-            TPEN.eventDispatcher.dispatch("tpen-toast", { status: "error", message: `Error adding role: ${error.message}` })
-        })
 
-        this.resetPermissions()
-        this.render()
+            if (response.ok) {
+                // update local cache and re-render without refetching
+                this.group = this.group || {}
+                this.group[role.value.toUpperCase()] = [...this.permissions]
+                TPEN.eventDispatcher.dispatch("tpen-toast", { status: "info", message: 'Custom role added successfully' })
+                // Reset internal state before rendering
+                this.permissions = []
+                this.isExistingRole = false
+                this.render(this.group)
+            } else {
+                TPEN.eventDispatcher.dispatch("tpen-toast", { status: "error", message: 'Error adding role' })
+            }
+        } catch (error) {
+            TPEN.eventDispatcher.dispatch("tpen-toast", { status: "error", message: `Error adding role: ${error.message}` })
+        }
     }
 }
 
