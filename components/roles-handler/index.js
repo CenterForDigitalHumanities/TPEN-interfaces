@@ -147,19 +147,21 @@ class RolesHandler extends HTMLElement {
         const groupMembers = document.querySelector("project-collaborators")?.shadowRoot?.querySelector('.group-members')
         if(!groupMembers) return
         this.renderCleanup.onElement(groupMembers, "click", (e) => {
-            const button = e.target
-            if (button.classList.contains("manage-roles-button")) {
-                this.toggleRoleManagementButtons(button)
-            }
+            const button = e.target.closest(".manage-roles-button")
+            if (!button) return
+            this.toggleRoleManagementButtons(button)
         })
     }
 
     toggleRoleManagementButtons(button) {
         const memberID = button.dataset.memberId
-        const actionsDiv = button.closest(".member").querySelector(".actions")
+        const actionsDiv = button.closest(".member")?.querySelector(".actions")
+        if (!actionsDiv) return
 
         if (actionsDiv.querySelector(".role-management-buttons")) {
             actionsDiv.querySelector(".role-management-buttons").remove()
+            button.hidden = false
+            button.setAttribute("aria-expanded", "false")
             return
         }
 
@@ -175,6 +177,8 @@ class RolesHandler extends HTMLElement {
         const roleManagementDiv = document.createElement("div")
         roleManagementDiv.innerHTML = roleManagementButtonsHTML
         actionsDiv.appendChild(roleManagementDiv)
+        button.hidden = true
+        button.setAttribute("aria-expanded", "true")
     }
 
     generateRoleManagementButtons(collaborator, button) {
@@ -209,6 +213,8 @@ class RolesHandler extends HTMLElement {
             buttons.push(`<button part="remove-button" class="remove-button" data-member-id=${memberID} data-member-name=${memberName}>Remove User</button>`)
         }
 
+        buttons.push(`<button part="close-role-management-button" class="close-role-management-button" data-member-id=${memberID}>Close</button>`)
+
         return buttons
     }
 
@@ -228,6 +234,7 @@ class RolesHandler extends HTMLElement {
                 "make-leader-button": () => this.handleMakeLeaderButton(memberId),
                 "transfer-ownership-button": () => this.handleTransferOwnershipButton(memberId),
                 "demote-leader-button": () => this.handleDemoteLeaderButton(memberId),
+                "close-role-management-button": () => this.closeRoleManagement(memberId),
             }
 
             for (const [className, action] of Object.entries(actions)) {
@@ -388,6 +395,18 @@ class RolesHandler extends HTMLElement {
         this.shadowRoot.querySelector("#roleModal").classList.add("hidden")
     }
 
+    closeRoleManagement(memberID) {
+        const memberElement = document.querySelector("project-collaborators")?.shadowRoot?.querySelector(`[data-member-id="${memberID}"]`)
+        const actionsDiv = memberElement?.querySelector(".actions")
+        if (!actionsDiv) return
+        actionsDiv.querySelector(".role-management-buttons")?.remove()
+        const manageButton = actionsDiv.querySelector(".manage-roles-button")
+        if (manageButton) {
+            manageButton.hidden = false
+            manageButton.setAttribute("aria-expanded", "false")
+        }
+    }
+
     /**
      * Refreshes the project collaborators display by calling the refresh method
      * on the project-collaborators component.
@@ -397,6 +416,10 @@ class RolesHandler extends HTMLElement {
         if (collaboratorsComponent?.refreshCollaborators) {
             collaboratorsComponent.refreshCollaborators()
         }
+        requestAnimationFrame(() => {
+            this.addEventListeners()
+            this.renderProjectCollaborators()
+        })
     }
 }
 
