@@ -283,17 +283,17 @@ class RolesHandler extends HTMLElement {
             <!-- Role Toggle Buttons -->
             <div class="role-toggles">
                 <div class="role-row">
-                    <button class="role-toggle-btn" id="leaderToggle" data-role="LEADER">Leader</button>
+                    <button class="role-toggle-btn" id="leaderToggle">Leader</button>
                     <span class="role-help-text">Manage materials and membership</span>
                 </div>
                 <div class="role-row">
-                    <button class="role-toggle-btn" id="contributorToggle" data-role="CONTRIBUTOR">Contributor</button>
+                    <button class="role-toggle-btn" id="contributorToggle">Contributor</button>
                     <span class="role-help-text">Describe and annotate</span>
                 </div>
             </div>
             
             <!-- Action Buttons Row -->
-            <div class="action-row" id="actionRow">
+            <div class="action-row">
                 <button class="action-btn readonly-btn" id="readonlyBtn">Set to Read-Only</button>
                 <button class="action-btn destructive icon-only" id="transferBtn" aria-label="Transfer Ownership">
                     <span class="icon">👑</span>
@@ -435,18 +435,28 @@ class RolesHandler extends HTMLElement {
         // Initialize role toggles - clear first, then set based on current member
         leaderToggle.classList.remove("active")
         contributorToggle.classList.remove("active")
-        if (collaborator.roles.includes("LEADER")) leaderToggle.classList.add("active")
-        if (collaborator.roles.includes("CONTRIBUTOR")) contributorToggle.classList.add("active")
+        leaderToggle.setAttribute("aria-pressed", "false")
+        contributorToggle.setAttribute("aria-pressed", "false")
+        if (collaborator.roles.includes("LEADER")) {
+            leaderToggle.classList.add("active")
+            leaderToggle.setAttribute("aria-pressed", "true")
+        }
+        if (collaborator.roles.includes("CONTRIBUTOR")) {
+            contributorToggle.classList.add("active")
+            contributorToggle.setAttribute("aria-pressed", "true")
+        }
         updateToggleStates()
 
         // Toggle handlers
         leaderToggle.onclick = () => {
             leaderToggle.classList.toggle("active")
+            leaderToggle.setAttribute("aria-pressed", leaderToggle.classList.contains("active"))
             updateToggleStates()
         }
 
         contributorToggle.onclick = () => {
             contributorToggle.classList.toggle("active")
+            contributorToggle.setAttribute("aria-pressed", contributorToggle.classList.contains("active"))
             updateToggleStates()
         }
 
