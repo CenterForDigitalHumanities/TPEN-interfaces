@@ -107,9 +107,7 @@ class RolesHandler extends HTMLElement {
         if (!TPEN.activeProject) {
             return this.errorHTML.innerHTML = "No project"
         }
-        const userId = this.getAttribute('tpen-user-id')
         const collaborators = TPEN.activeProject.collaborators
-        let isOwnerOrLeader = ["OWNER", "LEADER"].some(role => collaborators[userId]?.roles.includes(role))
         const userHasEditAccess = CheckPermissions.checkEditAccess("member", "*")
         const groupMembersElement = document.querySelector("project-collaborators")?.shadowRoot?.querySelector(".group-members") 
         if(!groupMembersElement) return
@@ -129,44 +127,38 @@ class RolesHandler extends HTMLElement {
                 }  
             }
         })        
-        this.manageRoleButtons(isOwnerOrLeader)
     }
 
     createMemberHTML(collaboratorId) {
         const memberElement = document.createElement("div")
         memberElement.innerHTML = `
-            <button part="manage-roles-button" class="manage-roles-button" data-member-id="${collaboratorId}">
+            <button part="manage-roles-button" class="manage-roles-button" data-member-id="${collaboratorId}" aria-expanded="false" data-role-management-open="false">
                 Manage Roles <i class="fas fa-caret-down"></i>
             </button>
         `
         return memberElement
     }
 
-
-    manageRoleButtons(isOwnerOrLeader) {
-        const groupMembers = document.querySelector("project-collaborators")?.shadowRoot?.querySelector('.group-members')
-        if(!groupMembers) return
-        this.renderCleanup.onElement(groupMembers, "click", (e) => {
-            const button = e.target.closest(".manage-roles-button")
-            if (!button) return
-            this.toggleRoleManagementButtons(button)
-        })
-    }
-
     toggleRoleManagementButtons(button) {
-        const memberID = button.dataset.memberId
-        const actionsDiv = button.closest(".member")?.querySelector(".actions")
-        if (!actionsDiv) return
+        if (!button) return
 
-        if (actionsDiv.querySelector(".role-management-buttons")) {
-            actionsDiv.querySelector(".role-management-buttons").remove()
+        const memberID = button.dataset?.memberId
+        const actionsDiv = button.closest(".member")?.querySelector(".actions")
+        if (!memberID || !actionsDiv) return
+
+        const isOpen = button.getAttribute("aria-expanded") === "true"
+        if (isOpen) {
+            actionsDiv.querySelector(".role-management-buttons")?.remove()
             button.hidden = false
             button.setAttribute("aria-expanded", "false")
+            button.dataset.roleManagementOpen = "false"
             return
         }
 
-        const collaborator = TPEN.activeProject.collaborators[memberID]
-        const buttons = this.generateRoleManagementButtons(collaborator, button.dataset)
+        const collaborator = TPEN.activeProject?.collaborators?.[memberID]
+        if (!collaborator) return
+
+        const buttons = this.generateRoleManagementButtons(collaborator, button.dataset ?? {})
 
         const roleManagementButtonsHTML = `
             <div part="role-management-buttons" class="role-management-buttons">
@@ -179,6 +171,7 @@ class RolesHandler extends HTMLElement {
         actionsDiv.appendChild(roleManagementDiv)
         button.hidden = true
         button.setAttribute("aria-expanded", "true")
+        button.dataset.roleManagementOpen = "true"
     }
 
     generateRoleManagementButtons(collaborator, button) {
@@ -227,21 +220,33 @@ class RolesHandler extends HTMLElement {
             const memberName = button.dataset.memberName
             if (!memberId) return console.warn("Button does not have a valid member ID")
 
-            const actions = {
-                "remove-button": () => this.removeMember(memberId, memberName),
-                "set-role-button": () => this.handleSetRoleButton(memberId),
-                "set-to-viewer-button": () => this.handleSetToViewerButton(memberId),
-                "make-leader-button": () => this.handleMakeLeaderButton(memberId),
-                "transfer-ownership-button": () => this.handleTransferOwnershipButton(memberId),
-                "demote-leader-button": () => this.handleDemoteLeaderButton(memberId),
-                "close-role-management-button": () => this.closeRoleManagement(memberId),
-            }
-
-            for (const [className, action] of Object.entries(actions)) {
-                if (button.classList.contains(className)) {
-                    await action()
+            switch (true) {
+                case button.classList.contains("manage-roles-button"):
+                    this.toggleRoleManagementButtons(button)
                     break
-                }
+                case button.classList.contains("remove-button"):
+                    await this.removeMember(memberId, memberName)
+                    break
+                case button.classList.contains("set-role-button"):
+                    await this.handleSetRoleButton(memberId)
+                    break
+                case button.classList.contains("set-to-viewer-button"):
+                    await this.handleSetToViewerButton(memberId)
+                    break
+                case button.classList.contains("make-leader-button"):
+                    await this.handleMakeLeaderButton(memberId)
+                    break
+                case button.classList.contains("transfer-ownership-button"):
+                    await this.handleTransferOwnershipButton(memberId)
+                    break
+                case button.classList.contains("demote-leader-button"):
+                    await this.handleDemoteLeaderButton(memberId)
+                    break
+                case button.classList.contains("close-role-management-button"):
+                    this.closeRoleManagement(memberId)
+                    break
+                default:
+                    break
             }
         } catch (error) {
             console.error("Error handling button action:", error)
