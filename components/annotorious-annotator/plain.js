@@ -2,7 +2,7 @@
  * A plain Annotorious Annotator that can draw Rectangles.  It is able to draw Polygons, but this ability is not exposed to the user.
  * It assigns all Annotations to the provided AnnotationPage (does not make or track more than one page at a time)
  *
- * It is exposed to the user at /interfaces/annotator/index.html and so is our 'default annotator'.
+ * It is exposed to the user at /interfaces/annotator/index.html.
  *
  * The Annotation generation UI is powered by Annotorious.  The TPEN3 team hereby acknowledges
  * and thanks the Annotorious development team for this open source software.

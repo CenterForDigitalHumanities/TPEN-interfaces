@@ -101,9 +101,9 @@ permalink: /project/metadata
             if (!scope) {
                 return
             }
-            const hasEditAccess = CheckPermissions.checkEditAccess('*', scope.toUpperCase())
-            const hasDeleteAccess = CheckPermissions.checkDeleteAccess('*', scope.toUpperCase())
-            const checkCreateAccess = CheckPermissions.checkCreateAccess('*', scope.toUpperCase())
+            const hasEditAccess = CheckPermissions.checkEditAccess('PROJECT', scope.toUpperCase())
+            const hasDeleteAccess = CheckPermissions.checkDeleteAccess('PROJECT', scope.toUpperCase())
+            const hasCreateAccess = CheckPermissions.checkCreateAccess('PROJECT', scope.toUpperCase())
             
             if (hasEditAccess) {
                 divMetadata.style.display = 'inline-block'
@@ -120,7 +120,7 @@ permalink: /project/metadata
                 
                 const addButton = document.querySelector('#add-field-btn')
                 if (addButton) {
-                    if (checkCreateAccess) {
+                    if (hasCreateAccess) {
                         addButton.style.display = 'inline-block'
                     } else {
                         addButton.remove()

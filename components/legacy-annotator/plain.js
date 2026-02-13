@@ -6,6 +6,8 @@
  *
  * It is exposed to the user through /interfaces/annotator/legacy.html
  * @element tpen-legacy-annotator
+ *
+ * @deprecated in favor of tpen-plain-annotator.
  */
 
 import { eventDispatcher } from '../../api/events.js'

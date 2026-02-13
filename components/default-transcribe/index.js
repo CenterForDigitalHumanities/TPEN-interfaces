@@ -2,6 +2,8 @@
  * TpenTranscriptionElement - Default transcription view component.
  * Displays line text and images for an annotation page.
  * @element tpen-transcription
+ *
+ * @deprecated in favor of tpen-simple-transcription.
  */
 import { userMessage, encodeContentState } from "../iiif-tools/index.js"
 import "../line-image/index.js"

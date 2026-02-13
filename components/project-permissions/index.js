@@ -23,10 +23,10 @@ class ProjectPermissions extends HTMLElement {
 
     /**
      * Authorization gate - checks permissions before rendering.
-     * Shows permission message if user lacks PERMISSION view access.
+     * Shows permission message if user lacks PERMISSION and ROLE view access.
      */
     authgate() {
-        if (!CheckPermissions.checkViewAccess('PERMISSION', '*')) {
+        if (!(CheckPermissions.checkViewAccess('PERMISSION', '*') && CheckPermissions.checkViewAccess('ROLE', '*'))) {
             this.shadowRoot.innerHTML = `<p>You don't have permission to view project permissions</p>`
             return
         }

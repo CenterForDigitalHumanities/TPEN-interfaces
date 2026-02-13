@@ -1,4 +1,5 @@
 import { checkIfUrlExists } from '../../utilities/checkIfUrlExists.js'
+import vault from '../../js/vault.js'
 import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 
 /**
@@ -58,13 +59,17 @@ class ReadOnlyViewTranscribe extends HTMLElement {
             <style>
                 @import "../../components/annotorious-annotator/AnnotoriousOSD.min.css";
                 :host {
-                    display: block;
+                    display: flex;
+                    flex-direction: column;
+                    flex: 1;
+                    min-height: 0;
                     font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
                     color: #222;
                 }
 
                 .transcribe-container {
                     display: flex;
+                    flex-shrink: 0;
                     align-items: center;
                     gap: 20px;
                     padding: 12px 18px;
@@ -107,13 +112,14 @@ class ReadOnlyViewTranscribe extends HTMLElement {
 
                 .main {
                     display: flex;
+                    flex: 1;
+                    min-height: 0;
                     gap: 18px;
                     padding: 10px 18px;
                 }
 
                 #annotator-container {
                     width: 70%;
-                    height: 80vh;
                     background-image: url(https://t-pen.org/TPEN/images/loading2.gif);
                     background-repeat: no-repeat;
                     background-position: center;
@@ -125,7 +131,6 @@ class ReadOnlyViewTranscribe extends HTMLElement {
 
                 .transcribed-text {
                     width: 30%;
-                    height: 80vh;
                     overflow: auto;
                     padding: 12px;
                     box-sizing: border-box;
@@ -158,35 +163,6 @@ class ReadOnlyViewTranscribe extends HTMLElement {
                     font-weight: 600;
                     font-size: 14px;
                     color: #111;
-                }
-
-                .page-controls {
-                    text-align: center;
-                    padding: 10px 18px;
-                }
-
-                .page-controls button {
-                    padding: 8px 14px;
-                    margin: 0 6px;
-                    border-radius: 6px;
-                    border: none;
-                    background: var(--primary-color, #ff6f3d);
-                    color: white;
-                    cursor: pointer;
-                    font-size: 14px;
-                    font-weight: 500;
-                    transition: background 0.2s, transform 0.2s;
-                }
-                
-                .page-controls button:hover:not(:disabled) {
-                    background: #e85d2d;
-                    transform: translateY(-1px);
-                }
-                
-                .page-controls button:disabled {
-                    background: #ccc;
-                    cursor: default;
-                    transform: none;
                 }
 
                 .hidden {
@@ -222,11 +198,6 @@ class ReadOnlyViewTranscribe extends HTMLElement {
                 <div id="annotator-container"></div>
                 <div class="transcribed-text"></div>
             </div>
-            <div class="page-controls">
-                <button id="prevPage">Previous Page</button>
-                <span id="pageNumber"></span>
-                <button id="nextPage">Next Page</button>
-            </div>
         `
     }
 
@@ -234,9 +205,6 @@ class ReadOnlyViewTranscribe extends HTMLElement {
      * Sets up event listeners for the component.
      */
     addEventListeners() {
-        this.cleanup.onElement(this.shadowRoot.getElementById("nextPage"), "click", () => this.openPage(this.currentPage + 1))
-        this.cleanup.onElement(this.shadowRoot.getElementById("prevPage"), "click", () => this.openPage(this.currentPage - 1))
-
         this.cleanup.onElement(this.shadowRoot.getElementById("layerSelect"), "change", (e) => {
             this.currentLayer = e.target.value
             this.populateCanvasDropdown()
@@ -319,23 +287,26 @@ class ReadOnlyViewTranscribe extends HTMLElement {
             this.shadowRoot.querySelector(".transcribe-title").textContent = "Transcription not available yet. Please check back later."
             this.shadowRoot.getElementById("annotator-container").classList.add("hidden")
             this.shadowRoot.querySelector(".transcribed-text").classList.add("hidden")
-            this.shadowRoot.querySelector(".page-controls").classList.add("hidden")
             this.shadowRoot.querySelector(".layer-container").classList.add("hidden")
             return
         }
         
-        const response = await fetch(manifestUrl)
-        if (!response.ok) {
-            const errText = await response.text()
-            throw new Error(`GitHub read failed: ${response.status} - ${errText}`)
+        const manifest = await vault.get(manifestUrl, 'manifest')
+        if (!manifest) {
+            this.shadowRoot.querySelector(".transcribe-title").textContent = "Manifest could not be loaded. Please try again later."
+            this.shadowRoot.getElementById("annotator-container").classList.add("hidden")
+            this.shadowRoot.querySelector(".transcribed-text").classList.add("hidden")
+            this.shadowRoot.querySelector(".layer-container").classList.add("hidden")
+            return
         }
-        const manifest = await response.json()
         this.#staticManifest = manifest
 
-        this.shadowRoot.querySelector(".transcribe-title").textContent = `Transcription for ${manifest.label.none?.[0]}`
+        this.shadowRoot.querySelector(".transcribe-title").textContent = `Transcription for ${manifest.label?.none?.[0] ?? 'Unknown'}`
 
-        for (const canvas of manifest.items) {
-            const imgUrl = canvas.items[0].items.find(i => i.motivation === "painting").body.id
+        for (const canvasRef of manifest.items) {
+            const canvas = await vault.get(canvasRef, 'canvas')
+            if (!canvas) continue
+            const imgUrl = canvas.items?.[0]?.items?.find(i => i.motivation === "painting")?.body?.id
             const annotations = canvas.annotations
 
             if (!annotations || annotations.length === 0) {
@@ -343,17 +314,26 @@ class ReadOnlyViewTranscribe extends HTMLElement {
             }
 
             for (const annoPage of annotations) {
-                const partOfId = await fetch(annoPage.partOf[0].id).then(res => res.json())
-                const layerLabel = partOfId.label.none[0]
+                const fullAnnoPage = await vault.get(annoPage, 'annotationpage') ?? annoPage
+                const partOfUrl = fullAnnoPage.partOf?.[0]?.id
+                if (!partOfUrl) continue
+                let layerLabel = 'Unnamed Layer'
+                try {
+                    const partOfData = await vault.get(partOfUrl, 'annotationcollection')
+                    layerLabel = partOfData?.label?.none?.[0] ?? 'Unnamed Layer'
+                } catch (err) {
+                    console.warn('Could not resolve layer label:', err)
+                }
 
                 if (!output[layerLabel]) {
                     output[layerLabel] = {}
                 }
-                output[layerLabel][imgUrl] = { id: annoPage.id, label: annoPage.label.none[0], lines: [] }
+                output[layerLabel][imgUrl] = { id: fullAnnoPage.id, label: fullAnnoPage.label?.none?.[0], lines: [] }
 
                 output[layerLabel][imgUrl].lines = await Promise.all(
-                    annoPage?.items.map(async (anno) => {
-                        return { text: anno.body?.value ?? '' }
+                    (fullAnnoPage?.items ?? []).map(async (anno) => {
+                        const fullAnno = await vault.get(anno, 'annotation') ?? anno
+                        return { text: fullAnno.body?.value ?? '' }
                     })
                 )
             }
@@ -386,7 +366,13 @@ class ReadOnlyViewTranscribe extends HTMLElement {
             return
         }
         
-        this.#resolvedAnnotationPage = this.#staticManifest?.items.flatMap(c => c.annotations || []).find(ap => (ap.id ?? ap['@id'] ?? '').endsWith(pageID))
+        const allCanvasRefs = this.#staticManifest?.items ?? []
+        const allAnnotationPages = []
+        for (const ref of allCanvasRefs) {
+            const canvas = await vault.get(ref, 'canvas')
+            if (canvas?.annotations) allAnnotationPages.push(...canvas.annotations)
+        }
+        this.#resolvedAnnotationPage = allAnnotationPages.find(ap => (ap.id ?? ap['@id'] ?? '').endsWith(pageID))
         if (!this.#resolvedAnnotationPage) {
             this.shadowRoot.getElementById('annotator-container').innerHTML = `<h3>Could not find AnnotationPage with ID: ${pageID}</h3>`
             return
@@ -411,9 +397,12 @@ class ReadOnlyViewTranscribe extends HTMLElement {
 
     async processCanvas(uri) {
         if (!uri) return
-        let embeddedCanvas = this.#staticManifest?.items.find(c => (c.id ?? c['@id']) === uri)
+        let embeddedCanvas = await vault.get(uri, 'canvas')
+        if (!embeddedCanvas) {
+            embeddedCanvas = this.#staticManifest?.items?.find(c => (c.id ?? c['@id']) === uri)
+        }
         // Handle both Presentation API v3 (items) and v2 (images) formats
-        let fullImage = embeddedCanvas?.items?.[0]?.items?.[0]?.body?.id ?? embeddedCanvas?.images?.[0]?.resource?.id
+        let fullImage = embeddedCanvas?.items?.[0]?.items?.[0]?.body?.id ?? embeddedCanvas?.images?.[0]?.resource?.["@id"] ?? embeddedCanvas?.images?.[0]?.resource?.id
         let imageService = embeddedCanvas?.items?.[0]?.items?.[0]?.body?.service?.id
         let imgx = embeddedCanvas?.items?.[0]?.items?.[0]?.body?.width
         let imgy = embeddedCanvas?.items?.[0]?.items?.[0]?.body?.height
@@ -442,6 +431,21 @@ class ReadOnlyViewTranscribe extends HTMLElement {
                 tileSources: imageInfo,
                 prefixUrl: "../../interfaces/annotator/images/",
                 showFullPageControl: false,
+                gestureSettingsMouse: { clickToZoom: false, dblClickToZoom: true },
+                gestureSettingsTouch: { clickToZoom: false, dblClickToZoom: true },
+            })
+
+            // Double right-click to zoom out
+            let lastRightClickTime = 0
+            this.cleanup.onElement(this.shadowRoot.getElementById('annotator-container'), 'contextmenu', (e) => {
+                e.preventDefault()
+                const now = Date.now()
+                if (now - lastRightClickTime < 400) {
+                    this.#osd.viewport.zoomBy(0.5)
+                    lastRightClickTime = 0
+                } else {
+                    lastRightClickTime = now
+                }
             })
         } else {
             this.#osd.open(imageInfo)
@@ -566,12 +570,6 @@ class ReadOnlyViewTranscribe extends HTMLElement {
         this.#annotationPageID = currentCanvasUrl.split('/').pop() ?? ''
         this.processPage(this.#annotationPageID)
         this.renderRightPanel()
-        const pageNumberEl = this.shadowRoot.getElementById("pageNumber")
-        if (pageNumberEl) pageNumberEl.textContent = `Page ${this.currentPage + 1} of ${this.pages.length}`
-        const prevBtn = this.shadowRoot.getElementById("prevPage")
-        const nextBtn = this.shadowRoot.getElementById("nextPage")
-        if (prevBtn) prevBtn.disabled = this.currentPage === 0
-        if (nextBtn) nextBtn.disabled = this.currentPage === this.pages.length - 1
     }
 
     formatAnnotations(annotations) {

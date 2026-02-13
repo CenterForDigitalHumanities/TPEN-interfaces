@@ -120,6 +120,10 @@ export default class PageSelector extends HTMLElement {
                     font-family: inherit;
                     cursor: pointer;
                 }
+                select option {
+                    background-color: Canvas;
+                    color: CanvasText;
+                }
             </style>
             <select part="select" aria-label="Select page">
                 ${optionsHtml}
