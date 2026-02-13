@@ -23,7 +23,40 @@ class RolesHandler extends HTMLElement {
 
     connectedCallback() {
         TPEN.attachAuthentication(this)
+        this._injectManageButtonStyles()
         this._unsubProject = onProjectReady(this, this.authgate)
+    }
+
+    _injectManageButtonStyles() {
+        // Check if styles are already injected
+        if (document.getElementById('roles-handler-manage-button-styles')) return
+        
+        const styleEl = document.createElement('style')
+        styleEl.id = 'roles-handler-manage-button-styles'
+        styleEl.textContent = `
+            project-collaborators::part(manage-button) {
+                background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+                color: white;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 4px;
+                cursor: pointer;
+                font-weight: 500;
+                font-size: 0.9rem;
+                transition: all 0.2s ease;
+                box-shadow: 0 2px 6px rgba(25, 118, 210, 0.25);
+            }
+            project-collaborators::part(manage-button):hover {
+                box-shadow: 0 4px 10px rgba(25, 118, 210, 0.4);
+                transform: translateY(-1px);
+            }
+            project-collaborators::part(manage-button):active {
+                transform: translateY(0);
+                box-shadow: 0 2px 4px rgba(25, 118, 210, 0.25);
+            }
+        `
+        document.head.appendChild(styleEl)
+        this.cleanup.onElement(styleEl, 'remove', () => {})
     }
 
     /**
@@ -47,34 +80,46 @@ class RolesHandler extends HTMLElement {
     render() {
         this.shadowRoot.innerHTML = `
         <style>
-        .role-modal-container .modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-        .role-modal-container .modal.hidden {
-            display: none;
-        }
-        .modal-content {
-            background: var(--color-white, white);
+        #roleModal {
             padding: 24px;
             border-radius: 8px;
+            border: none;
             max-width: 600px;
             width: 90%;
             max-height: 80vh;
-            overflow-y: auto;
+            position: relative;
         }
-        #modalTitle {
-            margin: 0 0 20px 0;
+        #roleModal::backdrop {
+            background: rgba(0, 0, 0, 0.5);
+        }
+        #roleModal[open] {
+            display: flex;
+            flex-direction: column;
+        }
+        #roleModal {
+            color: var(--color-text, #333);
+            background: var(--color-white, white);
+        }
+        #roleModal > :first-child {
+            margin-top: 0;
+        }
+        #roleCloseButton {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: none;
+            border: none;
             font-size: 1.5rem;
             color: var(--color-text, #333);
+            cursor: pointer;
+            padding: 4px 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s;
+        }
+        #roleCloseButton:hover {
+            color: var(--danger-color, #d32f2f);
         }
         .role-toggles {
             display: flex;
@@ -100,6 +145,14 @@ class RolesHandler extends HTMLElement {
             font-size: 1rem;
             transition: background-position 0.3s ease, border-color 0.3s ease, color 0.3s ease;
             color: var(--color-text, #333);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .role-toggle-btn::before {
+            content: '☐';
+            font-size: 1.1em;
+            flex-shrink: 0;
         }
         .role-toggle-btn:hover {
             border-color: var(--primary-color, #1976d2);
@@ -108,6 +161,9 @@ class RolesHandler extends HTMLElement {
             background-position: 0 0;
             border-color: var(--primary-color, #1976d2);
             color: var(--color-white, white);
+        }
+        .role-toggle-btn.active::before {
+            content: '☑';
         }
         .role-help-text {
             flex: 1;
@@ -136,10 +192,10 @@ class RolesHandler extends HTMLElement {
             background: var(--gray-100, #f5f5f5);
         }
         .action-btn.readonly-btn {
-            color: var(--warning-color, #f57c00);
+            color: var(--text-primary, #f57c00);
         }
         .action-btn.readonly-btn:hover {
-            background: var(--warning-light, #fff3e0);
+            background: var(--warning-color, #fff3e0);
         }
         .action-btn.destructive {
             color: var(--danger-color, #d32f2f);
@@ -204,56 +260,56 @@ class RolesHandler extends HTMLElement {
         #modalSaveButton {
             background: var(--primary-color, #1976d2);
             color: var(--color-white, white);
+            padding: 12px 28px;
+            font-size: 1rem;
+            min-width: 140px;
+            box-shadow: 0 2px 8px rgba(25, 118, 210, 0.3);
+            transition: all 0.2s ease;
         }
         #modalSaveButton:hover {
             background: var(--primary-dark, #1565c0);
+            box-shadow: 0 4px 12px rgba(25, 118, 210, 0.5);
+            transform: translateY(-1px);
         }
-        #modalCancelButton {
-            background: var(--gray-300, #e0e0e0);
-            color: var(--color-text, #333);
-        }
-        #modalCancelButton:hover {
-            background: var(--gray-400, #d0d0d0);
+        #modalSaveButton:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(25, 118, 210, 0.3);
         }
         </style>
-        <div part="role-modal-container" class="role-modal-container">
-            <div id="roleModal" class="modal hidden">
-                <div part="modal-content" class="modal-content">
-                    <h2 id="modalTitle"></h2>
-                    
-                    <!-- Role Toggle Buttons -->
-                    <div class="role-toggles">
-                        <div class="role-row">
-                            <button class="role-toggle-btn" id="leaderToggle" data-role="LEADER">Leader</button>
-                            <span class="role-help-text">Manage materials and membership</span>
-                        </div>
-                        <div class="role-row">
-                            <button class="role-toggle-btn" id="contributorToggle" data-role="CONTRIBUTOR">Contributor</button>
-                            <span class="role-help-text">Describe and annotate</span>
-                        </div>
-                    </div>
-                    
-                    <!-- Action Buttons Row -->
-                    <div class="action-row" id="actionRow">
-                        <button class="action-btn readonly-btn" id="readonlyBtn">Set to Read-Only</button>
-                        <button class="action-btn destructive icon-only" id="transferBtn" aria-label="Transfer Ownership">
-                            <span class="icon">👑</span>
-                            <span class="tooltip">Transfer Ownership</span>
-                        </button>
-                        <button class="action-btn destructive icon-only" id="removeBtn" aria-label="Remove Collaborator">
-                            <span class="icon">✕</span>
-                            <span class="tooltip">Remove Collaborator</span>
-                        </button>
-                    </div>
-                    
-                    <!-- Modal Buttons -->
-                    <div part="modal-actions" class="modal-actions">
-                        <button part="modal-buttons-cancel" id="modalCancelButton">Cancel</button>
-                        <button part="modal-buttons-save" id="modalSaveButton">Save Changes</button>
-                    </div>
+        <dialog id="roleModal">
+            <button id="roleCloseButton" aria-label="Close dialog">✕</button>
+            <h2 id="modalTitle"></h2>
+            
+            <!-- Role Toggle Buttons -->
+            <div class="role-toggles">
+                <div class="role-row">
+                    <button class="role-toggle-btn" id="leaderToggle" data-role="LEADER">Leader</button>
+                    <span class="role-help-text">Manage materials and membership</span>
+                </div>
+                <div class="role-row">
+                    <button class="role-toggle-btn" id="contributorToggle" data-role="CONTRIBUTOR">Contributor</button>
+                    <span class="role-help-text">Describe and annotate</span>
                 </div>
             </div>
-        </div>
+            
+            <!-- Action Buttons Row -->
+            <div class="action-row" id="actionRow">
+                <button class="action-btn readonly-btn" id="readonlyBtn">Set to Read-Only</button>
+                <button class="action-btn destructive icon-only" id="transferBtn" aria-label="Transfer Ownership">
+                    <span class="icon">👑</span>
+                    <span class="tooltip">Transfer Ownership</span>
+                </button>
+                <button class="action-btn destructive icon-only" id="removeBtn" aria-label="Remove Collaborator">
+                    <span class="icon">✕</span>
+                    <span class="tooltip">Remove Collaborator</span>
+                </button>
+            </div>
+            
+            <!-- Modal Buttons -->
+            <div part="modal-actions" class="modal-actions">
+                <button part="modal-buttons-save" id="modalSaveButton">Save Changes</button>
+            </div>
+        </dialog>
         `
         this.addEventListeners()
         this.renderProjectCollaborators()
@@ -350,7 +406,7 @@ class RolesHandler extends HTMLElement {
         const transferBtn = this.shadowRoot.querySelector("#transferBtn")
         const removeBtn = this.shadowRoot.querySelector("#removeBtn")
         const saveButton = this.shadowRoot.querySelector("#modalSaveButton")
-        const cancelButton = this.shadowRoot.querySelector("#modalCancelButton")
+        const closeButton = this.shadowRoot.querySelector("#roleCloseButton")
 
         const collaborator = TPEN.activeProject?.collaborators?.[memberID]
         if (!collaborator) return
@@ -376,7 +432,9 @@ class RolesHandler extends HTMLElement {
             }
         }
 
-        // Initialize role toggles
+        // Initialize role toggles - clear first, then set based on current member
+        leaderToggle.classList.remove("active")
+        contributorToggle.classList.remove("active")
         if (collaborator.roles.includes("LEADER")) leaderToggle.classList.add("active")
         if (collaborator.roles.includes("CONTRIBUTOR")) contributorToggle.classList.add("active")
         updateToggleStates()
@@ -425,11 +483,18 @@ class RolesHandler extends HTMLElement {
         }
 
         // Cancel button handler with unsaved changes check
-        cancelButton.onclick = () => {
+        closeButton.onclick = (e) => {
+            e.preventDefault()
             this.handleModalClose(leaderToggle, contributorToggle)
         }
 
-        modal.classList.remove("hidden")
+        // Handle Escape key with unsaved changes check
+        modal.oncancel = (e) => {
+            e.preventDefault()
+            this.handleModalClose(leaderToggle, contributorToggle)
+        }
+
+        modal.showModal()
     }
 
     async saveRoleChanges(memberID, leaderToggle, contributorToggle) {
@@ -501,7 +566,8 @@ class RolesHandler extends HTMLElement {
     }
 
     closeRoleModal() {
-        this.shadowRoot.querySelector("#roleModal").classList.add("hidden")
+        const modal = this.shadowRoot.querySelector("#roleModal")
+        modal.close()
         this.currentMemberID = null
         this.currentMemberName = null
         this.originalRoles = []
