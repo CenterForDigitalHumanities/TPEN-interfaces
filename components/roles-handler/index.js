@@ -23,7 +23,43 @@ class RolesHandler extends HTMLElement {
 
     connectedCallback() {
         TPEN.attachAuthentication(this)
+        this._injectManageButtonStyles()
         this._unsubProject = onProjectReady(this, this.authgate)
+    }
+
+    _injectManageButtonStyles() {
+        // Check if styles are already injected
+        if (document.getElementById('roles-handler-manage-button-styles')) return
+        
+        const styleEl = document.createElement('style')
+        styleEl.id = 'roles-handler-manage-button-styles'
+        styleEl.textContent = `
+            project-collaborators::part(manage-button) {
+                background: var(--primary-color, #1976d2);
+                color: var(--white, white);
+                border: none;
+                padding: 8px 16px;
+                border-radius: 4px;
+                cursor: pointer;
+                font-weight: 500;
+                font-size: 0.9rem;
+                transition: all 0.2s ease;
+                box-shadow: 0 2px 6px var(--interface-primary-shadow, rgba(25, 118, 210, 0.25));
+            }
+            project-collaborators::part(manage-button):hover {
+                background: var(--primary-dark, #1565c0);
+                box-shadow: 0 4px 10px var(--interface-primary-shadow, rgba(25, 118, 210, 0.4));
+                transform: translateY(-1px);
+            }
+            project-collaborators::part(manage-button):active {
+                transform: translateY(0);
+                box-shadow: 0 2px 4px var(--interface-primary-shadow, rgba(25, 118, 210, 0.25));
+            }
+        `
+        document.head.appendChild(styleEl)
+        this.cleanup.add(() => {
+            document.getElementById('roles-handler-manage-button-styles')?.remove()
+        })
     }
 
     /**
@@ -47,48 +83,292 @@ class RolesHandler extends HTMLElement {
     render() {
         this.shadowRoot.innerHTML = `
         <style>
-        #rolesListContainer {
+        #roleModal {
+            padding: 24px;
+            border-radius: 8px;
+            border: none;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            position: relative;
+        }
+        #roleModal::backdrop {
+            background: rgba(0, 0, 0, 0.5);
+        }
+        #roleModal[open] {
             display: flex;
             flex-direction: column;
-            gap: 5px;
-            padding: 10px;
-            width: 80%;
-            margin: 0 auto;
         }
-        .role-modal-container .modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
+        #roleModal {
+            color: var(--color-text, #333);
+            background: var(--color-white, white);
+        }
+        #roleModal > :first-child {
+            margin-top: 0;
+        }
+        #roleCloseButton {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--color-text, #333);
+            cursor: pointer;
+            padding: 4px 8px;
             display: flex;
-            justify-content: center;
             align-items: center;
-            z-index: 1000;
+            justify-content: center;
+            transition: color 0.2s;
         }
-        .role-modal-container .modal.hidden {
+        #roleCloseButton:hover {
+            color: var(--danger-color, #d32f2f);
+        }
+        .role-toggles {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .role-row {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .role-toggle-btn {
+            min-width: 120px;
+            padding: 10px 16px;
+            border: 2px solid var(--border-color, #ddd);
+            background: linear-gradient(to right, var(--primary-color, #1976d2) 50%, var(--color-white, white) 50%);
+            background-size: 200% 100%;
+            background-position: 100% 0;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 1rem;
+            transition: background-position 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+            color: var(--color-text, #333);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .role-toggle-btn::before {
+            content: '☐';
+            font-size: 1.1em;
+            flex-shrink: 0;
+        }
+        .role-toggle-btn:hover {
+            border-color: var(--primary-color, #1976d2);
+        }
+        .role-toggle-btn.active {
+            background-position: 0 0;
+            border-color: var(--primary-color, #1976d2);
+            color: var(--color-white, white);
+        }
+        .role-toggle-btn.active::before {
+            content: '☑';
+        }
+        .role-help-text {
+            flex: 1;
+            font-size: 0.875rem;
+            color: var(--color-text-secondary, #666);
+        }
+        .action-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color, #e0e0e0);
+            flex-wrap: nowrap;
+        }
+        .action-btn {
+            padding: 8px 16px;
+            border: 1px solid var(--border-color, #ccc);
+            background: var(--color-white, white);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: var(--color-text, #333);
+            transition: all 0.2s;
+        }
+        .action-btn:hover {
+            background: var(--gray-100, #f5f5f5);
+        }
+        .action-btn.readonly-btn {
+            color: var(--text-primary, #f57c00);
+        }
+        .action-btn.readonly-btn:hover {
+            background: var(--warning-color, #fff3e0);
+        }
+        .action-btn.destructive {
+            color: var(--danger-color, #d32f2f);
+        }
+        .action-btn.destructive:hover {
+            background: var(--danger-light, #ffebee);
+        }
+        .action-btn.icon-only {
+            width: 36px;
+            height: 36px;
+            padding: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .action-btn.icon-only .tooltip {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            margin-bottom: 8px;
+            padding: 6px 10px;
+            background: var(--color-text, #333);
+            color: var(--color-white, white);
+            font-size: 0.8rem;
+            white-space: nowrap;
+            border-radius: 4px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+            z-index: 1001;
+        }
+        .action-btn.icon-only .tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 4px solid transparent;
+            border-top-color: var(--color-text, #333);
+        }
+        .action-btn.icon-only:hover .tooltip {
+            opacity: 1;
+        }
+        .action-btn.hidden {
             display: none;
         }
-        .modal.hidden {
-            display: none;
+        .modal-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+        .modal-actions button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        #modalSaveButton {
+            background: var(--primary-color, #1976d2);
+            color: var(--color-white, white);
+            padding: 12px 28px;
+            font-size: 1rem;
+            min-width: 140px;
+            box-shadow: 0 2px 8px rgba(25, 118, 210, 0.3);
+            transition: all 0.2s ease;
+        }
+        #modalSaveButton:hover {
+            background: var(--primary-dark, #1565c0);
+            box-shadow: 0 4px 12px rgba(25, 118, 210, 0.5);
+            transform: translateY(-1px);
+        }
+        #modalSaveButton:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(25, 118, 210, 0.3);
+        }
+        .custom-roles-section {
+            margin: 20px 0;
+            padding: 16px;
+            border: 1px solid var(--border-color, #e0e0e0);
+            border-radius: 6px;
+            background: var(--gray-50, #fafafa);
+        }
+        .custom-roles-section h3 {
+            margin: 0 0 12px 0;
+            font-size: 1rem;
+            color: var(--color-text, #333);
+        }
+        .custom-roles-toggles {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .custom-role-toggle {
+            min-width: 100px;
+            padding: 6px 12px;
+            border: 2px solid var(--border-color, #ddd);
+            background: linear-gradient(to right, var(--primary-color, #1976d2) 50%, var(--color-white, white) 50%);
+            background-size: 200% 100%;
+            background-position: 100% 0;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.875rem;
+            transition: background-position 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+            color: var(--color-text, #333);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .custom-role-toggle::before {
+            content: '☐';
+            font-size: 1.1em;
+            flex-shrink: 0;
+        }
+        .custom-role-toggle:hover {
+            border-color: var(--primary-color, #1976d2);
+        }
+        .custom-role-toggle.active {
+            background-position: 0 0;
+            border-color: var(--primary-color, #1976d2);
+            color: var(--color-white, white);
+        }
+        .custom-role-toggle.active::before {
+            content: '☑';
         }
         </style>
-        <div part="role-modal-container" class="role-modal-container">
-            <div id="roleModal" class="modal hidden">
-                <div part="modal-content" class="modal-content">
-                    <h2 id="modalTitle"></h2>
-                    <p id="modalDescription"></p>
-                    <!-- Roles List -->
-                    <div id="rolesListContainer" class="defaultRoles"></div>
-                    <!-- Modal Buttons -->
-                    <div part="modal-actions" class="modal-actions">
-                        <button part="modal-buttons-confirm" id="modalConfirmButton">Confirm</button>
-                        <button part="modal-buttons-cancel" id="modalCancelButton">Cancel</button>
-                    </div>
+        <dialog id="roleModal" aria-labelledby="modalTitle">
+            <button id="roleCloseButton" aria-label="Close dialog">✕</button>
+            <h2 id="modalTitle"></h2>
+            
+            <!-- Role Toggle Buttons -->
+            <div class="role-toggles">
+                <div class="role-row">
+                    <button class="role-toggle-btn" id="leaderToggle">Leader</button>
+                    <span class="role-help-text">Manage materials and membership</span>
+                </div>
+                <div class="role-row">
+                    <button class="role-toggle-btn" id="contributorToggle">Contributor</button>
+                    <span class="role-help-text">Describe and annotate</span>
                 </div>
             </div>
-        </div>
+            
+            <!-- Custom Roles Section -->
+            <div class="custom-roles-section" id="customRolesSection" style="display: none;">
+                <h3>Custom Roles</h3>
+                <div class="custom-roles-toggles" id="customRolesToggles"></div>
+            </div>
+            
+            <!-- Action Buttons Row -->
+            <div class="action-row">
+                <button class="action-btn readonly-btn" id="readonlyBtn">Set to Read-Only</button>
+                <button class="action-btn destructive icon-only" id="transferBtn" aria-label="Transfer Ownership">
+                    <span class="icon">👑</span>
+                    <span class="tooltip">Transfer Ownership</span>
+                </button>
+                <button class="action-btn destructive icon-only" id="removeBtn" aria-label="Remove Collaborator">
+                    <span class="icon">✕</span>
+                    <span class="tooltip">Remove Collaborator</span>
+                </button>
+            </div>
+            
+            <!-- Modal Buttons -->
+            <div part="modal-actions" class="modal-actions">
+                <button part="modal-buttons-save" id="modalSaveButton">Save Changes</button>
+            </div>
+        </dialog>
         `
         this.addEventListeners()
         this.renderProjectCollaborators()
@@ -115,6 +395,11 @@ class RolesHandler extends HTMLElement {
             const groupMembersActionsElement = child.querySelector(".actions")
             for (const collaboratorId in collaborators) {
                 if (groupMembersActionsElement?.getAttribute("data-member-id") == collaboratorId) {
+                    // Clear any previously injected manage buttons to prevent duplicates
+                    groupMembersActionsElement.querySelectorAll(".manage-button").forEach(btn => {
+                        btn.closest("div")?.remove()
+                    })
+                    
                     let memberHTML
                     if(userHasEditAccess){
                         memberHTML = this.createMemberHTML(collaboratorId)
@@ -132,129 +417,27 @@ class RolesHandler extends HTMLElement {
     createMemberHTML(collaboratorId) {
         const memberElement = document.createElement("div")
         memberElement.innerHTML = `
-            <button part="manage-roles-button" class="manage-roles-button" data-member-id="${collaboratorId}" aria-expanded="false" data-role-management-open="false">
-                Manage Roles <i class="fas fa-caret-down"></i>
+            <button part="manage-button" class="manage-button" data-member-id="${collaboratorId}">
+                Manage
             </button>
         `
         return memberElement
     }
 
-    toggleRoleManagementButtons(button) {
-        if (!button) return
-
-        const memberID = button.dataset?.memberId
-        const actionsDiv = button.closest(".member")?.querySelector(".actions")
-        if (!memberID || !actionsDiv) return
-
-        const isOpen = button.getAttribute("aria-expanded") === "true"
-        if (isOpen) {
-            actionsDiv.querySelector(".role-management-buttons")?.remove()
-            button.hidden = false
-            button.setAttribute("aria-expanded", "false")
-            button.dataset.roleManagementOpen = "false"
-            return
-        }
-
+    async openManageModal(memberID) {
+        if (!memberID) return
         const collaborator = TPEN.activeProject?.collaborators?.[memberID]
         if (!collaborator) return
 
-        const buttons = this.generateRoleManagementButtons(collaborator, button.dataset ?? {})
-
-        const roleManagementButtonsHTML = `
-            <div part="role-management-buttons" class="role-management-buttons">
-                ${buttons.join("")}
-            </div>
-        `
-
-        const roleManagementDiv = document.createElement("div")
-        roleManagementDiv.innerHTML = roleManagementButtonsHTML
-        actionsDiv.appendChild(roleManagementDiv)
-        button.hidden = true
-        button.setAttribute("aria-expanded", "true")
-        button.dataset.roleManagementOpen = "true"
-    }
-
-    generateRoleManagementButtons(collaborator, button) {
-        const currentUserID = this.getAttribute("tpen-user-id")
-        const currentUserIsOwner = TPEN.activeProject.collaborators[currentUserID]?.roles.includes("OWNER")
-
-        const memberID = button.memberId
         const memberName = collaborator.profile?.displayName ?? memberID
-        const hasDeleteAccess = CheckPermissions.checkDeleteAccess("member", "*")
-        const isOwner = collaborator.roles.includes("OWNER")
-        const isLeader = collaborator.roles.includes("LEADER")
-        const isViewer = collaborator.roles.includes("VIEWER")
-
-        const buildButton = ({ part, className, label, dataAttrs }) => {
-            const attrs = Object.entries(dataAttrs ?? {})
-                .map(([key, value]) => `data-${key}="${value}"`)
-                .join(" ")
-            const attrString = attrs ? ` ${attrs}` : ""
-            return `<button part="${part}" class="${className}"${attrString}>${label}</button>`
-        }
-
-        const buttons = []
-
-        if (!isOwner && currentUserIsOwner) {
-            buttons.push(buildButton({
-                part: "transfer-ownership-button",
-                className: "transfer-ownership-button",
-                label: "Transfer Ownership",
-                dataAttrs: { "member-id": memberID }
-            }))
-        }
-
-        if (!isLeader) {
-            buttons.push(buildButton({
-                part: "make-leader-button",
-                className: "make-leader-button",
-                label: "Promote to Leader",
-                dataAttrs: { "member-id": memberID }
-            }))
-        }
-
-        if (isLeader) {
-            buttons.push(buildButton({
-                part: "demote-leader-button",
-                className: "demote-leader-button",
-                label: "Demote from Leader",
-                dataAttrs: { "member-id": memberID }
-            }))
-        }
-
-        if (!isViewer) {
-            buttons.push(buildButton({
-                part: "set-to-viewer-button",
-                className: "set-to-viewer-button",
-                label: "Revoke Write Access",
-                dataAttrs: { "member-id": memberID }
-            }))
-        }
-
-        buttons.push(buildButton({
-            part: "set-role-button",
-            className: "set-role-button",
-            label: "Set Role",
-            dataAttrs: { "member-id": memberID }
-        }))
-
-        if (hasDeleteAccess) {
-            buttons.push(buildButton({
-                part: "remove-button",
-                className: "remove-button",
-                label: "Remove User",
-                dataAttrs: { "member-id": memberID, "member-name": memberName }
-            }))
-        }
-
-        buttons.push(buildButton({
-            part: "close-role-management-button",
-            className: "close-role-management-button",
-            label: "Close",
-            dataAttrs: { "member-id": memberID }
-        }))
-
-        return buttons
+        this.currentMemberID = memberID
+        this.currentMemberName = memberName
+        this.originalRoles = [...collaborator.roles]
+        
+        this.openRoleModal(
+            `Manage ${memberName}`,
+            memberID
+        )
     }
 
     async rolesHandler(event) {
@@ -263,36 +446,12 @@ class RolesHandler extends HTMLElement {
             if (!button) return
 
             const { memberId } = button.dataset
-            const memberName = button.dataset.memberName
             if (!memberId) return console.warn("Button does not have a valid member ID")
 
-            switch (true) {
-                case button.classList.contains("manage-roles-button"):
-                    this.toggleRoleManagementButtons(button)
-                    break
-                case button.classList.contains("remove-button"):
-                    await this.removeMember(memberId, memberName)
-                    break
-                case button.classList.contains("set-role-button"):
-                    await this.handleSetRoleButton(memberId)
-                    break
-                case button.classList.contains("set-to-viewer-button"):
-                    await this.handleSetToViewerButton(memberId)
-                    break
-                case button.classList.contains("make-leader-button"):
-                    await this.handleMakeLeaderButton(memberId)
-                    break
-                case button.classList.contains("transfer-ownership-button"):
-                    await this.handleTransferOwnershipButton(memberId)
-                    break
-                case button.classList.contains("demote-leader-button"):
-                    await this.handleDemoteLeaderButton(memberId)
-                    break
-                case button.classList.contains("close-role-management-button"):
-                    this.closeRoleManagement(memberId)
-                    break
-                default:
-                    break
+            if (button.classList.contains("manage-button")) {
+                // Store trigger element for focus restoration
+                this.triggerElement = button
+                this.openManageModal(memberId)
             }
         } catch (error) {
             console.error("Error handling button action:", error)
@@ -300,13 +459,243 @@ class RolesHandler extends HTMLElement {
         }
     }
 
-    async removeMember(memberID, memberName) {
+    openRoleModal(title, memberID) {
+        const modal = this.shadowRoot.querySelector("#roleModal")
+        const modalTitle = this.shadowRoot.querySelector("#modalTitle")
+        const leaderToggle = this.shadowRoot.querySelector("#leaderToggle")
+        const contributorToggle = this.shadowRoot.querySelector("#contributorToggle")
+        const readonlyBtn = this.shadowRoot.querySelector("#readonlyBtn")
+        const transferBtn = this.shadowRoot.querySelector("#transferBtn")
+        const removeBtn = this.shadowRoot.querySelector("#removeBtn")
+        const saveButton = this.shadowRoot.querySelector("#modalSaveButton")
+        const closeButton = this.shadowRoot.querySelector("#roleCloseButton")
+
+        const collaborator = TPEN.activeProject?.collaborators?.[memberID]
+        if (!collaborator) return
+
+        const currentUserID = this.getAttribute("tpen-user-id")
+        const currentUserIsOwner = TPEN.activeProject.collaborators[currentUserID]?.roles.includes("OWNER")
+        const hasDeleteAccess = CheckPermissions.checkDeleteAccess("member", "*")
+        const isOwner = collaborator.roles.includes("OWNER")
+        const memberName = collaborator.profile?.displayName ?? memberID
+
+        modalTitle.textContent = title
+        
+        // Get custom roles from project.roles (anything not a default role)
+        const defaultRoles = ['OWNER', 'LEADER', 'CONTRIBUTOR', 'VIEWER']
+        const customRoleIds = Object.keys(TPEN.activeProject?.roles || {}).filter(roleId => 
+            !defaultRoles.includes(roleId.toUpperCase())
+        )
+        
+        // Render custom roles toggle buttons
+        const customRolesSection = this.shadowRoot.querySelector("#customRolesSection")
+        const customRolesToggles = this.shadowRoot.querySelector("#customRolesToggles")
+        
+        if (customRoleIds.length > 0) {
+            customRolesSection.style.display = 'block'
+            customRolesToggles.innerHTML = ''
+            
+            customRoleIds.forEach(roleId => {
+                const isActive = collaborator.roles.some(r => r.toUpperCase() === roleId.toUpperCase())
+                const button = document.createElement('button')
+                button.className = `custom-role-toggle ${isActive ? 'active' : ''}`
+                button.setAttribute('data-role-id', roleId.toUpperCase())
+                button.setAttribute('aria-pressed', isActive)
+                button.textContent = roleId
+                
+                button.onclick = () => {
+                    button.classList.toggle('active')
+                    button.setAttribute('aria-pressed', button.classList.contains('active'))
+                }
+                
+                customRolesToggles.appendChild(button)
+            })
+        } else {
+            customRolesSection.style.display = 'none'
+        }
+        
+        // Set initial toggle states
+        const updateToggleStates = () => {
+            const hasLeader = leaderToggle.classList.contains("active")
+            const hasContributor = contributorToggle.classList.contains("active")
+            
+            // Show readonly button only if Leader or Contributor is active
+            if (hasLeader || hasContributor) {
+                readonlyBtn.classList.remove("hidden")
+            } else {
+                readonlyBtn.classList.add("hidden")
+            }
+        }
+
+        // Initialize role toggles - clear first, then set based on current member
+        leaderToggle.classList.remove("active")
+        contributorToggle.classList.remove("active")
+        leaderToggle.setAttribute("aria-pressed", "false")
+        contributorToggle.setAttribute("aria-pressed", "false")
+        if (collaborator.roles.includes("LEADER")) {
+            leaderToggle.classList.add("active")
+            leaderToggle.setAttribute("aria-pressed", "true")
+        }
+        if (collaborator.roles.includes("CONTRIBUTOR")) {
+            contributorToggle.classList.add("active")
+            contributorToggle.setAttribute("aria-pressed", "true")
+        }
+        updateToggleStates()
+
+        // Toggle handlers
+        leaderToggle.onclick = () => {
+            leaderToggle.classList.toggle("active")
+            leaderToggle.setAttribute("aria-pressed", leaderToggle.classList.contains("active"))
+            updateToggleStates()
+        }
+
+        contributorToggle.onclick = () => {
+            contributorToggle.classList.toggle("active")
+            contributorToggle.setAttribute("aria-pressed", contributorToggle.classList.contains("active"))
+            updateToggleStates()
+        }
+
+        // Read-only button: remove Leader and Contributor
+        readonlyBtn.onclick = () => {
+            leaderToggle.classList.remove("active")
+            contributorToggle.classList.remove("active")
+            leaderToggle.setAttribute("aria-pressed", "false")
+            contributorToggle.setAttribute("aria-pressed", "false")
+            updateToggleStates()
+        }
+
+        // Transfer ownership button
+        if (!isOwner && currentUserIsOwner) {
+            transferBtn.classList.remove("hidden")
+            transferBtn.onclick = async () => {
+                await this.handleTransferOwnership(memberID, memberName)
+            }
+        } else {
+            transferBtn.classList.add("hidden")
+        }
+
+        // Remove collaborator button
+        if (hasDeleteAccess) {
+            removeBtn.classList.remove("hidden")
+            removeBtn.onclick = async () => {
+                await this.handleRemoveMember(memberID, memberName)
+            }
+        } else {
+            removeBtn.classList.add("hidden")
+        }
+
+        // Save button handler
+        saveButton.onclick = async () => {
+            await this.saveRoleChanges(memberID, leaderToggle, contributorToggle)
+        }
+
+        // Cancel button handler with unsaved changes check
+        closeButton.onclick = (e) => {
+            e.preventDefault()
+            this.handleModalClose(leaderToggle, contributorToggle)
+        }
+
+        // Handle Escape key with unsaved changes check
+        modal.oncancel = (e) => {
+            e.preventDefault()
+            this.handleModalClose(leaderToggle, contributorToggle)
+        }
+
+        modal.showModal()
+    }
+
+    async saveRoleChanges(memberID, leaderToggle, contributorToggle) {
+        const saveButton = this.shadowRoot.querySelector("#modalSaveButton")
+        const selectedRoles = []
+        
+        if (leaderToggle.classList.contains("active")) selectedRoles.push("LEADER")
+        if (contributorToggle.classList.contains("active")) selectedRoles.push("CONTRIBUTOR")
+        
+        // Collect custom roles from toggle buttons
+        const customRoleToggles = this.shadowRoot.querySelectorAll(".custom-role-toggle.active")
+        customRoleToggles.forEach(button => {
+            const roleId = button.getAttribute('data-role-id')
+            if (roleId) selectedRoles.push(roleId)
+        })
+        
+        // If no Leader or Contributor, they become VIEWER
+        if (!selectedRoles.includes("LEADER") && !selectedRoles.includes("CONTRIBUTOR")) {
+            selectedRoles.push("VIEWER")
+        }
+        
+        // Disable button and show loading state
+        saveButton.disabled = true
+        saveButton.textContent = "Saving..."
+        
+        try {
+            const response = await TPEN.activeProject.cherryPickRoles(memberID, selectedRoles)
+            if (response) {
+                TPEN.eventDispatcher.dispatch('tpen-toast', { message: 'Roles updated successfully.', status: 'success' })
+                this.closeRoleModal()
+                this.refreshCollaborators()
+            }
+        } catch (error) {
+            console.error("Error updating roles:", error)
+            TPEN.eventDispatcher.dispatch('tpen-toast', { message: 'Error updating roles', status: 'error', dismissible: true })
+        } finally {
+            // Re-enable button and restore text
+            saveButton.disabled = false
+            saveButton.textContent = "Save Changes"
+        }
+    }
+
+    handleModalClose(leaderToggle, contributorToggle) {
+        const currentRoles = []
+        if (leaderToggle.classList.contains("active")) currentRoles.push("LEADER")
+        if (contributorToggle.classList.contains("active")) currentRoles.push("CONTRIBUTOR")
+        
+        // Collect custom roles from toggle buttons
+        const customRoleToggles = this.shadowRoot.querySelectorAll(".custom-role-toggle.active")
+        customRoleToggles.forEach(button => {
+            const roleId = button.getAttribute('data-role-id')
+            if (roleId) currentRoles.push(roleId)
+        })
+        
+        if (!currentRoles.includes("LEADER") && !currentRoles.includes("CONTRIBUTOR") && customRoleToggles.length === 0) {
+            currentRoles.push("VIEWER")
+        }
+        
+        const currentSelection = currentRoles.sort().join(",")
+        const originalSelection = this.originalRoles.sort().join(",")
+        
+        if (currentSelection !== originalSelection) {
+            if (confirm("You have unsaved changes. Discard changes and close?")) {
+                this.closeRoleModal()
+            }
+        } else {
+            this.closeRoleModal()
+        }
+    }
+
+    async handleTransferOwnership(memberID, memberName) {
+        const confirmMessage = `You are about to transfer ownership of this project to ${memberName}. This action is irreversible. Please confirm if you want to proceed.`
+        if (!window.confirm(confirmMessage)) return
+        
+        try {
+            const response = await TPEN.activeProject.transferOwnership(memberID)
+            if (response) {
+                TPEN.eventDispatcher.dispatch('tpen-toast', { message: 'Ownership transferred successfully.', status: 'success' })
+                location.reload()
+            }
+        } catch (error) {
+            console.error("Error transferring ownership:", error)
+            TPEN.eventDispatcher.dispatch('tpen-toast', { message: 'Error transferring ownership', status: 'error', dismissible: true })
+        }
+    }
+
+    async handleRemoveMember(memberID, memberName) {
         if (!confirm(`This action will remove ${memberName} from your project. Click 'OK' to continue?`)) return
         try {
             const data = await TPEN.activeProject.removeMember(memberID)
             if (data) {
-                document.querySelector(`[data-member-id="${memberID}"]`)?.remove()
                 TPEN.eventDispatcher.dispatch('tpen-toast', { message: 'Member removed successfully', status: 'success' })
+                this.closeRoleModal()
+                this.refreshCollaborators()
             }
         } catch (error) {
             console.error("Error removing member:", error)
@@ -314,147 +703,17 @@ class RolesHandler extends HTMLElement {
         }
     }
 
-    async handleSetRoleButton(memberID) {
-        this.openRoleModal(
-            "Manage Roles",
-            `Add or remove roles for ${TPEN.activeProject.collaborators[memberID]?.profile?.displayName ?? " contributor " + memberID}`,
-            async (selectedRoles) => {
-                if (selectedRoles.length > 0) {
-                    try {
-                        const response = await TPEN.activeProject.cherryPickRoles(memberID, selectedRoles)
-                        if (response) {
-                            TPEN.eventDispatcher.dispatch('tpen-toast', { message: 'Roles updated successfully.', status: 'success' })
-                            this.refreshCollaborators()
-                        }
-                    } catch (error) {
-                        console.error("Error updating roles:", error)
-                        TPEN.eventDispatcher.dispatch('tpen-toast', { message: 'Error updating roles', status: 'error', dismissible: true })
-                    }
-                }
-            }
-        )
-    }
-
-    async handleSetToViewerButton(memberID) {
-        if (window.confirm(`Are you sure you want to remove all write access for ${memberID}? The user will become a VIEWER.`)) {
-            try {
-                const response = await TPEN.activeProject.setToViewer(memberID)
-                if (response) {
-                    TPEN.eventDispatcher.dispatch('tpen-toast', { message: 'User role updated to VIEWER.', status: 'success' })
-                    this.refreshCollaborators()
-                }
-            } catch (error) {
-                console.error("Error updating user role:", error)
-                TPEN.eventDispatcher.dispatch('tpen-toast', { message: 'Error updating user role', status: 'error', dismissible: true })
-            }
-        }
-    }
-
-    async handleMakeLeaderButton(memberID) {
-        if (window.confirm(`Are you sure you want to promote collaborator ${memberID} to LEADER?`)) {
-            try {
-                const response = await TPEN.activeProject.makeLeader(memberID)
-                if (response) {
-                    TPEN.eventDispatcher.dispatch('tpen-toast', { message: 'User promoted to LEADER.', status: 'success' })
-                    this.refreshCollaborators()
-                }
-            } catch (error) {
-                console.error("Error promoting user:", error)
-                TPEN.eventDispatcher.dispatch('tpen-toast', { message: 'Error promoting user', status: 'error', dismissible: true })
-            }
-        }
-    }
-
-    async handleDemoteLeaderButton(memberID) {
-        if (window.confirm(`Are you sure you want to demote collaborator ${memberID} from LEADER?`)) {
-            try {
-                const response = await TPEN.activeProject.demoteLeader(memberID)
-                if (response) {
-                    TPEN.eventDispatcher.dispatch('tpen-toast', { message: 'User demoted from LEADER.', status: 'success' })
-                    this.refreshCollaborators()
-                }
-            } catch (error) {
-                console.error("Error demoting user:", error)
-                TPEN.eventDispatcher.dispatch('tpen-toast', { message: 'Error demoting user', status: 'error', dismissible: true })
-            }
-        }
-    }
-
-    async handleTransferOwnershipButton(memberID) {
-        const confirmMessage = `You are about to transfer ownership of this project to ${TPEN.activeProject.collaborators[memberID]?.profile?.displayName ?? " contributor " + memberID}. This action is irreversible. Please confirm if you want to proceed.`
-        if (window.confirm(confirmMessage)) {
-            const response = await TPEN.activeProject.transferOwnership(memberID)
-            if (response) {
-                alert("Ownership transferred successfully.")
-                location.reload()
-            }
-        }
-    }
-
-    openRoleModal(title, description, confirmCallback) {
-        const modal = this.shadowRoot.querySelector("#roleModal")
-        const modalTitle = this.shadowRoot.querySelector("#modalTitle")
-        const modalDescription = this.shadowRoot.querySelector("#modalDescription")
-        const rolesListContainer = this.shadowRoot.querySelector("#rolesListContainer")
-        const confirmButton = this.shadowRoot.querySelector("#modalConfirmButton")
-        const cancelButton = this.shadowRoot.querySelector("#modalCancelButton")
-
-        modalTitle.textContent = title
-        modalDescription.textContent = description
-        this.renderRolesList(TPEN.activeProject.roles, rolesListContainer)
-
-        confirmButton.onclick = () => {
-            const selectedRoles = Array.from(
-                rolesListContainer.querySelectorAll("input[type=checkbox]:checked")
-            ).map((checkbox) => checkbox.value)
-            confirmCallback(selectedRoles)
-            this.closeRoleModal()
-        }
-
-        cancelButton.onclick = this.closeRoleModal.bind(this)
-        modal.classList.remove("hidden")
-    }
-
-    renderRolesList(rolesObject, container) {
-        container.innerHTML = ""
-        Object.keys(rolesObject).forEach((role) => {
-            if (role.toLowerCase() !== "owner") {
-                container.innerHTML += `
-                <style>
-                .role-checkbox {
-                    display: flex;
-                    align-items: center;
-                }
-                .role-checkbox label {
-                    display: flex;
-                    align-items: center;
-                }
-                .role-checkbox input[type="checkbox"] {
-                    margin-right: 5px;
-                }
-                </style>
-                <div class="role-checkbox">
-                    <label>
-                        <input type="checkbox" value="${role}"/>${role}
-                    </label>
-                </div>`
-            }
-        })
-    }
-
     closeRoleModal() {
-        this.shadowRoot.querySelector("#roleModal").classList.add("hidden")
-    }
-
-    closeRoleManagement(memberID) {
-        const memberElement = document.querySelector("project-collaborators")?.shadowRoot?.querySelector(`[data-member-id="${memberID}"]`)
-        const actionsDiv = memberElement?.querySelector(".actions")
-        if (!actionsDiv) return
-        actionsDiv.querySelector(".role-management-buttons")?.remove()
-        const manageButton = actionsDiv.querySelector(".manage-roles-button")
-        if (manageButton) {
-            manageButton.hidden = false
-            manageButton.setAttribute("aria-expanded", "false")
+        const modal = this.shadowRoot.querySelector("#roleModal")
+        modal.close()
+        this.currentMemberID = null
+        this.currentMemberName = null
+        this.originalRoles = []
+        
+        // Restore focus to the trigger element
+        if (this.triggerElement) {
+            this.triggerElement.focus()
+            this.triggerElement = null
         }
     }
 
