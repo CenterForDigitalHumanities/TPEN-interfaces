@@ -99,6 +99,14 @@ class ProjectCollaborators extends HTMLElement {
             })
             .join(" ")
     }
+
+    /**
+     * Refreshes the collaborators display by re-rendering the collaborators list.
+     * This is called when role changes occur to update the UI without a full page refresh.
+     */
+    refreshCollaborators() {
+        this.renderProjectCollaborators()
+    }
 }
 
 customElements.define('project-collaborators', ProjectCollaborators)

@@ -139,6 +139,7 @@ export default class Project {
                 throw new Error(`Error removing member: ${response.status}`)
             }
 
+            delete this.collaborators[userId]
             return await response
         } catch (error) {
             userMessage(error.message)
@@ -160,6 +161,9 @@ export default class Project {
                 throw new Error(`Error promoting user to LEADER: ${response.status}`)
             }
 
+            if (this.collaborators[userId] && !this.collaborators[userId].roles.includes("LEADER")) {
+                this.collaborators[userId].roles.push("LEADER")
+            }
             return response
         } catch (error) {
             userMessage(error.message)
@@ -181,6 +185,9 @@ export default class Project {
                 throw new Error(`Error removing LEADER role: ${response.status}`)
             }
 
+            if (this.collaborators[userId]) {
+                this.collaborators[userId].roles = this.collaborators[userId].roles.filter(role => role !== "LEADER")
+            }
             return response
         } catch (error) {
             userMessage(error.message)
@@ -201,8 +208,9 @@ export default class Project {
             if (!response.ok) {
                 throw new Error(`Error revoking write access: ${response.status}`)
             }
-
-            return response
+            if (this.collaborators[userId]) {
+                this.collaborators[userId].roles = ["VIEWER"]
+            }            return response
         } catch (error) {
             userMessage(error.message)
         }
@@ -223,6 +231,9 @@ export default class Project {
                 throw new Error(`Error setting user roles: ${response.status}`)
             }
 
+            if (this.collaborators[userId]) {
+                this.collaborators[userId].roles = roles
+            }
             return response
         } catch (error) {
             userMessage(error.message)
