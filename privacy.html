@@ -68,26 +68,6 @@ permalink: /privacy
             text-decoration: underline;
         }
 
-        .privacy-content table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 1em 0;
-            font-size: 0.95em;
-        }
-
-        .privacy-content th {
-            background-color: var(--light-color, hsl(186, 84%, 90%));
-            padding: 0.75em;
-            text-align: left;
-            font-weight: bold;
-        }
-
-        .privacy-content td {
-            border: 1px solid #ddd;
-            padding: 0.75em;
-            vertical-align: top;
-        }
-
         .privacy-content ul,
         .privacy-content ol {
             margin-left: 1.5em;
@@ -108,6 +88,30 @@ permalink: /privacy
 
         .highlight-box p {
             margin: 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1em 0;
+            font-size: 0.95em;
+        }
+
+        th {
+            background-color: var(--dark, #2d2d2d);
+            border: 1px solid var(--dark, #2d2d2d);
+            color:  white;
+            padding: 0.75em;
+            text-align: left;
+            font-weight: bold;
+        }
+
+        td {
+            border: 1px solid var(--dark, #2d2d2d);
+            background-color:  white;
+            color: var(--dark, #2d2d2d);
+            padding: 0.75em;
+            vertical-align: top;
         }
     </style>
 </head>
@@ -166,6 +170,10 @@ permalink: /privacy
             <ul>
                 <li><strong>three.t-pen.org</strong> &mdash; TPEN3 home and authentication</li>
                 <li><strong>app.t-pen.org</strong> &mdash; TPEN3 application interface</li>
+                <li><strong>api.t-pen.org</strong> &mdash; TPEN3 services API
+                    (<a href="https://api.t-pen.org/API.html" target="_blank"
+                        rel="noopener noreferrer">documentation</a>)</li>
+                <li><strong>static.t-pen.org</strong> &mdash; Published project manifests</li>
             </ul>
             <p>
                 TPEN3 source code is open source under the
@@ -356,7 +364,14 @@ permalink: /privacy
                 agent identifiers.
             </p>
 
-            <h3>C. Hosting</h3>
+            <h3>C. Email Delivery</h3>
+            <p>
+                When you invite collaborators to a project, invitation emails are sent through a mail service
+                hosted by <strong>Saint Louis University</strong>. The invitee's email address is transmitted to
+                this service for delivery.
+            </p>
+
+            <h3>D. Hosting</h3>
             <p>
                 <strong>GitHub Pages</strong> hosts portions of this application as well as published project
                 manifests at <strong>static.t-pen.org</strong>. When you export a project, its IIIF manifest is
@@ -366,7 +381,7 @@ permalink: /privacy
                     target="_blank" rel="noopener noreferrer">GitHub Privacy Statement</a>
             </p>
 
-            <h3>D. Content Delivery Networks (CDNs)</h3>
+            <h3>E. Content Delivery Networks (CDNs)</h3>
             <p>
                 Your browser loads resources from the following CDN providers, which may log your IP address and
                 User-Agent string:
@@ -416,10 +431,38 @@ permalink: /privacy
                         <td><a href="https://pixabay.com/service/privacy/" target="_blank"
                                 rel="noopener noreferrer">Pixabay Privacy Policy</a></td>
                     </tr>
+                    <tr>
+                        <td>OpenCV (docs.opencv.org)</td>
+                        <td>Computer vision library for image annotation</td>
+                        <td><a href="https://opencv.org/privacy-policy/" target="_blank"
+                                rel="noopener noreferrer">OpenCV Privacy Policy</a></td>
+                    </tr>
+                    <tr>
+                        <td>Lucid (corporate-assets.lucid.co)</td>
+                        <td>Quick-guide diagram image</td>
+                        <td><a href="https://lucid.co/privacy" target="_blank"
+                                rel="noopener noreferrer">Lucid Privacy Policy</a></td>
+                    </tr>
+                    <tr>
+                        <td>IIIF Consortium (iiif.io)</td>
+                        <td>IIIF logo for drag-and-drop</td>
+                        <td><a href="https://iiif.io/policies/privacy/" target="_blank"
+                                rel="noopener noreferrer">IIIF Privacy Policy</a></td>
+                    </tr>
+                    <tr>
+                        <td>TPEN 2.8 (t-pen.org)</td>
+                        <td>Legacy UI assets (loading animation, help icon)</td>
+                        <td>First-party (SLU/RCG)</td>
+                    </tr>
+                    <tr>
+                        <td>RERUM (rerum.io)</td>
+                        <td>Logo image</td>
+                        <td>First-party (SLU/RCG)</td>
+                    </tr>
                 </tbody>
             </table>
 
-            <h3>E. External IIIF Servers</h3>
+            <h3>F. External IIIF Servers</h3>
             <p>
                 When you import IIIF manifests or view manuscript images, your browser directly contacts the external
                 servers hosting those resources (museums, libraries, archives). These servers may log your IP address
