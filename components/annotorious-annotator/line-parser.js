@@ -1108,10 +1108,12 @@ class AnnotoriousAnnotator extends HTMLElement {
       })
     page.items = page.items.map(i => {
       const selectorValue = i.target?.selector?.value ?? i.target
-      const match = mod.items?.find(a => {
-        const aSelector = a.target?.selector?.value ?? a.target
-        return aSelector === selectorValue
-      })
+      // Prefer matching by ID for previously-saved annotations, fall back to selector for new ones
+      const match = mod.items?.find(a => a.id === i.id)
+        ?? mod.items?.find(a => {
+          const aSelector = a.target?.selector?.value ?? a.target
+          return aSelector === selectorValue
+        })
       return match ? { ...i, ...match } : i
     })
     this.#modifiedAnnotationPage = page
