@@ -1106,11 +1106,23 @@ class AnnotoriousAnnotator extends HTMLElement {
         saveButton.textContent = "ERROR"
         throw err
       })
-    page.items = page.items.map(i => ({
-      ...i,
-      ...(mod.items?.find(a => a.target === i.target) ?? {})
-    }))
+    page.items = page.items.map(i => {
+      const selectorValue = i.target?.selector?.value ?? i.target
+      const match = mod.items?.find(a => {
+        const aSelector = a.target?.selector?.value ?? a.target
+        return aSelector === selectorValue
+      })
+      return match ? { ...i, ...match } : i
+    })
     this.#modifiedAnnotationPage = page
+    this.#resolvedAnnotationPage = JSON.parse(JSON.stringify(page))
+    this.#resolvedAnnotationPage.$isDirty = false
+    // Sync server-assigned IDs back to Annotorious so subsequent saves use the correct IDs
+    let syncAnnotations = JSON.parse(JSON.stringify(page.items))
+    syncAnnotations = this.formatAnnotations(syncAnnotations)
+    syncAnnotations = this.convertSelectors(syncAnnotations, true)
+    this.#annotoriousInstance.clearAnnotations()
+    this.#annotoriousInstance.setAnnotations(syncAnnotations, false)
     TPEN.eventDispatcher.dispatch("tpen-page-committed", this.#modifiedAnnotationPage)
     TPEN.eventDispatcher.dispatch("tpen-toast", {
       message: "Annotations Saved",
@@ -1118,7 +1130,6 @@ class AnnotoriousAnnotator extends HTMLElement {
     })
     saveButton.removeAttribute("disabled")
     saveButton.textContent = "Save Annotations"
-    this.#resolvedAnnotationPage.$isDirty = false
     return this.#modifiedAnnotationPage
   }
 
