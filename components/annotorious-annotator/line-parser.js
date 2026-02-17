@@ -1140,17 +1140,23 @@ class AnnotoriousAnnotator extends HTMLElement {
    * https://annotorious.dev/api-reference/openseadragon-annotator/#clearannotations
    */
   async deleteAllAnnotations() {
+    const deleteAllBtn = this.shadowRoot.getElementById("deleteAllBtn")
+    deleteAllBtn.setAttribute("disabled", "true")
+    deleteAllBtn.textContent = "deleting.  please wait..."
     this.#annotoriousInstance.clearAnnotations()
     this.#resolvedAnnotationPage.$isDirty = true
-    await this.saveAnnotations()
     try {
+      await this.saveAnnotations()
       await this.clearColumnsServerSide()
     } catch (err) {
-      console.error("Could not clear columns server side.", err)
+      console.error("Could not delete all annotations.", err)
       TPEN.eventDispatcher.dispatch("tpen-toast", {
-        message: "Could not clear columns. Some column data may remain.",
+        message: "Could not delete all annotations.",
         status: "error"
       })
+    } finally {
+      deleteAllBtn.removeAttribute("disabled")
+      deleteAllBtn.textContent = "Delete All Annotations"
     }
   }
 
