@@ -1118,13 +1118,13 @@ class AnnotoriousAnnotator extends HTMLElement {
     })
     this.#modifiedAnnotationPage = page
     this.#resolvedAnnotationPage = JSON.parse(JSON.stringify(page))
-    this.#resolvedAnnotationPage.$isDirty = false
     // Sync server-assigned IDs back to Annotorious so subsequent saves use the correct IDs
-    let syncAnnotations = JSON.parse(JSON.stringify(page.items))
+    let syncAnnotations = page.items
     syncAnnotations = this.formatAnnotations(syncAnnotations)
     syncAnnotations = this.convertSelectors(syncAnnotations, true)
     this.#annotoriousInstance.clearAnnotations()
     this.#annotoriousInstance.setAnnotations(syncAnnotations, false)
+    this.#resolvedAnnotationPage.$isDirty = false
     TPEN.eventDispatcher.dispatch("tpen-page-committed", this.#modifiedAnnotationPage)
     TPEN.eventDispatcher.dispatch("tpen-toast", {
       message: "Annotations Saved",
