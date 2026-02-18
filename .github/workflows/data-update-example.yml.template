@@ -1,0 +1,151 @@
+# Example: Clean Data Update Workflow
+# 
+# This is a TEMPLATE file demonstrating best practices for automated data updates.
+# To use this workflow:
+# 1. Rename from .yml.template to .yml
+# 2. Customize the schedule, data source, and storage method
+# 3. Add required secrets to repository settings
+#
+# This template shows external storage approach (RECOMMENDED) to avoid polluting git history
+
+name: Update Data (Example - Not Active)
+
+# Uncomment and customize schedule as needed
+# on:
+#   schedule:
+#     - cron: '0 */6 * * *'  # Every 6 hours
+#   workflow_dispatch:  # Allow manual triggering
+
+# Prevent multiple concurrent runs
+concurrency:
+  group: data-update
+  cancel-in-progress: false
+
+jobs:
+  update-and-store-externally:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Fetch data from source
+        id: fetch
+        run: |
+          echo "Fetching data..."
+          # Example: Replace with your actual data source
+          curl -f -o /tmp/data.json https://api.example.com/data || exit 1
+          
+          # Add timestamp to track freshness
+          echo "{\"updated\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\", \"data\": $(cat /tmp/data.json)}" > /tmp/data_with_timestamp.json
+          
+          echo "Data fetched successfully"
+      
+      # OPTION 1: Upload to GitHub Releases (simple, free, no extra services)
+      - name: Create/Update Release with data
+        if: success()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Create or update a release named "data-latest"
+          TAG_NAME="data-latest"
+          RELEASE_NAME="Latest Data"
+          
+          # Delete existing release and tag if they exist
+          gh release delete "$TAG_NAME" --yes || true
+          git push --delete origin "$TAG_NAME" || true
+          
+          # Create new release with data file
+          gh release create "$TAG_NAME" /tmp/data_with_timestamp.json \
+            --title "$RELEASE_NAME" \
+            --notes "Automated data update from $(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --latest=false
+          
+          echo "✅ Data published to GitHub Releases"
+          echo "📍 Access at: https://github.com/${{ github.repository }}/releases/download/$TAG_NAME/data_with_timestamp.json"
+      
+      # OPTION 2: Upload to GitHub Pages (if enabled)
+      # - name: Deploy to GitHub Pages
+      #   uses: peaceiris/actions-gh-pages@v3
+      #   with:
+      #     github_token: ${{ secrets.GITHUB_TOKEN }}
+      #     publish_dir: /tmp
+      #     publish_branch: gh-pages
+      #     destination_dir: data
+      
+      # OPTION 3: Upload to S3/CDN (requires AWS credentials)
+      # - name: Upload to S3
+      #   env:
+      #     AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      #     AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      #     AWS_DEFAULT_REGION: us-east-1
+      #   run: |
+      #     aws s3 cp /tmp/data_with_timestamp.json s3://your-bucket/data/latest.json --acl public-read
+      #     echo "✅ Data uploaded to S3"
+      
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "❌ Data update failed"
+          # Add notification logic here (Slack, email, etc.)
+
+  # Alternative: Commit to separate branch (if git history is acceptable)
+  update-with-separate-branch:
+    runs-on: ubuntu-latest
+    # Uncomment to enable this job
+    if: false
+    
+    steps:
+      - name: Checkout data branch
+        uses: actions/checkout@v4
+        with:
+          ref: data-updates
+          fetch-depth: 1
+      
+      - name: Fetch and commit data
+        run: |
+          # Fetch data
+          curl -f -o data/latest.json https://api.example.com/data
+          
+          # Configure git
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Only commit if there are changes
+          if git diff --quiet data/latest.json; then
+            echo "No changes detected, skipping commit"
+          else
+            git add data/latest.json
+            git commit -m "chore: update data $(date -u +%Y-%m-%dT%H:%M:%SZ) [skip ci]"
+            git push origin data-updates
+            echo "✅ Changes committed to data-updates branch"
+          fi
+      
+      # Optionally, create a PR to merge to main periodically
+      - name: Create weekly merge PR
+        if: github.event.schedule == '0 0 * * 0'  # Sunday midnight
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Check if PR already exists
+          EXISTING_PR=$(gh pr list --base main --head data-updates --json number -q '.[0].number')
+          
+          if [ -z "$EXISTING_PR" ]; then
+            gh pr create \
+              --base main \
+              --head data-updates \
+              --title "chore: merge weekly data updates" \
+              --body "This PR merges accumulated data updates from the past week."
+          else
+            echo "PR already exists: #$EXISTING_PR"
+          fi
+
+# To consume the data in your application:
+# 
+# JavaScript example:
+# const dataUrl = 'https://github.com/USER/REPO/releases/download/data-latest/data_with_timestamp.json'
+# const response = await fetch(dataUrl)
+# const data = await response.json()
+#
+# Or for GitHub Pages:
+# const dataUrl = 'https://USER.github.io/REPO/data/data_with_timestamp.json'

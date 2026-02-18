@@ -68,6 +68,18 @@ Add descriptive key-value pairs to a project. This might be used to make a list 
 easier to filter or more discoverable from an external source. On its own, this may not mean
 much but combined with a customized project list page, it could be a powerful tool.
 
+## GitHub Actions Workflows
+
+This repository uses GitHub Actions for CI/CD. If you plan to add workflows that commit data automatically (e.g., fetching external data, generating reports), please review our [Workflow Best Practices](./.github/workflows/WORKFLOW_BEST_PRACTICES.md) to avoid polluting the git history with noisy commits.
+
+**Key recommendations:**
+- Store frequently-updated data externally (GitHub Releases, S3, CDN)
+- Use separate branches for automated data commits
+- Batch commits instead of committing on every run
+- Add `[skip ci]` to commit messages to prevent infinite loops
+
+See [data-update-example.yml.template](./.github/workflows/data-update-example.yml.template) for a complete working example.
+
 ## License
 
 Code: Apache License 2.0 — see [LICENSE](./LICENSE)
