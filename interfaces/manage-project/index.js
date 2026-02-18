@@ -48,13 +48,13 @@ TPEN.eventDispatcher.on('tpen-project-loaded', () => {
 
 document.getElementById('export-project-btn').addEventListener('click', () => {
     TPEN.eventDispatcher.dispatch('tpen-confirm', {
-        message: 'This will publish a new Manifest.  It will overwrite any existing Manifest.  The Manifest will be publicly available.  ',
+        message: 'This will publish a new Manifest. It will overwrite any existing Manifest. The Manifest will be publicly available.',
         positiveButtonText: 'Export',
         negativeButtonText: 'Cancel'
     })
 
     const onPositive = async () => {
-        cleanup()
+        TPEN.eventDispatcher.off('tpen-confirm-negative', onNegative)
         await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/manifest`, {
             method: 'GET',
             headers: {
@@ -71,15 +71,12 @@ document.getElementById('export-project-btn').addEventListener('click', () => {
         })
     }
 
-    const onNegative = () => cleanup()
-
-    const cleanup = () => {
+    const onNegative = () => {
         TPEN.eventDispatcher.off('tpen-confirm-positive', onPositive)
-        TPEN.eventDispatcher.off('tpen-confirm-negative', onNegative)
     }
 
-    TPEN.eventDispatcher.on('tpen-confirm-positive', onPositive)
-    TPEN.eventDispatcher.on('tpen-confirm-negative', onNegative)
+    TPEN.eventDispatcher.one('tpen-confirm-positive', onPositive)
+    TPEN.eventDispatcher.one('tpen-confirm-negative', onNegative)
 })
 
 function render() {
