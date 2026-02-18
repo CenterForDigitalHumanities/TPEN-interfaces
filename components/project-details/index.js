@@ -127,7 +127,7 @@ class ProjectDetails extends HTMLElement {
             return
         }
         this.render()
-        this.initializeAsync()
+        this.manifestCheck()
     }
 
     disconnectedCallback() {
@@ -138,11 +138,11 @@ class ProjectDetails extends HTMLElement {
     }
 
     /**
-     * Performs async initialization after authgate passes.
+     * Performs a manifest check after authgate passes.
      * Pre-fetches the manifest and replaces the sequence-panel with an
      * error message if the manifest cannot be loaded.
      */
-    async initializeAsync() {
+    async manifestCheck() {
         const project = this.Project ?? TPEN.activeProject
         const manifestId = Array.isArray(project?.manifest) ? project.manifest[0] : project?.manifest
         if (!manifestId) return
@@ -152,14 +152,10 @@ class ProjectDetails extends HTMLElement {
             const panel = this.shadowRoot.querySelector('sequence-panel')
             if (panel) {
                 const errorMsg = document.createElement('p')
-                errorMsg.textContent = 'Manuscript images could not be loaded.'
+                errorMsg.textContent = 'Manifest could not be loaded.'
                 errorMsg.className = 'manifest-error'
                 panel.replaceWith(errorMsg)
             }
-            TPEN.eventDispatcher.dispatch('tpen-toast', {
-                status: 'error',
-                message: 'Failed to load manuscript images. Some pages may not display correctly.'
-            })
         }
     }
 
