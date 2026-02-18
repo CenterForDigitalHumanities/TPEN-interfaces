@@ -21,8 +21,8 @@ All other classes and their methods will be in that namespace.
 
 The classes provided will return JSON for processing by your own interfaces with no opinion about how 
 it is displayed. Some data may be different depending on whether you are sending an authenticated user 
-token along with it. Using the built in `TPEN.currentUser` with the &lt;auth-button> component will 
-automatically send the user's token with each request. If you are using some other auth scheme, this is 
+token along with it. Using the built in `TPEN.currentUser` with `TPEN.attachAuthentication(element)` will
+automatically send the user's token with each request. If you are using some other auth scheme, this is
 a good place to connect it.
 
 ## Cookbook

@@ -77,7 +77,7 @@ export default class ProjectsManager extends HTMLElement {
                 ${this.#projects.reduce((a, project) =>
             a + `<li tpen-project-id="${project._id}">
                         <div>
-                            <a href="/manage/?projectID=${project._id}">${project.title ?? project.label}</a>
+                            <a href="/project/manage?projectID=${project._id}">${project.title ?? project.label}</a>
                             <span class="badge">${project.roles.join(", ").toLowerCase()}</span>
                         </div>
                         <button class="delete-btn" data-project-id=${project._id}>Delete</button>

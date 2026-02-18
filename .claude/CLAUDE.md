@@ -637,7 +637,7 @@ try {
 - Don't store sensitive data in localStorage beyond auth tokens
 - Don't make synchronous API calls - always use async/await
 - Don't forget to clean up event listeners in disconnectedCallback
-- Don't import `@iiif/helpers` Vault — `components/default-transcribe` still uses it and is `@deprecated`
+- Don't import `@iiif/helpers` Vault — use the custom `js/vault.js` singleton instead
 
 ### Development Tips:
 - Use the browser's Developer Tools to inspect web components
