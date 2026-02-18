@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>TPEN Interfaces</title>
+    <meta charset="UTF-8">
+    <link href="favicon.ico" rel="icon" type="image/x-icon" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="../api/TPEN.js" type="module"></script>
+    <script src="../components/projects/index.js" type="module"></script>
+    <script src="../components/public-login/index.js" type="module"></script>
+    <script src="../components/user-profile/index.js" type="module"></script>
+    <script type="module" src="../../components/feedback-button/index.js"></script>
+    <script src="../api/events.js" type="module"></script>
+</head>
+
+<body>
+    <h1>TPEN Interfaces</h1>
+    <p>No style, no flash, just proof-of-life.</p>
+
+    <auth-button></auth-button>
+    <small>/components/public-login</small>
+
+    <h2>User Content</h2>
+
+    <small>/components/projects</small>
+    <h3>Projects (roles)</h3>
+    <style scoped>
+        .badge::before {
+            content: '(';
+        }
+
+        .badge::after {
+            content: ')';
+        }
+
+        li::after {
+            content: '<' attr(tpen-project-id)'>';
+        }
+    </style>
+    <tpen-projects-list></tpen-projects-list>
+
+    <small>/components/user-profile</small>
+    <h3>Profile</h3>
+    <tpen-user-profile></tpen-user-profile>
+    <tpen-feedback-button></tpen-feedback-button>
+
+</body>
+
+</html>
