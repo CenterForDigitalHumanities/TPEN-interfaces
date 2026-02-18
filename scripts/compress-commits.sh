@@ -14,7 +14,7 @@
 #   ./scripts/compress-commits.sh [OPTIONS]
 #
 # Options:
-#   --pattern "commit message pattern"  Pattern to match commits to compress
+#   --pattern "commit message pattern"  Pattern to match commits to compress (case-insensitive)
 #   --branch BRANCH                     Branch to operate on (default: current)
 #   --start-from COMMIT                 Start from this commit (default: HEAD~50)
 #   --dry-run                           Show what would be done without doing it
@@ -70,7 +70,7 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         --help)
-            head -n 30 "$0" | grep "^#" | sed 's/^# //; s/^#//'
+            head -n 35 "$0" | grep "^#" | sed 's/^# //; s/^#//'
             exit 0
             ;;
         *)
@@ -132,9 +132,9 @@ echo -e "  Start from:   ${GREEN}$START_FROM${NC}"
 echo -e "  Dry run:      ${YELLOW}$DRY_RUN${NC}"
 echo ""
 
-# Find matching commits
-echo -e "${BLUE}Finding commits matching pattern...${NC}"
-MATCHING_COMMITS=$(git log --oneline --grep="$PATTERN" "$START_FROM"..HEAD | wc -l)
+# Find matching commits (case-insensitive)
+echo -e "${BLUE}Finding commits matching pattern (case-insensitive)...${NC}"
+MATCHING_COMMITS=$(git log --oneline --grep="$PATTERN" -i "$START_FROM"..HEAD | wc -l)
 
 if [ "$MATCHING_COMMITS" -eq 0 ]; then
     echo -e "${YELLOW}No commits found matching pattern '$PATTERN'${NC}"
@@ -146,7 +146,7 @@ echo ""
 
 # Show the commits
 echo -e "${BLUE}Matching commits:${NC}"
-git log --oneline --grep="$PATTERN" "$START_FROM"..HEAD
+git log --oneline --grep="$PATTERN" -i "$START_FROM"..HEAD
 echo ""
 
 # Create backup branch

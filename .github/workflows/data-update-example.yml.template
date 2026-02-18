@@ -122,11 +122,18 @@ jobs:
           fi
       
       # Optionally, create a PR to merge to main periodically
+      # Note: Checking day of week since github.event.schedule doesn't contain the cron value
       - name: Create weekly merge PR
-        if: github.event.schedule == '0 0 * * 0'  # Sunday midnight
+        if: github.event_name == 'schedule'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # Only run on Sundays (day 0)
+          if [ "$(date +%w)" != "0" ]; then
+            echo "Not Sunday, skipping PR creation"
+            exit 0
+          fi
+          
           # Check if PR already exists
           EXISTING_PR=$(gh pr list --base main --head data-updates --json number -q '.[0].number')
           
