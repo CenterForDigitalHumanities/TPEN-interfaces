@@ -132,6 +132,7 @@ class ProjectDetails extends HTMLElement {
         }
 
         const manifestKey = JSON.stringify(project?.manifest ?? [])
+        const manifestId = Array.isArray(project?.manifest) ? project.manifest[0] : project?.manifest
 
         // Only render if manifest has changed or first render
         if (this._currentManifestKey === manifestKey) {
@@ -160,7 +161,7 @@ class ProjectDetails extends HTMLElement {
             <p>
                 ${collaboratorCount < 3 ? "Collaborators: "+Object.entries(project.collaborators).map(([userID, u]) => u.profile.displayName).join(', ') : `${collaboratorCount} collaborator${collaboratorCount===1? '' : 's'}`}
             </p>
-            <sequence-panel manifest-id="${project.manifest}"></sequence-panel>
+            ${manifestId ? `<sequence-panel manifest-id="${manifestId}"></sequence-panel>` : ''}
         `
         // Clear previous render-specific listeners before adding new ones
         this.renderCleanup.run()
