@@ -123,6 +123,9 @@ class InviteMemberElement extends HTMLElement {
             const response = await TPEN.activeProject.addMember(this.shadowRoot.querySelector('#invitee-email').value)
             if (!response) throw new Error("Invitation failed")
             
+            // Dispatch event to notify other components of the new member
+            TPEN.eventDispatcher.dispatch('tpen-member-invited', { email: email })
+            
             this.shadowRoot.querySelector('#submit').textContent = "Submit"
             this.shadowRoot.querySelector('#submit').disabled = false
             this.shadowRoot.querySelector('#invitee-email').value = ""

@@ -84,13 +84,14 @@ class RolesHandler extends HTMLElement {
         this.shadowRoot.innerHTML = `
         <style>
         #roleModal {
-            padding: 24px;
+            padding: 50px 24px 24px 24px;
             border-radius: 8px;
             border: none;
             max-width: 600px;
             width: 90%;
             max-height: 80vh;
             position: relative;
+            overflow: visible;
         }
         #roleModal::backdrop {
             background: rgba(0, 0, 0, 0.5);
@@ -180,6 +181,7 @@ class RolesHandler extends HTMLElement {
             padding-top: 20px;
             border-top: 1px solid var(--border-color, #e0e0e0);
             flex-wrap: nowrap;
+            overflow: visible;
         }
         .action-btn {
             padding: 8px 16px;
@@ -230,7 +232,7 @@ class RolesHandler extends HTMLElement {
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.2s;
-            z-index: 1001;
+            z-index: 10000;
         }
         .action-btn.icon-only .tooltip::after {
             content: '';
@@ -381,6 +383,11 @@ class RolesHandler extends HTMLElement {
         const groupMembersElement = document.querySelector("project-collaborators")?.shadowRoot?.querySelector(".group-members")
         if(!groupMembersElement) return
         this.renderCleanup.onElement(groupMembersElement, 'click', this.rolesHandler.bind(this))
+        
+        // Listen for member invitation events to refresh the collaborators list
+        this.renderCleanup.onEvent(TPEN.eventDispatcher, 'tpen-member-invited', () => {
+            this.refreshCollaborators()
+        })
     }
 
     renderProjectCollaborators() {
@@ -424,7 +431,7 @@ class RolesHandler extends HTMLElement {
         return memberElement
     }
 
-    async openManageModal(memberID) {
+    openManageModal(memberID) {
         if (!memberID) return
         const collaborator = TPEN.activeProject?.collaborators?.[memberID]
         if (!collaborator) return
@@ -503,15 +510,50 @@ class RolesHandler extends HTMLElement {
                 button.setAttribute('aria-pressed', isActive)
                 button.textContent = roleId
                 
-                button.onclick = () => {
+                this.renderCleanup.onElement(button, 'click', () => {
                     button.classList.toggle('active')
                     button.setAttribute('aria-pressed', button.classList.contains('active'))
-                }
+                    updateSaveButtonState()
+                })
                 
                 customRolesToggles.appendChild(button)
             })
         } else {
             customRolesSection.style.display = 'none'
+        }
+        
+        // Helper to get current roles from modal state
+        const getCurrentRoles = () => {
+            const currentRoles = []
+            if (leaderToggle.classList.contains("active")) currentRoles.push("LEADER")
+            if (contributorToggle.classList.contains("active")) currentRoles.push("CONTRIBUTOR")
+            
+            // Collect custom roles from toggle buttons
+            const customRoleToggles = this.shadowRoot.querySelectorAll(".custom-role-toggle.active")
+            customRoleToggles.forEach(button => {
+                const roleId = button.getAttribute('data-role-id')
+                if (roleId) currentRoles.push(roleId)
+            })
+            
+            // Add VIEWER if no Leader or Contributor
+            if (!currentRoles.includes("LEADER") && !currentRoles.includes("CONTRIBUTOR")) {
+                currentRoles.push("VIEWER")
+            }
+            
+            return currentRoles
+        }
+        
+        // Helper to check if there are unsaved changes
+        const hasChanges = () => {
+            const currentRoles = getCurrentRoles()
+            const currentSelection = currentRoles.sort().join(",")
+            const originalSelection = this.originalRoles.sort().join(",")
+            return currentSelection !== originalSelection
+        }
+        
+        // Helper to update Save button state
+        const updateSaveButtonState = () => {
+            saveButton.disabled = !hasChanges()
         }
         
         // Set initial toggle states
@@ -525,6 +567,8 @@ class RolesHandler extends HTMLElement {
             } else {
                 readonlyBtn.classList.add("hidden")
             }
+            
+            updateSaveButtonState()
         }
 
         // Initialize role toggles - clear first, then set based on current member
@@ -543,33 +587,33 @@ class RolesHandler extends HTMLElement {
         updateToggleStates()
 
         // Toggle handlers
-        leaderToggle.onclick = () => {
+        this.renderCleanup.onElement(leaderToggle, 'click', () => {
             leaderToggle.classList.toggle("active")
             leaderToggle.setAttribute("aria-pressed", leaderToggle.classList.contains("active"))
             updateToggleStates()
-        }
+        })
 
-        contributorToggle.onclick = () => {
+        this.renderCleanup.onElement(contributorToggle, 'click', () => {
             contributorToggle.classList.toggle("active")
             contributorToggle.setAttribute("aria-pressed", contributorToggle.classList.contains("active"))
             updateToggleStates()
-        }
+        })
 
         // Read-only button: remove Leader and Contributor
-        readonlyBtn.onclick = () => {
+        this.renderCleanup.onElement(readonlyBtn, 'click', () => {
             leaderToggle.classList.remove("active")
             contributorToggle.classList.remove("active")
             leaderToggle.setAttribute("aria-pressed", "false")
             contributorToggle.setAttribute("aria-pressed", "false")
             updateToggleStates()
-        }
+        })
 
         // Transfer ownership button
         if (!isOwner && currentUserIsOwner) {
             transferBtn.classList.remove("hidden")
-            transferBtn.onclick = async () => {
+            this.renderCleanup.onElement(transferBtn, 'click', async () => {
                 await this.handleTransferOwnership(memberID, memberName)
-            }
+            })
         } else {
             transferBtn.classList.add("hidden")
         }
@@ -577,29 +621,29 @@ class RolesHandler extends HTMLElement {
         // Remove collaborator button
         if (hasDeleteAccess) {
             removeBtn.classList.remove("hidden")
-            removeBtn.onclick = async () => {
+            this.renderCleanup.onElement(removeBtn, 'click', async () => {
                 await this.handleRemoveMember(memberID, memberName)
-            }
+            })
         } else {
             removeBtn.classList.add("hidden")
         }
 
         // Save button handler
-        saveButton.onclick = async () => {
+        this.renderCleanup.onElement(saveButton, 'click', async () => {
             await this.saveRoleChanges(memberID, leaderToggle, contributorToggle)
-        }
+        })
 
         // Cancel button handler with unsaved changes check
-        closeButton.onclick = (e) => {
+        this.renderCleanup.onElement(closeButton, 'click', (e) => {
             e.preventDefault()
             this.handleModalClose(leaderToggle, contributorToggle)
-        }
+        })
 
         // Handle Escape key with unsaved changes check
-        modal.oncancel = (e) => {
+        this.renderCleanup.onElement(modal, 'cancel', (e) => {
             e.preventDefault()
             this.handleModalClose(leaderToggle, contributorToggle)
-        }
+        })
 
         modal.showModal()
     }
@@ -656,7 +700,7 @@ class RolesHandler extends HTMLElement {
             if (roleId) currentRoles.push(roleId)
         })
         
-        if (!currentRoles.includes("LEADER") && !currentRoles.includes("CONTRIBUTOR") && customRoleToggles.length === 0) {
+        if (!currentRoles.includes("LEADER") && !currentRoles.includes("CONTRIBUTOR")) {
             currentRoles.push("VIEWER")
         }
         
