@@ -4,6 +4,7 @@ import "../../components/line-image/index.js"
 import CheckPermissions from "../check-permissions/checkPermissions.js"
 import { onProjectReady } from "../../utilities/projectReady.js"
 import { CleanupRegistry } from "../../utilities/CleanupRegistry.js"
+import vault from "../../js/vault.js"
 
 /**
  * ProjectDetails - Displays project title, owner, collaborator count, and thumbnail.
@@ -63,6 +64,11 @@ class ProjectDetails extends HTMLElement {
     .hidden {
         display: none;
     }
+    .manifest-error {
+        color: var(--gray, #888);
+        font-style: italic;
+        padding: 1em 0;
+    }
     #edit-project-title {
         background: none;
         border: none;
@@ -89,6 +95,7 @@ class ProjectDetails extends HTMLElement {
                 ? TPEN.activeProject
                 : await (new Project(newValue).fetch())
             this.render()
+            this.manifestCheck()
         }
     }
 
@@ -121,6 +128,7 @@ class ProjectDetails extends HTMLElement {
             return
         }
         this.render()
+        this.manifestCheck()
     }
 
     disconnectedCallback() {
@@ -128,6 +136,28 @@ class ProjectDetails extends HTMLElement {
         this.renderCleanup.run()
         this.cleanup.run()
         this._currentManifestKey = null
+    }
+
+    /**
+     * Performs a manifest check after authgate passes.
+     * Pre-fetches the manifest and replaces the sequence-panel with an
+     * error message if the manifest cannot be loaded.
+     */
+    async manifestCheck() {
+        const project = this.Project ?? TPEN.activeProject
+        const manifestId = Array.isArray(project?.manifest) ? project.manifest[0] : project?.manifest
+        if (!manifestId) return
+
+        const manifest = await vault.get(manifestId, 'manifest')
+        if (!manifest) {
+            const panel = this.shadowRoot.querySelector('sequence-panel')
+            if (panel) {
+                const errorMsg = document.createElement('p')
+                errorMsg.textContent = 'Manifest could not be loaded.'
+                errorMsg.className = 'manifest-error'
+                panel.replaceWith(errorMsg)
+            }
+        }
     }
 
     render() {
