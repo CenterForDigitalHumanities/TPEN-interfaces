@@ -41,15 +41,12 @@ TPEN3 Interfaces is a JavaScript library that provides web components and API cl
 │   ├── CleanupRegistry.js   # Event listener cleanup utility
 │   └── projectReady.js      # Project ready state utility
 ├── css/                     # Stylesheets
-│   ├── index.css            # Main stylesheet
-│   ├── manage/              # Management page styles
 │   └── collaborators/       # Collaborator styles
-├── js/                      # Utility scripts (redirect, vault, utils)
+├── js/                      # Utility scripts (vault, utils)
 ├── assets/                  # Static assets (icons, images, logos)
 ├── _classes/                # Jekyll class documentation
 ├── _cookbook/               # Jekyll cookbook examples
 ├── _layouts/                # Jekyll layouts for GitHub Pages
-├── manage/                  # Management pages
 └── _config.yml              # Jekyll configuration
 ```
 
