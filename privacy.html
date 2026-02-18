@@ -167,14 +167,34 @@ permalink: /privacy
             <p>
                 Our services are available at:
             </p>
-            <ul>
-                <li><strong>three.t-pen.org</strong> &mdash; TPEN3 home and authentication</li>
-                <li><strong>app.t-pen.org</strong> &mdash; TPEN3 application interface</li>
-                <li><strong>api.t-pen.org</strong> &mdash; TPEN3 services API
-                    (<a href="https://api.t-pen.org/API.html" target="_blank"
-                        rel="noopener noreferrer">documentation</a>)</li>
-                <li><strong>static.t-pen.org</strong> &mdash; Published project manifests</li>
-            </ul>
+            <table>
+                <thead>
+                    <tr>
+                        <th scope="col">Domain</th>
+                        <th scope="col">Purpose</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>three.t-pen.org</strong></td>
+                        <td>TPEN3 home and authentication</td>
+                    </tr>
+                    <tr>
+                        <td><strong>app.t-pen.org</strong></td>
+                        <td>TPEN3 application interface</td>
+                    </tr>
+                    <tr>
+                        <td><strong>api.t-pen.org</strong></td>
+                        <td>TPEN3 services API
+                            (<a href="https://api.t-pen.org/API.html" target="_blank"
+                                rel="noopener noreferrer">documentation</a>)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>static.t-pen.org</strong></td>
+                        <td>Published Project Resources</td>
+                    </tr>
+                </tbody>
+            </table>
             <p>
                 TPEN3 source code is open source under the
                 <a href="https://github.com/CenterForDigitalHumanities/TPEN-interfaces/blob/main/LICENSE"
@@ -189,17 +209,20 @@ permalink: /privacy
 
             <h3>A. Account &amp; Authentication Data</h3>
             <p>
-                When you create an account, we collect your <strong>email address</strong> through our authentication
-                provider, Auth0. Authentication generates a JSON Web Token (JWT) that contains your user ID, an agent
-                identifier (IRI), and an expiration timestamp. No passwords are stored by TPEN directly.
+                Auth0 is the identity provider for RERUM services, of which TPEN is one. When you log in, a public
+                agent IRI is created and associated with your login token. Authentication generates a JSON Web Token
+                (JWT) that contains your user ID, agent identifier (IRI), and an expiration timestamp.
+                T-PEN.org does not display or share user emails through its services. No passwords are stored by
+                TPEN directly.
             </p>
 
-            <h3>B. Profile Information (Optional)</h3>
+            <h3>B. Profile Information (Opt-In)</h3>
             <p>
-                You may optionally provide the following for your public profile. None of these are required:
+                You may opt in to sharing the following on your public profile with other TPEN users.
+                None of these are required:
             </p>
             <ul>
-                <li>Display name</li>
+                <li>Display name (defaults to your email handle and may be identifying if not changed)</li>
                 <li>Profile image URL</li>
                 <li>Academic identifiers: ORCID ID, NSF ID, Institutional ID</li>
                 <li>Social links: LinkedIn, Twitter, Instagram, Facebook, GitHub, Homepage URL</li>
@@ -213,24 +236,28 @@ permalink: /privacy
                     (includes your description and the page URL you submitted from)</li>
                 <li><strong>Transcription drafts</strong> &mdash; Auto-saved in your browser's local storage to prevent
                     data loss during editing</li>
+                <li><strong>Cached resources</strong> &mdash; Downloaded resources (images, manifest documents) and
+                    your authentication token (idToken) are stored in your browser's local storage for performance
+                    and session continuity</li>
             </ul>
 
             <h3>D. Project &amp; Collaboration Data</h3>
             <ul>
-                <li>Project membership and your assigned role (Owner, Leader, Contributor, or Viewer)</li>
-                <li>Email addresses of users you invite to collaborate on projects</li>
-                <li>Project modification timestamps</li>
+                <li>Project membership and your assigned role (Owner, Leader, Contributor, or Viewer), linked
+                    to your public Agent</li>
+                <li>Email addresses of users you invite to collaborate (stored to connect invite codes to
+                    temporary accounts until the invitee accepts)</li>
             </ul>
 
             <h3>E. Activity Data</h3>
             <p>
-                We track limited activity metrics on the server to power features like the "continue working" panel on
+                We track per User metrics on the server to power features like the "continue working" panel on
                 your dashboard. This includes which projects you recently edited and when projects were last modified.
             </p>
 
             <h3>F. Technical Information</h3>
             <p>
-                When your browser loads TPEN or fetches resources from third-party CDNs and external IIIF servers, the
+                When your browser loads TPEN or fetches resources from third-party CDNs and external servers, the
                 following is automatically sent by your browser as part of standard HTTP requests:
             </p>
             <ul>
@@ -240,7 +267,7 @@ permalink: /privacy
             </ul>
             <p>
                 TPEN does not explicitly collect or store this information on our servers, but third-party CDN providers
-                and external IIIF image servers may log it per their own privacy policies.
+                and external image servers may log it per their own privacy policies.
             </p>
 
             <!-- Section 3 -->
@@ -262,7 +289,7 @@ permalink: /privacy
                     </tr>
                     <tr>
                         <td>Attribute transcriptions to authors</td>
-                        <td>User agent IRI</td>
+                        <td>Public user agent</td>
                         <td>Legitimate interest (academic attribution)</td>
                     </tr>
                     <tr>
@@ -279,16 +306,6 @@ permalink: /privacy
                         <td>Show recent projects on dashboard</td>
                         <td>Activity timestamps, project IDs</td>
                         <td>Legitimate interest (user experience)</td>
-                    </tr>
-                    <tr>
-                        <td>Auto-save transcription drafts</td>
-                        <td>Draft text, project/page IDs</td>
-                        <td>Legitimate interest (prevent data loss)</td>
-                    </tr>
-                    <tr>
-                        <td>Process feedback and bug reports</td>
-                        <td>Submission text, page URL</td>
-                        <td>Legitimate interest (service improvement)</td>
                     </tr>
                     <tr>
                         <td>Import projects from TPEN 2.8</td>
@@ -308,29 +325,29 @@ permalink: /privacy
             <h3>A. Publicly Accessible Information</h3>
             <ul>
                 <li><strong>Transcriptions and annotations</strong> are publicly accessible via
-                    <a href="https://store.rerum.io" target="_blank" rel="noopener noreferrer">RERUM</a> and
-                    attributed to your user agent IRI (not your email address)</li>
+                    <a href="https://rerum.io" target="_blank" rel="noopener noreferrer">RERUM</a> and
+                    attributed to your public user agent (not your email address)</li>
                 <li><strong>Public profile</strong> information you choose to provide (display name, social links)
                     is visible at your public profile endpoint</li>
                 <li><strong>Public projects</strong> and their metadata are visible to unauthenticated users</li>
-                <li><strong>Published manifests</strong> &mdash; When you choose to export your project, the IIIF
-                    manifest is published to <strong>static.t-pen.org</strong> (hosted on GitHub Pages) and is
-                    publicly accessible via a direct URL</li>
+                <li><strong>Published resources</strong> &mdash; When you choose to export your project, resources
+                    are published to <strong>static.t-pen.org</strong> (hosted on GitHub Pages). These URLs are
+                    obscure but openly available to anyone with the direct link</li>
             </ul>
 
             <h3>B. Shared with Project Collaborators</h3>
             <p>
                 Members of projects you belong to can see your display name and role within that project. Email
-                addresses are used for sending invitations but are not displayed to other collaborators through the
-                interface.
+                addresses are not available to the TPEN interfaces at all and are only used server-side for sending
+                invitations.
             </p>
 
             <h3>C. Feedback Submissions</h3>
             <p>
                 When you submit feedback or a bug report through TPEN, it creates a public GitHub Issue in our
                 <a href="https://github.com/CenterForDigitalHumanities/TPEN-Static" target="_blank"
-                    rel="noopener noreferrer">TPEN-Static repository</a>. The issue includes your description text and the page URL from which you submitted.
-                Your email address is not included in the GitHub Issue.
+                    rel="noopener noreferrer">TPEN-Static repository</a>. No user information is included in
+                the report&mdash;only what you type and the page URL you submitted from.
             </p>
 
             <h3>D. TPEN 2.8 Legacy Import</h3>
@@ -361,113 +378,42 @@ permalink: /privacy
             <p>
                 <strong>RERUM</strong> (store.rerum.io) is our linked open data store for transcriptions and
                 annotations. RERUM is operated by the Research Computing Group at Saint Louis University. Transcriptions
-                stored in RERUM are publicly accessible by design to support open scholarship and are attributed to user
-                agent identifiers.
+                stored in RERUM are publicly accessible by design to support open scholarship and are attributed to your
+                public user agent.
             </p>
 
             <h3>C. Email Delivery</h3>
             <p>
-                When you invite collaborators to a project, invitation emails are sent through a mail service
-                hosted by <strong>Saint Louis University</strong>. The invitee's email address is transmitted to
-                this service for delivery.
+                When you invite collaborators to a project, invitation emails are sent through a mailrelay server
+                at <strong>Saint Louis University</strong>. The invitee's email address is only used for sending
+                the invitation and is not stored by the mail service for any other purpose.
             </p>
 
             <h3>D. Hosting</h3>
             <p>
                 <strong>GitHub Pages</strong> hosts portions of this application as well as published project
-                manifests at <strong>static.t-pen.org</strong>. When you export a project, its IIIF manifest is
-                deployed to this static site and becomes publicly accessible. GitHub may log IP addresses and
+                resources at <strong>static.t-pen.org</strong>. When you export a project, its resources are
+                deployed to this static site and become publicly accessible. GitHub may log IP addresses and
                 access patterns per their policy.
                 <a href="https://docs.github.com/en/site-policy/privacy-policies/github-privacy-statement"
                     target="_blank" rel="noopener noreferrer">GitHub Privacy Statement</a>
             </p>
 
-            <h3>E. Content Delivery Networks (CDNs)</h3>
+            <h3>E. Content Delivery Networks (CDNs) &amp; External Libraries</h3>
             <p>
-                Your browser loads resources from the following CDN providers, which may log your IP address and
-                User-Agent string:
+                TPEN3 is built on modular interfaces that may load libraries and frameworks served over third-party
+                CDNs (such as jsDelivr, Cloudflare, Skypack, and unpkg). Your browser also loads fonts from
+                <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Google
+                Fonts</a>. These providers may log your IP address and User-Agent string per their own privacy
+                policies. We do not control these third-party services.
             </p>
-            <table>
-                <thead>
-                    <tr>
-                        <th scope="col">Provider</th>
-                        <th scope="col">Resources Loaded</th>
-                        <th scope="col">Privacy Policy</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>Google Fonts</td>
-                        <td>Inter font</td>
-                        <td><a href="https://policies.google.com/privacy" target="_blank"
-                                rel="noopener noreferrer">Google Privacy Policy</a></td>
-                    </tr>
-                    <tr>
-                        <td>jsDelivr</td>
-                        <td>IIIF helpers, Canvas Panel, OpenSeadragon, Annotorious</td>
-                        <td><a href="https://www.jsdelivr.com/terms/privacy-policy-jsdelivr-net" target="_blank"
-                                rel="noopener noreferrer">jsDelivr Privacy Policy</a></td>
-                    </tr>
-                    <tr>
-                        <td>unpkg.com</td>
-                        <td>Chota CSS framework</td>
-                        <td><a href="https://www.cloudflare.com/privacypolicy/" target="_blank"
-                                rel="noopener noreferrer">Cloudflare Privacy Policy</a></td>
-                    </tr>
-                    <tr>
-                        <td>Cloudflare CDN</td>
-                        <td>OpenSeadragon</td>
-                        <td><a href="https://www.cloudflare.com/privacypolicy/" target="_blank"
-                                rel="noopener noreferrer">Cloudflare Privacy Policy</a></td>
-                    </tr>
-                    <tr>
-                        <td>Skypack</td>
-                        <td>UUID library</td>
-                        <td><a href="https://www.cloudflare.com/privacypolicy/" target="_blank"
-                                rel="noopener noreferrer">Cloudflare Privacy Policy</a></td>
-                    </tr>
-                    <tr>
-                        <td>Pixabay</td>
-                        <td>Loading animation</td>
-                        <td><a href="https://pixabay.com/service/privacy/" target="_blank"
-                                rel="noopener noreferrer">Pixabay Privacy Policy</a></td>
-                    </tr>
-                    <tr>
-                        <td>OpenCV (docs.opencv.org)</td>
-                        <td>Computer vision library for image annotation</td>
-                        <td><a href="https://opencv.org/privacy-policy/" target="_blank"
-                                rel="noopener noreferrer">OpenCV Privacy Policy</a></td>
-                    </tr>
-                    <tr>
-                        <td>Lucid (corporate-assets.lucid.co)</td>
-                        <td>Quick-guide diagram image</td>
-                        <td><a href="https://lucid.co/privacy" target="_blank"
-                                rel="noopener noreferrer">Lucid Privacy Policy</a></td>
-                    </tr>
-                    <tr>
-                        <td>IIIF Consortium (iiif.io)</td>
-                        <td>IIIF logo for drag-and-drop</td>
-                        <td><a href="https://iiif.io/policies/privacy/" target="_blank"
-                                rel="noopener noreferrer">IIIF Privacy Policy</a></td>
-                    </tr>
-                    <tr>
-                        <td>TPEN 2.8 (t-pen.org)</td>
-                        <td>Legacy UI assets (loading animation, help icon)</td>
-                        <td>First-party (SLU/RCG)</td>
-                    </tr>
-                    <tr>
-                        <td>RERUM (rerum.io)</td>
-                        <td>Logo image</td>
-                        <td>First-party (SLU/RCG)</td>
-                    </tr>
-                </tbody>
-            </table>
 
-            <h3>F. External IIIF Servers</h3>
+            <h3>F. External Resource Servers</h3>
             <p>
-                When you import IIIF manifests or view manuscript images, your browser directly contacts the external
-                servers hosting those resources (museums, libraries, archives). These servers may log your IP address
-                and browser metadata per their own privacy policies. TPEN does not control these third-party services.
+                When you import manifest documents or view manuscript images, your browser directly contacts the
+                external servers hosting those resources (museums, libraries, archives). These servers may log your
+                IP address and browser metadata per their own privacy policies. TPEN does not control these
+                third-party services.
             </p>
 
             <!-- Section 6 -->
@@ -525,17 +471,17 @@ permalink: /privacy
                     <tr>
                         <td><code>tpen-drafts:{projectID}:{pageID}</code></td>
                         <td>Auto-saved transcription drafts to prevent data loss</td>
-                        <td>Until you save the transcription or log out</td>
+                        <td>Until you save the transcription or clear browser storage</td>
                     </tr>
                     <tr>
                         <td><code>vault:{type}:{id}</code></td>
-                        <td>Cached IIIF resources (canvases, annotation pages) for faster page loads</td>
-                        <td>Until logout or browser storage is cleared</td>
+                        <td>Cached resources (canvases, annotation pages) for faster page loads</td>
+                        <td>Until browser storage is cleared</td>
                     </tr>
                     <tr>
                         <td><code>tpen_redirected</code></td>
                         <td>Prevents repeated login redirects</td>
-                        <td>Until logout</td>
+                        <td>Until browser storage is cleared</td>
                     </tr>
                     <tr>
                         <td><code>annotationsState</code></td>
@@ -547,31 +493,22 @@ permalink: /privacy
 
             <h3>C. What Happens When You Log Out</h3>
             <p>
-                All localStorage data is cleared when you log out, including your authentication token, cached resources,
-                and transcription drafts.
+                When you log out, your authentication token is removed from localStorage. Cached resources and
+                transcription drafts may remain in your browser's local storage until you clear them manually or
+                your browser storage is cleared.
             </p>
-
-            <h3>D. What We Do Not Use</h3>
-            <ul>
-                <li>No sessionStorage</li>
-                <li>No IndexedDB</li>
-                <li>No cross-site tracking</li>
-                <li>No browser fingerprinting</li>
-            </ul>
 
             <!-- Section 7 -->
             <h2 id="security">7. How We Protect Your Information</h2>
             <ul>
                 <li><strong>Encrypted transmission</strong> &mdash; All data is transmitted over HTTPS (TLS)</li>
                 <li><strong>Token-based authentication</strong> &mdash; JWT tokens with automatic expiration</li>
-                <li><strong>Secure cookie attributes</strong> &mdash; <code>Secure</code> and
-                    <code>SameSite=Strict</code> flags in production</li>
                 <li><strong>Role-based access control</strong> &mdash; Project access limited to assigned roles
                     (Owner, Leader, Contributor, Viewer)</li>
                 <li><strong>Open-source codebase</strong> &mdash; Publicly auditable code allows community
                     security review</li>
-                <li><strong>Token URL cleanup</strong> &mdash; Authentication tokens are immediately removed from
-                    the browser URL after login to prevent accidental sharing</li>
+                <li><strong>Token cleanup</strong> &mdash; Authentication tokens are immediately removed from
+                    the browser history after login to prevent accidental sharing</li>
             </ul>
             <p>
                 No security system is perfect. While we implement industry-standard protections, we cannot guarantee
@@ -579,8 +516,9 @@ permalink: /privacy
                 on shared computers.
             </p>
             <p>
-                In the event of a data breach affecting your personal information, we will notify affected users and
-                relevant authorities as required by GDPR (within 72 hours) and applicable US state regulations.
+                In the event of a data breach affecting your personal information, we will make reasonable efforts
+                to notify affected users and relevant authorities in accordance with GDPR and applicable US state
+                regulations.
             </p>
 
             <!-- Section 8 -->
@@ -596,15 +534,16 @@ permalink: /privacy
             <p>
                 Transcriptions and annotations are stored permanently in RERUM as public linked open data. This is by
                 design to support long-term preservation, scholarly citation, and open access. Transcriptions are
-                attributed to user agent identifiers rather than personal information like email addresses. Under
+                attributed to your public user agent rather than personal information like email addresses. Under
                 GDPR Article 17(3)(d), the right to erasure does not apply where processing is necessary for archiving
                 purposes in the public interest or scientific research.
             </p>
 
             <h3>C. Local Storage</h3>
             <p>
-                All browser-stored data (authentication tokens, drafts, cached resources) is cleared immediately when
-                you log out. Orphaned transcription drafts for lines that no longer exist are automatically cleaned up.
+                Your authentication token is removed from browser storage when you log out. Cached resources and
+                transcription drafts may persist until cleared manually or by your browser. Orphaned transcription
+                drafts for lines that no longer exist are automatically cleaned up when you next visit the page.
             </p>
 
             <h3>D. Account Deletion</h3>
@@ -660,7 +599,8 @@ permalink: /privacy
                     the sources, purposes, and third parties with whom we share it</li>
                 <li><strong>Right to Delete</strong> &mdash; Request deletion of your personal information, subject to
                     exceptions for scholarly research integrity</li>
-                <li><strong>Right to Correct</strong> &mdash; Request correction of inaccurate personal information</li>
+                <li><strong>Right to Correct</strong> &mdash; All public information is editable by you through
+                    your profile settings</li>
                 <li><strong>Right to Opt-Out of Sale or Sharing</strong> &mdash; TPEN does <strong>not sell</strong>
                     your personal information and does not share personal information for cross-context behavioral
                     advertising</li>
@@ -740,9 +680,8 @@ permalink: /privacy
             <h3>D. Additional Resources</h3>
             <ul>
                 <li><a href="https://three.t-pen.org" target="_blank" rel="noopener noreferrer">TPEN3 Home</a></li>
-                <li><a href="/about">About TPEN</a></li>
-                <li><a href="https://github.com/CenterForDigitalHumanities/TPEN-interfaces" target="_blank"
-                        rel="noopener noreferrer">Source Code (GitHub)</a></li>
+                <li><a href="https://github.com/CenterForDigitalHumanities" target="_blank"
+                        rel="noopener noreferrer">Center for Digital Humanities (GitHub)</a></li>
                 <li><a href="https://globalprivacycontrol.org/" target="_blank"
                         rel="noopener noreferrer">Global Privacy Control</a></li>
             </ul>
