@@ -46,21 +46,40 @@ TPEN.eventDispatcher.on('tpen-project-loaded', () => {
     render()
 })
 
-document.getElementById('export-project-btn').addEventListener('click', async () => {
-    await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/manifest`, {
-        method: 'GET',
-        headers: {
-            'Authorization': `Bearer ${TPEN.getAuthorization()}`
-        }
-    }).then(response => {
-        return TPEN.eventDispatcher.dispatch("tpen-toast", 
-        response.ok ? 
-            { status: "info", message: 'Successfully Exported Project Manifest' } : 
-            { status: "error", message: 'Error Exporting Project Manifest' }
-        )
-    }).catch(error => {
-        console.error('Error exporting project manifest:', error)
+document.getElementById('export-project-btn').addEventListener('click', () => {
+    TPEN.eventDispatcher.dispatch('tpen-confirm', {
+        message: 'This will publish a new Manifest.  It will overwrite any existing Manifest.  The Manifest will be publicly available.  ',
+        positiveButtonText: 'Export',
+        negativeButtonText: 'Cancel'
     })
+
+    const onPositive = async () => {
+        cleanup()
+        await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/manifest`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${TPEN.getAuthorization()}`
+            }
+        }).then(response => {
+            return TPEN.eventDispatcher.dispatch("tpen-toast",
+                response.ok ?
+                    { status: "info", message: 'Successfully Exported Project Manifest' } :
+                    { status: "error", message: 'Error Exporting Project Manifest' }
+            )
+        }).catch(error => {
+            console.error('Error exporting project manifest:', error)
+        })
+    }
+
+    const onNegative = () => cleanup()
+
+    const cleanup = () => {
+        TPEN.eventDispatcher.off('tpen-confirm-positive', onPositive)
+        TPEN.eventDispatcher.off('tpen-confirm-negative', onNegative)
+    }
+
+    TPEN.eventDispatcher.on('tpen-confirm-positive', onPositive)
+    TPEN.eventDispatcher.on('tpen-confirm-negative', onNegative)
 })
 
 function render() {

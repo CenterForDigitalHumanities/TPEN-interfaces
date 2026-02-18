@@ -465,7 +465,28 @@ class AnnotoriousAnnotator extends HTMLElement {
       }, 500)
       this.#pendingTimeouts.add(timeoutId)
     })
-    this.renderCleanup.onElement(deleteAllBtn, "click", async (e) => await this.deleteAllAnnotations(e))
+    this.renderCleanup.onElement(deleteAllBtn, "click", () => {
+      TPEN.eventDispatcher.dispatch('tpen-confirm', {
+        message: 'Are you sure you want to delete ALL annotations on this page? This will take effect immediately cannot be undone.',
+        positiveButtonText: 'Delete All',
+        negativeButtonText: 'Cancel'
+      })
+
+      const onPositive = async () => {
+        cleanup()
+        await this.deleteAllAnnotations()
+      }
+
+      const onNegative = () => cleanup()
+
+      const cleanup = () => {
+        TPEN.eventDispatcher.off('tpen-confirm-positive', onPositive)
+        TPEN.eventDispatcher.off('tpen-confirm-negative', onNegative)
+      }
+
+      TPEN.eventDispatcher.on('tpen-confirm-positive', onPositive)
+      TPEN.eventDispatcher.on('tpen-confirm-negative', onNegative)
+    })
     this.renderCleanup.onWindow('beforeunload', (ev) => {
       if (this.#resolvedAnnotationPage?.$isDirty) {
         ev.preventDefault()
