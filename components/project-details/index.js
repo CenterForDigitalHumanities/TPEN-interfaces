@@ -161,7 +161,7 @@ class ProjectDetails extends HTMLElement {
             <p>
                 ${collaboratorCount < 3 ? "Collaborators: "+Object.entries(project.collaborators).map(([userID, u]) => u.profile.displayName).join(', ') : `${collaboratorCount} collaborator${collaboratorCount===1? '' : 's'}`}
             </p>
-            ${manifestId ? `<sequence-panel manifest-id="${manifestId}"></sequence-panel>` : ''}
+            ${manifestId ? `<canvas-panel manifest-id="${manifestId}"></canvas-panel>` : ''}
         `
         // Clear previous render-specific listeners before adding new ones
         this.renderCleanup.run()
