@@ -95,6 +95,7 @@ class ProjectDetails extends HTMLElement {
                 ? TPEN.activeProject
                 : await (new Project(newValue).fetch())
             this.render()
+            this.manifestCheck()
         }
     }
 
