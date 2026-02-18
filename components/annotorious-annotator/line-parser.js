@@ -1106,11 +1106,25 @@ class AnnotoriousAnnotator extends HTMLElement {
         saveButton.textContent = "ERROR"
         throw err
       })
-    page.items = page.items.map(i => ({
-      ...i,
-      ...(mod.items?.find(a => a.target === i.target) ?? {})
-    }))
+    page.items = page.items.map(i => {
+      const selectorValue = i.target?.selector?.value ?? i.target
+      // Prefer matching by ID for previously-saved annotations, fall back to selector for new ones
+      const match = mod.items?.find(a => a.id === i.id)
+        ?? mod.items?.find(a => {
+          const aSelector = a.target?.selector?.value ?? a.target
+          return aSelector === selectorValue
+        })
+      return match ? { ...i, ...match } : i
+    })
     this.#modifiedAnnotationPage = page
+    this.#resolvedAnnotationPage = JSON.parse(JSON.stringify(page))
+    // Sync server-assigned IDs back to Annotorious so subsequent saves use the correct IDs
+    let syncAnnotations = JSON.parse(JSON.stringify(page.items))
+    syncAnnotations = this.formatAnnotations(syncAnnotations)
+    syncAnnotations = this.convertSelectors(syncAnnotations, true)
+    this.#annotoriousInstance.clearAnnotations()
+    this.#annotoriousInstance.setAnnotations(syncAnnotations, false)
+    this.#resolvedAnnotationPage.$isDirty = false
     TPEN.eventDispatcher.dispatch("tpen-page-committed", this.#modifiedAnnotationPage)
     TPEN.eventDispatcher.dispatch("tpen-toast", {
       message: "Annotations Saved",
@@ -1118,7 +1132,6 @@ class AnnotoriousAnnotator extends HTMLElement {
     })
     saveButton.removeAttribute("disabled")
     saveButton.textContent = "Save Annotations"
-    this.#resolvedAnnotationPage.$isDirty = false
     return this.#modifiedAnnotationPage
   }
 
@@ -1127,17 +1140,24 @@ class AnnotoriousAnnotator extends HTMLElement {
    * https://annotorious.dev/api-reference/openseadragon-annotator/#clearannotations
    */
   async deleteAllAnnotations() {
+    if (!confirm('This will remove all Annotations and will take effect immediately. This action cannot be undone.')) return
+    const deleteAllBtn = this.shadowRoot.getElementById("deleteAllBtn")
+    deleteAllBtn.setAttribute("disabled", "true")
+    deleteAllBtn.textContent = "deleting.  please wait..."
     this.#annotoriousInstance.clearAnnotations()
     this.#resolvedAnnotationPage.$isDirty = true
-    await this.saveAnnotations()
     try {
+      await this.saveAnnotations()
       await this.clearColumnsServerSide()
     } catch (err) {
-      console.error("Could not clear columns server side.", err)
+      console.error("Could not delete all annotations.", err)
       TPEN.eventDispatcher.dispatch("tpen-toast", {
-        message: "Could not clear columns. Some column data may remain.",
+        message: "Could not delete all annotations.",
         status: "error"
       })
+    } finally {
+      deleteAllBtn.removeAttribute("disabled")
+      deleteAllBtn.textContent = "Delete All Annotations"
     }
   }
 

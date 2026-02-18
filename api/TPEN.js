@@ -175,7 +175,7 @@ class Tpen {
     }
 
     logout(redirect = origin + location.pathname) {
-        localStorage.clear()
+        localStorage.removeItem("userToken")
         location.href = `${this.TPEN3URL}/logout?returnTo=${encodeURIComponent(redirect)}`
         return
     }

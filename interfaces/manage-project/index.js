@@ -42,11 +42,12 @@ TPEN.eventDispatcher.on('tpen-project-loaded', () => {
         leaveProjectBtn.href = `/project/leave?projectID=${projectID}`
     }
 
-    // Render the page with permissions check
-    render()
+    // Apply project context with permissions check
+    applyProjectContext()
 })
 
 document.getElementById('export-project-btn').addEventListener('click', async () => {
+    if (!confirm('This will publish a new Manifest which will be available to the public.')) return
     await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/manifest`, {
         method: 'GET',
         headers: {
@@ -63,7 +64,7 @@ document.getElementById('export-project-btn').addEventListener('click', async ()
     })
 })
 
-function render() {
+function applyProjectContext() {
     const isManageProjectPermission = CheckPermissions.checkEditAccess('PROJECT')
     if(!isManageProjectPermission) {
         alert("You do not have permissions to use this page.")
