@@ -120,6 +120,7 @@ class ProjectDetails extends HTMLElement {
         try { this._unsubProject?.() } catch {}
         this.renderCleanup.run()
         this.cleanup.run()
+        this._currentManifestKey = null
     }
 
     render() {

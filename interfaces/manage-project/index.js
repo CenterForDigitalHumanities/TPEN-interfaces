@@ -42,8 +42,8 @@ TPEN.eventDispatcher.on('tpen-project-loaded', () => {
         leaveProjectBtn.href = `/project/leave?projectID=${projectID}`
     }
 
-    // Render the page with permissions check
-    render()
+    // Apply project context with permissions check
+    applyProjectContext()
 })
 
 document.getElementById('export-project-btn').addEventListener('click', async () => {
@@ -63,7 +63,7 @@ document.getElementById('export-project-btn').addEventListener('click', async ()
     })
 })
 
-function render() {
+function applyProjectContext() {
     const isManageProjectPermission = CheckPermissions.checkEditAccess('PROJECT')
     if(!isManageProjectPermission) {
         alert("You do not have permissions to use this page.")
