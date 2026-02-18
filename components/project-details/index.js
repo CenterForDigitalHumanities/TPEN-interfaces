@@ -126,6 +126,11 @@ class ProjectDetails extends HTMLElement {
     render() {
         const project = this.Project ?? TPEN.activeProject
 
+        if (!project) {
+            console.error('No project data available to render')
+            return
+        }
+
         const manifestKey = JSON.stringify(project?.manifest ?? [])
 
         // Only render if manifest has changed or first render
