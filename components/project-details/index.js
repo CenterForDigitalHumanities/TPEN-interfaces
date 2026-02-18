@@ -17,8 +17,8 @@ class ProjectDetails extends HTMLElement {
     renderCleanup = new CleanupRegistry()
     /** @type {Function|null} Unsubscribe function for project ready listener */
     _unsubProject = null
-    /** @type {string|null} Track current manifest ID to prevent duplicate renders */
-    _currentManifestId = null
+    /** @type {string|null} Track manifest key to prevent duplicate renders */
+    _currentManifestKey = null
 
     style = `
     sequence-panel {
@@ -124,12 +124,14 @@ class ProjectDetails extends HTMLElement {
 
     render() {
         const project = this.Project ?? TPEN.activeProject
-        
+
+        const manifestKey = JSON.stringify(project?.manifest ?? [])
+
         // Only render if manifest has changed or first render
-        if (this._currentManifestId === project.manifest) {
+        if (this._currentManifestKey === manifestKey) {
             return
         }
-        this._currentManifestId = project.manifest
+        this._currentManifestKey = manifestKey
         
         const projectOwner = Object.entries(project.collaborators).find(([userID, u]) => u.roles.includes('OWNER'))?.[1].profile.displayName
         const collaboratorCount = Object.keys(project.collaborators).length

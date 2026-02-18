@@ -87,13 +87,13 @@ permalink: /project
     import TPEN from '../../api/TPEN.js'
     import CheckPermissions from '../../components/check-permissions/checkPermissions.js'
 
-    function render() {
+    function setProjectId() {
         document.querySelector('tpen-project-details').setAttribute('tpen-project-id', TPEN.screen.projectInQuery)
     }
 
     TPEN.eventDispatcher.on('tpen-project-loaded', (ev) => {
         // Set the project ID attribute to trigger controlled render
-        render()
+        setProjectId()
         
         const goParse = document.getElementById("goParse")
         const goTranscribe = document.getElementById("goTranscribe")
