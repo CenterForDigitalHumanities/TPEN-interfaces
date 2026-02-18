@@ -28,25 +28,6 @@ includes the project ID. Examples here, of the best practice, include the follow
 Each Interface is self-contained and uses the [TPEN Services](#) API to create, modify, and
 annotate web resources. Some examples, whether or not they are currently implemented include:
 
-### /classroom-group
-
-Assign a group of users to a team and set appropriate permissions. The User with a`project-admin` role can add users to the project group.
-
-* `/addUser` to add an existing user with a certain role.
-* `/inviteUser` to send a mailer to a user who is not a TPEN User yet.
-* `/removeUser` to remove a user from the project group.
-* `/setRole` to set the role of a user.
-* `/setPermissions` to set the permissions of a role (existing or new).
-
-The interface may be configured to add custom roles to a project group:
-
-* `instructor` has permissions to `[manage-users, set-roles, modify-transcriptions-all, modify-regions-all, modify-project-all]` to create a class and review submissions.
-* `assistant` has permissions to `[view-transcriptions-all]` to grade submissions.
-* `student` has permissions to `[modify-transcriptions-self]` to only see their own work.
-
-Any Interface can understand the enumerated permissions, so multiple transcription interfaces
-might be helpful to complete an assignment.
-
 ### /transcribe-latin-poetry
 
 Add text annotations to an image with tools that allow users to select words, phrases, and lines.
