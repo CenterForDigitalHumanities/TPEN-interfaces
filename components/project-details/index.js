@@ -17,6 +17,8 @@ class ProjectDetails extends HTMLElement {
     renderCleanup = new CleanupRegistry()
     /** @type {Function|null} Unsubscribe function for project ready listener */
     _unsubProject = null
+    /** @type {string|null} Track manifest key to prevent duplicate renders */
+    _currentManifestKey = null
 
     style = `
     sequence-panel {
@@ -125,10 +127,26 @@ class ProjectDetails extends HTMLElement {
         try { this._unsubProject?.() } catch {}
         this.renderCleanup.run()
         this.cleanup.run()
+        this._currentManifestKey = null
     }
 
     render() {
         const project = this.Project ?? TPEN.activeProject
+
+        if (!project) {
+            console.error('No project data available to render')
+            return
+        }
+
+        const manifestKey = JSON.stringify(project?.manifest ?? [])
+        const manifestId = Array.isArray(project?.manifest) ? project.manifest[0] : project?.manifest
+
+        // Only render if manifest has changed or first render
+        if (this._currentManifestKey === manifestKey) {
+            return
+        }
+        this._currentManifestKey = manifestKey
+        
         const projectOwner = Object.entries(project.collaborators).find(([userID, u]) => u.roles.includes('OWNER'))?.[1].profile.displayName
         const collaboratorCount = Object.keys(project.collaborators).length
 
@@ -150,7 +168,7 @@ class ProjectDetails extends HTMLElement {
             <p>
                 ${collaboratorCount < 3 ? "Collaborators: "+Object.entries(project.collaborators).map(([userID, u]) => u.profile.displayName).join(', ') : `${collaboratorCount} collaborator${collaboratorCount===1? '' : 's'}`}
             </p>
-            <sequence-panel manifest-id="${project.manifest}"></sequence-panel>
+            ${manifestId ? `<sequence-panel manifest-id="${manifestId}"></sequence-panel>` : ''}
         `
         // Clear previous render-specific listeners before adding new ones
         this.renderCleanup.run()
