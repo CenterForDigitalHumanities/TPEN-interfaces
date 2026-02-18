@@ -447,6 +447,36 @@ class RolesHandler extends HTMLElement {
         )
     }
 
+    /**
+     * Helper to extract meaningful error message from error object
+     * @param {Error|Object} error - The error object
+     * @returns {string} - User-friendly error message
+     */
+    getErrorMessage(error) {
+        // Check for HTTP status codes
+        if (error?.response?.status) {
+            const status = error.response.status
+            const statusText = error.response.statusText || ''
+            const message = error.response?.data?.message || error.response?.data?.error || ''
+            
+            if (message) {
+                return `${status} ${statusText}: ${message}`.trim()
+            }
+            
+            if (status === 403) return '403 Forbidden: You do not have permission to perform this action'
+            if (status === 404) return '404 Not Found: The resource could not be found'
+            if (status === 409) return '409 Conflict: This action conflicts with the current state'
+            if (status >= 500) return `${status} Server Error: Please try again later`
+            if (status >= 400) return `${status} ${statusText}`
+        }
+        
+        // Check for message property
+        if (error?.message) return error.message
+        
+        // Fallback
+        return 'An unexpected error occurred'
+    }
+
     async rolesHandler(event) {
         try {
             const button = event.target.closest("button")
@@ -680,7 +710,8 @@ class RolesHandler extends HTMLElement {
             }
         } catch (error) {
             console.error("Error updating roles:", error)
-            TPEN.eventDispatcher.dispatch('tpen-toast', { message: 'Error updating roles', status: 'error', dismissible: true })
+            const errorMessage = this.getErrorMessage(error)
+            TPEN.eventDispatcher.dispatch('tpen-toast', { message: errorMessage, status: 'error', dismissible: true })
         } finally {
             // Re-enable button and restore text
             saveButton.disabled = false
@@ -728,7 +759,8 @@ class RolesHandler extends HTMLElement {
             }
         } catch (error) {
             console.error("Error transferring ownership:", error)
-            TPEN.eventDispatcher.dispatch('tpen-toast', { message: 'Error transferring ownership', status: 'error', dismissible: true })
+            const errorMessage = this.getErrorMessage(error)
+            TPEN.eventDispatcher.dispatch('tpen-toast', { message: errorMessage, status: 'error', dismissible: true })
         }
     }
 
@@ -743,7 +775,8 @@ class RolesHandler extends HTMLElement {
             }
         } catch (error) {
             console.error("Error removing member:", error)
-            TPEN.eventDispatcher.dispatch('tpen-toast', { message: 'Error removing member', status: 'error', dismissible: true })
+            const errorMessage = this.getErrorMessage(error)
+            TPEN.eventDispatcher.dispatch('tpen-toast', { message: errorMessage, status: 'error', dismissible: true })
         }
     }
 
