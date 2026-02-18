@@ -1084,9 +1084,7 @@ class AnnotoriousAnnotator extends HTMLElement {
     let page = JSON.parse(JSON.stringify(this.#resolvedAnnotationPage))
     page.items = allAnnotations
     const pageID = page["@id"] ?? page.id
-    let mod
-    try {
-      const res = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/page/${pageID.split("/").pop()}`, {
+    const mod = await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/page/${pageID.split("/").pop()}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -1094,18 +1092,20 @@ class AnnotoriousAnnotator extends HTMLElement {
         },
         body: JSON.stringify({ "items": page.items })
       })
-      if (!res.ok) {
-        TPEN.eventDispatcher.dispatch("tpen-toast", {
-          message: "ERROR Annotations Not Saved",
-          status: "error"
-        })
-        throw new Error("Could not save annotations", { "cause": `\n${res.status} Error from TPEN Services.  Check the Network response.` })
-      }
-      mod = await res.json()
-    } catch (err) {
-      saveButton.textContent = "ERROR"
-      throw err
-    }
+      .then(res => {
+        if(!res.ok) {
+          TPEN.eventDispatcher.dispatch("tpen-toast", {
+            message: "ERROR Annotations Not Saved",
+            status: "error"
+          })
+          throw new Error("Could not save annotations", { "cause": `\n${res.status} Error from TPEN Services.  Check the Network response.` })
+        }
+        return res.json()
+      })
+      .catch(err => {
+        saveButton.textContent = "ERROR"
+        throw err
+      })
     page.items = page.items.map(i => {
       const selectorValue = i.target?.selector?.value ?? i.target
       // Prefer matching by ID for previously-saved annotations, fall back to selector for new ones
