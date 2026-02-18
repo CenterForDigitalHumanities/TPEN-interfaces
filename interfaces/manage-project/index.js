@@ -47,6 +47,7 @@ TPEN.eventDispatcher.on('tpen-project-loaded', () => {
 })
 
 document.getElementById('export-project-btn').addEventListener('click', async () => {
+    if (!confirm('This will publish a new Manifest which will be available to the public.')) return
     await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/manifest`, {
         method: 'GET',
         headers: {

@@ -1140,6 +1140,7 @@ class AnnotoriousAnnotator extends HTMLElement {
    * https://annotorious.dev/api-reference/openseadragon-annotator/#clearannotations
    */
   async deleteAllAnnotations() {
+    if (!confirm('This will remove all Annotations and will take effect immediately. This action cannot be undone.')) return
     const deleteAllBtn = this.shadowRoot.getElementById("deleteAllBtn")
     deleteAllBtn.setAttribute("disabled", "true")
     deleteAllBtn.textContent = "deleting.  please wait..."
