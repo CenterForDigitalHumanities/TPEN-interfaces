@@ -137,12 +137,14 @@ class ProjectOptions extends HTMLElement {
             layer.pages?.some(page => page.items && page.items.length > 0)
         ) ?? false
 
-        const url = hasLines
-            ? this.getNavigationUrl('transcribe', project)
-            : this.getNavigationUrl('defineLines', project)
         TPEN.eventDispatcher.dispatch('tpen-gui-action-link', {
             label: hasLines ? 'Transcribe' : 'Find Lines',
-            href: url
+            callback: () => {
+                const url = hasLines
+                    ? this.getNavigationUrl('transcribe', project)
+                    : this.getNavigationUrl('defineLines', project)
+                window.location.href = url
+            }
         })
     }
 }
