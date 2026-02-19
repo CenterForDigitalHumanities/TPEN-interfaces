@@ -136,7 +136,6 @@ class LeaveProject extends HTMLElement {
         this.renderCleanup.run()
 
         const leaveBtn = this.shadowRoot.getElementById("leaveBtn")
-        const noLeaveBtn = this.shadowRoot.getElementById("noLeaveBtn")
         this.renderCleanup.onElement(leaveBtn, 'click', () => this.leaveProject())
     }
 

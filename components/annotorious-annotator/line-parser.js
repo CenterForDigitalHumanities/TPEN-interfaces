@@ -203,6 +203,7 @@ class AnnotoriousAnnotator extends HTMLElement {
           display: block;
           text-align: center;
           text-decoration: none;
+          font: inherit;
           border: none;
           box-sizing: border-box;
         }

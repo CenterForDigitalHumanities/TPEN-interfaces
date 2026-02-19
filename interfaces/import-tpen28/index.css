@@ -67,6 +67,7 @@ a.btn {
     cursor: pointer;
     text-decoration: none;
     display: inline-block;
+    font: inherit;
 }
    
 .primary-btn {
