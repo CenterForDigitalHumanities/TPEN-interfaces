@@ -275,11 +275,11 @@ class ContributionActivity extends HTMLElement {
                                 <li>
                                     <div class="contribution-details">
                                         <div class="logo-container">
-                                            <img class="logo" src="https://rerum.io/logo.png" alt="Rerum Logo" onclick="window.open('${c.id}', '_blank')" />
+                                            <a href="${c.id}" target="_blank" rel="noopener noreferrer" aria-label="View in RERUM"><img class="logo" src="https://rerum.io/logo.png" alt="Rerum Logo" /></a>
                                         </div>
                                         ${c.page ? `
                                         <div class="logo-container">
-                                            <img class="logo" src="../../assets/icons/transcribe.png" alt="Transcribe Icon" onclick="window.open('${TPEN.BASEURL}/transcribe?projectID=${c.projectId}&pageID=${c.page}', '_blank')" />
+                                            <a href="${TPEN.BASEURL}/transcribe?projectID=${c.projectId}&pageID=${c.page}" target="_blank" rel="noopener noreferrer" aria-label="Transcribe page"><img class="logo" src="../../assets/icons/transcribe.png" alt="Transcribe Icon" /></a>
                                         </div>` : ''}
                                         <p>${c.type}</p>
                                     </div>
@@ -314,11 +314,11 @@ class ContributionActivity extends HTMLElement {
                     li.innerHTML = `
                         <div class="contribution-details">
                             <div class="logo-container">
-                                <img class="logo" src="https://rerum.io/logo.png" alt="Rerum Logo" onclick="window.open('${c.id}', '_blank')" />
+                                <a href="${c.id}" target="_blank" rel="noopener noreferrer" aria-label="View in RERUM"><img class="logo" src="https://rerum.io/logo.png" alt="Rerum Logo" /></a>
                             </div>
                             ${c.page ? `
                             <div class="logo-container">
-                                <img class="logo" src="../../assets/icons/transcribe.png" alt="Transcribe Icon" onclick="window.open('${TPEN.BASEURL}/transcribe?projectID=${c.projectId}&pageID=${c.page}', '_blank')" />
+                                <a href="${TPEN.BASEURL}/transcribe?projectID=${c.projectId}&pageID=${c.page}" target="_blank" rel="noopener noreferrer" aria-label="Transcribe page"><img class="logo" src="../../assets/icons/transcribe.png" alt="Transcribe Icon" /></a>
                             </div>` : ''}
                             <p>${c.type}</p>
                         </div>

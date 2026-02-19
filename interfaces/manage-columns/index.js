@@ -228,6 +228,10 @@ class TpenManageColumns extends HTMLElement {
                     width: 100%;
                     margin-top: 1em;
                     border: none;
+                    text-decoration: none;
+                    font: inherit;
+                    text-align: center;
+                    box-sizing: border-box;
                 }
                 .goBtn:hover,
                 .goBtn:focus-visible {
@@ -260,9 +264,9 @@ class TpenManageColumns extends HTMLElement {
                     <button id="clearSelectionBtn">Clear All</button>
                     <hr>
                     <div class="inter-links">
-                        <button type="button" class="goBtn" id="identifyLinesBtn"><span aria-hidden="true">↪</span>Go Identify Lines</button>
-                        <button type="button" class="goBtn" id="transcribeBtn"><span aria-hidden="true">↪</span>Go Transcribe</button>
-                        <button type="button" class="goBtn" id="projectManagementBtn"><span aria-hidden="true">↪</span>Go to Project Management</button>
+                        <a class="goBtn" id="identifyLinesBtn"><span aria-hidden="true">↪</span>Go Identify Lines</a>
+                        <a class="goBtn" id="transcribeBtn"><span aria-hidden="true">↪</span>Go Transcribe</a>
+                        <a class="goBtn" id="projectManagementBtn"><span aria-hidden="true">↪</span>Go to Project Management</a>
                     </div>
                 </div>
                 <div class="container" id="container"></div>
@@ -326,21 +330,18 @@ class TpenManageColumns extends HTMLElement {
         this.cleanup.onElement(this.mergeColumnsCheckbox, "change", () => this.handleModeChange())
         this.cleanup.onElement(this.extendColumnCheckbox, "change", () => this.handleModeChange())
 
-        // Inter-interface navigation buttons
+        // Inter-interface navigation links
         this.identifyLinesBtn.style.display = "block"
-        this.cleanup.onElement(this.identifyLinesBtn, "click", () =>
-            document.location.href = `/annotator?projectID=${TPEN.activeProject._id}&pageID=${TPEN.screen.pageInQuery}`)
+        this.identifyLinesBtn.href = `/annotator?projectID=${TPEN.activeProject._id}&pageID=${TPEN.screen.pageInQuery}`
 
         if (CheckPermissions.checkEditAccess("PROJECT")) {
             this.projectManagementBtn.style.display = "block"
-            this.cleanup.onElement(this.projectManagementBtn, "click", () =>
-                document.location.href = `/project/manage?projectID=${TPEN.activeProject._id}`)
+            this.projectManagementBtn.href = `/project/manage?projectID=${TPEN.activeProject._id}`
         }
 
         if (CheckPermissions.checkViewAccess("LINE", "TEXT") || CheckPermissions.checkEditAccess("LINE", "TEXT")) {
             this.transcribeBtn.style.display = "block"
-            this.cleanup.onElement(this.transcribeBtn, "click", () =>
-                document.location.href = `/transcribe?projectID=${TPEN.activeProject._id}&pageID=${TPEN.screen.pageInQuery}`)
+            this.transcribeBtn.href = `/transcribe?projectID=${TPEN.activeProject._id}&pageID=${TPEN.screen.pageInQuery}`
         }
     }
 

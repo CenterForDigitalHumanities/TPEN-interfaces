@@ -44,7 +44,7 @@ class TpenHeader extends HTMLElement {
                 </h1>
                 <h1 class="banner ${this.getAttribute('title') ? "" : "hidden"}">${this.getAttribute('title') ?? ""}</h1>
                 <tpen-action-link data-description="Whatever the TPEN.actionLink is will be a button-looking link here.">
-                    <button type="button" class="action-button hidden">Action</button>
+                    <a class="action-button hidden">Action</a>
                 </tpen-action-link>
                 <nav>
                     <ul>
@@ -73,13 +73,12 @@ class TpenHeader extends HTMLElement {
             const btn = this.shadowRoot.querySelector('.action-button')
             btn.classList.remove('hidden')
             btn.textContent = ev.detail.label
-            // Use onclick assignment to prevent listener accumulation on repeated dispatches
-            btn.onclick = ev.detail.callback
+            btn.href = ev.detail.href
         }
         const actionLinkRemoveHandler = () => {
             const btn = this.shadowRoot.querySelector('.action-button')
             btn.classList.add('hidden')
-            btn.onclick = null
+            btn.removeAttribute('href')
         }
 
         this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-gui-title', titleHandler)

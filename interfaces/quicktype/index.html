@@ -26,6 +26,8 @@ permalink: /manage/quicktype
             cursor: pointer;
             transition: background-color 0.3s;
             border: none;
+            text-decoration: none;
+            font: inherit;
         }
 
         #projectManagementBtn:hover,
@@ -46,7 +48,7 @@ permalink: /manage/quicktype
 
 <body>
     <tpen-page>
-        <button type="button" id="projectManagementBtn"><span aria-hidden="true">↪</span> Go to Project Management</button>
+        <a id="projectManagementBtn"><span aria-hidden="true">↪</span> Go to Project Management</a>
         <tpen-quicktype-manager></tpen-quicktype-manager>
     </tpen-page>
 </body>
@@ -60,9 +62,7 @@ permalink: /manage/quicktype
             const goManage = document.getElementById("projectManagementBtn")
             if (goManage) {
                 goManage.style.display = "block"
-                goManage.addEventListener('click', () => {
-                    document.location.href = `/project/manage?projectID=${ev.detail._id}`
-                })
+                goManage.href = `/project/manage?projectID=${ev.detail._id}`
             }
         }
     })

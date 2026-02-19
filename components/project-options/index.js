@@ -97,7 +97,7 @@ class ProjectOptions extends HTMLElement {
             </style>
             <p>
             ${project.description ?? 'No description provided.'}
-            <a href="/project/metadata?projectID=${project._id}">✏️</a>
+            <a href="/project/metadata?projectID=${project._id}" aria-label="Edit metadata">✏️</a>
             </p>
             <ul style="padding-left:1em;">
             <li><b>Label:</b> ${project.getLabel()}</li>
@@ -105,7 +105,7 @@ class ProjectOptions extends HTMLElement {
             <li><b>Last Modified:</b> ${stringFromDate(project._modifiedAt)}</li>
             <li><b>Owner:</b> ${project.getOwner()?.displayName ?? ''}</li>
             </ul>
-            <h3>Project Tools <a href="${this.getNavigationUrl('manageProject', project)}">✏️</a></h3>
+            <h3>Project Tools <a href="${this.getNavigationUrl('manageProject', project)}" aria-label="Manage project tools">✏️</a></h3>
             <tpen-project-tools readonly="true"></tpen-project-tools>
             <h3>Define Lines</h3>
             ${project.layers?.map(layer => `
@@ -137,14 +137,12 @@ class ProjectOptions extends HTMLElement {
             layer.pages?.some(page => page.items && page.items.length > 0)
         ) ?? false
 
+        const url = hasLines
+            ? this.getNavigationUrl('transcribe', project)
+            : this.getNavigationUrl('defineLines', project)
         TPEN.eventDispatcher.dispatch('tpen-gui-action-link', {
             label: hasLines ? 'Transcribe' : 'Find Lines',
-            callback: () => {
-                const url = hasLines 
-                    ? this.getNavigationUrl('transcribe', project)
-                    : this.getNavigationUrl('defineLines', project)
-                window.location.href = url
-            }
+            href: url
         })
     }
 }

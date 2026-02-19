@@ -58,6 +58,16 @@ button:disabled {
     opacity: 0.6;
     cursor: not-allowed;
 }
+
+a.btn {
+    padding: 12px 24px;
+    font-size: 15px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+}
    
 .primary-btn {
     background-color: #3498db;

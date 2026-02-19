@@ -196,7 +196,7 @@ export default class ProjectsListNavigation extends HTMLElement {
             try {
                 await(new Project(project._id).fetch())
                 const isManageProjectPermission = CheckPermissions.checkEditAccess('PROJECT')
-                manageLink = isManageProjectPermission ? `<a title="Manage Project" part="project-opt" href="/project/manage?projectID=${project._id}">⚙</a>` : ``
+                manageLink = isManageProjectPermission ? `<a title="Manage Project" part="project-opt" href="/project/manage?projectID=${project._id}" aria-label="Manage Project">⚙</a>` : ``
             } catch (error) {
                 console.warn(`Failed to check permissions for project ${project._id}:`, error)
             }

@@ -27,6 +27,8 @@ permalink: /project/metadata
             cursor: pointer;
             transition: background-color 0.3s;
             border: none;
+            text-decoration: none;
+            font: inherit;
         }
         #projectManagementBtn:hover,
         #projectManagementBtn:focus-visible {
@@ -75,7 +77,7 @@ permalink: /project/metadata
             </div>
             <p slot="body" class="permission-msg" style="display: none;">You don't have permission to create, edit, or delete Metadata</p>
         </tpen-card>
-        <button type="button" id="projectManagementBtn"><span aria-hidden="true">↪</span> Go to Project Management</button>
+        <a id="projectManagementBtn"><span aria-hidden="true">↪</span> Go to Project Management</a>
     </tpen-page>
     <script type="module">
         import TPEN from '../../api/TPEN.js'
@@ -86,9 +88,7 @@ permalink: /project/metadata
                 const goManage = document.getElementById("projectManagementBtn")
                 if (goManage) {
                     goManage.style.display = "block"
-                    goManage.addEventListener('click', () => {
-                        document.location.href = `/project/manage?projectID=${ev.detail._id}`
-                    })
+                    goManage.href = `/project/manage?projectID=${ev.detail._id}`
                 }
             }
 

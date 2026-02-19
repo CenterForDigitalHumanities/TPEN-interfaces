@@ -89,10 +89,8 @@ export default class PageTool extends HTMLElement {
             this.shadowRoot.querySelector('.parsing-section').style.display = "block"
             linesBtn.style.display = "block"
             columnsBtn.style.display = "block"
-            this.renderCleanup.onElement(linesBtn, 'click', () =>
-                document.location.href = `/annotator?projectID=${TPEN.activeProject._id}&pageID=${TPEN.screen.pageInQuery}`)
-            this.renderCleanup.onElement(columnsBtn, 'click', () =>
-                document.location.href = `/manage-columns?projectID=${TPEN.activeProject._id}&pageID=${TPEN.screen.pageInQuery}`)
+            linesBtn.href = `/annotator?projectID=${TPEN.activeProject._id}&pageID=${TPEN.screen.pageInQuery}`
+            columnsBtn.href = `/manage-columns?projectID=${TPEN.activeProject._id}&pageID=${TPEN.screen.pageInQuery}`
         }
     }
 
@@ -416,6 +414,9 @@ export default class PageTool extends HTMLElement {
               margin: 10px auto;
               display: none;
               width: fit-content;
+              text-decoration: none;
+              font: inherit;
+              text-align: center;
             }
 
             .grayscale-btn, .invert-btn, .reset-btn, .lines-btn, .columns-btn {
@@ -506,8 +507,8 @@ export default class PageTool extends HTMLElement {
                 </div>
                 <div class="tool-section parsing-section">
                     <h4 class="tool-section-title">LINES & COLUMNS</h4>
-                    <button type="button" class="lines-btn">IDENTIFY LINES</button>
-                    <button type="button" class="columns-btn">IDENTIFY COLUMNS</button>
+                    <a class="lines-btn">IDENTIFY LINES</a>
+                    <a class="columns-btn">IDENTIFY COLUMNS</a>
                 </div>
             </div>
         </div>

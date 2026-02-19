@@ -124,10 +124,18 @@ a:hover, .logout-btn button:hover {
     outline: var(--primary-light) 1px solid;
     outline-offset: -3.5px;
     transition: all .3s;
+    text-decoration: none;
+    font: inherit;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
 }
 .action-button:focus, .action-button:hover {
     outline: var(--primary-color) 1px solid;
     outline-offset: -1.5px;
+    background-color: var(--primary-light);
+    color: var(--darkest);
 }
 .hidden {
     visibility: hidden;

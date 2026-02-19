@@ -21,7 +21,7 @@ class TpenFooter extends HTMLElement {
         footerContent.className = 'footer-content'
 
         const p = document.createElement('p')
-        p.innerHTML = `&copy; ${new Date().getFullYear()} TPEN. Licensed under <a href="/LICENSE" target="_blank">Apache 2.0</a>.`
+        p.innerHTML = `&copy; ${new Date().getFullYear()} TPEN. Licensed under <a href="/LICENSE" target="_blank" rel="noopener noreferrer">Apache 2.0</a>.`
 
         const nav = document.createElement('nav')
         nav.className = 'footer-nav'

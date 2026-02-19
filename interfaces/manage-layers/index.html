@@ -27,6 +27,8 @@ permalink: /project/manage/layers
             cursor: pointer;
             transition: background-color 0.3s;
             border: none;
+            text-decoration: none;
+            font: inherit;
         }
         #projectManagementBtn:hover,
         #projectManagementBtn:focus-visible {
@@ -55,7 +57,7 @@ permalink: /project/manage/layers
                 <tpen-manage-layers></tpen-manage-layers>
             </div>
         </tpen-card>
-        <button type="button" id="projectManagementBtn"><span aria-hidden="true">↪</span> Go to Project Management</button>
+        <a id="projectManagementBtn"><span aria-hidden="true">↪</span> Go to Project Management</a>
     </tpen-page>
 </body>
 <script type="module">
@@ -67,9 +69,7 @@ permalink: /project/manage/layers
             const goManage = document.getElementById("projectManagementBtn")
             if (goManage) {
                 goManage.style.display = "block"
-                goManage.addEventListener('click', () => {
-                    document.location.href = `/project/manage?projectID=${ev.detail._id}`
-                })
+                goManage.href = `/project/manage?projectID=${ev.detail._id}`
             }
         }
     })
