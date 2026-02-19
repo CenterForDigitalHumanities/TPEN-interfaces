@@ -291,6 +291,8 @@ class ManageRole extends HTMLElement {
                     cursor: pointer;
                     transition: background-color 0.3s;
                     border: none;
+                    text-decoration: none;
+                    font: inherit;
                 }
 
                 #projectManagementBtn:hover,
@@ -413,7 +415,7 @@ class ManageRole extends HTMLElement {
                     </div>
                 </div>
             </div>
-            <button type="button" id="projectManagementBtn"><span aria-hidden="true">↪</span> Go to Project Management</button>
+            <a id="projectManagementBtn"><span aria-hidden="true">↪</span> Go to Project Management</a>
         `
 
         // Clear previous render-specific listeners before adding new ones
@@ -427,7 +429,7 @@ class ManageRole extends HTMLElement {
         if (CheckPermissions.checkEditAccess("PROJECT")) {
             const manageBtn = this.shadowRoot.getElementById("projectManagementBtn")
             manageBtn.style.display = "block"
-            this.renderCleanup.onElement(manageBtn, 'click', () => document.location.href = `/project/manage?projectID=${TPEN.activeProject._id}`)
+            manageBtn.href = `/project/manage?projectID=${TPEN.activeProject._id}`
         }
 
         const rolesList = this.shadowRoot.querySelector(".roles-list")

@@ -34,6 +34,9 @@ permalink: /project/manage/collaborators
             margin-top: 1em;
             grid-column: 1 / -1;
             justify-self: start;
+            text-decoration: none;
+            font: inherit;
+            display: inline-block;
         }
 
         #projectManagementBtn:hover,
@@ -61,7 +64,7 @@ permalink: /project/manage/collaborators
                 <invite-member></invite-member>
             </div>
         </tpen-card>
-        <button type="button" id="projectManagementBtn"><span aria-hidden="true">↪</span> Go to Project Management</button>
+        <a id="projectManagementBtn"><span aria-hidden="true">↪</span> Go to Project Management</a>
     </tpen-page>
     <tpen-feedback-button></tpen-feedback-button>
 </body>
@@ -74,9 +77,7 @@ permalink: /project/manage/collaborators
             const goManage = document.getElementById("projectManagementBtn")
             if (goManage) {
                 goManage.style.display = "block"
-                goManage.addEventListener('click', () => {
-                    document.location.href = `/project/manage?projectID=${ev.detail._id}`
-                })
+                goManage.href = `/project/manage?projectID=${ev.detail._id}`
             }
         }
     })

@@ -304,17 +304,17 @@ class UserProfile extends HTMLElement {
                 </p>
                 <div class="icons-list">
                     <!-- Icon source: https://www.flaticon.com/free-icons/linkedin by Freepik -->
-                    ${linkedin ? `<img class="icon" src="../../assets/icons/linkedin.png" alt="Linkedin" onclick="window.open('${linkedin}')" />` : ''}
+                    ${linkedin ? `<a href="${linkedin}" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><img class="icon" src="../../assets/icons/linkedin.png" alt="LinkedIn" /></a>` : ''}
                     <!-- Icon source: https://www.flaticon.com/free-icons/twitter by Freepik -->
-                    ${twitter ? `<img class="icon" src="../../assets/icons/twitter.png" alt="Twitter" onclick="window.open('${twitter}')" />` : ''}
+                    ${twitter ? `<a href="${twitter}" target="_blank" rel="noopener noreferrer" aria-label="Twitter"><img class="icon" src="../../assets/icons/twitter.png" alt="Twitter" /></a>` : ''}
                     <!-- Icon source: https://www.flaticon.com/free-icons/facebook by Freepik -->
-                    ${facebook ? `<img class="icon" src="../../assets/icons/facebook.png" alt="Facebook" onclick="window.open('${facebook}')" />` : ''}
+                    ${facebook ? `<a href="${facebook}" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><img class="icon" src="../../assets/icons/facebook.png" alt="Facebook" /></a>` : ''}
                     <!-- Icon source: https://www.flaticon.com/free-icons/instagram by Freepik -->
-                    ${instagram ? `<img class="icon" src="../../assets/icons/instagram.png" alt="Instagram" onclick="window.open('${instagram}')" />` : ''}
+                    ${instagram ? `<a href="${instagram}" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><img class="icon" src="../../assets/icons/instagram.png" alt="Instagram" /></a>` : ''}
                     <!-- Icon source: https://www.flaticon.com/free-icons/github by Freepik -->
-                    ${github ? `<img class="icon" src="../../assets/icons/github.png" alt="GitHub" onclick="window.open('${github}')" />` : ''}
+                    ${github ? `<a href="${github}" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><img class="icon" src="../../assets/icons/github.png" alt="GitHub" /></a>` : ''}
                     <!-- Icon source: https://www.flaticon.com/free-icons/homepage by Freepik -->
-                    ${homepage ? `<img class="icon" src="../../assets/icons/home-button.png" alt="HomePage" onclick="window.open('${homepage}')" />` : ''}
+                    ${homepage ? `<a href="${homepage}" target="_blank" rel="noopener noreferrer" aria-label="Homepage"><img class="icon" src="../../assets/icons/home-button.png" alt="Homepage" /></a>` : ''}
                 </div>
                 <div class="user-links-container" style="display: none;">
                     <p class="user-links">

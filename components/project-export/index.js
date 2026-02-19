@@ -144,16 +144,16 @@ customElements.define('tpen-project-export', class extends HTMLElement {
             case 7:
                 // This case indicates that the deployment is failed
                 if (urlExists) {
-                    html += `<a href="${url}" target="_blank">${url}</a>`
-                    html += `<a class="iiif-drag-drop" href="${url}?manifest=${url}" target="_blank"><img src="https://iiif.io/img/logo-iiif-34x30.png" alt="IIIF Drag and Drop" title="Drag and Drop IIIF Resource"></a>`
+                    html += `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`
+                    html += `<a class="iiif-drag-drop" href="${url}?manifest=${url}" target="_blank" rel="noopener noreferrer"><img src="https://iiif.io/img/logo-iiif-34x30.png" alt="IIIF Drag and Drop" title="Drag and Drop IIIF Resource"></a>`
                 } else {
                     html += `<p class="error">Manifest Not Found</p>`
                 }
                 break
             case 4:
                 // This case indicates that the manifest is being generated successfully
-                html += `<a href="${url}" target="_blank">${url}</a>`
-                html += `<a class="iiif-drag-drop" href="${url}?manifest=${url}" target="_blank"><img src="https://iiif.io/img/logo-iiif-34x30.png" alt="IIIF Drag and Drop" title="Drag and Drop IIIF Resource"></a>`
+                html += `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`
+                html += `<a class="iiif-drag-drop" href="${url}?manifest=${url}" target="_blank" rel="noopener noreferrer"><img src="https://iiif.io/img/logo-iiif-34x30.png" alt="IIIF Drag and Drop" title="Drag and Drop IIIF Resource"></a>`
                 break
             default:
                 html += `<p class="error">Unknown Status</p>`

@@ -26,6 +26,8 @@ permalink: /project/options
             cursor: pointer;
             transition: background-color 0.3s;
             border: none;
+            text-decoration: none;
+            font: inherit;
         }
 
         #projectManagementBtn:hover,
@@ -54,7 +56,7 @@ permalink: /project/options
             <h2 slot="header">Project Configuration</h2>
             <tpen-project-customization slot="body">  </tpen-project-customization>
         </tpen-card>
-        <button type="button" id="projectManagementBtn"><span aria-hidden="true">↪</span> Go to Project Management</button>
+        <a id="projectManagementBtn"><span aria-hidden="true">↪</span> Go to Project Management</a>
     </tpen-page>
 </body>
 
@@ -67,9 +69,7 @@ permalink: /project/options
             const goManage = document.getElementById("projectManagementBtn")
             if (goManage) {
                 goManage.style.display = "block"
-                goManage.addEventListener('click', () => {
-                    document.location.href = `/project/manage?projectID=${ev.detail._id}`
-                })
+                goManage.href = `/project/manage?projectID=${ev.detail._id}`
             }
         }
     })

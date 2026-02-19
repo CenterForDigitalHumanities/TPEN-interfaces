@@ -203,6 +203,7 @@ class AnnotoriousAnnotator extends HTMLElement {
           display: block;
           text-align: center;
           text-decoration: none;
+          font: inherit;
           border: none;
           box-sizing: border-box;
         }
@@ -317,6 +318,8 @@ class AnnotoriousAnnotator extends HTMLElement {
           transition: background-color 0.3s;
           z-index: 9;
           border: none;
+          text-decoration: none;
+          font: inherit;
         }
         #projectManagementBtn:hover,
         #projectManagementBtn:focus-visible {
@@ -364,12 +367,12 @@ class AnnotoriousAnnotator extends HTMLElement {
            <input type="checkbox" id="seeTool" checked> 
           </label>
           <button id="deleteAllBtn" type="button">Delete All Annotations</button>
-          <button id="createColumnsBtn" type="button">Manage Columns</button>
+          <a id="createColumnsBtn">Manage Columns</a>
           <button id="saveBtn" type="button">Save Annotations</button>
         </div>
         <button type="button" id="autoParseBtn">Auto Parse</button>
         <tpen-page-selector></tpen-page-selector>
-        <button type="button" id="projectManagementBtn"><span aria-hidden="true">↪</span> Go to Project Management</button>
+        <a id="projectManagementBtn"><span aria-hidden="true">↪</span> Go to Project Management</a>
         <div id="annotator-container"> Loading Annotorious and getting the TPEN3 Page information... </div>
         <div id="ruler"></div>
         <span id="sampleRuler"></span>
@@ -453,9 +456,7 @@ class AnnotoriousAnnotator extends HTMLElement {
     this.renderCleanup.onElement(editTool, "change", (e) => this.toggleEditingMode(e))
     this.renderCleanup.onElement(eraseTool, "change", (e) => this.toggleErasingMode(e))
     this.renderCleanup.onElement(seeTool, "change", (e) => this.toggleAnnotationVisibility(e))
-    this.renderCleanup.onElement(createColumnsBtn, "click", () =>
-      window.location.href = `/manage-columns?projectID=${TPEN.activeProject._id}&pageID=${this.#annotationPageID}`
-    )
+    createColumnsBtn.href = `/manage-columns?projectID=${TPEN.activeProject._id}&pageID=${this.#annotationPageID}`
     this.renderCleanup.onElement(saveButton, "click", (e) => {
       this.#annotoriousInstance.cancelSelected()
       // Timeout required in order to allow the unfocus native functionality to complete for $isDirty.
@@ -702,6 +703,9 @@ class AnnotoriousAnnotator extends HTMLElement {
     })
 
     // Link to transcribe if they have view permissions for it
+    // NOTE: This uses OpenSeadragon.Button which creates <div> elements, not standard HTML links.
+    // The OSD Button API does not support <a> elements, so this is an intentional exception
+    // to the consistent navigation pattern (issue #465).
     if (CheckPermissions.checkViewAccess("LINE", "TEXT") || CheckPermissions.checkEditAccess("LINE", "TEXT")) {
       let parsingRedirectButton = new OpenSeadragon.Button({
         tooltip: "Go Transcribe",
@@ -892,7 +896,7 @@ class AnnotoriousAnnotator extends HTMLElement {
     if (CheckPermissions.checkEditAccess("PROJECT")) {
       const manageProjectBtn = this.shadowRoot.querySelector("#projectManagementBtn")
       manageProjectBtn.style.display = "block"
-      this.renderCleanup.onElement(manageProjectBtn, "click", (e) => document.location.href = `/project/manage?projectID=${TPEN.activeProject._id}`)
+      manageProjectBtn.href = `/project/manage?projectID=${TPEN.activeProject._id}`
     }
   }
 
