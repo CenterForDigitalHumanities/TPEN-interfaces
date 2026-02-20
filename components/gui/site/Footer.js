@@ -6,6 +6,7 @@ class TpenFooter extends HTMLElement {
         { href: '/index', text: 'Home' },
         { href: '/account', text: 'Account' },
         { href: '/about', text: 'About Us' },
+        { href: '/privacy', text: 'Privacy' },
     ]
 
     version = '3.0.1a'
