@@ -596,9 +596,10 @@ export default class TranscriptionBlock extends HTMLElement {
             transition: border-color 0.2s ease;
         }
 
-        .transcription-input[disabled] {
+        .transcription-input:read-only {
             border-color: transparent;
             color: #777;
+            cursor: default;
         }
 
         .transcription-input:focus {
@@ -645,7 +646,7 @@ export default class TranscriptionBlock extends HTMLElement {
         <div class="flex-center">
             <button class="prev-page-button hidden">Previous Page</button>
           <button class="prev-button">Prev</button>
-          <input type="text" class="transcription-input" placeholder="Transcription input text" value="" ${CheckPermissions.checkEditAccess('LINE', 'TEXT') || CheckPermissions.checkEditAccess('LINE', 'CONTENT') ? '' : 'disabled'}>
+          <input type="text" class="transcription-input" placeholder="Transcription input text" value="" ${CheckPermissions.checkEditAccess('LINE', 'TEXT') || CheckPermissions.checkEditAccess('LINE', 'CONTENT') ? '' : 'readonly'}>
           <button class="next-button">Next</button>
           <button class="next-page-button hidden">Next Page</button>
         </div>
