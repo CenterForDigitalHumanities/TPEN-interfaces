@@ -117,11 +117,24 @@ export default class ProjectsListNavigation extends HTMLElement {
     }
 
     connectedCallback() {
-        TPEN.attachAuthentication(this)
+        this.cleanup.onEvent(TPEN.eventDispatcher, "tpen-authenticated", (ev) => {
+            TPEN.getUserProjects(ev.detail) // ev.detail is the token
+                .catch((error) => {
+                    const status = error.status ?? 500
+                    const text = error.statusText ?? error.message ?? "Internal Error"
+                    const toast = new CustomEvent('tpen-toast', {
+                        detail: {
+                            message: `Error fetching projects: ${text}`,
+                            status: status
+                        }
+                    })
+                    TPEN.eventDispatcher.dispatch(toast)
+        })
 
-        this.cleanup.onEvent(TPEN.eventDispatcher, "tpen-authenticated", async (ev) => {
+        // Listen for when projects are loaded
+        this.cleanup.onEvent(TPEN.eventDispatcher, "tpen-user-projects-loaded", () => {
             try {
-                this.projects = await TPEN.getUserProjects(ev.detail)
+                this.projects = TPEN.userProjects
             } catch (error) {
                 const status = error.status ?? 500
                 const text = error.statusText ?? error.message ?? "Internal Error"
@@ -135,6 +148,7 @@ export default class ProjectsListNavigation extends HTMLElement {
                 this.shadowRoot.getElementById('projectsListView').innerHTML = `No projects found`
             }
         })
+        TPEN.attachAuthentication(this)
 
         // Handle empty recent activity signal from other components via central dispatcher
         this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-no-recent-activity', () => {
@@ -194,7 +208,7 @@ export default class ProjectsListNavigation extends HTMLElement {
         for (const project of this.#projects) {
             let manageLink = ``
             try {
-                await(new Project(project._id).fetch())
+                await (new Project(project._id).fetch())
                 const isManageProjectPermission = CheckPermissions.checkEditAccess('PROJECT')
                 manageLink = isManageProjectPermission ? `<a title="Manage Project" part="project-opt" href="/project/manage?projectID=${project._id}" aria-label="Manage Project">⚙</a>` : ``
             } catch (error) {
