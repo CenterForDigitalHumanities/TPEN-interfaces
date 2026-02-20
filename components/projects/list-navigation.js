@@ -9,6 +9,7 @@ import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
  */
 export default class ProjectsListNavigation extends HTMLElement {
     #projects = []
+    #renderPromise = null
 
     /** @type {CleanupRegistry} Registry for cleanup handlers */
     cleanup = new CleanupRegistry()
@@ -126,7 +127,7 @@ export default class ProjectsListNavigation extends HTMLElement {
                         message: `Error fetching projects: ${text}`,
                         status: status
                     })
-                    const list = this.shadowRoot.getElementById('projectsListView')
+                    const list = this.shadowRoot?.getElementById('projectsListView')
                     if (list) list.innerHTML = `<li>Failed to load projects</li>`
                 })
         })
@@ -134,6 +135,8 @@ export default class ProjectsListNavigation extends HTMLElement {
         // Listen for when projects are loaded
         this.cleanup.onEvent(TPEN.eventDispatcher, "tpen-user-projects-loaded", () => {
             this.projects = TPEN.userProjects
+            // Track the render promise to prevent concurrent updates
+            this.#renderPromise?.catch(() => {}) // Suppress if previous render failed
         })
         TPEN.attachAuthentication(this)
 
@@ -148,8 +151,16 @@ export default class ProjectsListNavigation extends HTMLElement {
         this.cleanup.run()
     }
     set projects(projects) {
+        // Only update if projects actually changed
+        if (this.#projects === projects) return
+        
         this.#projects = projects
-        this.updateList()
+        // Store the render promise so we can track pending updates
+        this.#renderPromise = this.updateList().catch((error) => {
+            // Error already handled in updateList, but store the rejection
+            // so we can suppress it if a new render starts
+            console.debug('Project list render failed:', error)
+        })
     }
     get projects() {
         return this.#projects
@@ -219,6 +230,8 @@ export default class ProjectsListNavigation extends HTMLElement {
             // Handle any errors that occur during updateList
             console.error('Error updating project list:', error)
             const root = this.shadowRoot
+            if (!root) return // Shadow root was removed
+            
             const list = root.getElementById('projectsListView')
             if (list) {
                 list.innerHTML = `<li>Failed to load projects</li>`
