@@ -201,6 +201,7 @@ export default class ProjectsListNavigation extends HTMLElement {
         } else {
             list.innerHTML = ""
         }
+        const projectItems = []
         for (const project of this.#projects) {
             let manageLink = ``
             try {
@@ -210,15 +211,17 @@ export default class ProjectsListNavigation extends HTMLElement {
             } catch (error) {
                 console.warn(`Failed to check permissions for project ${project._id}:`, error)
             }
-            list.innerHTML += `
+            projectItems.push(`
+
                 <li tpen-project-id="${project._id}">
                     <a title="See Project Details" class="static" href="/project?projectID=${project._id}" part="project-link">
                         ${project.label ?? project.title}
                     </a>
                     ${manageLink}
                 </li>
-            `
+            `)
         }
+        list.innerHTML = projectItems.join('')
     }
 }
 
