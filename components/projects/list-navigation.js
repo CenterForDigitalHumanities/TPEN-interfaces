@@ -122,13 +122,12 @@ export default class ProjectsListNavigation extends HTMLElement {
                 .catch((error) => {
                     const status = error.status ?? 500
                     const text = error.statusText ?? error.message ?? "Internal Error"
-                    const toast = new CustomEvent('tpen-toast', {
-                        detail: {
-                            message: `Error fetching projects: ${text}`,
-                            status: status
-                        }
+                    TPEN.eventDispatcher.dispatch('tpen-toast', {
+                        message: `Error fetching projects: ${text}`,
+                        status: status
                     })
-                    TPEN.eventDispatcher.dispatch(toast)
+                    this.shadowRoot.getElementById('projectsListView').innerHTML = `No projects found`
+                })
         })
 
         // Listen for when projects are loaded
@@ -138,13 +137,10 @@ export default class ProjectsListNavigation extends HTMLElement {
             } catch (error) {
                 const status = error.status ?? 500
                 const text = error.statusText ?? error.message ?? "Internal Error"
-                const toast = new CustomEvent('tpen-toast', {
-                    detail: {
-                        message: `Error fetching projects: ${text}`,
-                        status: status
-                    }
+                TPEN.eventDispatcher.dispatch('tpen-toast', {
+                    message: `Error fetching projects: ${text}`,
+                    status: status
                 })
-                TPEN.eventDispatcher.dispatch(toast)
                 this.shadowRoot.getElementById('projectsListView').innerHTML = `No projects found`
             }
         })
