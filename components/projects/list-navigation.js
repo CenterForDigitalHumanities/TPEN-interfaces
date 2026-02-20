@@ -126,23 +126,14 @@ export default class ProjectsListNavigation extends HTMLElement {
                         message: `Error fetching projects: ${text}`,
                         status: status
                     })
-                    this.shadowRoot.getElementById('projectsListView').innerHTML = `No projects found`
+                    const list = this.shadowRoot.getElementById('projectsListView')
+                    if (list) list.innerHTML = `<li>Failed to load projects</li>`
                 })
         })
 
         // Listen for when projects are loaded
         this.cleanup.onEvent(TPEN.eventDispatcher, "tpen-user-projects-loaded", () => {
-            try {
-                this.projects = TPEN.userProjects
-            } catch (error) {
-                const status = error.status ?? 500
-                const text = error.statusText ?? error.message ?? "Internal Error"
-                TPEN.eventDispatcher.dispatch('tpen-toast', {
-                    message: `Error fetching projects: ${text}`,
-                    status: status
-                })
-                this.shadowRoot.getElementById('projectsListView').innerHTML = `No projects found`
-            }
+            this.projects = TPEN.userProjects
         })
         TPEN.attachAuthentication(this)
 
@@ -166,62 +157,77 @@ export default class ProjectsListNavigation extends HTMLElement {
 
     /**
      * Updates the project list in the DOM. Handles async permission checks.
+     * Catches any errors during rendering and shows an error message.
      */
     async updateList() {
-        const root = this.shadowRoot
-        let list = root.getElementById('projectsListView')
-        if (!this.#projects?.length) {
-            const welcome = document.createElement('section')
-            welcome.className = 'welcome-message'
-            welcome.innerHTML = `
-                    <p><strong>Welcome to TPEN!</strong></p>
-                    <p>Get started by creating your first project or importing a manuscript.</p>
-                    <ul class="welcome-list">
-                        <li aria-label="View Tutorials"><span aria-hidden="true">📚</span> <a href="https://three.t-pen.org/category/tutorials/" target="_blank" rel="noopener noreferrer">View Tutorials</a></li>
-                        <li aria-label="Frequently Asked Questions"><span aria-hidden="true">❓</span> <a href="https://three.t-pen.org/faq/" target="_blank" rel="noopener noreferrer">Frequently Asked Questions</a></li>
-                        <li aria-label="Find IIIF Resources"><span aria-hidden="true">🖼️</span> <a href="https://iiif.io/guides/finding_resources/" target="_blank" rel="noopener noreferrer">Find IIIF Resources</a></li>
-                    </ul>
-            `
-            if (list) list.replaceWith(welcome)
-            else {
+        try {
+            const root = this.shadowRoot
+            let list = root.getElementById('projectsListView')
+            if (!this.#projects?.length) {
+                const welcome = document.createElement('section')
+                welcome.className = 'welcome-message'
+                welcome.innerHTML = `
+                        <p><strong>Welcome to TPEN!</strong></p>
+                        <p>Get started by creating your first project or importing a manuscript.</p>
+                        <ul class="welcome-list">
+                            <li aria-label="View Tutorials"><span aria-hidden="true">📚</span> <a href="https://three.t-pen.org/category/tutorials/" target="_blank" rel="noopener noreferrer">View Tutorials</a></li>
+                            <li aria-label="Frequently Asked Questions"><span aria-hidden="true">❓</span> <a href="https://three.t-pen.org/faq/" target="_blank" rel="noopener noreferrer">Frequently Asked Questions</a></li>
+                            <li aria-label="Find IIIF Resources"><span aria-hidden="true">🖼️</span> <a href="https://iiif.io/guides/finding_resources/" target="_blank" rel="noopener noreferrer">Find IIIF Resources</a></li>
+                        </ul>
+                `
+                if (list) list.replaceWith(welcome)
+                else {
+                    const existingWelcome = root.querySelector('section.welcome-message')
+                    if (existingWelcome) existingWelcome.replaceWith(welcome)
+                    else root.appendChild(welcome)
+                }
+                return
+            }
+            // Ensure the list element exists when we have projects
+            if (!list) {
+                list = document.createElement('ol')
+                list.id = 'projectsListView'
+                if (this.classList.contains('unbounded')) list.classList.add('unbounded')
                 const existingWelcome = root.querySelector('section.welcome-message')
-                if (existingWelcome) existingWelcome.replaceWith(welcome)
-                else root.appendChild(welcome)
+                if (existingWelcome) existingWelcome.replaceWith(list)
+                else root.appendChild(list)
+            } else {
+                list.innerHTML = ""
             }
-            return
-        }
-        // Ensure the list element exists when we have projects
-        if (!list) {
-            list = document.createElement('ol')
-            list.id = 'projectsListView'
-            if (this.classList.contains('unbounded')) list.classList.add('unbounded')
-            const existingWelcome = root.querySelector('section.welcome-message')
-            if (existingWelcome) existingWelcome.replaceWith(list)
-            else root.appendChild(list)
-        } else {
-            list.innerHTML = ""
-        }
-        const projectItems = []
-        for (const project of this.#projects) {
-            let manageLink = ``
-            try {
-                await (new Project(project._id).fetch())
-                const isManageProjectPermission = CheckPermissions.checkEditAccess('PROJECT')
-                manageLink = isManageProjectPermission ? `<a title="Manage Project" part="project-opt" href="/project/manage?projectID=${project._id}" aria-label="Manage Project">⚙</a>` : ``
-            } catch (error) {
-                console.warn(`Failed to check permissions for project ${project._id}:`, error)
+            const projectItems = []
+            for (const project of this.#projects) {
+                let manageLink = ``
+                try {
+                    await (new Project(project._id).fetch())
+                    const isManageProjectPermission = CheckPermissions.checkEditAccess('PROJECT')
+                    manageLink = isManageProjectPermission ? `<a title="Manage Project" part="project-opt" href="/project/manage?projectID=${project._id}" aria-label="Manage Project">⚙</a>` : ``
+                } catch (error) {
+                    console.warn(`Failed to check permissions for project ${project._id}:`, error)
+                    // Continue rendering the project even if permission check fails
+                }
+                projectItems.push(`
+                    <li tpen-project-id="${project._id}">
+                        <a title="See Project Details" class="static" href="/project?projectID=${project._id}" part="project-link">
+                            ${project.label ?? project.title}
+                        </a>
+                        ${manageLink}
+                    </li>
+                `)
             }
-            projectItems.push(`
-
-                <li tpen-project-id="${project._id}">
-                    <a title="See Project Details" class="static" href="/project?projectID=${project._id}" part="project-link">
-                        ${project.label ?? project.title}
-                    </a>
-                    ${manageLink}
-                </li>
-            `)
+            list.innerHTML = projectItems.join('')
+        } catch (error) {
+            // Handle any errors that occur during updateList
+            console.error('Error updating project list:', error)
+            const root = this.shadowRoot
+            const list = root.getElementById('projectsListView')
+            if (list) {
+                list.innerHTML = `<li>Failed to load projects</li>`
+            }
+            TPEN.eventDispatcher.dispatch('tpen-toast', {
+                message: `Failed to load projects: ${error.message}`,
+                status: 500
+            })
         }
-        list.innerHTML = projectItems.join('')
     }
 }
 
