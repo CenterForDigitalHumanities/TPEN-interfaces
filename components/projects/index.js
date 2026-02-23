@@ -96,7 +96,7 @@ export default class ProjectsList extends HTMLElement {
         this.querySelectorAll('.delete-btn').forEach(button => {
             this.renderCleanup.onElement(button, "click", (event) => {
                 const projectId = event.target.getAttribute("data-project-id")
-                alert(`Delete not implemented for project ID: ${projectId}`)
+                TPEN.eventDispatcher.dispatch('tpen-alert', { message: `Delete not implemented for project ID: ${projectId}` })
             })
         })
     }

@@ -285,13 +285,21 @@ class ManagePages extends HTMLElement {
                             })
                             return
                         }
-                        if (!confirm("This Page will be removed from this layer and deleted.  This action cannot be undone.")) return
-                        layerCardOuter.querySelector(".layer-pages").removeChild(el)
-                        layers[layerIndex].pages.splice(el.dataset.index, 1)
-                        mainParent.shadowRoot.querySelectorAll(`.layer-card-outer[data-index="${layerIndex}"] .layer-page`).forEach((card, newIndex) => {
-                            card.dataset.index = newIndex
-                        })
-                        layerPagesCard = mainParent.shadowRoot.querySelectorAll(`.layer-card-outer[data-index="${layerIndex}"] .layer-page`)
+                        const onPositive = () => {
+                            TPEN.eventDispatcher.off('tpen-confirm-negative', onNegative)
+                            layerCardOuter.querySelector(".layer-pages").removeChild(el)
+                            layers[layerIndex].pages.splice(el.dataset.index, 1)
+                            mainParent.shadowRoot.querySelectorAll(`.layer-card-outer[data-index="${layerIndex}"] .layer-page`).forEach((card, newIndex) => {
+                                card.dataset.index = newIndex
+                            })
+                            layerPagesCard = mainParent.shadowRoot.querySelectorAll(`.layer-card-outer[data-index="${layerIndex}"] .layer-page`)
+                        }
+                        const onNegative = () => {
+                            TPEN.eventDispatcher.off('tpen-confirm-positive', onPositive)
+                        }
+                        TPEN.eventDispatcher.one('tpen-confirm-positive', onPositive)
+                        TPEN.eventDispatcher.one('tpen-confirm-negative', onNegative)
+                        TPEN.eventDispatcher.dispatch('tpen-confirm', { message: "This Page will be removed from this layer and deleted.  This action cannot be undone." })
                     })
                 })
 

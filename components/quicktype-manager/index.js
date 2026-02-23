@@ -357,11 +357,18 @@ class QuickTypeManager extends HTMLElement {
         // Clear all
         const clearBtn = this.shadowRoot.querySelector('#clear-btn')
         this.renderCleanup.onElement(clearBtn, 'click', () => {
-            if (confirm('Are you sure you want to clear all shortcuts?')) {
+            const onPositive = () => {
+                TPEN.eventDispatcher.off('tpen-confirm-negative', onNegative)
                 this._shortcuts = []
                 this.render()
                 this.addEventListeners()
             }
+            const onNegative = () => {
+                TPEN.eventDispatcher.off('tpen-confirm-positive', onPositive)
+            }
+            TPEN.eventDispatcher.one('tpen-confirm-positive', onPositive)
+            TPEN.eventDispatcher.one('tpen-confirm-negative', onNegative)
+            TPEN.eventDispatcher.dispatch('tpen-confirm', { message: 'Are you sure you want to clear all shortcuts?' })
         })
 
         // Save

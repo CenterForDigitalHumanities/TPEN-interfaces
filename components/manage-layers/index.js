@@ -244,24 +244,31 @@ class ProjectLayers extends HTMLElement {
                     })
                     return
                 }
-                if (!confirm("This Layer will be deleted and the Pages will no longer be a part of this project.  This action cannot be undone.")) return
                 const url = event.target.getAttribute("data-layer-id")
                 const layerId = url.substring(url.lastIndexOf("/") + 1)
-
-                fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/layer/${layerId}`, {
-                    method: "DELETE",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${TPEN.getAuthorization()}`
-                    }
-                })
-                .then(response => {
-                    return TPEN.eventDispatcher.dispatch("tpen-toast",
-                    response.ok ?
-                        { status: "info", message: 'Successfully Deleted Layer' } :
-                        { status: "error", message: 'Error Deleting Layer' }
-                    )
-                })
+                const onPositive = () => {
+                    TPEN.eventDispatcher.off('tpen-confirm-negative', onNegative)
+                    fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/layer/${layerId}`, {
+                        method: "DELETE",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${TPEN.getAuthorization()}`
+                        }
+                    })
+                    .then(response => {
+                        return TPEN.eventDispatcher.dispatch("tpen-toast",
+                        response.ok ?
+                            { status: "info", message: 'Successfully Deleted Layer' } :
+                            { status: "error", message: 'Error Deleting Layer' }
+                        )
+                    })
+                }
+                const onNegative = () => {
+                    TPEN.eventDispatcher.off('tpen-confirm-positive', onPositive)
+                }
+                TPEN.eventDispatcher.one('tpen-confirm-positive', onPositive)
+                TPEN.eventDispatcher.one('tpen-confirm-negative', onNegative)
+                TPEN.eventDispatcher.dispatch('tpen-confirm', { message: "This Layer will be deleted and the Pages will no longer be a part of this project.  This action cannot be undone." })
             })
         })
 

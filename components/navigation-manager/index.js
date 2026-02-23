@@ -101,7 +101,8 @@ class NavigationManager extends HTMLElement {
     }
 
     resetToDefaults() {
-        if (confirm('Reset all navigation URLs to defaults?')) {
+        const onPositive = () => {
+            TPEN.eventDispatcher.off('tpen-confirm-negative', onNegative)
             this._navigation = {
                 transcribe: '',
                 defineLines: '',
@@ -110,6 +111,12 @@ class NavigationManager extends HTMLElement {
             this.render()
             this.addEventListeners()
         }
+        const onNegative = () => {
+            TPEN.eventDispatcher.off('tpen-confirm-positive', onPositive)
+        }
+        TPEN.eventDispatcher.one('tpen-confirm-positive', onPositive)
+        TPEN.eventDispatcher.one('tpen-confirm-negative', onNegative)
+        TPEN.eventDispatcher.dispatch('tpen-confirm', { message: 'Reset all navigation URLs to defaults?' })
     }
 
     render() {

@@ -466,7 +466,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       }, 500)
       this.#pendingTimeouts.add(timeoutId)
     })
-    this.renderCleanup.onElement(deleteAllBtn, "click", async (e) => await this.deleteAllAnnotations(e))
+    this.renderCleanup.onElement(deleteAllBtn, "click", (e) => this.deleteAllAnnotations(e))
     this.renderCleanup.onWindow('beforeunload', (ev) => {
       if (this.#resolvedAnnotationPage?.$isDirty) {
         ev.preventDefault()
@@ -715,8 +715,16 @@ class AnnotoriousAnnotator extends HTMLElement {
         srcDown: "../interfaces/annotator/images/transcribe.png",
         onClick: (e) => {
             if (this.#resolvedAnnotationPage?.$isDirty) {
-              if (confirm("Stop identifying lines and go transcribe?  Unsaved changes will be lost.")) 
-                location.href = `/transcribe?projectID=${TPEN.activeProject._id}&pageID=${this.#annotationPageID}`  
+              const onPositive = () => {
+                TPEN.eventDispatcher.off('tpen-confirm-negative', onNegative)
+                location.href = `/transcribe?projectID=${TPEN.activeProject._id}&pageID=${this.#annotationPageID}`
+              }
+              const onNegative = () => {
+                TPEN.eventDispatcher.off('tpen-confirm-positive', onPositive)
+              }
+              TPEN.eventDispatcher.one('tpen-confirm-positive', onPositive)
+              TPEN.eventDispatcher.one('tpen-confirm-negative', onNegative)
+              TPEN.eventDispatcher.dispatch('tpen-confirm', { message: "Stop identifying lines and go transcribe?  Unsaved changes will be lost." })
             }
             else {
               location.href = `/transcribe?projectID=${TPEN.activeProject._id}&pageID=${this.#annotationPageID}`  
@@ -808,13 +816,18 @@ class AnnotoriousAnnotator extends HTMLElement {
           _this.#pendingTimeouts.delete(timeoutId)
           // Timeout required in order to allow the click-and-focus native functionality to complete.
           // Also stops the goofy UX for naturally slow clickers.
-          let c = confirm("Are you sure you want to remove this?")
-          if (c) {
+          const onPositive = () => {
+            TPEN.eventDispatcher.off('tpen-confirm-negative', onNegative)
             _this.#annotoriousInstance.removeAnnotation(originalAnnotation)
             _this.#resolvedAnnotationPage.$isDirty = true
-          } else {
+          }
+          const onNegative = () => {
+            TPEN.eventDispatcher.off('tpen-confirm-positive', onPositive)
             _this.#annotoriousInstance.cancelSelected()
           }
+          TPEN.eventDispatcher.one('tpen-confirm-positive', onPositive)
+          TPEN.eventDispatcher.one('tpen-confirm-negative', onNegative)
+          TPEN.eventDispatcher.dispatch('tpen-confirm', { message: "Are you sure you want to remove this?" })
         }, 500)
         _this.#pendingTimeouts.add(timeoutId)
       }
@@ -1143,26 +1156,34 @@ class AnnotoriousAnnotator extends HTMLElement {
    * Use Annotorious to delete all known Annotations
    * https://annotorious.dev/api-reference/openseadragon-annotator/#clearannotations
    */
-  async deleteAllAnnotations() {
-    if (!confirm('This will remove all Annotations and will take effect immediately. This action cannot be undone.')) return
-    const deleteAllBtn = this.shadowRoot.getElementById("deleteAllBtn")
-    deleteAllBtn.setAttribute("disabled", "true")
-    deleteAllBtn.textContent = "deleting.  please wait..."
-    this.#annotoriousInstance.clearAnnotations()
-    this.#resolvedAnnotationPage.$isDirty = true
-    try {
-      await this.saveAnnotations()
-      await this.clearColumnsServerSide()
-    } catch (err) {
-      console.error("Could not delete all annotations.", err)
-      TPEN.eventDispatcher.dispatch("tpen-toast", {
-        message: "Could not delete all annotations.",
-        status: "error"
-      })
-    } finally {
-      deleteAllBtn.removeAttribute("disabled")
-      deleteAllBtn.textContent = "Delete All Annotations"
+  deleteAllAnnotations() {
+    const onPositive = () => {
+      TPEN.eventDispatcher.off('tpen-confirm-negative', onNegative)
+      const deleteAllBtn = this.shadowRoot.getElementById("deleteAllBtn")
+      deleteAllBtn.setAttribute("disabled", "true")
+      deleteAllBtn.textContent = "deleting.  please wait..."
+      this.#annotoriousInstance.clearAnnotations()
+      this.#resolvedAnnotationPage.$isDirty = true
+      this.saveAnnotations()
+        .then(() => this.clearColumnsServerSide())
+        .catch(err => {
+          console.error("Could not delete all annotations.", err)
+          TPEN.eventDispatcher.dispatch("tpen-toast", {
+            message: "Could not delete all annotations.",
+            status: "error"
+          })
+        })
+        .finally(() => {
+          deleteAllBtn.removeAttribute("disabled")
+          deleteAllBtn.textContent = "Delete All Annotations"
+        })
     }
+    const onNegative = () => {
+      TPEN.eventDispatcher.off('tpen-confirm-positive', onPositive)
+    }
+    TPEN.eventDispatcher.one('tpen-confirm-positive', onPositive)
+    TPEN.eventDispatcher.one('tpen-confirm-negative', onNegative)
+    TPEN.eventDispatcher.dispatch('tpen-confirm', { message: 'This will remove all Annotations and will take effect immediately. This action cannot be undone.' })
   }
 
   /**

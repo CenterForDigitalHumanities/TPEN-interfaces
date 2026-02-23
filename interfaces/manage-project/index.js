@@ -46,28 +46,36 @@ TPEN.eventDispatcher.on('tpen-project-loaded', () => {
     applyProjectContext()
 })
 
-document.getElementById('export-project-btn').addEventListener('click', async () => {
-    if (!confirm('This will publish a new Manifest which will be available to the public.')) return
-    await fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/manifest`, {
-        method: 'GET',
-        headers: {
-            'Authorization': `Bearer ${TPEN.getAuthorization()}`
-        }
-    }).then(response => {
-        return TPEN.eventDispatcher.dispatch("tpen-toast", 
-        response.ok ? 
-            { status: "info", message: 'Successfully Exported Project Manifest' } : 
-            { status: "error", message: 'Error Exporting Project Manifest' }
-        )
-    }).catch(error => {
-        console.error('Error exporting project manifest:', error)
-    })
+document.getElementById('export-project-btn').addEventListener('click', () => {
+    const onPositive = () => {
+        TPEN.eventDispatcher.off('tpen-confirm-negative', onNegative)
+        fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/manifest`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${TPEN.getAuthorization()}`
+            }
+        }).then(response => {
+            return TPEN.eventDispatcher.dispatch("tpen-toast", 
+            response.ok ? 
+                { status: "info", message: 'Successfully Exported Project Manifest' } : 
+                { status: "error", message: 'Error Exporting Project Manifest' }
+            )
+        }).catch(error => {
+            console.error('Error exporting project manifest:', error)
+        })
+    }
+    const onNegative = () => {
+        TPEN.eventDispatcher.off('tpen-confirm-positive', onPositive)
+    }
+    TPEN.eventDispatcher.one('tpen-confirm-positive', onPositive)
+    TPEN.eventDispatcher.one('tpen-confirm-negative', onNegative)
+    TPEN.eventDispatcher.dispatch('tpen-confirm', { message: 'This will publish a new Manifest which will be available to the public.' })
 })
 
 function applyProjectContext() {
     const isManageProjectPermission = CheckPermissions.checkEditAccess('PROJECT')
     if(!isManageProjectPermission) {
-        alert("You do not have permissions to use this page.")
+        TPEN.eventDispatcher.dispatch('tpen-alert', { message: "You do not have permissions to use this page." })
         document.location.href = `/project?projectID=${TPEN.screen.projectInQuery}`
     }
     document.querySelector('tpen-project-details').setAttribute('tpen-project-id', TPEN.screen.projectInQuery)

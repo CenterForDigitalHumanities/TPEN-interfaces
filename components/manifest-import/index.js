@@ -60,13 +60,21 @@ class ManifestImport extends HTMLElement {
         // For multiple manifests, require explicit user confirmation before starting import
         if (this.#manifests.length > 1) {
             const confirmMessage = `You are about to import ${this.#manifests.length} manifests as new projects. Do you want to continue?`
-            const proceed = window.confirm(confirmMessage)
-            if (!proceed) {
+            const onPositive = () => {
+                TPEN.eventDispatcher.off('tpen-confirm-negative', onNegative)
+                this.renderCreating()
+                this.#createProjects()
+            }
+            const onNegative = () => {
+                TPEN.eventDispatcher.off('tpen-confirm-positive', onPositive)
                 if (this.shadowRoot) {
                     this.shadowRoot.innerHTML = '<p>Manifest import canceled by user.</p>'
                 }
-                return
             }
+            TPEN.eventDispatcher.one('tpen-confirm-positive', onPositive)
+            TPEN.eventDispatcher.one('tpen-confirm-negative', onNegative)
+            TPEN.eventDispatcher.dispatch('tpen-confirm', { message: confirmMessage })
+            return
         }
         this.renderCreating()
         await this.#createProjects()

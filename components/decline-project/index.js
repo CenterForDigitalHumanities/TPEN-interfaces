@@ -87,45 +87,53 @@ class DeclineInvite extends HTMLElement {
     }
 
     declineInvitation(collaboratorID, projectID) {
-        if (!confirm("You are declining a chance to be a part of this TPEN3 project.")) return
-        let redir = true
-        const declineBtn = this.shadowRoot.getElementById("declineBtn")
-        declineBtn.setAttribute("disabled", "disabled")
-        declineBtn.setAttribute("value", "declining...")
-        fetch(`${TPEN.servicesURL}/project/${this.#project}/collaborator/${this.#user}/decline`)
-        .then(resp => {
-            if (resp.ok) return resp.text()
-            redir = false
-            return resp.json()
-        })
-        .then(message => {
-            let userMessage = (typeof message === "string") ? message : message?.message
-            if (redir) {
+        const onPositive = () => {
+            TPEN.eventDispatcher.off('tpen-confirm-negative', onNegative)
+            let redir = true
+            const declineBtn = this.shadowRoot.getElementById("declineBtn")
+            declineBtn.setAttribute("disabled", "disabled")
+            declineBtn.setAttribute("value", "declining...")
+            fetch(`${TPEN.servicesURL}/project/${this.#project}/collaborator/${this.#user}/decline`)
+            .then(resp => {
+                if (resp.ok) return resp.text()
+                redir = false
+                return resp.json()
+            })
+            .then(message => {
+                let userMessage = (typeof message === "string") ? message : message?.message
+                if (redir) {
+                    this.shadowRoot.innerHTML = `
+                        <h3> ${userMessage} </h3>
+                    `
+                    setTimeout(() => {
+                      document.location.href = TPEN.TPEN3URL
+                    }, 3000)
+                    return
+                }
                 this.shadowRoot.innerHTML = `
-                    <h3> ${userMessage} </h3>
+                    <h3>There was an error declining the invitation.</h3>
+                    <p>
+                        The message below has more details.
+                        Refresh the page to try again or contact the TPEN3 Administrators.  
+                    </p>
+                    <code> ${userMessage} <code>
                 `
-                setTimeout(() => {
-                  document.location.href = TPEN.TPEN3URL
-                }, 3000)
-                return
-            }
-            this.shadowRoot.innerHTML = `
-                <h3>There was an error declining the invitation.</h3>
-                <p>
-                    The message below has more details.
-                    Refresh the page to try again or contact the TPEN3 Administrators.  
-                </p>
-                <code> ${userMessage} <code>
-            `
-        })
-        .catch(err => {
-             this.shadowRoot.innerHTML = `
-                <h3> 
-                    There was an error declining the invitation.  Refresh the page to try again 
-                    or contact the TPEN3 Administrators. 
-                </h3>
-            `
-        })
+            })
+            .catch(err => {
+                 this.shadowRoot.innerHTML = `
+                    <h3> 
+                        There was an error declining the invitation.  Refresh the page to try again 
+                        or contact the TPEN3 Administrators. 
+                    </h3>
+                `
+            })
+        }
+        const onNegative = () => {
+            TPEN.eventDispatcher.off('tpen-confirm-positive', onPositive)
+        }
+        TPEN.eventDispatcher.one('tpen-confirm-positive', onPositive)
+        TPEN.eventDispatcher.one('tpen-confirm-negative', onNegative)
+        TPEN.eventDispatcher.dispatch('tpen-confirm', { message: "You are declining a chance to be a part of this TPEN3 project." })
     }
 }
 
