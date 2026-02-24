@@ -9,7 +9,7 @@ import { CleanupRegistry } from '../../../utilities/CleanupRegistry.js'
  */
 class ConfirmContainer extends HTMLElement {
     #screenLockingSection
-    #confirmElem
+    #confirmElems = new Map()
     /** @type {CleanupRegistry} Registry for cleanup handlers */
     cleanup = new CleanupRegistry()
 
@@ -20,13 +20,18 @@ class ConfirmContainer extends HTMLElement {
     }
 
     connectedCallback() {
-        const confirmHandler = ({ detail }) => this.addConfirm(detail?.message, detail?.positiveButtonText, detail.negativeButtonText)
-        const positiveHandler = () => this.#confirmElem?.dismiss()
-        const negativeHandler = () => this.#confirmElem?.dismiss()
+        const confirmHandler = ({ detail }) => this.addConfirm(detail?.message, detail?.positiveButtonText, detail?.negativeButtonText, detail?.confirmId)
+        const dismissHandler = ({ detail }) => {
+            const id = detail?.confirmId
+            if (!id) return
+            const elem = this.#confirmElems.get(id)
+            elem?.dismiss()
+            this.#confirmElems.delete(id)
+        }
 
         this.cleanup.onEvent(eventDispatcher, 'tpen-confirm', confirmHandler)
-        this.cleanup.onEvent(eventDispatcher, 'tpen-confirm-positive', positiveHandler)
-        this.cleanup.onEvent(eventDispatcher, 'tpen-confirm-negative', negativeHandler)
+        this.cleanup.onEvent(eventDispatcher, 'tpen-confirm-positive', dismissHandler)
+        this.cleanup.onEvent(eventDispatcher, 'tpen-confirm-negative', dismissHandler)
     }
 
     disconnectedCallback() {
@@ -39,11 +44,13 @@ class ConfirmContainer extends HTMLElement {
      * @params message {String} A message to show in the confirm dialogue.
      * @params positiveButtonText {String} The text label for the positive confirm button.
      * @params negativeButtonText {String} The text label for the negative confirm button.
+     * @params confirmId {String} A unique identifier for this confirm dialog (used to prevent race conditions).
      */
-    addConfirm(message, positiveButtonText, negativeButtonText) {
+    addConfirm(message, positiveButtonText, negativeButtonText, confirmId) {
         if (!message || typeof message !== 'string') return
         if (!positiveButtonText || typeof positiveButtonText !== 'string') positiveButtonText = 'Yes'
         if (!negativeButtonText || typeof negativeButtonText !== 'string') negativeButtonText = 'No'
+        if (!confirmId || typeof confirmId !== 'string') confirmId = crypto.randomUUID()
         const { matches: motionOK } = window.matchMedia('(prefers-reduced-motion: no-preference)')
         const buttonContainer = document.createElement("div")
         buttonContainer.classList.add("button-container")
@@ -55,10 +62,10 @@ class ConfirmContainer extends HTMLElement {
         confirmButton.textContent = positiveButtonText
         denyButton.textContent = negativeButtonText
         const handlePositive = (e) => {
-            eventDispatcher.dispatch("tpen-confirm-positive")
+            eventDispatcher.dispatch("tpen-confirm-positive", { confirmId })
         }
         const handleNegative = (e) => {
-            eventDispatcher.dispatch("tpen-confirm-negative")
+            eventDispatcher.dispatch("tpen-confirm-negative", { confirmId })
         }
         confirmButton.addEventListener('click', handlePositive)
         denyButton.addEventListener('click', handleNegative)
@@ -66,7 +73,7 @@ class ConfirmContainer extends HTMLElement {
         buttonContainer.appendChild(denyButton)
         confirmElem.appendChild(buttonContainer)
         this.#screenLockingSection.appendChild(confirmElem)
-        this.#confirmElem = confirmElem
+        this.#confirmElems.set(confirmId, confirmElem)
         confirmElem.show()
     }
 

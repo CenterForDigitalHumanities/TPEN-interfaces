@@ -12,18 +12,22 @@
         <script>
             confirmer.onclick = async () => {
                 import('../../../api/events.js').then(module => {
+                    const confirmId = crypto.randomUUID();
                     const message = `Is this the confirm dialogue you want?`
                     const confirm = {
                         message,
                         positiveButtonText: 'It is!',
-                        negativeButtonText: 'Ew, no.'
+                        negativeButtonText: 'Ew, no.',
+                        confirmId
                     }
-                    const positiveCallback = () => {
+                    const positiveCallback = (ev) => {
+                        if (ev.detail?.confirmId !== confirmId) return
                         console.log("We are glad that it is the confirm you want.")
                         module.eventDispatcher.off('tpen-confirm-positive', positiveCallback)
                         module.eventDispatcher.off('tpen-confirm-negative', negativeCallback)
                     }
-                    const negativeCallback = () => {
+                    const negativeCallback = (ev) => {
+                        if (ev.detail?.confirmId !== confirmId) return
                         console.log("We are sad that it is not the confirm you want.")
                         module.eventDispatcher.off('tpen-confirm-negative', negativeCallback)
                         module.eventDispatcher.off('tpen-confirm-positive', positiveCallback)
