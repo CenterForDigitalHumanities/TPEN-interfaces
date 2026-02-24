@@ -29,7 +29,6 @@ class Alert extends HTMLElement {
         const showTimer = setTimeout(() => {
             this.closest(".alert-area").classList.add("show")
             this.classList.add('show')
-            document.querySelector("body").style.overflow = "hidden"
         }, 1)
         this.cleanup.add(() => clearTimeout(showTimer))
         eventDispatcher.dispatch("tpen-alert-activated")
@@ -42,7 +41,6 @@ class Alert extends HTMLElement {
     dismiss() {
         this.classList.remove('show')
         this.closest(".alert-area")?.classList.remove("show")
-        document.querySelector("body").style.overflow = "auto"
         const removeTimer = setTimeout(() => {
             this.remove()
         }, 500)
