@@ -2,6 +2,7 @@ import TPEN from "../../api/TPEN.js"
 import CheckPermissions from "../../components/check-permissions/checkPermissions.js"
 import { onProjectReady } from "../../utilities/projectReady.js"
 import { CleanupRegistry } from "../../utilities/CleanupRegistry.js"
+import { confirmAction } from "../../api/events.js"
 
 /**
  * ManagePages - Provides UI for managing pages within a layer including reordering, editing labels, and deletion.
@@ -285,21 +286,19 @@ class ManagePages extends HTMLElement {
                             })
                             return
                         }
-                        const onPositive = () => {
-                            TPEN.eventDispatcher.off('tpen-confirm-negative', onNegative)
-                            layerCardOuter.querySelector(".layer-pages").removeChild(el)
-                            layers[layerIndex].pages.splice(el.dataset.index, 1)
-                            mainParent.shadowRoot.querySelectorAll(`.layer-card-outer[data-index="${layerIndex}"] .layer-page`).forEach((card, newIndex) => {
-                                card.dataset.index = newIndex
-                            })
-                            layerPagesCard = mainParent.shadowRoot.querySelectorAll(`.layer-card-outer[data-index="${layerIndex}"] .layer-page`)
-                        }
-                        const onNegative = () => {
-                            TPEN.eventDispatcher.off('tpen-confirm-positive', onPositive)
-                        }
-                        TPEN.eventDispatcher.one('tpen-confirm-positive', onPositive)
-                        TPEN.eventDispatcher.one('tpen-confirm-negative', onNegative)
-                        TPEN.eventDispatcher.dispatch('tpen-confirm', { message: "This Page will be removed from this layer and deleted.  This action cannot be undone." })
+                        confirmAction(
+                            "This Page will be removed from this layer and deleted. This action cannot be undone.",
+                            () => {
+                                layerCardOuter.querySelector(".layer-pages").removeChild(el)
+                                layers[layerIndex].pages.splice(el.dataset.index, 1)
+                                mainParent.shadowRoot.querySelectorAll(`.layer-card-outer[data-index="${layerIndex}"] .layer-page`).forEach((card, newIndex) => {
+                                    card.dataset.index = newIndex
+                                })
+                                layerPagesCard = mainParent.shadowRoot.querySelectorAll(`.layer-card-outer[data-index="${layerIndex}"] .layer-page`)
+                            },
+                            null,
+                            { positiveButtonText: 'Delete', negativeButtonText: 'Cancel' }
+                        )
                     })
                 })
 

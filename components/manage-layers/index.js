@@ -3,6 +3,7 @@ import "../../components/manage-pages/index.js"
 import CheckPermissions from "../../components/check-permissions/checkPermissions.js"
 import { onProjectReady } from "../../utilities/projectReady.js"
 import { CleanupRegistry } from "../../utilities/CleanupRegistry.js"
+import { confirmAction } from "../../api/events.js"
 
 /**
  * ProjectLayers - Manages project layers including creation, deletion, and page management.
@@ -246,29 +247,27 @@ class ProjectLayers extends HTMLElement {
                 }
                 const url = event.target.getAttribute("data-layer-id")
                 const layerId = url.substring(url.lastIndexOf("/") + 1)
-                const onPositive = () => {
-                    TPEN.eventDispatcher.off('tpen-confirm-negative', onNegative)
-                    fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/layer/${layerId}`, {
-                        method: "DELETE",
-                        headers: {
-                            "Content-Type": "application/json",
-                            Authorization: `Bearer ${TPEN.getAuthorization()}`
-                        }
-                    })
-                    .then(response => {
-                        return TPEN.eventDispatcher.dispatch("tpen-toast",
-                        response.ok ?
-                            { status: "info", message: 'Successfully Deleted Layer' } :
-                            { status: "error", message: 'Error Deleting Layer' }
-                        )
-                    })
-                }
-                const onNegative = () => {
-                    TPEN.eventDispatcher.off('tpen-confirm-positive', onPositive)
-                }
-                TPEN.eventDispatcher.one('tpen-confirm-positive', onPositive)
-                TPEN.eventDispatcher.one('tpen-confirm-negative', onNegative)
-                TPEN.eventDispatcher.dispatch('tpen-confirm', { message: "This Layer will be deleted and the Pages will no longer be a part of this project.  This action cannot be undone." })
+                confirmAction(
+                    "Delete this layer and all its pages? This action cannot be undone.",
+                    () => {
+                        fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/layer/${layerId}`, {
+                            method: "DELETE",
+                            headers: {
+                                "Content-Type": "application/json",
+                                Authorization: `Bearer ${TPEN.getAuthorization()}`
+                            }
+                        })
+                        .then(response => {
+                            return TPEN.eventDispatcher.dispatch("tpen-toast",
+                            response.ok ?
+                                { status: "info", message: 'Successfully Deleted Layer' } :
+                                { status: "error", message: 'Error Deleting Layer' }
+                            )
+                        })
+                    },
+                    null,
+                    { positiveButtonText: 'Delete', negativeButtonText: 'Cancel' }
+                )
             })
         })
 

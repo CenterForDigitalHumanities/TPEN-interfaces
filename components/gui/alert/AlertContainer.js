@@ -9,6 +9,7 @@ import { CleanupRegistry } from '../../../utilities/CleanupRegistry.js'
  */
 class AlertContainer extends HTMLElement {
     #screenLockingSection
+    #keydownHandler
     /** @type {CleanupRegistry} Registry for cleanup handlers */
     cleanup = new CleanupRegistry()
 
@@ -36,21 +37,46 @@ class AlertContainer extends HTMLElement {
     addAlert(message, buttonText) {
         if (!message || typeof message !== 'string') return
         if (!buttonText || typeof buttonText !== 'string') buttonText = 'OK'
-        const { matches: motionOK } = window.matchMedia('(prefers-reduced-motion: no-preference)')
         const alertElem = document.createElement('tpen-alert')
         const okButton = document.createElement('button')
         const buttonContainer = document.createElement('div')
-        buttonContainer.classList.add("button-container")
+        buttonContainer.classList.add('button-container')
         okButton.textContent = buttonText
         alertElem.textContent = message
         const handleOk = (e) => {
-            alertElem.dismiss()
+            this.#dismissAlert(alertElem)
         }
         okButton.addEventListener('click', handleOk)
         buttonContainer.appendChild(okButton)
         alertElem.appendChild(buttonContainer)
         this.#screenLockingSection.appendChild(alertElem)
         alertElem.show()
+
+        // Set focus to button
+        okButton.focus()
+
+        // Attach keyboard handler for Escape and Enter
+        if (this.#keydownHandler) {
+            document.removeEventListener('keydown', this.#keydownHandler)
+        }
+        this.#keydownHandler = (e) => {
+            if (e.key === 'Escape' || e.key === 'Enter') {
+                e.preventDefault()
+                this.#dismissAlert(alertElem)
+            }
+        }
+        document.addEventListener('keydown', this.#keydownHandler)
+    }
+
+    /**
+     * Dismiss an alert and remove keyboard handler.
+     */
+    #dismissAlert(alertElem) {
+        alertElem.dismiss()
+        if (this.#keydownHandler) {
+            document.removeEventListener('keydown', this.#keydownHandler)
+            this.#keydownHandler = null
+        }
     }
 
     render() {
@@ -143,6 +169,11 @@ class AlertContainer extends HTMLElement {
                 background-color: var(--primary-light);
                 outline: var(--primary-color) 1px solid;
                 outline-offset: -1.5px;
+            }
+            .alert-area button:focus-visible {
+                background-color: var(--primary-light);
+                outline: var(--white) 2.5px solid;
+                outline-offset: 1px;
             }
         `
         // This section will take over the screen and lock down screen interaction.  It lives at the top of the viewport.
