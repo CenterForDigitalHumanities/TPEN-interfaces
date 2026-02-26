@@ -295,13 +295,12 @@ class TpenManageColumns extends HTMLElement {
     connectedCallback() {
         TPEN.attachAuthentication(this)
         localStorage.removeItem('annotationsState')
-        const params = new URLSearchParams(window.location.search)
         if (!TPEN.screen.pageInQuery) {
             this.showError("No page id provided")
             return
         }
         this.pageID = `${TPEN.RERUMURL}/id/${TPEN.screen.pageInQuery}`
-        this.projectID = params.get("projectID")
+        this.projectID = TPEN.screen.projectInQuery
         this.annotationPageID = this.pageID.split("/").pop()
         this._unsubProject = onProjectReady(this, this.authgate)
     }

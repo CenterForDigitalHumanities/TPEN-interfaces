@@ -36,10 +36,9 @@ export default class ColumnSelector extends HTMLElement {
         this._unsubProject = onProjectReady(this, this.authgate)
         
         // Listen for column updates to refresh selector
-        this.cleanup.onEvent(eventDispatcher, "tpen-columns-updated", async (event) => {
-            const pageId = new URLSearchParams(location.search).get("pageID")
+        this.cleanup.onEvent(eventDispatcher, "tpen-columns-updated", (event) => {
             // Only refresh if the update is for the current page
-            if (event.detail?.pageId === pageId) {
+            if (event.detail?.pageId === TPEN.screen.pageInQuery) {
                 this.refreshFromProject()
             }
         })
@@ -64,7 +63,7 @@ export default class ColumnSelector extends HTMLElement {
     }
 
     async findColumnsData() {
-        const pageId = new URLSearchParams(location.search).get("pageID")
+        const pageId = TPEN.screen.pageInQuery
         const page = TPEN.activeProject?.layers?.flatMap(layer => layer.pages || []).find(p => p.id.split('/').pop() === pageId)
         this.columns = page?.columns || []
 
@@ -90,7 +89,7 @@ export default class ColumnSelector extends HTMLElement {
     }
 
     refreshFromProject() {
-        const pageId = new URLSearchParams(location.search).get("pageID")
+        const pageId = TPEN.screen.pageInQuery
         const page = TPEN.activeProject?.layers?.flatMap(layer => layer.pages || []).find(p => p.id.split('/').pop() === pageId)
         this.columns = page?.columns || []
 

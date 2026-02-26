@@ -242,9 +242,8 @@ class TpenCreateColumn extends HTMLElement {
     connectedCallback() {
         TPEN.attachAuthentication(this)
         localStorage.removeItem('annotationsState')
-        const params = new URLSearchParams(window.location.search)
-        this.pageID = `${TPEN.RERUMURL}/id/${params.get("pageID")}`
-        this.projectID = params.get("projectID")
+        this.pageID = `${TPEN.RERUMURL}/id/${TPEN.screen.pageInQuery}`
+        this.projectID = TPEN.screen.projectInQuery
         this.annotationPageID = this.pageID.split("/").pop()
         this._unsubProject = onProjectReady(this, this.authgate)
     }
