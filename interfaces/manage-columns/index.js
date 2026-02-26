@@ -30,6 +30,8 @@ class TpenManageColumns extends HTMLElement {
         this.totalIds = []
         this.existingColumns = []
         this.originalColumnLabels = []
+        this.cachedImageInfo = null
+        this.cachedAnnotations = []
 
         this.shadowRoot.innerHTML = `
             <style>
@@ -354,15 +356,16 @@ class TpenManageColumns extends HTMLElement {
     async columnLabelCheck() {
         const AUTO_COLUMN_PREFIX = "Column "
         const AUTO_LABEL_ID_LENGTH = 24
-        this.originalColumnLabels = this.existingColumns.map(col => col.label)
+        this.originalColumnLabels = this.existingColumns.map(col => col.rawLabel ?? col.label)
         this.existingColumns = this.existingColumns.map((col, index) => {
-            const { label } = col
-            const idPart = label.slice(AUTO_COLUMN_PREFIX.length)
-            const isAutoLabel = label.startsWith(AUTO_COLUMN_PREFIX) && 
+            const rawLabel = col.rawLabel ?? col.label
+            const idPart = rawLabel.slice(AUTO_COLUMN_PREFIX.length)
+            const isAutoLabel = rawLabel.startsWith(AUTO_COLUMN_PREFIX) && 
                                new RegExp(`^[a-f\\d]{${AUTO_LABEL_ID_LENGTH}}$`, 'i').test(idPart)
             return {
                 ...col,
-                label: isAutoLabel ? `Unnamed ${index + 1}` : label
+                rawLabel,
+                label: isAutoLabel ? `Unnamed ${index + 1}` : rawLabel
             }
         })
     }
@@ -371,9 +374,17 @@ class TpenManageColumns extends HTMLElement {
         try {
             this.showLoading()
             let { imgUrl, annotations, imgWidth, imgHeight } = await this.fetchPageViewerData(pageID)
+            this.cachedImageInfo = { imgUrl, imgWidth, imgHeight }
+            this.cachedAnnotations = annotations
             await this.renderImage(imgUrl)
             const page = TPEN.activeProject.layers.flatMap(layer => layer.pages || []).find(p => p.id.split('/').pop() === this.annotationPageID)
-            this.existingColumns = page?.columns?.map(column => ({ label: column.label, lines: column.lines })) || []
+            this.existingColumns = page?.columns?.map(column => ({
+                id: column.id ?? column._id,
+                _id: column._id ?? column.id,
+                label: column.label,
+                rawLabel: column.label,
+                lines: column.lines ?? []
+            })) || []
             const assignedAnnotationIds = []
             await this.columnLabelCheck()
             this.existingColumns.forEach(column => {
@@ -391,6 +402,166 @@ class TpenManageColumns extends HTMLElement {
         } catch (e) {
             this.showError(e.message)
         }
+    }
+
+    /**
+     * Reload columns data after server operations without full page refresh.
+     * Re-renders the component from cached data and notifies other components.
+     */
+    async reloadColumns() {
+        try {
+            await this.columnLabelCheck()
+            // Always ensure TPEN.activeProject is source of truth
+            this.syncProjectColumnsFromExisting()
+            this.selectedBoxes = []
+            this.lastClickedIndex = null
+            if (!this.refreshFromCache()) {
+                TPEN.eventDispatcher.dispatch("tpen-toast", {
+                    status: "warning",
+                    message: 'Column update applied. Reload the page if changes are not visible.'
+                })
+            }
+            // Notify other components of column changes
+            TPEN.eventDispatcher.dispatch("tpen-columns-updated", {
+                projectId: this.projectID,
+                pageId: this.annotationPageID
+            })
+        } catch (error) {
+            console.error('Failed to reload columns:', error)
+            TPEN.eventDispatcher.dispatch("tpen-toast", {
+                status: "error",
+                message: 'Failed to reload columns after update'
+            })
+        }
+    }
+
+    getProjectPage() {
+        return TPEN.activeProject?.layers?.flatMap(layer => layer.pages || [])
+            .find(p => p.id.split('/').pop() === this.annotationPageID)
+    }
+
+    generateColumnId(label) {
+        return globalThis.crypto?.randomUUID?.() ?? `column-${Date.now()}-${Math.random().toString(16).slice(2)}`
+    }
+
+    updateColumnsFromResponse(data) {
+        const columns = data?.columns ?? data?.page?.columns ?? data?.data?.columns
+        if (!Array.isArray(columns)) return false
+        this.existingColumns = columns.map(column => ({
+            id: column.id ?? column._id,
+            _id: column._id ?? column.id,
+            label: column.label,
+            rawLabel: column.label,
+            lines: column.lines ?? []
+        }))
+        // Sync to TPEN.activeProject immediately
+        this.syncProjectColumnsFromExisting()
+        return true
+    }
+
+    syncProjectColumnsFromExisting() {
+        const page = this.getProjectPage()
+        if (!page) return
+        const existingColumns = page.columns || []
+        const byLabel = new Map(existingColumns.map(column => [column.label, column]))
+        
+        // Update TPEN.activeProject.layers with synchronized column state
+        page.columns = this.existingColumns.map(column => {
+            const rawLabel = column.rawLabel ?? column.label
+            const existing = byLabel.get(rawLabel)
+            const id = column.id ?? existing?.id ?? existing?._id ?? this.generateColumnId(rawLabel)
+            const updated = {
+                ...existing,
+                id,
+                _id: id,
+                label: rawLabel,
+                lines: [...new Set(column.lines ?? [])]
+            }
+            // Ensure id is consistent
+            if (!updated.id && updated._id) updated.id = updated._id
+            return updated
+        })
+    }
+
+    buildAssignedAnnotations() {
+        const assignedAnnotationIds = []
+        this.existingColumns.forEach(column => {
+            column.lines?.forEach(annoId => assignedAnnotationIds.push({
+                lineId: annoId,
+                columnLabel: column.label
+            }))
+        })
+        return assignedAnnotationIds
+    }
+
+    refreshFromCache() {
+        if (!this.cachedImageInfo || !this.cachedAnnotations) return false
+        const { imgWidth, imgHeight } = this.cachedImageInfo
+        const assignedAnnotationIds = this.buildAssignedAnnotations()
+        this.totalIds = this.cachedAnnotations
+            .filter(anno => !assignedAnnotationIds.find(a => a.lineId === anno.lineId))
+            .map(a => a.lineId)
+        localStorage.setItem('annotationsState', JSON.stringify({
+            remainingIDs: this.totalIds,
+            selectedIDs: []
+        }))
+        this.container.querySelectorAll('.overlayBox').forEach(box => box.remove())
+        this.renderAnnotations(this.cachedAnnotations, imgWidth, imgHeight, assignedAnnotationIds)
+        this.restoreAnnotationState()
+        return true
+    }
+
+    mergeColumnsLocal(newLabel, columnIndexes) {
+        const mergeIndexes = [...new Set(columnIndexes)].filter(i => i !== '').sort((a, b) => b - a)
+        const mergedLines = []
+        mergeIndexes.forEach(index => {
+            const column = this.existingColumns[index]
+            if (column?.lines?.length) mergedLines.push(...column.lines)
+        })
+        const remaining = this.existingColumns.filter((_, index) => !mergeIndexes.includes(index))
+        const newId = this.generateColumnId(newLabel)
+        remaining.push({
+            id: newId,
+            _id: newId,
+            label: newLabel,
+            rawLabel: newLabel,
+            lines: [...new Set(mergedLines)]
+        })
+        this.existingColumns = remaining
+        // Sync to TPEN immediately
+        this.syncProjectColumnsFromExisting()
+    }
+
+    extendColumnLocal(columnLabel, annotationIdsToAdd) {
+        const targetIndex = this.existingColumns.findIndex(col => col.label === columnLabel || col.rawLabel === columnLabel)
+        if (targetIndex === -1) return
+        const existing = this.existingColumns[targetIndex]
+        const merged = new Set([...(existing.lines ?? []), ...annotationIdsToAdd])
+        this.existingColumns[targetIndex] = {
+            ...existing,
+            lines: [...merged]
+        }
+        // Sync to TPEN immediately
+        this.syncProjectColumnsFromExisting()
+    }
+
+    createColumnLocal(columnLabel, annotationIds) {
+        const newId = this.generateColumnId(columnLabel)
+        this.existingColumns.push({
+            id: newId,
+            _id: newId,
+            label: columnLabel,
+            rawLabel: columnLabel,
+            lines: [...annotationIds]
+        })
+        // Sync to TPEN immediately
+        this.syncProjectColumnsFromExisting()
+    }
+
+    clearColumnsLocal() {
+        this.existingColumns = []
+        // Sync to TPEN immediately
+        this.syncProjectColumnsFromExisting()
     }
 
     handleModeChange() {
@@ -528,7 +699,12 @@ class TpenManageColumns extends HTMLElement {
                 TPEN.eventDispatcher.dispatch("tpen-toast", { 
                     status: "success", message: 'Columns merged successfully.' 
                 })
-                window.location.reload()
+                let data = null
+                try { data = await res.json() } catch {}
+                if (!this.updateColumnsFromResponse(data)) {
+                    this.mergeColumnsLocal(newLabel, columnLabelsToMerge)
+                }
+                await this.reloadColumns()
             } catch (error) {
                 TPEN.eventDispatcher.dispatch("tpen-toast", { 
                     status: "error", message: error.message 
@@ -625,7 +801,12 @@ class TpenManageColumns extends HTMLElement {
                 TPEN.eventDispatcher.dispatch("tpen-toast", { 
                     status: "success", message: 'Column extended successfully.' 
                 })
-                window.location.reload()
+                let data = null
+                try { data = await res.json() } catch {}
+                if (!this.updateColumnsFromResponse(data)) {
+                    this.extendColumnLocal(columnToExtend, annotationIdsToAdd)
+                }
+                await this.reloadColumns()
             } catch (error) {
                 TPEN.eventDispatcher.dispatch("tpen-toast", { 
                     status: "error", message: error.message 
@@ -843,7 +1024,12 @@ class TpenManageColumns extends HTMLElement {
             TPEN.eventDispatcher.dispatch("tpen-toast", { 
                 status: "success", message: 'Column created successfully.' 
             })
-            window.location.reload()
+            let data = null
+            try { data = await res.json() } catch {}
+            if (!this.updateColumnsFromResponse(data)) {
+                this.createColumnLocal(columnLabel, selectedIDs)
+            }
+            await this.reloadColumns()
         } catch (err) {
             TPEN.eventDispatcher.dispatch("tpen-toast", { 
                 status: "error", message: 'Failed to create column.' 
@@ -864,7 +1050,12 @@ class TpenManageColumns extends HTMLElement {
             TPEN.eventDispatcher.dispatch("tpen-toast", { 
                 status: "info", message: 'All columns cleared successfully.' 
             })
-            window.location.reload()
+            let data = null
+            try { data = await res.json() } catch {}
+            if (!this.updateColumnsFromResponse(data)) {
+                this.clearColumnsLocal()
+            }
+            await this.reloadColumns()
         } catch (err) {
             TPEN.eventDispatcher.dispatch("tpen-toast", { 
                 status: "error", message: 'Failed to clear columns: ' + err.message 

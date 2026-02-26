@@ -34,6 +34,15 @@ export default class ColumnSelector extends HTMLElement {
     connectedCallback() {
         TPEN.attachAuthentication(this)
         this._unsubProject = onProjectReady(this, this.authgate)
+        
+        // Listen for column updates to refresh selector
+        this.cleanup.onEvent(eventDispatcher, "tpen-columns-updated", async (event) => {
+            const pageId = new URLSearchParams(location.search).get("pageID")
+            // Only refresh if the update is for the current page
+            if (event.detail?.pageId === pageId) {
+                this.refreshFromProject()
+            }
+        })
     }
 
     /**
@@ -70,6 +79,37 @@ export default class ColumnSelector extends HTMLElement {
 
         this.#page = await vault.getWithFallback(pageId, 'annotationpage', TPEN.activeProject?.manifest, true)
         if (!this.#page) return
+        const { orderedItems, columnsInPage, allColumnLines } = orderPageItemsByColumns(
+            { columns: this.columns, items: page?.items },
+            this.#page
+        )
+        this.columns = columnsInPage
+        this.allLinesInColumns = allColumnLines
+        this.#page.items = orderedItems
+        this.render()
+    }
+
+    refreshFromProject() {
+        const pageId = new URLSearchParams(location.search).get("pageID")
+        const page = TPEN.activeProject?.layers?.flatMap(layer => layer.pages || []).find(p => p.id.split('/').pop() === pageId)
+        this.columns = page?.columns || []
+
+        if (this.columns.length < 1) {
+            this.remove()
+            return
+        }
+
+        this.columns = this.columns.map((col, i) => {
+            const isAuto = col.label.startsWith("Column ") &&
+                /^[a-f\d]{24}$/i.test(col.label.slice(7))
+            return { ...col, label: isAuto ? `Unnamed ${i + 1}` : col.label }
+        })
+
+        if (!this.#page) {
+            this.findColumnsData()
+            return
+        }
+
         const { orderedItems, columnsInPage, allColumnLines } = orderPageItemsByColumns(
             { columns: this.columns, items: page?.items },
             this.#page
