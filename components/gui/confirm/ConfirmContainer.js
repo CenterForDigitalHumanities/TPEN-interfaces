@@ -10,6 +10,7 @@ import { CleanupRegistry } from '../../../utilities/CleanupRegistry.js'
 class ConfirmContainer extends HTMLElement {
     #screenLockingSection
     #confirmElem
+    #activeConfirmId = null
     /** @type {CleanupRegistry} Registry for cleanup handlers */
     cleanup = new CleanupRegistry()
 
@@ -20,9 +21,19 @@ class ConfirmContainer extends HTMLElement {
     }
 
     connectedCallback() {
-        const confirmHandler = ({ detail }) => this.addConfirm(detail?.message, detail?.positiveButtonText, detail.negativeButtonText)
-        const positiveHandler = () => this.#confirmElem?.dismiss()
-        const negativeHandler = () => this.#confirmElem?.dismiss()
+        const confirmHandler = ({ detail }) => this.addConfirm(detail?.message, detail?.positiveButtonText, detail?.negativeButtonText, detail?.confirmId)
+        const positiveHandler = ({ detail }) => {
+            if (this.#activeConfirmId && detail?.confirmId !== this.#activeConfirmId) return
+            this.#confirmElem?.dismiss()
+            this.#confirmElem = null
+            this.#activeConfirmId = null
+        }
+        const negativeHandler = ({ detail }) => {
+            if (this.#activeConfirmId && detail?.confirmId !== this.#activeConfirmId) return
+            this.#confirmElem?.dismiss()
+            this.#confirmElem = null
+            this.#activeConfirmId = null
+        }
 
         this.cleanup.onEvent(eventDispatcher, 'tpen-confirm', confirmHandler)
         this.cleanup.onEvent(eventDispatcher, 'tpen-confirm-positive', positiveHandler)
@@ -35,16 +46,21 @@ class ConfirmContainer extends HTMLElement {
 
     /**
      * Add the confirm dialogue with positive and negative confirmation buttons.
+     * Only one dialog may be shown at a time; a new request while a dialog is
+     * already visible is ignored.
      *
      * @params message {String} A message to show in the confirm dialogue.
      * @params positiveButtonText {String} The text label for the positive confirm button.
      * @params negativeButtonText {String} The text label for the negative confirm button.
+     * @params confirmId {String} Correlation token echoed in response events.
      */
-    addConfirm(message, positiveButtonText, negativeButtonText) {
+    addConfirm(message, positiveButtonText, negativeButtonText, confirmId) {
         if (!message || typeof message !== 'string') return
+        // Prevent multiple dialogs from stacking when actions are triggered rapidly
+        if (this.#screenLockingSection.querySelector('tpen-confirm')) return
         if (!positiveButtonText || typeof positiveButtonText !== 'string') positiveButtonText = 'Yes'
         if (!negativeButtonText || typeof negativeButtonText !== 'string') negativeButtonText = 'No'
-        const { matches: motionOK } = window.matchMedia('(prefers-reduced-motion: no-preference)')
+        this.#activeConfirmId = confirmId ?? null
         const buttonContainer = document.createElement("div")
         buttonContainer.classList.add("button-container")
         const confirmElem = document.createElement('tpen-confirm')
@@ -54,11 +70,11 @@ class ConfirmContainer extends HTMLElement {
         confirmElem.textContent = message
         confirmButton.textContent = positiveButtonText
         denyButton.textContent = negativeButtonText
-        const handlePositive = (e) => {
-            eventDispatcher.dispatch("tpen-confirm-positive")
+        const handlePositive = () => {
+            eventDispatcher.dispatch("tpen-confirm-positive", { confirmId })
         }
-        const handleNegative = (e) => {
-            eventDispatcher.dispatch("tpen-confirm-negative")
+        const handleNegative = () => {
+            eventDispatcher.dispatch("tpen-confirm-negative", { confirmId })
         }
         confirmButton.addEventListener('click', handlePositive)
         denyButton.addEventListener('click', handleNegative)
@@ -68,6 +84,9 @@ class ConfirmContainer extends HTMLElement {
         this.#screenLockingSection.appendChild(confirmElem)
         this.#confirmElem = confirmElem
         confirmElem.show()
+        // Delay matches the show() animation (1ms setTimeout + CSS transition start) so the
+        // button is visible before receiving focus, avoiding jarring scroll jumps.
+        setTimeout(() => confirmButton.focus(), 50)
     }
 
     render() {
@@ -156,6 +175,11 @@ class ConfirmContainer extends HTMLElement {
                 background-color: var(--primary-light);
                 outline: var(--primary-color) 1px solid;
                 outline-offset: -1.5px;
+            }
+            .confirm-area button:focus-visible {
+                outline: 3px solid var(--primary-light);
+                outline-offset: 2px;
+                background-color: var(--primary-light);
             }
         `
         // This section will take over the screen and lock down screen interaction.  It lives at the top of the viewport.

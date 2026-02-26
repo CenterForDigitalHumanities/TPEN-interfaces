@@ -14,6 +14,7 @@
 import TPEN from '../../api/TPEN.js'
 import User from '../../api/User.js'
 import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
+import { confirmAction } from '../../utilities/confirmAction.js'
 
 class AnnotoriousAnnotator extends HTMLElement {
     #osd
@@ -257,17 +258,11 @@ class AnnotoriousAnnotator extends HTMLElement {
             _this.#eraseConfirmTimeout = null
             // Timeout required in order to allow the click-and-focus native functionality to complete.
             // Also stops the goofy UX for naturally slow clickers.
-            const onPositive = () => {
-              TPEN.eventDispatcher.off('tpen-confirm-negative', onNegative)
-              _this.#annotoriousInstance.removeAnnotation(annotation)
-            }
-            const onNegative = () => {
-              TPEN.eventDispatcher.off('tpen-confirm-positive', onPositive)
-              _this.#annotoriousInstance.cancelSelected()
-            }
-            TPEN.eventDispatcher.one('tpen-confirm-positive', onPositive)
-            TPEN.eventDispatcher.one('tpen-confirm-negative', onNegative)
-            TPEN.eventDispatcher.dispatch('tpen-confirm', { message: "Are you sure you want to remove this?" })
+            confirmAction(
+              "Are you sure you want to remove this?",
+              () => _this.#annotoriousInstance.removeAnnotation(annotation),
+              () => _this.#annotoriousInstance.cancelSelected()
+            )
           }, 500)
         }
       })
