@@ -3,7 +3,7 @@ import { getAgentIRIFromToken } from '../iiif-tools/index.js'
 import CheckPermissions from '../check-permissions/checkPermissions.js'
 import { onProjectReady } from "../../utilities/projectReady.js"
 import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
-import { confirmAction } from '../../api/events.js'
+import { confirmAction } from '../../utilities/confirmAction.js'
 
 /**
  * LeaveProject - Allows a user to leave a project they are a member of.
@@ -190,7 +190,7 @@ class LeaveProject extends HTMLElement {
                 })
             },
             null,
-            { positiveButtonText: 'Leave', negativeButtonText: 'Cancel' }
+            { positiveButtonText: "Leave", negativeButtonText: "Cancel" }
         )
     }
 }

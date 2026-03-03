@@ -7,7 +7,7 @@
 import TPEN from '../../api/TPEN.js'
 import { escapeHtml } from '/js/utils.js'
 import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
-import { confirmAction } from '../../api/events.js'
+import { confirmAction } from '../../utilities/confirmAction.js'
 
 class ManifestImport extends HTMLElement {
     #manifests = []
@@ -72,7 +72,7 @@ class ManifestImport extends HTMLElement {
                         this.shadowRoot.innerHTML = '<p>Manifest import canceled by user.</p>'
                     }
                 },
-                { positiveButtonText: 'Import', negativeButtonText: 'Cancel' }
+                { positiveButtonText: "Import", negativeButtonText: "Cancel" }
             )
             return
         }

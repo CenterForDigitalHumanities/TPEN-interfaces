@@ -2,7 +2,7 @@ import TPEN from "../../api/TPEN.js"
 import CheckPermissions from '../../components/check-permissions/checkPermissions.js'
 import { onProjectReady } from "../../utilities/projectReady.js"
 import { CleanupRegistry } from "../../utilities/CleanupRegistry.js"
-import { confirmAction } from "../../api/events.js"
+import { confirmAction } from "../../utilities/confirmAction.js"
 
 /**
  * RolesHandler - Manages role assignment UI for project collaborators.
@@ -744,7 +744,7 @@ class RolesHandler extends HTMLElement {
                 "You have unsaved changes. Discard changes and close?",
                 () => this.closeRoleModal(),
                 null,
-                { positiveButtonText: 'Discard', negativeButtonText: 'Keep Editing' }
+                { positiveButtonText: "Discard", negativeButtonText: "Keep Editing" }
             )
         } else {
             this.closeRoleModal()
@@ -770,13 +770,13 @@ class RolesHandler extends HTMLElement {
                     })
             },
             null,
-            { positiveButtonText: 'Transfer', negativeButtonText: 'Cancel' }
+            { positiveButtonText: "Transfer", negativeButtonText: "Cancel" }
         )
     }
 
     handleRemoveMember(memberID, memberName) {
         confirmAction(
-            `Remove ${memberName} from this project?`,
+            `This action will remove ${memberName} from your project. Do you want to continue?`,
             () => {
                 TPEN.activeProject.removeMember(memberID)
                     .then(data => {
@@ -793,7 +793,7 @@ class RolesHandler extends HTMLElement {
                     })
             },
             null,
-            { positiveButtonText: 'Remove', negativeButtonText: 'Cancel' }
+            { positiveButtonText: "Remove", negativeButtonText: "Cancel" }
         )
     }
 

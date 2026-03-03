@@ -14,7 +14,7 @@
 import TPEN from '../../api/TPEN.js'
 import User from '../../api/User.js'
 import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
-import { confirmAction } from '../../api/events.js'
+import { confirmAction } from '../../utilities/confirmAction.js'
 
 class AnnotoriousAnnotator extends HTMLElement {
     #osd
@@ -259,10 +259,10 @@ class AnnotoriousAnnotator extends HTMLElement {
             // Timeout required in order to allow the click-and-focus native functionality to complete.
             // Also stops the goofy UX for naturally slow clickers.
             confirmAction(
-              "Delete this annotation?",
+              "Are you sure you want to remove this?",
               () => _this.#annotoriousInstance.removeAnnotation(annotation),
               () => _this.#annotoriousInstance.cancelSelected(),
-              { positiveButtonText: 'Delete', negativeButtonText: 'Cancel' }
+              { positiveButtonText: "Delete", negativeButtonText: "Cancel" }
             )
           }, 500)
         }

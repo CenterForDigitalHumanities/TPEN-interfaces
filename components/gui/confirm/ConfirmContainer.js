@@ -52,6 +52,8 @@ class ConfirmContainer extends HTMLElement {
      */
     addConfirm(message, positiveButtonText, negativeButtonText, confirmId) {
         if (!message || typeof message !== 'string') return
+        // Prevent multiple dialogs from stacking when actions are triggered rapidly
+        if (this.#screenLockingSection.querySelector('tpen-confirm')) return
         if (!positiveButtonText || typeof positiveButtonText !== 'string') positiveButtonText = 'Yes'
         if (!negativeButtonText || typeof negativeButtonText !== 'string') negativeButtonText = 'No'
 

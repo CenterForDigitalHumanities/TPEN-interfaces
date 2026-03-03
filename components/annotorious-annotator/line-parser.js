@@ -21,6 +21,7 @@ import { onProjectReady } from '../../utilities/projectReady.js'
 import { confirmAction } from '../../api/events.js'
 import vault from '../../js/vault.js'
 import '../page-selector/index.js'
+import { confirmAction } from '../../utilities/confirmAction.js'
 
 class AnnotoriousAnnotator extends HTMLElement {
   #osd
@@ -722,7 +723,7 @@ class AnnotoriousAnnotator extends HTMLElement {
                   location.href = `/transcribe?projectID=${TPEN.activeProject._id}&pageID=${this.#annotationPageID}`
                 },
                 null,
-                { positiveButtonText: 'Go Transcribe', negativeButtonText: 'Keep Editing' }
+                { positiveButtonText: "Go Transcribe", negativeButtonText: "Keep Editing" }
               )
             }
             else {
@@ -816,13 +817,13 @@ class AnnotoriousAnnotator extends HTMLElement {
           // Timeout required in order to allow the click-and-focus native functionality to complete.
           // Also stops the goofy UX for naturally slow clickers.
           confirmAction(
-            "Delete this annotation?",
+            "Are you sure you want to remove this?",
             () => {
               _this.#annotoriousInstance.removeAnnotation(originalAnnotation)
               _this.#resolvedAnnotationPage.$isDirty = true
             },
             () => _this.#annotoriousInstance.cancelSelected(),
-            { positiveButtonText: 'Delete', negativeButtonText: 'Cancel' }
+            { positiveButtonText: "Delete", negativeButtonText: "Cancel" }
           )
         }, 500)
         _this.#pendingTimeouts.add(timeoutId)
@@ -1155,7 +1156,7 @@ class AnnotoriousAnnotator extends HTMLElement {
    */
   deleteAllAnnotations() {
     confirmAction(
-      'Delete all annotations on this page? This action cannot be undone.',
+      "This will remove all Annotations and will take effect immediately. This action cannot be undone.",
       () => {
         const deleteAllBtn = this.shadowRoot.getElementById("deleteAllBtn")
         deleteAllBtn.setAttribute("disabled", "true")
@@ -1177,7 +1178,7 @@ class AnnotoriousAnnotator extends HTMLElement {
           })
       },
       null,
-      { positiveButtonText: 'Delete All', negativeButtonText: 'Cancel' }
+      { positiveButtonText: "Delete All", negativeButtonText: "Cancel" }
     )
   }
 

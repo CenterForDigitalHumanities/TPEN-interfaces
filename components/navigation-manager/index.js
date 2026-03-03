@@ -3,7 +3,7 @@ import { escapeHtml } from '/js/utils.js'
 import CheckPermissions from '../check-permissions/checkPermissions.js'
 import { onProjectReady } from "../../utilities/projectReady.js"
 import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
-import { confirmAction } from '../../api/events.js'
+import { confirmAction } from '../../utilities/confirmAction.js'
 
 /**
  * NavigationManager - Interface for customizing project navigation URLs.
@@ -114,7 +114,7 @@ class NavigationManager extends HTMLElement {
                 this.addEventListeners()
             },
             null,
-            { positiveButtonText: 'Reset', negativeButtonText: 'Cancel' }
+            { positiveButtonText: "Reset", negativeButtonText: "Cancel" }
         )
     }
 

@@ -8,7 +8,7 @@ import "../../components/project-export/index.js"
 import "../../components/project-layers/index.js"
 import "../../components/project-tools/index.js"
 import CheckPermissions from "../../components/check-permissions/checkPermissions.js"
-import { confirmAction } from "../../api/events.js"
+import { confirmAction } from "../../utilities/confirmAction.js"
 
 const container = document.body
 TPEN.attachAuthentication(container)
@@ -49,7 +49,7 @@ TPEN.eventDispatcher.on('tpen-project-loaded', () => {
 
 document.getElementById('export-project-btn').addEventListener('click', () => {
     confirmAction(
-        'Publish a new Manifest which will be available to the public?',
+        "This will publish a new Manifest which will be available to the public.",
         () => {
             fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/manifest`, {
                 method: 'GET',
@@ -67,7 +67,7 @@ document.getElementById('export-project-btn').addEventListener('click', () => {
             })
         },
         null,
-        { positiveButtonText: 'Publish', negativeButtonText: 'Cancel' }
+        { positiveButtonText: "Publish", negativeButtonText: "Cancel" }
     )
 })
 

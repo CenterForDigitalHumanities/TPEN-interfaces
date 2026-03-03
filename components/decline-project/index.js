@@ -1,6 +1,6 @@
 import TPEN from "../../api/TPEN.js"
 import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
-import { confirmAction } from '../../api/events.js'
+import { confirmAction } from '../../utilities/confirmAction.js'
 
 /**
  * DeclineInvite - Allows invited users to decline a project invitation.
@@ -131,7 +131,7 @@ class DeclineInvite extends HTMLElement {
                 })
             },
             null,
-            { positiveButtonText: 'Decline', negativeButtonText: 'Cancel' }
+            { positiveButtonText: "Decline", negativeButtonText: "Cancel" }
         )
     }
 }

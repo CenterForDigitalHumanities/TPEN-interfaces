@@ -2,7 +2,7 @@ import TPEN from "../../api/TPEN.js"
 import CheckPermissions from "../../components/check-permissions/checkPermissions.js"
 import { onProjectReady } from "../../utilities/projectReady.js"
 import { CleanupRegistry } from "../../utilities/CleanupRegistry.js"
-import { confirmAction } from "../../api/events.js"
+import { confirmAction } from "../../utilities/confirmAction.js"
 
 /**
  * ManagePages - Provides UI for managing pages within a layer including reordering, editing labels, and deletion.
@@ -297,7 +297,7 @@ class ManagePages extends HTMLElement {
                                 layerPagesCard = mainParent.shadowRoot.querySelectorAll(`.layer-card-outer[data-index="${layerIndex}"] .layer-page`)
                             },
                             null,
-                            { positiveButtonText: 'Delete', negativeButtonText: 'Cancel' }
+                            { positiveButtonText: "Delete", negativeButtonText: "Cancel" }
                         )
                     })
                 })
