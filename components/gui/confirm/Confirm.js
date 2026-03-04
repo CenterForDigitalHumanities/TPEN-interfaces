@@ -25,9 +25,12 @@ class Confirm extends HTMLElement {
      * Have them appear with a dropdown effect.
      */
     show() {
-        this.closest(".confirm-area").style.display = "grid"
+        const confirmArea = this.closest('.confirm-area')
+        if (confirmArea?.showModal && !confirmArea.open) {
+            confirmArea.showModal()
+        }
         const showTimer = setTimeout(() => {
-            this.closest(".confirm-area").classList.add("show")
+            confirmArea?.classList.add('show')
             this.classList.add('show')
         }, 1)
         this.cleanup.add(() => clearTimeout(showTimer))
@@ -40,7 +43,7 @@ class Confirm extends HTMLElement {
      */
     dismiss() {
         this.classList.remove('show')
-        this.closest(".confirm-area")?.classList.remove("show")
+        this.closest('.confirm-area')?.classList.remove('show')
         const removeTimer = setTimeout(() => {
             this.remove()
         }, 500)

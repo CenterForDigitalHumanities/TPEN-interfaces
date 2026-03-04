@@ -188,7 +188,13 @@ class ConfirmContainer extends HTMLElement {
         // Show next dialog in queue if available
         if (this.#dialogQueue.length > 0) {
             setTimeout(() => this.#showCurrent(), 600) // Wait for dismiss animation
+            return
         }
+
+        setTimeout(() => {
+            this.#screenLockingSection?.close?.()
+            this.#screenLockingSection?.classList.remove('show')
+        }, 550)
     }
 
     render() {
@@ -206,23 +212,31 @@ class ConfirmContainer extends HTMLElement {
             }
             .confirm-area {
                 position: fixed;
-                display: grid;
-                z-index: 16;
                 inset-block-start: 0;
                 inset-inline: 0;
                 justify-items: center;
                 justify-content: center;
-                height: 0vh;
+                width: 100vw;
+                height: 100vh;
+                max-width: 100vw;
+                max-height: 100vh;
+                margin: 0;
+                padding: 0;
+                border: none;
                 background-color: rgba(0,0,0,0.7);
                 opacity: 0;
                 transition: all 0.5s ease-in-out;   
             }
+            .confirm-area[open] {
+                display: grid;
+            }
+            .confirm-area::backdrop {
+                background-color: rgba(0,0,0,0.7);
+            }
             .confirm-area.show {
                 opacity: 1;
-                height: 100vh;
             }
             tpen-confirm {
-                z-index: 16;
                 display: block;
                 position: relative;
                 background-color: #333;
@@ -285,7 +299,7 @@ class ConfirmContainer extends HTMLElement {
             }
         `
         // This section will take over the screen and lock down screen interaction.  It lives at the top of the viewport.
-        const screenLockingSection = document.createElement('section')
+        const screenLockingSection = document.createElement('dialog')
         screenLockingSection.classList.add('confirm-area')
 
         this.shadowRoot.innerHTML = ''

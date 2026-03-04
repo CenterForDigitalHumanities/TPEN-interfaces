@@ -77,6 +77,21 @@ class AlertContainer extends HTMLElement {
             document.removeEventListener('keydown', this.#keydownHandler)
             this.#keydownHandler = null
         }
+
+        const closeWhenEmpty = (attemptsRemaining = 6) => {
+            const hasAlerts = this.#screenLockingSection?.querySelector('tpen-alert')
+            if (hasAlerts && attemptsRemaining > 0) {
+                setTimeout(() => closeWhenEmpty(attemptsRemaining - 1), 120)
+                return
+            }
+
+            if (hasAlerts) return
+
+            this.#screenLockingSection?.classList.remove('show')
+            this.#screenLockingSection?.close?.()
+        }
+
+        setTimeout(() => closeWhenEmpty(), 550)
     }
 
     render() {
@@ -94,23 +109,31 @@ class AlertContainer extends HTMLElement {
             }
             .alert-area {
                 position: fixed;
-                display: grid;
-                z-index: 16;
                 inset-block-start: 0;
                 inset-inline: 0;
                 justify-items: center;
                 justify-content: center;
-                height: 0vh;
+                width: 100vw;
+                height: 100vh;
+                max-width: 100vw;
+                max-height: 100vh;
+                margin: 0;
+                padding: 0;
+                border: none;
                 background-color: rgba(0,0,0,0.7);
                 opacity: 0;
                 transition: all 0.5s ease-in-out;   
             }
+            .alert-area[open] {
+                display: grid;
+            }
+            .alert-area::backdrop {
+                background-color: rgba(0,0,0,0.7);
+            }
             .alert-area.show {
                 opacity: 1;
-                height: 100vh;
             }
             tpen-alert {
-                z-index: 16;
                 display: block;
                 position: relative;
                 background-color: #333;
@@ -177,7 +200,7 @@ class AlertContainer extends HTMLElement {
             }
         `
         // This section will take over the screen and lock down screen interaction.  It lives at the top of the viewport.
-        const screenLockingSection = document.createElement('section')
+        const screenLockingSection = document.createElement('dialog')
         screenLockingSection.classList.add('alert-area')
 
         this.shadowRoot.innerHTML = ''

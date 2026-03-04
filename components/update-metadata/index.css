@@ -15,16 +15,30 @@
 }
 
 #metadata-modal {
-    width: 70%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    width: 100vw;
+    height: 100vh;
+    max-width: 100vw;
+    max-height: 100vh;
+    margin: 0;
+    border: none;
+    background: transparent;
+    padding: 0;
+}
+
+#metadata-modal[open] {
+    display: grid;
+    place-items: center;
+}
+
+#metadata-modal::backdrop {
+    background-color: rgba(0, 0, 0, 0.35);
 }
 
 .modal-content {
     padding: 20px;
     border-radius: 8px;
-    width: 100%;
+    width: 70%;
+    background-color: #fff;
 }
 
 .modal-content h3 {
@@ -84,6 +98,10 @@
     }
 
     #metadata-modal {
+        width: 100vw;
+    }
+
+    .modal-content {
         width: 100%;
     }
 }

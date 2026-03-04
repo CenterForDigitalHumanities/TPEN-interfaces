@@ -25,9 +25,12 @@ class Alert extends HTMLElement {
      * Have them appear with a dropdown effect.
      */
     show() {
-        this.closest(".alert-area").style.display = "grid"
+        const alertArea = this.closest('.alert-area')
+        if (alertArea?.showModal && !alertArea.open) {
+            alertArea.showModal()
+        }
         const showTimer = setTimeout(() => {
-            this.closest(".alert-area").classList.add("show")
+            alertArea?.classList.add('show')
             this.classList.add('show')
         }, 1)
         this.cleanup.add(() => clearTimeout(showTimer))
@@ -40,7 +43,7 @@ class Alert extends HTMLElement {
      */
     dismiss() {
         this.classList.remove('show')
-        this.closest(".alert-area")?.classList.remove("show")
+        this.closest('.alert-area')?.classList.remove('show')
         const removeTimer = setTimeout(() => {
             this.remove()
         }, 500)
