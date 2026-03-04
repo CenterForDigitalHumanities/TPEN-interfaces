@@ -7,13 +7,13 @@
  */
 export const sharedModalStyles = `
   :host {
-    --primary-color: hsl(186, 84%, 40%);
-    --primary-light: hsl(186, 84%, 60%);
-    --light-color  : hsl(186, 84%, 90%);
-    --dark         : #2d2d2d;
-    --white        : hsl(0, 0%, 100%);
-    --gray         : hsl(0, 0%, 60%);
-    --light-gray   : hsl(0, 0%, 90%);
+    --primary-color: var(--primary-color, hsl(186, 84%, 40%));
+    --primary-light: var(--primary-light, hsl(186, 84%, 60%));
+    --light-color  : var(--light-color, hsl(186, 84%, 90%));
+    --dark         : var(--dark, #2d2d2d);
+    --white        : var(--white, hsl(0, 0%, 100%));
+    --gray         : var(--gray, hsl(0, 0%, 60%));
+    --light-gray   : var(--light-gray, hsl(0, 0%, 90%));
   }
 
   /* Modal host dialog — invisible until open */
