@@ -1,6 +1,7 @@
 import './Alert.js'
 import { eventDispatcher } from '../../../api/events.js'
 import { CleanupRegistry } from '../../../utilities/CleanupRegistry.js'
+import { closeModalHostWhenEmpty } from '../../../utilities/modalHost.js'
 
 /**
  * AlertContainer - Global container for displaying alert dialogs.
@@ -54,17 +55,41 @@ class AlertContainer extends HTMLElement {
 
         // Set focus to button
         okButton.focus()
+        this.#attachKeyboardHandler(alertElem)
+    }
 
-        // Attach keyboard handler for Escape and Enter
+    /**
+     * Add a pre-built custom alert element to the global alert host.
+     * @param {HTMLElement} alertElem - Custom alert element, typically tpen-alert.
+     */
+    addCustomAlert(alertElem) {
+        if (!alertElem) return
+
+        this.#screenLockingSection.appendChild(alertElem)
+        alertElem.show?.()
+
+        const firstButton = alertElem.querySelector('button')
+        firstButton?.focus?.()
+
+        this.#attachKeyboardHandler(alertElem)
+    }
+
+    /**
+     * Attach keyboard handling for the active alert.
+     * @param {HTMLElement} alertElem - Alert element to dismiss on key actions.
+     */
+    #attachKeyboardHandler(alertElem) {
         if (this.#keydownHandler) {
             document.removeEventListener('keydown', this.#keydownHandler)
         }
+
         this.#keydownHandler = (e) => {
             if (e.key === 'Escape' || e.key === 'Enter') {
                 e.preventDefault()
                 this.#dismissAlert(alertElem)
             }
         }
+
         document.addEventListener('keydown', this.#keydownHandler)
     }
 
@@ -78,20 +103,7 @@ class AlertContainer extends HTMLElement {
             this.#keydownHandler = null
         }
 
-        const closeWhenEmpty = (attemptsRemaining = 6) => {
-            const hasAlerts = this.#screenLockingSection?.querySelector('tpen-alert')
-            if (hasAlerts && attemptsRemaining > 0) {
-                setTimeout(() => closeWhenEmpty(attemptsRemaining - 1), 120)
-                return
-            }
-
-            if (hasAlerts) return
-
-            this.#screenLockingSection?.classList.remove('show')
-            this.#screenLockingSection?.close?.()
-        }
-
-        setTimeout(() => closeWhenEmpty(), 550)
+        closeModalHostWhenEmpty(this.#screenLockingSection, 'tpen-alert')
     }
 
     render() {

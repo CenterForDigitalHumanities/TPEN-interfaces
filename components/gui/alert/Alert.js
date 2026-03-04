@@ -1,5 +1,6 @@
 import { eventDispatcher } from '../../../api/events.js'
 import { CleanupRegistry } from '../../../utilities/CleanupRegistry.js'
+import { openModalHost } from '../../../utilities/modalHost.js'
 
 /**
  * Alert - A modal alert dialog that requires user acknowledgement.
@@ -26,9 +27,7 @@ class Alert extends HTMLElement {
      */
     show() {
         const alertArea = this.closest('.alert-area')
-        if (alertArea?.showModal && !alertArea.open) {
-            alertArea.showModal()
-        }
+        openModalHost(alertArea)
         const showTimer = setTimeout(() => {
             alertArea?.classList.add('show')
             this.classList.add('show')

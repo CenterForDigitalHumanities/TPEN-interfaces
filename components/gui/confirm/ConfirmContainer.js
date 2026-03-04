@@ -1,6 +1,7 @@
 import './Confirm.js'
 import { eventDispatcher } from '../../../api/events.js'
 import { CleanupRegistry } from '../../../utilities/CleanupRegistry.js'
+import { closeModalHostWhenEmpty } from '../../../utilities/modalHost.js'
 
 /**
  * ConfirmContainer - Global container for displaying confirmation dialogs.
@@ -191,10 +192,7 @@ class ConfirmContainer extends HTMLElement {
             return
         }
 
-        setTimeout(() => {
-            this.#screenLockingSection?.close?.()
-            this.#screenLockingSection?.classList.remove('show')
-        }, 550)
+        closeModalHostWhenEmpty(this.#screenLockingSection, 'tpen-confirm')
     }
 
     render() {

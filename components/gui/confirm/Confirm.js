@@ -1,5 +1,6 @@
 import { eventDispatcher } from '../../../api/events.js'
 import { CleanupRegistry } from '../../../utilities/CleanupRegistry.js'
+import { openModalHost } from '../../../utilities/modalHost.js'
 
 /**
  * Confirm - A modal confirmation dialog with positive/negative options.
@@ -26,9 +27,7 @@ class Confirm extends HTMLElement {
      */
     show() {
         const confirmArea = this.closest('.confirm-area')
-        if (confirmArea?.showModal && !confirmArea.open) {
-            confirmArea.showModal()
-        }
+        openModalHost(confirmArea)
         const showTimer = setTimeout(() => {
             confirmArea?.classList.add('show')
             this.classList.add('show')
