@@ -282,7 +282,7 @@ class TpenCreateColumn extends HTMLElement {
         this.cleanup.run()
     }
 
-    async columnLabelCheck() {
+    columnLabelCheck() {
         this.originalColumnLabels = this.existingColumns.map(col => col.rawLabel ?? col.label)
         this.existingColumns = this.existingColumns.map((col, index) => {
             const rawLabel = col.rawLabel ?? col.label
@@ -311,13 +311,13 @@ class TpenCreateColumn extends HTMLElement {
                 lines: column.lines ?? []
             })) || []
             const assignedAnnotationIds = []
-            await this.columnLabelCheck()
+            this.columnLabelCheck()
             this.existingColumns.forEach(column => {
                 column.lines.forEach(annoId => assignedAnnotationIds.push({
                     lineId: annoId, columnLabel: column.label
                 }))
             })
-            this.totalIds = annotations.filter(anno => !assignedAnnotationIds.find(a => a.lineId === anno.lineId)).map(a => a.lineId)
+            this.totalIds = annotations.filter(anno => !assignedAnnotationIds.some(a => a.lineId === anno.lineId)).map(a => a.lineId)
             localStorage.setItem('annotationsState', JSON.stringify({
                 remainingIDs: this.totalIds,
                 selectedIDs: []
@@ -336,7 +336,7 @@ class TpenCreateColumn extends HTMLElement {
      */
     async reloadColumns() {
         try {
-            await this.columnLabelCheck()
+            this.columnLabelCheck()
             // Always ensure TPEN.activeProject is source of truth
             this.syncProjectColumnsFromExisting()
             this.selectedBoxes = []
@@ -366,7 +366,7 @@ class TpenCreateColumn extends HTMLElement {
             .find(p => p.id.split('/').pop() === this.annotationPageID)
     }
 
-    generateColumnId(label) {
+    generateColumnId() {
         return globalThis.crypto?.randomUUID?.() ?? `column-${Date.now()}-${Math.random().toString(16).slice(2)}`
     }
 
@@ -403,8 +403,6 @@ class TpenCreateColumn extends HTMLElement {
                 label: rawLabel,
                 lines: [...new Set(column.lines ?? [])]
             }
-            // Ensure id is consistent
-            if (!updated.id && updated._id) updated.id = updated._id
             return updated
         })
     }
@@ -421,11 +419,11 @@ class TpenCreateColumn extends HTMLElement {
     }
 
     refreshFromCache() {
-        if (!this.cachedImageInfo || !this.cachedAnnotations) return false
+        if (!this.cachedImageInfo || !this.cachedAnnotations?.length) return false
         const { imgWidth, imgHeight } = this.cachedImageInfo
         const assignedAnnotationIds = this.buildAssignedAnnotations()
         this.totalIds = this.cachedAnnotations
-            .filter(anno => !assignedAnnotationIds.find(a => a.lineId === anno.lineId))
+            .filter(anno => !assignedAnnotationIds.some(a => a.lineId === anno.lineId))
             .map(a => a.lineId)
         localStorage.setItem('annotationsState', JSON.stringify({
             remainingIDs: this.totalIds,
@@ -438,7 +436,7 @@ class TpenCreateColumn extends HTMLElement {
     }
 
     mergeColumnsLocal(newLabel, columnIndexes) {
-        const mergeIndexes = [...new Set(columnIndexes)].filter(i => i !== '').sort((a, b) => b - a)
+        const mergeIndexes = [...new Set(columnIndexes)].sort((a, b) => b - a)
         const mergedLines = []
         mergeIndexes.forEach(index => {
             const column = this.existingColumns[index]
@@ -558,7 +556,7 @@ class TpenCreateColumn extends HTMLElement {
         input.classList.add('merge-column-input')
         workspaceToolbar.appendChild(input)
 
-        columnLabels.forEach(label => {
+        columnLabels.forEach((label, labelIndex) => {
             const btn = document.createElement('button')
             btn.classList.add('merge-label-btn')
             btn.textContent = label
@@ -570,12 +568,12 @@ class TpenCreateColumn extends HTMLElement {
                     btn.dataset.selected = 'true'
                     btn.style.backgroundColor = 'rgb(255, 255, 255)'
                     btn.style.color = 'var(--primary-color)'
-                    columnLabelsToMerge.push(columnLabels.indexOf(label) !== -1 ? columnLabels.indexOf(label) : '')
+                    columnLabelsToMerge.push(labelIndex)
                 } else {
                     delete btn.dataset.selected
                     btn.style.backgroundColor = 'var(--primary-color)'
                     btn.style.color = 'rgb(255, 255, 255)'
-                    const index = columnLabelsToMerge.indexOf(columnLabels.indexOf(label))
+                    const index = columnLabelsToMerge.indexOf(labelIndex)
                     if (index > -1) {
                         columnLabelsToMerge.splice(index, 1)
                     }
@@ -599,8 +597,9 @@ class TpenCreateColumn extends HTMLElement {
             }
 
             const duplicate = this.existingColumns.some(col => {
-                const existingLabel = (col.label ?? "").toString().trim()
-                return existingLabel === newLabel
+                const displayLabel = (col.label ?? "").toString().trim()
+                const rawLabel = (col.rawLabel ?? "").toString().trim()
+                return displayLabel === newLabel || rawLabel === newLabel
             })
             if (duplicate) {
                 return TPEN.eventDispatcher.dispatch("tpen-toast", { 
@@ -624,12 +623,14 @@ class TpenCreateColumn extends HTMLElement {
                 TPEN.eventDispatcher.dispatch("tpen-toast", { 
                     status: "success", message: 'Columns merged successfully.' 
                 })
-                let data = null
-                try { data = await res.json() } catch {}
+                const data = await res.json()
                 if (!this.updateColumnsFromResponse(data)) {
                     this.mergeColumnsLocal(newLabel, columnLabelsToMerge)
                 }
                 await this.reloadColumns()
+                // Reset workspace UI to avoid stale state
+                this.mergeColumnsCheckbox.checked = false
+                this.handleModeChange()
             } catch (error) {
                 TPEN.eventDispatcher.dispatch("tpen-toast", { 
                     status: "error", message: error.message 
@@ -725,12 +726,14 @@ class TpenCreateColumn extends HTMLElement {
                 TPEN.eventDispatcher.dispatch("tpen-toast", { 
                     status: "success", message: 'Column extended successfully.' 
                 })
-                let data = null
-                try { data = await res.json() } catch {}
+                const data = await res.json()
                 if (!this.updateColumnsFromResponse(data)) {
-                    this.extendColumnLocal(columnToExtend, annotationIdsToAdd)
+                    this.extendColumnLocal(this.originalColumnLabels[columnToExtend], annotationIdsToAdd)
                 }
                 await this.reloadColumns()
+                // Reset workspace UI to avoid stale state
+                this.extendColumnCheckbox.checked = false
+                this.handleModeChange()
             } catch (error) {
                 TPEN.eventDispatcher.dispatch("tpen-toast", { 
                     status: "error", message: error.message 
@@ -952,8 +955,7 @@ class TpenCreateColumn extends HTMLElement {
             TPEN.eventDispatcher.dispatch("tpen-toast", { 
                 status: "success", message: 'Column created successfully.' 
             })
-            let data = null
-            try { data = await res.json() } catch {}
+            const data = await res.json()
             if (!this.updateColumnsFromResponse(data)) {
                 this.createColumnLocal(columnLabel, selectedIDs)
             }
@@ -978,8 +980,7 @@ class TpenCreateColumn extends HTMLElement {
             TPEN.eventDispatcher.dispatch("tpen-toast", { 
                 status: "info", message: 'All columns cleared successfully.' 
             })
-            let data = null
-            try { data = await res.json() } catch {}
+            const data = await res.json()
             if (!this.updateColumnsFromResponse(data)) {
                 this.clearColumnsLocal()
             }
