@@ -1,5 +1,6 @@
 import { eventDispatcher } from '../../../api/events.js'
 import { CleanupRegistry } from '../../../utilities/CleanupRegistry.js'
+import { openModalHost } from '../../../utilities/modalHost.js'
 
 /**
  * Confirm - A modal confirmation dialog with positive/negative options.
@@ -14,7 +15,7 @@ class Confirm extends HTMLElement {
         super()
         this.attachShadow({ mode: 'open' })
         this.shadowRoot.innerHTML = `
-            <output role="confirm">
+            <output role="alertdialog">
             <slot></slot>
             </output>
         `
@@ -25,11 +26,11 @@ class Confirm extends HTMLElement {
      * Have them appear with a dropdown effect.
      */
     show() {
-        this.closest(".confirm-area").style.display = "grid"
+        const confirmArea = this.closest('.confirm-area')
+        openModalHost(confirmArea)
         const showTimer = setTimeout(() => {
-            this.closest(".confirm-area").classList.add("show")
+            confirmArea?.classList.add('show')
             this.classList.add('show')
-            document.querySelector("body").style.overflow = "hidden"
         }, 1)
         this.cleanup.add(() => clearTimeout(showTimer))
         eventDispatcher.dispatch("tpen-confirm-activated")
@@ -41,8 +42,7 @@ class Confirm extends HTMLElement {
      */
     dismiss() {
         this.classList.remove('show')
-        this.closest(".confirm-area")?.classList.remove("show")
-        document.querySelector("body").style.overflow = "auto"
+        this.closest('.confirm-area')?.classList.remove('show')
         const removeTimer = setTimeout(() => {
             this.remove()
         }, 500)

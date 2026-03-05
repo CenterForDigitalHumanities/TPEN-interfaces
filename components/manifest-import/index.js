@@ -7,6 +7,7 @@
 import TPEN from '../../api/TPEN.js'
 import { escapeHtml } from '/js/utils.js'
 import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
+import { confirmAction } from '../../utilities/confirmAction.js'
 
 class ManifestImport extends HTMLElement {
     #manifests = []
@@ -60,13 +61,20 @@ class ManifestImport extends HTMLElement {
         // For multiple manifests, require explicit user confirmation before starting import
         if (this.#manifests.length > 1) {
             const confirmMessage = `You are about to import ${this.#manifests.length} manifests as new projects. Do you want to continue?`
-            const proceed = window.confirm(confirmMessage)
-            if (!proceed) {
-                if (this.shadowRoot) {
-                    this.shadowRoot.innerHTML = '<p>Manifest import canceled by user.</p>'
-                }
-                return
-            }
+            confirmAction(
+                confirmMessage,
+                () => {
+                    this.renderCreating()
+                    this.#createProjects()
+                },
+                () => {
+                    if (this.shadowRoot) {
+                        this.shadowRoot.innerHTML = '<p>Manifest import canceled by user.</p>'
+                    }
+                },
+                { positiveButtonText: "Import", negativeButtonText: "Cancel" }
+            )
+            return
         }
         this.renderCreating()
         await this.#createProjects()

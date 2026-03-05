@@ -2,6 +2,7 @@ import TPEN from "../../api/TPEN.js"
 import CheckPermissions from '../../components/check-permissions/checkPermissions.js'
 import { onProjectReady } from "../../utilities/projectReady.js"
 import { CleanupRegistry } from "../../utilities/CleanupRegistry.js"
+import { confirmAction } from "../../utilities/confirmAction.js"
 
 /**
  * RolesHandler - Manages role assignment UI for project collaborators.
@@ -492,7 +493,7 @@ class RolesHandler extends HTMLElement {
             }
         } catch (error) {
             console.error("Error handling button action:", error)
-            alert("An error occurred. Please try again.")
+            TPEN.eventDispatcher.dispatch('tpen-alert', { message: "An error occurred. Please try again." })
         }
     }
 
@@ -641,8 +642,8 @@ class RolesHandler extends HTMLElement {
         // Transfer ownership button
         if (!isOwner && currentUserIsOwner) {
             transferBtn.classList.remove("hidden")
-            this.renderCleanup.onElement(transferBtn, 'click', async () => {
-                await this.handleTransferOwnership(memberID, memberName)
+            this.renderCleanup.onElement(transferBtn, 'click', () => {
+                this.handleTransferOwnership(memberID, memberName)
             })
         } else {
             transferBtn.classList.add("hidden")
@@ -651,8 +652,8 @@ class RolesHandler extends HTMLElement {
         // Remove collaborator button
         if (hasDeleteAccess) {
             removeBtn.classList.remove("hidden")
-            this.renderCleanup.onElement(removeBtn, 'click', async () => {
-                await this.handleRemoveMember(memberID, memberName)
+            this.renderCleanup.onElement(removeBtn, 'click', () => {
+                this.handleRemoveMember(memberID, memberName)
             })
         } else {
             removeBtn.classList.add("hidden")
@@ -739,45 +740,61 @@ class RolesHandler extends HTMLElement {
         const originalSelection = this.originalRoles.sort().join(",")
         
         if (currentSelection !== originalSelection) {
-            if (confirm("You have unsaved changes. Discard changes and close?")) {
-                this.closeRoleModal()
-            }
+            confirmAction(
+                "You have unsaved changes. Discard changes and close?",
+                () => this.closeRoleModal(),
+                null,
+                { positiveButtonText: "Discard", negativeButtonText: "Keep Editing" }
+            )
         } else {
             this.closeRoleModal()
         }
     }
 
-    async handleTransferOwnership(memberID, memberName) {
+    handleTransferOwnership(memberID, memberName) {
         const confirmMessage = `You are about to transfer ownership of this project to ${memberName}. This action is irreversible. Please confirm if you want to proceed.`
-        if (!window.confirm(confirmMessage)) return
-        
-        try {
-            const response = await TPEN.activeProject.transferOwnership(memberID)
-            if (response) {
-                TPEN.eventDispatcher.dispatch('tpen-toast', { message: 'Ownership transferred successfully.', status: 'success' })
-                location.reload()
-            }
-        } catch (error) {
-            console.error("Error transferring ownership:", error)
-            const errorMessage = this.getErrorMessage(error)
-            TPEN.eventDispatcher.dispatch('tpen-toast', { message: errorMessage, status: 'error', dismissible: true })
-        }
+        confirmAction(
+            confirmMessage,
+            () => {
+                TPEN.activeProject.transferOwnership(memberID)
+                    .then(response => {
+                        if (response) {
+                            TPEN.eventDispatcher.dispatch('tpen-toast', { message: 'Ownership transferred successfully.', status: 'success' })
+                            location.reload()
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Error transferring ownership:", error)
+                        const errorMessage = this.getErrorMessage(error)
+                        TPEN.eventDispatcher.dispatch('tpen-toast', { message: errorMessage, status: 'error', dismissible: true })
+                    })
+            },
+            null,
+            { positiveButtonText: "Transfer", negativeButtonText: "Cancel" }
+        )
     }
 
-    async handleRemoveMember(memberID, memberName) {
-        if (!confirm(`This action will remove ${memberName} from your project. Click 'OK' to continue?`)) return
-        try {
-            const data = await TPEN.activeProject.removeMember(memberID)
-            if (data) {
-                TPEN.eventDispatcher.dispatch('tpen-toast', { message: 'Member removed successfully', status: 'success' })
-                this.closeRoleModal()
-                this.refreshCollaborators()
-            }
-        } catch (error) {
-            console.error("Error removing member:", error)
-            const errorMessage = this.getErrorMessage(error)
-            TPEN.eventDispatcher.dispatch('tpen-toast', { message: errorMessage, status: 'error', dismissible: true })
-        }
+    handleRemoveMember(memberID, memberName) {
+        confirmAction(
+            `This action will remove ${memberName} from your project. Do you want to continue?`,
+            () => {
+                TPEN.activeProject.removeMember(memberID)
+                    .then(data => {
+                        if (data) {
+                            TPEN.eventDispatcher.dispatch('tpen-toast', { message: 'Member removed successfully', status: 'success' })
+                            this.closeRoleModal()
+                            this.refreshCollaborators()
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Error removing member:", error)
+                        const errorMessage = this.getErrorMessage(error)
+                        TPEN.eventDispatcher.dispatch('tpen-toast', { message: errorMessage, status: 'error', dismissible: true })
+                    })
+            },
+            null,
+            { positiveButtonText: "Remove", negativeButtonText: "Cancel" }
+        )
     }
 
     closeRoleModal() {

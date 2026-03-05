@@ -1,6 +1,8 @@
 import './Alert.js'
 import { eventDispatcher } from '../../../api/events.js'
 import { CleanupRegistry } from '../../../utilities/CleanupRegistry.js'
+import { closeModalHostWhenEmpty } from '../../../utilities/modalHost.js'
+import { sharedModalStyles } from '../modal.css.js'
 
 /**
  * AlertContainer - Global container for displaying alert dialogs.
@@ -9,6 +11,8 @@ import { CleanupRegistry } from '../../../utilities/CleanupRegistry.js'
  */
 class AlertContainer extends HTMLElement {
     #screenLockingSection
+    #alertQueue = []
+    #keydownHandler
     /** @type {CleanupRegistry} Registry for cleanup handlers */
     cleanup = new CleanupRegistry()
 
@@ -29,6 +33,7 @@ class AlertContainer extends HTMLElement {
 
     /**
      * Add the alert dialogue with acknowledgement button.
+     * Alerts are queued - only one is shown at a time.
      *
      * @params message {String} A message to show in the alert.
      * @params buttonText {String} The textual label for the acknowledgement button.
@@ -36,117 +41,119 @@ class AlertContainer extends HTMLElement {
     addAlert(message, buttonText) {
         if (!message || typeof message !== 'string') return
         if (!buttonText || typeof buttonText !== 'string') buttonText = 'OK'
-        const { matches: motionOK } = window.matchMedia('(prefers-reduced-motion: no-preference)')
+        
         const alertElem = document.createElement('tpen-alert')
         const okButton = document.createElement('button')
         const buttonContainer = document.createElement('div')
-        buttonContainer.classList.add("button-container")
+        buttonContainer.classList.add('button-container')
         okButton.textContent = buttonText
         alertElem.textContent = message
-        const handleOk = (e) => {
-            alertElem.dismiss()
-        }
+        
+        const handleOk = () => this.dismissCurrent()
         okButton.addEventListener('click', handleOk)
         buttonContainer.appendChild(okButton)
         alertElem.appendChild(buttonContainer)
-        this.#screenLockingSection.appendChild(alertElem)
-        alertElem.show()
+
+        const alertEntry = { elem: alertElem, button: okButton }
+        this.#alertQueue.push(alertEntry)
+
+        // If this is the first alert, show it immediately
+        if (this.#alertQueue.length === 1) {
+            this.#showCurrent()
+        }
+    }
+
+    /**
+     * Add a pre-built custom alert element to the global alert host.
+     * @param {HTMLElement} alertElem - Custom alert element, typically tpen-alert.
+     */
+    addCustomAlert(alertElem) {
+        if (!alertElem) return
+
+        const alertEntry = { elem: alertElem, button: alertElem.querySelector('button') }
+        this.#alertQueue.push(alertEntry)
+
+        if (this.#alertQueue.length === 1) {
+            this.#showCurrent()
+        }
+    }
+
+    /**
+     * Display the current (first) alert in the queue and set focus.
+     */
+    #showCurrent() {
+        if (this.#alertQueue.length === 0) return
+
+        const current = this.#alertQueue[0]
+        this.#screenLockingSection.appendChild(current.elem)
+        current.elem.show?.()
+
+        // Set focus to button
+        current.button?.focus?.()
+
+        // Use native dialog cancel event for Escape key (cleaner than document keydown)
+        const cancelHandler = (e) => {
+            e.preventDefault()
+            this.dismissCurrent()
+        }
+        this.#screenLockingSection.addEventListener('cancel', cancelHandler)
+
+        // Attach keyboard handler for Enter key
+        if (this.#keydownHandler) {
+            document.removeEventListener('keydown', this.#keydownHandler)
+        }
+        this.#keydownHandler = (e) => this.#handleKeydown(e)
+        document.addEventListener('keydown', this.#keydownHandler)
+
+        // Store cancel handler so it can be removed on dismiss
+        current.cancelHandler = cancelHandler
+    }
+
+    /**
+     * Handle keyboard events for alerts.
+     * - Enter: dismiss current alert
+     * (Escape is handled via native dialog cancel event)
+     */
+    #handleKeydown(e) {
+        const current = this.#alertQueue[0]
+        if (!current) return
+    }
+
+    /**
+     * Dismiss the current alert and show the next one in queue.
+     */
+    dismissCurrent() {
+        if (this.#alertQueue.length === 0) return
+
+        const current = this.#alertQueue.shift()
+        
+        // Remove the cancel event listener
+        if (current.cancelHandler) {
+            this.#screenLockingSection.removeEventListener('cancel', current.cancelHandler)
+        }
+        
+        current.elem.dismiss()
+
+        // Remove keyboard handler
+        if (this.#keydownHandler) {
+            document.removeEventListener('keydown', this.#keydownHandler)
+            this.#keydownHandler = null
+        }
+
+        // Show next alert in queue if available
+        if (this.#alertQueue.length > 0) {
+            setTimeout(() => this.#showCurrent(), 600) // Wait for dismiss animation
+            return
+        }
+
+        closeModalHostWhenEmpty(this.#screenLockingSection, 'tpen-alert')
     }
 
     render() {
         const style = document.createElement('style')
-        // We copied the :root rules from /components/gui/site/index.css.  Importing it was too much.
-        style.textContent = `
-            :host {
-              --primary-color: hsl(186, 84%, 40%);
-              --primary-light: hsl(186, 84%, 60%);
-              --light-color  : hsl(186, 84%, 90%);
-              --dark         : #2d2d2d;
-              --white        : hsl(0, 0%, 100%);
-              --gray         : hsl(0, 0%, 60%);
-              --light-gray   : hsl(0, 0%, 90%);
-            }
-            .alert-area {
-                position: fixed;
-                display: grid;
-                z-index: 16;
-                inset-block-start: 0;
-                inset-inline: 0;
-                justify-items: center;
-                justify-content: center;
-                height: 0vh;
-                background-color: rgba(0,0,0,0.7);
-                opacity: 0;
-                transition: all 0.5s ease-in-out;   
-            }
-            .alert-area.show {
-                opacity: 1;
-                height: 100vh;
-            }
-            tpen-alert {
-                z-index: 16;
-                display: block;
-                position: relative;
-                background-color: #333;
-                color: #fff;
-                padding: 10px 20px;
-                border-radius: 5px;
-                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-                opacity: 0.0;
-                height: fit-content;
-                min-width: 25vw;
-                max-width: 35vw;
-                transition: all 0.3s ease-in-out;
-                font-size: 14pt;
-            }
-                tpen-alert a {
-                    color: var(--primary-color);
-                    text-decoration: underline;
-                }
-            .alert-area tpen-alert {
-                top: 0px;
-                right: 0px;
-            }
-            @media (prefers-reduced-motion) {
-                .alert-area tpen-alert { 
-                    opacity: 1.0;
-                    height: fit-content;
-                    top: 5vh;
-                }
-            }
-            .alert-area .button-container {
-                position: relative;
-                display: block;
-                text-align: right;
-                margin-top: 1vh;
-            }
-            .alert-area tpen-alert.show {
-                opacity: 1.0;
-                height: fit-content;
-                top: 5vh;
-            }
-            .alert-area button {
-                position: relative;
-                display: inline-block;
-                cursor: pointer;
-                border: none;
-                padding: 10px 20px;
-                background-color: var(--primary-color);
-                outline: var(--primary-light) 1px solid;
-                outline-offset: -3.5px;
-                color: var(--white);
-                border-radius: 5px;
-                transition: all 0.3s;
-                font-size: 12pt;
-            }
-            .alert-area button:hover {
-                background-color: var(--primary-light);
-                outline: var(--primary-color) 1px solid;
-                outline-offset: -1.5px;
-            }
-        `
+        style.textContent = sharedModalStyles
         // This section will take over the screen and lock down screen interaction.  It lives at the top of the viewport.
-        const screenLockingSection = document.createElement('section')
+        const screenLockingSection = document.createElement('dialog')
         screenLockingSection.classList.add('alert-area')
 
         this.shadowRoot.innerHTML = ''
@@ -159,5 +166,5 @@ class AlertContainer extends HTMLElement {
 // Guard against duplicate registration when module is loaded via different URL paths
 if (!customElements.get('tpen-alert-container')) {
     customElements.define('tpen-alert-container', AlertContainer)
-    document?.body.after(new AlertContainer())
+    document.body.appendChild(new AlertContainer())
 }

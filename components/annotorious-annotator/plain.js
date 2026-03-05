@@ -14,6 +14,7 @@
 import TPEN from '../../api/TPEN.js'
 import User from '../../api/User.js'
 import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
+import { confirmAction } from '../../utilities/confirmAction.js'
 
 class AnnotoriousAnnotator extends HTMLElement {
     #osd
@@ -126,7 +127,7 @@ class AnnotoriousAnnotator extends HTMLElement {
       }
       this.#annotationPageURI = TPEN.screen.pageInQuery
       if(!this.#annotationPageURI) {
-          alert("You must provide a ?pageID=theid in the URL.  The value should be the URI of an existing AnnotationPage.")
+          TPEN.eventDispatcher.dispatch('tpen-alert', { message: "You must provide a ?pageID=theid in the URL.  The value should be the URI of an existing AnnotationPage." })
           return
       }
       this.setAttribute("annotationpage", this.#annotationPageURI)
@@ -257,13 +258,12 @@ class AnnotoriousAnnotator extends HTMLElement {
             _this.#eraseConfirmTimeout = null
             // Timeout required in order to allow the click-and-focus native functionality to complete.
             // Also stops the goofy UX for naturally slow clickers.
-            let c = confirm("Are you sure you want to remove this?")
-            if(c) {
-              _this.#annotoriousInstance.removeAnnotation(annotation)
-            }
-            else{
-              _this.#annotoriousInstance.cancelSelected()
-            }
+            confirmAction(
+              "Are you sure you want to remove this?",
+              () => _this.#annotoriousInstance.removeAnnotation(annotation),
+              () => _this.#annotoriousInstance.cancelSelected(),
+              { positiveButtonText: "Delete", negativeButtonText: "Cancel" }
+            )
           }, 500)
         }
       })

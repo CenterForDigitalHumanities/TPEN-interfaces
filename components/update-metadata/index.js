@@ -75,6 +75,21 @@ class UpdateMetadata extends HTMLElement {
         this.renderCleanup.onElement(document.getElementById("save-metadata-btn"), "click", () => {
             this.updateMetadata()
         })
+
+        this.renderCleanup.onElement(document.getElementById("cancel-btn"), "click", () => {
+            document.getElementById("metadata-modal")?.close?.()
+        })
+
+        this.renderCleanup.onElement(document.getElementById("metadata-modal"), "cancel", (e) => {
+            e.preventDefault()
+            document.getElementById("metadata-modal")?.close?.()
+        })
+
+        this.renderCleanup.onElement(document.getElementById("metadata-modal"), "click", (e) => {
+            if (e.target === e.currentTarget) {
+                document.getElementById("metadata-modal")?.close?.()
+            }
+        })
     }
 
     openModal() {
@@ -141,7 +156,9 @@ class UpdateMetadata extends HTMLElement {
             }
         })
 
-        modal.classList.remove("hidden")
+        if (!modal.open) {
+            modal.showModal()
+        }
     }
 
     addMetadataField(lang = "none", label = "", value = "", index = null) {

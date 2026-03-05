@@ -3,6 +3,7 @@ import "../../components/manage-pages/index.js"
 import CheckPermissions from "../../components/check-permissions/checkPermissions.js"
 import { onProjectReady } from "../../utilities/projectReady.js"
 import { CleanupRegistry } from "../../utilities/CleanupRegistry.js"
+import { confirmAction } from "../../utilities/confirmAction.js"
 
 /**
  * ProjectLayers - Manages project layers including creation, deletion, and page management.
@@ -244,24 +245,29 @@ class ProjectLayers extends HTMLElement {
                     })
                     return
                 }
-                if (!confirm("This Layer will be deleted and the Pages will no longer be a part of this project.  This action cannot be undone.")) return
                 const url = event.target.getAttribute("data-layer-id")
                 const layerId = url.substring(url.lastIndexOf("/") + 1)
-
-                fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/layer/${layerId}`, {
-                    method: "DELETE",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${TPEN.getAuthorization()}`
-                    }
-                })
-                .then(response => {
-                    return TPEN.eventDispatcher.dispatch("tpen-toast",
-                    response.ok ?
-                        { status: "info", message: 'Successfully Deleted Layer' } :
-                        { status: "error", message: 'Error Deleting Layer' }
-                    )
-                })
+                confirmAction(
+                    "This Layer will be deleted and the Pages will no longer be a part of this project. This action cannot be undone.",
+                    () => {
+                        fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/layer/${layerId}`, {
+                            method: "DELETE",
+                            headers: {
+                                "Content-Type": "application/json",
+                                Authorization: `Bearer ${TPEN.getAuthorization()}`
+                            }
+                        })
+                        .then(response => {
+                            return TPEN.eventDispatcher.dispatch("tpen-toast",
+                            response.ok ?
+                                { status: "info", message: 'Successfully Deleted Layer' } :
+                                { status: "error", message: 'Error Deleting Layer' }
+                            )
+                        })
+                    },
+                    null,
+                    { positiveButtonText: "Delete", negativeButtonText: "Cancel" }
+                )
             })
         })
 

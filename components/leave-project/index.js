@@ -3,6 +3,7 @@ import { getAgentIRIFromToken } from '../iiif-tools/index.js'
 import CheckPermissions from '../check-permissions/checkPermissions.js'
 import { onProjectReady } from "../../utilities/projectReady.js"
 import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
+import { confirmAction } from '../../utilities/confirmAction.js'
 
 /**
  * LeaveProject - Allows a user to leave a project they are a member of.
@@ -140,51 +141,57 @@ class LeaveProject extends HTMLElement {
     }
 
     leaveProject() {
-        if (!confirm("You are leaving this TPEN3 project.")) return
-        let redir = true
-        const leaveBtn = this.shadowRoot.getElementById("leaveBtn")
-        leaveBtn.setAttribute("disabled", "disabled")
-        leaveBtn.setAttribute("value", "leaving...")
+        confirmAction(
+            "You are leaving this TPEN3 project.",
+            () => {
+                let redir = true
+                const leaveBtn = this.shadowRoot.getElementById("leaveBtn")
+                leaveBtn.setAttribute("disabled", "disabled")
+                leaveBtn.setAttribute("value", "leaving...")
 
-        fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/leave`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${TPEN.getAuthorization()}`
-            }
-        })
-        .then(resp => {
-            if (resp.ok) return resp.text()
-            redir = false
-            return resp.json()
-        })
-        .then(message => {
-            let userMessage = (typeof message === "string") ? message : message?.message
-            if (redir) {
-                this.shadowRoot.innerHTML = `
-                    <h3>Now you are not a project member.  Goodbye 👋</h3>
-                `
-                setTimeout(() => {
-                  document.location.href = TPEN.BASEURL
-                }, 3000)
-                return
-            }
-            this.shadowRoot.innerHTML = `
-                <h3>There was an error leaving the project.</h3>
-                <p>
-                    The message below has more details.
-                    Refresh the page to try again or contact the TPEN3 Administrators.  
-                </p>
-                <code>${userMessage}<code>
-            `
-        })
-        .catch(err => {
-             this.shadowRoot.innerHTML = `
-                <h3> 
-                    There was an error leaving the project.  Refresh the page to try again 
-                    or contact the TPEN3 Administrators. 
-                </h3>
-            `
-        })
+                fetch(`${TPEN.servicesURL}/project/${TPEN.activeProject._id}/leave`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${TPEN.getAuthorization()}`
+                    }
+                })
+                .then(resp => {
+                    if (resp.ok) return resp.text()
+                    redir = false
+                    return resp.json()
+                })
+                .then(message => {
+                    let userMessage = (typeof message === "string") ? message : message?.message
+                    if (redir) {
+                        this.shadowRoot.innerHTML = `
+                            <h3>Now you are not a project member.  Goodbye 👋</h3>
+                        `
+                        setTimeout(() => {
+                          document.location.href = TPEN.BASEURL
+                        }, 3000)
+                        return
+                    }
+                    this.shadowRoot.innerHTML = `
+                        <h3>There was an error leaving the project.</h3>
+                        <p>
+                            The message below has more details.
+                            Refresh the page to try again or contact the TPEN3 Administrators.  
+                        </p>
+                        <code>${userMessage}<code>
+                    `
+                })
+                .catch(err => {
+                     this.shadowRoot.innerHTML = `
+                        <h3> 
+                            There was an error leaving the project.  Refresh the page to try again 
+                            or contact the TPEN3 Administrators. 
+                        </h3>
+                    `
+                })
+            },
+            null,
+            { positiveButtonText: "Leave", negativeButtonText: "Cancel" }
+        )
     }
 }
 
