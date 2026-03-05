@@ -18,7 +18,6 @@ import { detectTextLinesCombined } from "./detect-lines.js"
 import { v4 as uuidv4 } from "https://cdn.skypack.dev/uuid@9.0.1"
 import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 import { onProjectReady } from '../../utilities/projectReady.js'
-import { confirmAction } from '../../api/events.js'
 import vault from '../../js/vault.js'
 import '../page-selector/index.js'
 import { confirmAction } from '../../utilities/confirmAction.js'

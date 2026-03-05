@@ -15,7 +15,7 @@ class Confirm extends HTMLElement {
         super()
         this.attachShadow({ mode: 'open' })
         this.shadowRoot.innerHTML = `
-            <output role="confirm">
+            <output role="alertdialog">
             <slot></slot>
             </output>
         `

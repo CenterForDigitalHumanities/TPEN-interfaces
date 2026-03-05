@@ -31,8 +31,18 @@ class ConfirmContainer extends HTMLElement {
             detail?.negativeButtonText,
             detail?.confirmId
         )
-        const positiveHandler = () => this.dismissCurrent()
-        const negativeHandler = () => this.dismissCurrent()
+        const positiveHandler = ({ detail }) => {
+            const current = this.#dialogQueue[0]
+            if (current && detail?.confirmId === current.confirmId) {
+                this.dismissCurrent()
+            }
+        }
+        const negativeHandler = ({ detail }) => {
+            const current = this.#dialogQueue[0]
+            if (current && detail?.confirmId === current.confirmId) {
+                this.dismissCurrent()
+            }
+        }
 
         this.cleanup.onEvent(eventDispatcher, 'tpen-confirm', confirmHandler)
         this.cleanup.onEvent(eventDispatcher, 'tpen-confirm-positive', positiveHandler)
@@ -54,8 +64,6 @@ class ConfirmContainer extends HTMLElement {
      */
     addConfirm(message, positiveButtonText, negativeButtonText, confirmId) {
         if (!message || typeof message !== 'string') return
-        // Prevent multiple dialogs from stacking when actions are triggered rapidly
-        if (this.#screenLockingSection.querySelector('tpen-confirm')) return
         if (!positiveButtonText || typeof positiveButtonText !== 'string') positiveButtonText = 'Yes'
         if (!negativeButtonText || typeof negativeButtonText !== 'string') negativeButtonText = 'No'
 
@@ -63,7 +71,6 @@ class ConfirmContainer extends HTMLElement {
         buttonContainer.classList.add('button-container')
         const confirmElem = document.createElement('tpen-confirm')
         const confirmButton = document.createElement('button')
-        confirmButton.style.marginRight = '10px'
         const denyButton = document.createElement('button')
 
         confirmElem.textContent = message
@@ -85,7 +92,8 @@ class ConfirmContainer extends HTMLElement {
 
         const dialogEntry = {
             elem: confirmElem,
-            buttons: { positive: confirmButton, negative: denyButton }
+            buttons: { positive: confirmButton, negative: denyButton },
+            confirmId: confirmId
         }
 
         this.#dialogQueue.push(dialogEntry)
@@ -108,36 +116,45 @@ class ConfirmContainer extends HTMLElement {
         this.#screenLockingSection.appendChild(current.elem)
         current.elem.show()
 
-        // Set focus to positive button (Yes/OK/Delete) by default
-        current.buttons.positive.focus()
+        // Set focus to negative/cancel button by default (UX best practice: avoid accidental destructive actions)
+        current.buttons.negative.focus()
 
-        // Attach keyboard handler for current dialog
+        // Use native dialog cancel event for Escape key (cleaner than document keydown)
+        const cancelHandler = (e) => {
+            e.preventDefault()
+            current.buttons.negative.click()
+        }
+        this.#screenLockingSection.addEventListener('cancel', cancelHandler)
+
+        // Attach keyboard handler for Tab/Enter navigation
         if (this.#keydownHandler) {
             document.removeEventListener('keydown', this.#keydownHandler)
         }
         this.#keydownHandler = (e) => this.#handleKeydown(e)
         document.addEventListener('keydown', this.#keydownHandler)
+
+        // Store cancel handler so it can be removed on dismiss
+        current.cancelHandler = cancelHandler
     }
 
     /**
      * Handle keyboard navigation in confirm dialogs.
      * - Tab: cycle focus between buttons
      * - Enter: activate focused button
-     * - Escape: dismiss dialog (treat as negative/cancel)
+     * (Escape is handled via native dialog cancel event)
      */
     #handleKeydown(e) {
         if (!this.#confirmElem) return
 
-        if (e.key === 'Escape') {
-            e.preventDefault()
-            this.dismissCurrent()
-            return
-        }
-
         if (e.key === 'Enter') {
             e.preventDefault()
-            if (document.activeElement?.tagName === 'BUTTON') {
-                document.activeElement.click()
+            // Traverse shadow DOM to find the actual focused element
+            let focused = document.activeElement
+            while (focused?.shadowRoot?.activeElement) {
+                focused = focused.shadowRoot.activeElement
+            }
+            if (focused?.tagName === 'BUTTON') {
+                focused.click()
             }
             return
         }
@@ -146,28 +163,20 @@ class ConfirmContainer extends HTMLElement {
             const buttons = this.#confirmElem.querySelectorAll('button')
             if (buttons.length !== 2) return
 
-            const focused = document.activeElement
-            const isPositive = buttons[0] === focused
-            const isNegative = buttons[1] === focused
+            // Traverse shadow DOM for actual focus
+            let focused = document.activeElement
+            while (focused?.shadowRoot?.activeElement) {
+                focused = focused.shadowRoot.activeElement
+            }
 
+            e.preventDefault()
+            // Simple two-button cycle: Tab goes negative→positive, Shift+Tab goes positive→negative
             if (e.shiftKey) {
-                // Shift+Tab: move to previous button
-                if (isPositive || !isNegative) {
-                    e.preventDefault()
-                    buttons[1].focus()
-                } else {
-                    e.preventDefault()
-                    buttons[0].focus()
-                }
+                const target = focused === buttons[0] ? buttons[1] : buttons[0]
+                target.focus()
             } else {
-                // Tab: move to next button
-                if (isNegative || !isPositive) {
-                    e.preventDefault()
-                    buttons[0].focus()
-                } else {
-                    e.preventDefault()
-                    buttons[1].focus()
-                }
+                const target = focused === buttons[1] ? buttons[0] : buttons[1]
+                target.focus()
             }
         }
     }
@@ -179,6 +188,12 @@ class ConfirmContainer extends HTMLElement {
         if (this.#dialogQueue.length === 0) return
 
         const current = this.#dialogQueue.shift()
+        
+        // Remove the cancel event listener
+        if (current.cancelHandler) {
+            this.#screenLockingSection.removeEventListener('cancel', current.cancelHandler)
+        }
+        
         current.elem.dismiss()
 
         // Remove keyboard handler
@@ -213,5 +228,5 @@ class ConfirmContainer extends HTMLElement {
 // Guard against duplicate registration when module is loaded via different URL paths
 if (!customElements.get('tpen-confirm-container')) {
     customElements.define('tpen-confirm-container', ConfirmContainer)
-    document?.body.after(new ConfirmContainer())
+    document.body.appendChild(new ConfirmContainer())
 }

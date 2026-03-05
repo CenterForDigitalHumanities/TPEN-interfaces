@@ -11,6 +11,7 @@ import { sharedModalStyles } from '../modal.css.js'
  */
 class AlertContainer extends HTMLElement {
     #screenLockingSection
+    #alertQueue = []
     #keydownHandler
     /** @type {CleanupRegistry} Registry for cleanup handlers */
     cleanup = new CleanupRegistry()
@@ -32,6 +33,7 @@ class AlertContainer extends HTMLElement {
 
     /**
      * Add the alert dialogue with acknowledgement button.
+     * Alerts are queued - only one is shown at a time.
      *
      * @params message {String} A message to show in the alert.
      * @params buttonText {String} The textual label for the acknowledgement button.
@@ -39,24 +41,26 @@ class AlertContainer extends HTMLElement {
     addAlert(message, buttonText) {
         if (!message || typeof message !== 'string') return
         if (!buttonText || typeof buttonText !== 'string') buttonText = 'OK'
+        
         const alertElem = document.createElement('tpen-alert')
         const okButton = document.createElement('button')
         const buttonContainer = document.createElement('div')
         buttonContainer.classList.add('button-container')
         okButton.textContent = buttonText
         alertElem.textContent = message
-        const handleOk = (e) => {
-            this.#dismissAlert(alertElem)
-        }
+        
+        const handleOk = () => this.dismissCurrent()
         okButton.addEventListener('click', handleOk)
         buttonContainer.appendChild(okButton)
         alertElem.appendChild(buttonContainer)
-        this.#screenLockingSection.appendChild(alertElem)
-        alertElem.show()
 
-        // Set focus to button
-        okButton.focus()
-        this.#attachKeyboardHandler(alertElem)
+        const alertEntry = { elem: alertElem, button: okButton }
+        this.#alertQueue.push(alertEntry)
+
+        // If this is the first alert, show it immediately
+        if (this.#alertQueue.length === 1) {
+            this.#showCurrent()
+        }
     }
 
     /**
@@ -66,42 +70,85 @@ class AlertContainer extends HTMLElement {
     addCustomAlert(alertElem) {
         if (!alertElem) return
 
-        this.#screenLockingSection.appendChild(alertElem)
-        alertElem.show?.()
+        const alertEntry = { elem: alertElem, button: alertElem.querySelector('button') }
+        this.#alertQueue.push(alertEntry)
 
-        const firstButton = alertElem.querySelector('button')
-        firstButton?.focus?.()
-
-        this.#attachKeyboardHandler(alertElem)
+        if (this.#alertQueue.length === 1) {
+            this.#showCurrent()
+        }
     }
 
     /**
-     * Attach keyboard handling for the active alert.
-     * @param {HTMLElement} alertElem - Alert element to dismiss on key actions.
+     * Display the current (first) alert in the queue and set focus.
      */
-    #attachKeyboardHandler(alertElem) {
+    #showCurrent() {
+        if (this.#alertQueue.length === 0) return
+
+        const current = this.#alertQueue[0]
+        this.#screenLockingSection.appendChild(current.elem)
+        current.elem.show?.()
+
+        // Set focus to button
+        current.button?.focus?.()
+
+        // Use native dialog cancel event for Escape key (cleaner than document keydown)
+        const cancelHandler = (e) => {
+            e.preventDefault()
+            this.dismissCurrent()
+        }
+        this.#screenLockingSection.addEventListener('cancel', cancelHandler)
+
+        // Attach keyboard handler for Enter key
         if (this.#keydownHandler) {
             document.removeEventListener('keydown', this.#keydownHandler)
         }
-
-        this.#keydownHandler = (e) => {
-            if (e.key === 'Escape' || e.key === 'Enter') {
-                e.preventDefault()
-                this.#dismissAlert(alertElem)
-            }
-        }
-
+        this.#keydownHandler = (e) => this.#handleKeydown(e)
         document.addEventListener('keydown', this.#keydownHandler)
+
+        // Store cancel handler so it can be removed on dismiss
+        current.cancelHandler = cancelHandler
     }
 
     /**
-     * Dismiss an alert and remove keyboard handler.
+     * Handle keyboard events for alerts.
+     * - Enter: dismiss current alert
+     * (Escape is handled via native dialog cancel event)
      */
-    #dismissAlert(alertElem) {
-        alertElem.dismiss()
+    #handleKeydown(e) {
+        const current = this.#alertQueue[0]
+        if (!current) return
+
+        if (e.key === 'Enter' && (e.target === current.elem || current.elem.contains(e.target))) {
+            e.preventDefault()
+            this.dismissCurrent()
+        }
+    }
+
+    /**
+     * Dismiss the current alert and show the next one in queue.
+     */
+    dismissCurrent() {
+        if (this.#alertQueue.length === 0) return
+
+        const current = this.#alertQueue.shift()
+        
+        // Remove the cancel event listener
+        if (current.cancelHandler) {
+            this.#screenLockingSection.removeEventListener('cancel', current.cancelHandler)
+        }
+        
+        current.elem.dismiss()
+
+        // Remove keyboard handler
         if (this.#keydownHandler) {
             document.removeEventListener('keydown', this.#keydownHandler)
             this.#keydownHandler = null
+        }
+
+        // Show next alert in queue if available
+        if (this.#alertQueue.length > 0) {
+            setTimeout(() => this.#showCurrent(), 600) // Wait for dismiss animation
+            return
         }
 
         closeModalHostWhenEmpty(this.#screenLockingSection, 'tpen-alert')
@@ -124,5 +171,5 @@ class AlertContainer extends HTMLElement {
 // Guard against duplicate registration when module is loaded via different URL paths
 if (!customElements.get('tpen-alert-container')) {
     customElements.define('tpen-alert-container', AlertContainer)
-    document?.body.after(new AlertContainer())
+    document.body.appendChild(new AlertContainer())
 }
