@@ -117,11 +117,6 @@ class AlertContainer extends HTMLElement {
     #handleKeydown(e) {
         const current = this.#alertQueue[0]
         if (!current) return
-
-        if (e.key === 'Enter' && (e.target === current.elem || current.elem.contains(e.target))) {
-            e.preventDefault()
-            this.dismissCurrent()
-        }
     }
 
     /**
