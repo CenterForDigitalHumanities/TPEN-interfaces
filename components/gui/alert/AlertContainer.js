@@ -12,7 +12,6 @@ import { sharedModalStyles } from '../modal.css.js'
 class AlertContainer extends HTMLElement {
     #screenLockingSection
     #alertQueue = []
-    #keydownHandler
     /** @type {CleanupRegistry} Registry for cleanup handlers */
     cleanup = new CleanupRegistry()
 
@@ -98,25 +97,8 @@ class AlertContainer extends HTMLElement {
         }
         this.#screenLockingSection.addEventListener('cancel', cancelHandler)
 
-        // Attach keyboard handler for Enter key
-        if (this.#keydownHandler) {
-            document.removeEventListener('keydown', this.#keydownHandler)
-        }
-        this.#keydownHandler = (e) => this.#handleKeydown(e)
-        document.addEventListener('keydown', this.#keydownHandler)
-
         // Store cancel handler so it can be removed on dismiss
         current.cancelHandler = cancelHandler
-    }
-
-    /**
-     * Handle keyboard events for alerts.
-     * - Enter: dismiss current alert
-     * (Escape is handled via native dialog cancel event)
-     */
-    #handleKeydown(e) {
-        const current = this.#alertQueue[0]
-        if (!current) return
     }
 
     /**
@@ -133,12 +115,6 @@ class AlertContainer extends HTMLElement {
         }
         
         current.elem.dismiss()
-
-        // Remove keyboard handler
-        if (this.#keydownHandler) {
-            document.removeEventListener('keydown', this.#keydownHandler)
-            this.#keydownHandler = null
-        }
 
         // Show next alert in queue if available
         if (this.#alertQueue.length > 0) {
