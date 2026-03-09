@@ -443,6 +443,23 @@ class TpenManageColumns extends HTMLElement {
         return globalThis.crypto?.randomUUID?.() ?? `column-${Date.now()}-${Math.random().toString(16).slice(2)}`
     }
 
+    async readJsonBodyOrNull(res, operationName) {
+        if (res.status === 204 || res.headers.get("content-length") === "0") return null
+
+        const contentType = (res.headers.get("content-type") ?? "").toLowerCase()
+        if (!contentType.includes("application/json")) {
+            console.warn(`Column ${operationName} returned non-JSON response (${contentType || "unknown content type"}); using local fallback.`)
+            return null
+        }
+
+        try {
+            return await res.json()
+        } catch (error) {
+            console.warn(`Could not parse JSON response for column ${operationName}; using local fallback.`, error)
+            return null
+        }
+    }
+
     updateColumnsFromResponse(data) {
         const columns = data?.columns ?? data?.page?.columns ?? data?.data?.columns
         if (!Array.isArray(columns)) return false
@@ -468,7 +485,7 @@ class TpenManageColumns extends HTMLElement {
         page.columns = this.existingColumns.map(column => {
             const rawLabel = column.rawLabel ?? column.label
             const existing = byLabel.get(rawLabel)
-            const id = column.id ?? existing?.id ?? existing?._id ?? this.generateColumnId(rawLabel)
+            const id = column.id ?? existing?.id ?? existing?._id ?? this.generateColumnId()
             const updated = {
                 ...existing,
                 id,
@@ -516,7 +533,7 @@ class TpenManageColumns extends HTMLElement {
             if (column?.lines?.length) mergedLines.push(...column.lines)
         })
         const remaining = this.existingColumns.filter((_, index) => !mergeIndexes.includes(index))
-        const newId = this.generateColumnId(newLabel)
+        const newId = this.generateColumnId()
         remaining.push({
             id: newId,
             _id: newId,
@@ -543,7 +560,7 @@ class TpenManageColumns extends HTMLElement {
     }
 
     createColumnLocal(columnLabel, annotationIds) {
-        const newId = this.generateColumnId(columnLabel)
+        const newId = this.generateColumnId()
         this.existingColumns.push({
             id: newId,
             _id: newId,
@@ -697,7 +714,7 @@ class TpenManageColumns extends HTMLElement {
                 TPEN.eventDispatcher.dispatch("tpen-toast", { 
                     status: "success", message: 'Columns merged successfully.' 
                 })
-                const data = await res.json()
+                const data = await this.readJsonBodyOrNull(res, "merge")
                 if (!this.updateColumnsFromResponse(data)) {
                     this.mergeColumnsLocal(newLabel, columnLabelsToMerge)
                 }
@@ -801,7 +818,7 @@ class TpenManageColumns extends HTMLElement {
                 TPEN.eventDispatcher.dispatch("tpen-toast", { 
                     status: "success", message: 'Column extended successfully.' 
                 })
-                const data = await res.json()
+                const data = await this.readJsonBodyOrNull(res, "extend")
                 if (!this.updateColumnsFromResponse(data)) {
                     this.extendColumnLocal(this.originalColumnLabels[columnToExtend], annotationIdsToAdd)
                 }
@@ -998,8 +1015,9 @@ class TpenManageColumns extends HTMLElement {
             })
 
         const duplicate = this.existingColumns.some(col => {
-            const existingLabel = (col.label ?? "").toString().trim()
-            return existingLabel === columnLabel
+            const displayLabel = (col.label ?? "").toString().trim()
+            const rawLabel = (col.rawLabel ?? "").toString().trim()
+            return displayLabel === columnLabel || rawLabel === columnLabel
         })
         if (duplicate) {
             return TPEN.eventDispatcher.dispatch("tpen-toast", { 
@@ -1026,7 +1044,7 @@ class TpenManageColumns extends HTMLElement {
             TPEN.eventDispatcher.dispatch("tpen-toast", { 
                 status: "success", message: 'Column created successfully.' 
             })
-            const data = await res.json()
+            const data = await this.readJsonBodyOrNull(res, "create")
             if (!this.updateColumnsFromResponse(data)) {
                 this.createColumnLocal(columnLabel, selectedIDs)
             }
@@ -1051,7 +1069,7 @@ class TpenManageColumns extends HTMLElement {
             TPEN.eventDispatcher.dispatch("tpen-toast", { 
                 status: "info", message: 'All columns cleared successfully.' 
             })
-            const data = await res.json()
+            const data = await this.readJsonBodyOrNull(res, "clear")
             if (!this.updateColumnsFromResponse(data)) {
                 this.clearColumnsLocal()
             }
