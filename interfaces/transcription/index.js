@@ -385,7 +385,10 @@ export default class TranscriptionInterface extends HTMLElement {
         rightPane.innerHTML = `<${tagName}></${tagName}>`
       }
       script.onerror = () => {
-        rightPane.innerHTML = `<p>Failed to load tool: ${tagName}</p>`
+        rightPane.replaceChildren()
+        const message = document.createElement('p')
+        message.textContent = `Failed to load tool: ${tagName ?? 'unknown tool'}`
+        rightPane.appendChild(message)
       }
       document.head.appendChild(script)
       return
