@@ -61,6 +61,12 @@ class Tpen {
         eventDispatcher.on("tpen-user-loaded", ev => this.currentUser = ev.detail)
         eventDispatcher.on("tpen-project-loaded", ev => this.activeProject = ev.detail)
 
+        // Centralized token expiration UX: notify user and redirect to login
+        eventDispatcher.on('token-expiration', () => {
+            eventDispatcher.dispatch('tpen-toast', { status: 'error', message: 'Your session has expired. Redirecting to login...' })
+            setTimeout(() => this.login(), 4000)
+        })
+
         if (this.screen.projectInQuery) {
             try {
                 import('./Project.js').then(module => {
@@ -176,6 +182,13 @@ class Tpen {
 
     logout(redirect = origin + location.pathname) {
         localStorage.removeItem("userToken")
+        // Clear user-specific IIIF resource cache so another user on this device
+        // does not inherit authenticated annotation data from the previous session (#402)
+        for (const key of Object.keys(localStorage)) {
+            if (/^vault:(annotation|annotationpage|annotationcollection):/.test(key)) {
+                localStorage.removeItem(key)
+            }
+        }
         location.href = `${this.TPEN3URL}/logout?returnTo=${encodeURIComponent(redirect)}`
         return
     }
