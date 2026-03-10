@@ -1,15 +1,20 @@
 import './Confirm.js'
 import { eventDispatcher } from '../../../api/events.js'
 import { CleanupRegistry } from '../../../utilities/CleanupRegistry.js'
+import { closeModalHostWhenEmpty } from '../../../utilities/modalHost.js'
+import { sharedModalStyles } from '../modal.css.js'
 
 /**
  * ConfirmContainer - Global container for displaying confirmation dialogs.
  * Listens for 'tpen-confirm' events and displays modal confirm dialogs.
+ * Manages a queue of pending dialogs - only one is shown at a time.
  * @element tpen-confirm-container
  */
 class ConfirmContainer extends HTMLElement {
     #screenLockingSection
     #confirmElem
+    #dialogQueue = []
+    #keydownHandler
     /** @type {CleanupRegistry} Registry for cleanup handlers */
     cleanup = new CleanupRegistry()
 
@@ -20,9 +25,24 @@ class ConfirmContainer extends HTMLElement {
     }
 
     connectedCallback() {
-        const confirmHandler = ({ detail }) => this.addConfirm(detail?.message, detail?.positiveButtonText, detail.negativeButtonText)
-        const positiveHandler = () => this.#confirmElem?.dismiss()
-        const negativeHandler = () => this.#confirmElem?.dismiss()
+        const confirmHandler = ({ detail }) => this.addConfirm(
+            detail?.message,
+            detail?.positiveButtonText,
+            detail?.negativeButtonText,
+            detail?.confirmId
+        )
+        const positiveHandler = ({ detail }) => {
+            const current = this.#dialogQueue[0]
+            if (current && detail?.confirmId === current.confirmId) {
+                this.dismissCurrent()
+            }
+        }
+        const negativeHandler = ({ detail }) => {
+            const current = this.#dialogQueue[0]
+            if (current && detail?.confirmId === current.confirmId) {
+                this.dismissCurrent()
+            }
+        }
 
         this.cleanup.onEvent(eventDispatcher, 'tpen-confirm', confirmHandler)
         this.cleanup.onEvent(eventDispatcher, 'tpen-confirm-positive', positiveHandler)
@@ -35,131 +55,167 @@ class ConfirmContainer extends HTMLElement {
 
     /**
      * Add the confirm dialogue with positive and negative confirmation buttons.
+     * Dialogs are queued - only one is shown at a time.
      *
      * @params message {String} A message to show in the confirm dialogue.
      * @params positiveButtonText {String} The text label for the positive confirm button.
      * @params negativeButtonText {String} The text label for the negative confirm button.
+     * @params confirmId {String} Unique ID to prevent listener collisions on rapid confirms.
      */
-    addConfirm(message, positiveButtonText, negativeButtonText) {
+    addConfirm(message, positiveButtonText, negativeButtonText, confirmId) {
         if (!message || typeof message !== 'string') return
         if (!positiveButtonText || typeof positiveButtonText !== 'string') positiveButtonText = 'Yes'
         if (!negativeButtonText || typeof negativeButtonText !== 'string') negativeButtonText = 'No'
-        const { matches: motionOK } = window.matchMedia('(prefers-reduced-motion: no-preference)')
-        const buttonContainer = document.createElement("div")
-        buttonContainer.classList.add("button-container")
+
+        const buttonContainer = document.createElement('div')
+        buttonContainer.classList.add('button-container')
         const confirmElem = document.createElement('tpen-confirm')
         const confirmButton = document.createElement('button')
-        confirmButton.style.marginRight = "10px"
         const denyButton = document.createElement('button')
+
         confirmElem.textContent = message
         confirmButton.textContent = positiveButtonText
         denyButton.textContent = negativeButtonText
+
         const handlePositive = (e) => {
-            eventDispatcher.dispatch("tpen-confirm-positive")
+            eventDispatcher.dispatch('tpen-confirm-positive', { confirmId })
         }
         const handleNegative = (e) => {
-            eventDispatcher.dispatch("tpen-confirm-negative")
+            eventDispatcher.dispatch('tpen-confirm-negative', { confirmId })
         }
+
         confirmButton.addEventListener('click', handlePositive)
         denyButton.addEventListener('click', handleNegative)
         buttonContainer.appendChild(confirmButton)
         buttonContainer.appendChild(denyButton)
         confirmElem.appendChild(buttonContainer)
-        this.#screenLockingSection.appendChild(confirmElem)
-        this.#confirmElem = confirmElem
-        confirmElem.show()
+
+        const dialogEntry = {
+            elem: confirmElem,
+            buttons: { positive: confirmButton, negative: denyButton },
+            confirmId: confirmId
+        }
+
+        this.#dialogQueue.push(dialogEntry)
+
+        // If this is the first dialog, show it immediately
+        if (this.#dialogQueue.length === 1) {
+            this.#showCurrent()
+        }
+    }
+
+    /**
+     * Display the current (first) dialog in the queue and set focus.
+     */
+    #showCurrent() {
+        if (this.#dialogQueue.length === 0) return
+
+        const current = this.#dialogQueue[0]
+        this.#confirmElem = current.elem
+
+        this.#screenLockingSection.appendChild(current.elem)
+        current.elem.show()
+
+        // Set focus to negative/cancel button by default (UX best practice: avoid accidental destructive actions)
+        current.buttons.negative.focus()
+
+        // Use native dialog cancel event for Escape key (cleaner than document keydown)
+        const cancelHandler = (e) => {
+            e.preventDefault()
+            current.buttons.negative.click()
+        }
+        this.#screenLockingSection.addEventListener('cancel', cancelHandler)
+
+        // Attach keyboard handler for Tab/Enter navigation
+        if (this.#keydownHandler) {
+            document.removeEventListener('keydown', this.#keydownHandler)
+        }
+        this.#keydownHandler = (e) => this.#handleKeydown(e)
+        document.addEventListener('keydown', this.#keydownHandler)
+
+        // Store cancel handler so it can be removed on dismiss
+        current.cancelHandler = cancelHandler
+    }
+
+    /**
+     * Handle keyboard navigation in confirm dialogs.
+     * - Tab: cycle focus between buttons
+     * - Enter: activate focused button
+     * (Escape is handled via native dialog cancel event)
+     */
+    #handleKeydown(e) {
+        if (!this.#confirmElem) return
+
+        if (e.key === 'Enter') {
+            e.preventDefault()
+            // Traverse shadow DOM to find the actual focused element
+            let focused = document.activeElement
+            while (focused?.shadowRoot?.activeElement) {
+                focused = focused.shadowRoot.activeElement
+            }
+            if (focused?.tagName === 'BUTTON') {
+                focused.click()
+            }
+            return
+        }
+
+        if (e.key === 'Tab') {
+            const buttons = this.#confirmElem.querySelectorAll('button')
+            if (buttons.length !== 2) return
+
+            // Traverse shadow DOM for actual focus
+            let focused = document.activeElement
+            while (focused?.shadowRoot?.activeElement) {
+                focused = focused.shadowRoot.activeElement
+            }
+
+            e.preventDefault()
+            // Simple two-button cycle: Tab goes negative→positive, Shift+Tab goes positive→negative
+            if (e.shiftKey) {
+                const target = focused === buttons[0] ? buttons[1] : buttons[0]
+                target.focus()
+            } else {
+                const target = focused === buttons[1] ? buttons[0] : buttons[1]
+                target.focus()
+            }
+        }
+    }
+
+    /**
+     * Dismiss the current dialog and show the next one in queue.
+     */
+    dismissCurrent() {
+        if (this.#dialogQueue.length === 0) return
+
+        const current = this.#dialogQueue.shift()
+        
+        // Remove the cancel event listener
+        if (current.cancelHandler) {
+            this.#screenLockingSection.removeEventListener('cancel', current.cancelHandler)
+        }
+        
+        current.elem.dismiss()
+
+        // Remove keyboard handler
+        if (this.#keydownHandler) {
+            document.removeEventListener('keydown', this.#keydownHandler)
+            this.#keydownHandler = null
+        }
+
+        // Show next dialog in queue if available
+        if (this.#dialogQueue.length > 0) {
+            setTimeout(() => this.#showCurrent(), 600) // Wait for dismiss animation
+            return
+        }
+
+        closeModalHostWhenEmpty(this.#screenLockingSection, 'tpen-confirm')
     }
 
     render() {
         const style = document.createElement('style')
-        // We copied the :root rules from /components/gui/site/index.css.  Importing it was too much.
-        style.textContent = `
-            :host {
-              --primary-color: hsl(186, 84%, 40%);
-              --primary-light: hsl(186, 84%, 60%);
-              --light-color  : hsl(186, 84%, 90%);
-              --dark         : #2d2d2d;
-              --white        : hsl(0, 0%, 100%);
-              --gray         : hsl(0, 0%, 60%);
-              --light-gray   : hsl(0, 0%, 90%);
-            }
-            .confirm-area {
-                position: fixed;
-                display: grid;
-                z-index: 16;
-                inset-block-start: 0;
-                inset-inline: 0;
-                justify-items: center;
-                justify-content: center;
-                height: 0vh;
-                background-color: rgba(0,0,0,0.7);
-                opacity: 0;
-                transition: all 0.5s ease-in-out;   
-            }
-            .confirm-area.show {
-                opacity: 1;
-                height: 100vh;
-            }
-            tpen-confirm {
-                z-index: 16;
-                display: block;
-                position: relative;
-                background-color: #333;
-                color: #fff;
-                padding: 10px 20px;
-                border-radius: 5px;
-                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-                opacity: 0.0;
-                height: fit-content;
-                min-width: 25vw;
-                max-width: 35vw;
-                transition: all 0.3s ease-in-out;
-                font-size: 14pt;
-            }
-            .confirm-area tpen-confirm {
-                top: 0px;
-                right: 0px;
-            }
-            @media (prefers-reduced-motion) {
-                .confirm-area tpen-confirm { 
-                    opacity: 1.0;
-                    height: fit-content;
-                    top: 5vh;
-                }
-            }
-            .confirm-area tpen-confirm.show {
-                opacity: 1.0;
-                height: fit-content;
-                top: 5vh;
-            }
-            .confirm-area .button-container {
-                position: relative;
-                display: block;
-                text-align: right;
-                margin-top: 1vh;
-            }
-            .confirm-area button {
-                position: relative;
-                display: inline-block;
-                cursor: pointer;
-                border: none;
-                padding: 10px 20px;
-                background-color: var(--primary-color);
-                outline: var(--primary-light) 1px solid;
-                outline-offset: -3.5px;
-                color: var(--white);
-                border-radius: 5px;
-                transition: all 0.3s;
-                font-size: 12pt;
-            }
-            .confirm-area button:hover {
-                background-color: var(--primary-light);
-                outline: var(--primary-color) 1px solid;
-                outline-offset: -1.5px;
-            }
-        `
+        style.textContent = sharedModalStyles
         // This section will take over the screen and lock down screen interaction.  It lives at the top of the viewport.
-        const screenLockingSection = document.createElement('section')
+        const screenLockingSection = document.createElement('dialog')
         screenLockingSection.classList.add('confirm-area')
 
         this.shadowRoot.innerHTML = ''
@@ -172,5 +228,5 @@ class ConfirmContainer extends HTMLElement {
 // Guard against duplicate registration when module is loaded via different URL paths
 if (!customElements.get('tpen-confirm-container')) {
     customElements.define('tpen-confirm-container', ConfirmContainer)
-    document?.body.after(new ConfirmContainer())
+    document.body.appendChild(new ConfirmContainer())
 }

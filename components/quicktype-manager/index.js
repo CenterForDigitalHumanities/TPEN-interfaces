@@ -4,6 +4,7 @@ import { evaluateEntry } from '../quicktype/validation.js'
 import '../quicktype-tool/quicktype-editor-dialog.js'
 import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 import { onProjectReady } from '../../utilities/projectReady.js'
+import { confirmAction } from '../../utilities/confirmAction.js'
 
 export const PRESET_COLLECTIONS = {
     'Old English': ['Þ', 'þ', 'Ð', 'ð', 'Æ', 'æ', 'Ȝ', 'ȝ'],
@@ -357,11 +358,16 @@ class QuickTypeManager extends HTMLElement {
         // Clear all
         const clearBtn = this.shadowRoot.querySelector('#clear-btn')
         this.renderCleanup.onElement(clearBtn, 'click', () => {
-            if (confirm('Are you sure you want to clear all shortcuts?')) {
-                this._shortcuts = []
-                this.render()
-                this.addEventListeners()
-            }
+            confirmAction(
+                "Are you sure you want to clear all shortcuts?",
+                () => {
+                    this._shortcuts = []
+                    this.render()
+                    this.addEventListeners()
+                },
+                null,
+                { positiveButtonText: "Clear", negativeButtonText: "Cancel" }
+            )
         })
 
         // Save

@@ -562,16 +562,8 @@ export default class TranscriptionInterface extends HTMLElement {
     alertElem.querySelector('#no-lines-ok').addEventListener('click', () => {
       alertElem.dismiss()
     })
-    
-    if (typeof alertContainer.addCustomAlert === 'function') {
-      alertContainer.addCustomAlert(alertElem)
-    } else {
-      const screenLockingSection = alertContainer.shadowRoot.querySelector('.alert-area')
-      if (screenLockingSection) {
-        screenLockingSection.appendChild(alertElem)
-        alertElem.show()
-      }
-    }
+
+    alertContainer.addCustomAlert(alertElem)
   }
 
   updateLines() {

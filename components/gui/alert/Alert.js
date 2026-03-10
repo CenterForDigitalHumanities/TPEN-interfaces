@@ -1,5 +1,6 @@
 import { eventDispatcher } from '../../../api/events.js'
 import { CleanupRegistry } from '../../../utilities/CleanupRegistry.js'
+import { openModalHost } from '../../../utilities/modalHost.js'
 
 /**
  * Alert - A modal alert dialog that requires user acknowledgement.
@@ -25,11 +26,11 @@ class Alert extends HTMLElement {
      * Have them appear with a dropdown effect.
      */
     show() {
-        this.closest(".alert-area").style.display = "grid"
+        const alertArea = this.closest('.alert-area')
+        openModalHost(alertArea)
         const showTimer = setTimeout(() => {
-            this.closest(".alert-area").classList.add("show")
+            alertArea?.classList.add('show')
             this.classList.add('show')
-            document.querySelector("body").style.overflow = "hidden"
         }, 1)
         this.cleanup.add(() => clearTimeout(showTimer))
         eventDispatcher.dispatch("tpen-alert-activated")
@@ -41,8 +42,7 @@ class Alert extends HTMLElement {
      */
     dismiss() {
         this.classList.remove('show')
-        this.closest(".alert-area")?.classList.remove("show")
-        document.querySelector("body").style.overflow = "auto"
+        this.closest('.alert-area')?.classList.remove('show')
         const removeTimer = setTimeout(() => {
             this.remove()
         }, 500)

@@ -74,16 +74,24 @@ class ProjectTools extends HTMLElement {
                     user-select: none;
                 }
                 .modal {
-                    display: none;
                     position: fixed;
                     top: 0;
                     left: 0;
                     width: 100vw;
                     height: 100vh;
+                    background-color: transparent;
+                    margin: 0;
+                    padding: 0;
+                    border: none;
+                    max-width: 100vw;
+                    max-height: 100vh;
+                }
+                .modal[open] {
+                    display: grid;
+                    place-items: center;
+                }
+                .modal::backdrop {
                     background-color: rgba(0, 0, 0, 0.5);
-                    justify-content: center;
-                    align-items: center;
-                    z-index: 1000;
                 }
                 .modal-content {
                     background: #fff;
@@ -199,7 +207,7 @@ class ProjectTools extends HTMLElement {
                             </div>` : ""}
                 `).join("")}
                 ${isToolsEditAccess ? `
-                <div class="modal" id="tool-modal">
+                <dialog class="modal" id="tool-modal">
                     <div class="modal-content">
                         <button class="tools-btn close-btn" id="close-modal-btn">&times;</button>
                         <div class="project-tools-title">ADD IFRAME TOOL</div>
@@ -213,7 +221,7 @@ class ProjectTools extends HTMLElement {
                         </div>
                         <iframe id="tool-preview" style="display: none;"></iframe>
                     </div>
-                </div>` : ""}
+                </dialog>` : ""}
             </div>
         `
 
@@ -257,14 +265,27 @@ class ProjectTools extends HTMLElement {
         this.renderCleanup.run()
 
         this.renderCleanup.onElement(openModalBtn, "click", () => {
-            modal.style.display = "flex"
+            if (!modal.open) {
+                modal.showModal()
+            }
             iframe.style.display = "none"
             nameInput.value = ""
             urlInput.value = ""
         })
 
         this.renderCleanup.onElement(closeModalBtn, "click", () => {
-            modal.style.display = "none"
+            modal.close()
+        })
+
+        this.renderCleanup.onElement(modal, "cancel", (e) => {
+            e.preventDefault()
+            modal.close()
+        })
+
+        this.renderCleanup.onElement(modal, "click", (e) => {
+            if (e.target === modal) {
+                modal.close()
+            }
         })
 
         this.renderCleanup.onElement(testBtn, "click", () => {
@@ -298,7 +319,7 @@ class ProjectTools extends HTMLElement {
                 return TPEN.eventDispatcher.dispatch("tpen-toast", { status: "error", message: 'Please enter a valid URL' })
 
             if (checkTools(name, url)) {
-                modal.style.display = "none"
+                modal.close()
                 iframe.style.display = "none"
                 nameInput.value = ""
                 urlInput.value = ""
@@ -323,7 +344,7 @@ class ProjectTools extends HTMLElement {
                 })
             })
 
-            modal.style.display = "none"
+            modal.close()
             iframe.style.display = "none"
             nameInput.value = ""
             urlInput.value = ""
@@ -361,7 +382,7 @@ class ProjectTools extends HTMLElement {
                     body: JSON.stringify({ toolName })
                 })
 
-                modal.style.display = "none"
+                modal.close()
                 iframe.style.display = "none"
                 nameInput.value = ""
                 urlInput.value = ""

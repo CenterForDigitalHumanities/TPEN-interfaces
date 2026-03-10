@@ -3,6 +3,7 @@ import { escapeHtml } from '/js/utils.js'
 import CheckPermissions from '../check-permissions/checkPermissions.js'
 import { onProjectReady } from "../../utilities/projectReady.js"
 import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
+import { confirmAction } from '../../utilities/confirmAction.js'
 
 /**
  * NavigationManager - Interface for customizing project navigation URLs.
@@ -101,15 +102,20 @@ class NavigationManager extends HTMLElement {
     }
 
     resetToDefaults() {
-        if (confirm('Reset all navigation URLs to defaults?')) {
-            this._navigation = {
-                transcribe: '',
-                defineLines: '',
-                manageProject: ''
-            }
-            this.render()
-            this.addEventListeners()
-        }
+        confirmAction(
+            'Reset all navigation URLs to defaults?',
+            () => {
+                this._navigation = {
+                    transcribe: '',
+                    defineLines: '',
+                    manageProject: ''
+                }
+                this.render()
+                this.addEventListeners()
+            },
+            null,
+            { positiveButtonText: "Reset", negativeButtonText: "Cancel" }
+        )
     }
 
     render() {

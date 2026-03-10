@@ -51,8 +51,9 @@ class QuickTypeEditorDialog extends HTMLElement {
         const overlay = this.shadowRoot.querySelector('.dialog-overlay')
         const container = this.shadowRoot.querySelector('.dialog-container')
         
-        overlay.style.display = 'flex'
-        // Trigger reflow
+        if (!overlay.open) {
+            overlay.showModal()
+        }
         overlay.offsetHeight
         overlay.classList.add('show')
         container.classList.add('show')
@@ -71,7 +72,7 @@ class QuickTypeEditorDialog extends HTMLElement {
         if (this.#closeAnimationTimeout) clearTimeout(this.#closeAnimationTimeout)
         this.#closeAnimationTimeout = setTimeout(() => {
             this.#closeAnimationTimeout = null
-            overlay.style.display = 'none'
+            overlay?.close?.()
         }, 300)
     }
 
@@ -297,7 +298,7 @@ class QuickTypeEditorDialog extends HTMLElement {
         const isEmpty = this._quicktype.length === 0
         const overlay = this.shadowRoot.querySelector('.dialog-overlay')
         const container = this.shadowRoot.querySelector('.dialog-container')
-        const wasOverlayVisible = overlay?.classList.contains('show') ?? false
+        const wasOverlayVisible = overlay?.open ?? false
         const wasContainerVisible = container?.classList.contains('show') ?? false
 
         const isNewItemAdded = this._quicktype.length > this._previousLength
@@ -336,7 +337,9 @@ class QuickTypeEditorDialog extends HTMLElement {
         const container = this.shadowRoot.querySelector('.dialog-container')
 
         if (wasOverlayVisible && overlay) {
-            overlay.style.display = 'flex'
+            if (!overlay.open) {
+                overlay.showModal()
+            }
             overlay.offsetHeight
             overlay.classList.add('show')
         }
@@ -382,28 +385,32 @@ class QuickTypeEditorDialog extends HTMLElement {
         this.shadowRoot.innerHTML = `
         <style>
             .dialog-overlay {
-                display: none;
                 position: fixed;
                 top: 0;
                 left: 0;
                 right: 0;
                 bottom: 0;
                 background: rgba(0, 0, 0, 0);
-                z-index: 10000;
-                align-items: center;
-                justify-content: center;
+                display: grid;
+                place-items: center;
                 backdrop-filter: blur(0px);
                 transition: background 0.3s ease, backdrop-filter 0.3s ease;
+                margin: 0;
+                padding: 0;
+                border: none;
+                width: 100vw;
+                max-width: 100vw;
+                height: 100vh;
+                max-height: 100vh;
+            }
+
+            .dialog-overlay::backdrop {
+                background: rgba(0, 0, 0, 0.6);
             }
 
             .dialog-overlay.show {
                 background: rgba(0, 0, 0, 0.6);
                 backdrop-filter: blur(2px);
-            }
-
-            /* Ensure toasts appear above the modal */
-            :host {
-                z-index: 9999;
             }
 
             .dialog-container {
@@ -720,7 +727,7 @@ class QuickTypeEditorDialog extends HTMLElement {
             }
         </style>
 
-        <div class="dialog-overlay">
+        <dialog class="dialog-overlay">
             <div class="dialog-container">
                 <div class="dialog-header">
                     <h2>Edit QuickType Shortcuts</h2>
@@ -758,7 +765,7 @@ class QuickTypeEditorDialog extends HTMLElement {
                     <button type="button" role="button" class="save-btn">Save Changes</button>
                 </div>
             </div>
-        </div>
+        </dialog>
         `
     }
 

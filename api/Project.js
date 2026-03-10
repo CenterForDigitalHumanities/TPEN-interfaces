@@ -258,7 +258,7 @@ export default class Project {
             return response
         } catch (error) {
             console.error("Error updating roles:", error)
-            alert("Failed to update roles. Please try again.")
+            eventDispatcher.dispatch('tpen-alert', { message: "Failed to update roles. Please try again." })
         }
     }
 
