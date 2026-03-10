@@ -131,6 +131,12 @@ class TpenManageColumns extends HTMLElement {
                     outline: var(--primary-color) 1px solid;
                     outline-offset: -1.5px;
                 }
+                button#createColumnBtn:focus-visible, button#clearSelectionBtn:focus-visible,
+                button#mergeColumnBtn:focus-visible, button#extendColumnBtn:focus-visible {
+                    background-color: var(--primary-light);
+                    outline: 2px solid var(--primary-color);
+                    outline-offset: 2px;
+                }
                 .disabled {
                     pointer-events: none;
                     opacity: 0.6;
@@ -206,6 +212,11 @@ class TpenManageColumns extends HTMLElement {
                     background-color: var(--primary-light);
                     outline: var(--primary-color) 1px solid;
                     outline-offset: -1.5px;
+                }
+                .merge-label-btn:focus-visible, .extend-label-btn:focus-visible {
+                    background-color: var(--primary-light);
+                    outline: 2px solid var(--primary-color);
+                    outline-offset: 2px;
                 }
                 .merge-label-btn[data-selected="true"], .extend-label-btn[data-selected="true"] {
                     border: 8px solid var(--primary-color);
@@ -581,11 +592,13 @@ class TpenManageColumns extends HTMLElement {
     handleModeChange() {
         if (this.extendColumnCheckbox.checked || this.mergeColumnsCheckbox.checked) {
             this.createBtn.classList.add("disable-button")
+            this.createBtn.disabled = true
             this.columnTitleInput.disabled = true
             const workspaceToolbar = this.shadowRoot.querySelectorAll('.toolbar')[1]
             workspaceToolbar.style.justifyContent = 'space-between'
         } else {
             this.createBtn.classList.remove("disable-button")
+            this.createBtn.disabled = false
             this.columnTitleInput.disabled = false
             const workspaceToolbar = this.shadowRoot.querySelectorAll('.toolbar')[1]
             workspaceToolbar.innerHTML = `
@@ -597,17 +610,21 @@ class TpenManageColumns extends HTMLElement {
 
         if (this.extendColumnCheckbox.checked) {
             this.mergeColumnsCheckbox.classList.add("disable-other")
+            this.mergeColumnsCheckbox.disabled = true
             this.mergeColumnsLabel.classList.add("disable-other")
         } else {
             this.mergeColumnsCheckbox.classList.remove("disable-other")
+            this.mergeColumnsCheckbox.disabled = false
             this.mergeColumnsLabel.classList.remove("disable-other")
         }
 
         if (this.mergeColumnsCheckbox.checked) {
             this.extendColumnCheckbox.classList.add("disable-other")
+            this.extendColumnCheckbox.disabled = true
             this.extendColumnLabel.classList.add("disable-other")
         } else {
             this.extendColumnCheckbox.classList.remove("disable-other")
+            this.extendColumnCheckbox.disabled = false
             this.extendColumnLabel.classList.remove("disable-other")
         }
 
@@ -1057,6 +1074,29 @@ class TpenManageColumns extends HTMLElement {
     }
 
     async clearAllSelections() {
+        if (!this.existingColumns.length) return
+
+        TPEN.eventDispatcher.dispatch("tpen-confirm", {
+            message: "This will clear all columns. This action cannot be undone.",
+            positiveButtonText: "Clear All",
+            negativeButtonText: "Cancel"
+        })
+
+        const confirmed = await new Promise(resolve => {
+            const onPositive = () => {
+                TPEN.eventDispatcher.off("tpen-confirm-negative", onNegative)
+                resolve(true)
+            }
+            const onNegative = () => {
+                TPEN.eventDispatcher.off("tpen-confirm-positive", onPositive)
+                resolve(false)
+            }
+            TPEN.eventDispatcher.one("tpen-confirm-positive", onPositive)
+            TPEN.eventDispatcher.one("tpen-confirm-negative", onNegative)
+        })
+
+        if (!confirmed) return
+
         try {
             const res = await fetch(`${TPEN.servicesURL}/project/${this.projectID}/page/${this.annotationPageID}/clear-columns`, {
                 method: 'DELETE',
