@@ -29,6 +29,7 @@ class Confirm extends HTMLElement {
         const showTimer = setTimeout(() => {
             this.closest(".confirm-area").classList.add("show")
             this.classList.add('show')
+            document.querySelector("body").style.overflow = "hidden"
         }, 1)
         this.cleanup.add(() => clearTimeout(showTimer))
         eventDispatcher.dispatch("tpen-confirm-activated")
@@ -41,6 +42,7 @@ class Confirm extends HTMLElement {
     dismiss() {
         this.classList.remove('show')
         this.closest(".confirm-area")?.classList.remove("show")
+        document.querySelector("body").style.overflow = "auto"
         const removeTimer = setTimeout(() => {
             this.remove()
         }, 500)
