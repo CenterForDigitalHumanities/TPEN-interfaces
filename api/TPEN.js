@@ -182,13 +182,6 @@ class Tpen {
 
     logout(redirect = origin + location.pathname) {
         localStorage.removeItem("userToken")
-        // Clear user-specific IIIF resource cache so another user on this device
-        // does not inherit authenticated annotation data from the previous session (#402)
-        for (const key of Object.keys(localStorage)) {
-            if (/^vault:(annotation|annotationpage|annotationcollection):/.test(key)) {
-                localStorage.removeItem(key)
-            }
-        }
         location.href = `${this.TPEN3URL}/logout?returnTo=${encodeURIComponent(redirect)}`
         return
     }
