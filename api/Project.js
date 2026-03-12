@@ -26,6 +26,45 @@ export default class Project {
     #authentication
     #isLoaded
 
+    // We eventually want this caught and managed better upstream, but we might get 200 responses here that do not represent success (#478).
+    async #validateResponse(response, fallbackMessage) {
+        const contentType = response?.headers?.get?.('content-type') ?? ''
+        let payload = null
+
+        if (contentType.includes('application/json')) {
+            payload = await response.json().catch(() => null)
+        } else {
+            const text = await response.text().catch(() => '')
+            if (text) {
+                try {
+                    payload = JSON.parse(text)
+                } catch {
+                    payload = { message: text }
+                }
+            }
+        }
+
+        if (!response.ok) {
+            const errorMessage = payload?.message ?? payload?.error ?? payload?.errorResponse?.errmsg ?? `${fallbackMessage}: ${response.status}`
+            throw new Error(errorMessage)
+        }
+
+        const hasSemanticError = Boolean(
+            payload?.error ||
+            payload?.errorResponse ||
+            payload?.ok === false ||
+            payload?.success === false ||
+            (typeof payload?.status === 'number' && payload.status >= 400)
+        )
+
+        if (hasSemanticError) {
+            const semanticMessage = payload?.message ?? payload?.error?.message ?? payload?.errorResponse?.errmsg ?? payload?.error ?? fallbackMessage
+            throw new Error(semanticMessage)
+        }
+
+        return payload
+    }
+
     constructor(_id) {
         if (typeof _id !== "string") {
             throw new Error("Project ID must be a string")
@@ -135,14 +174,13 @@ export default class Project {
                 },
                 body: JSON.stringify({ userId }),
             })
-            if (!response.ok) {
-                throw new Error(`Error removing member: ${response.status}`)
-            }
+            const payload = await this.#validateResponse(response, 'Error removing member')
 
             delete this.collaborators[userId]
-            return await response
+            return payload ?? response
         } catch (error) {
             userMessage(error.message)
+            throw error
         }
     }
 
@@ -157,16 +195,15 @@ export default class Project {
                 },
                 body: JSON.stringify(["LEADER"]),
             })
-            if (!response.ok) {
-                throw new Error(`Error promoting user to LEADER: ${response.status}`)
-            }
+            const payload = await this.#validateResponse(response, 'Error promoting user to LEADER')
 
             if (this.collaborators[userId] && !this.collaborators[userId].roles.includes("LEADER")) {
                 this.collaborators[userId].roles.push("LEADER")
             }
-            return response
+            return payload ?? response
         } catch (error) {
             userMessage(error.message)
+            throw error
         }
     }
 
@@ -181,16 +218,15 @@ export default class Project {
                 },
                 body: JSON.stringify(["LEADER"]),
             })
-            if (!response.ok) {
-                throw new Error(`Error removing LEADER role: ${response.status}`)
-            }
+            const payload = await this.#validateResponse(response, 'Error removing LEADER role')
 
             if (this.collaborators[userId]) {
                 this.collaborators[userId].roles = this.collaborators[userId].roles.filter(role => role !== "LEADER")
             }
-            return response
+            return payload ?? response
         } catch (error) {
             userMessage(error.message)
+            throw error
         }
     }
 
@@ -205,14 +241,14 @@ export default class Project {
                 },
                 body: JSON.stringify(["VIEWER"]),
             })
-            if (!response.ok) {
-                throw new Error(`Error revoking write access: ${response.status}`)
-            }
+            const payload = await this.#validateResponse(response, 'Error revoking write access')
             if (this.collaborators[userId]) {
                 this.collaborators[userId].roles = ["VIEWER"]
-            }            return response
+            }
+            return payload ?? response
         } catch (error) {
             userMessage(error.message)
+            throw error
         }
     }
 
@@ -227,16 +263,15 @@ export default class Project {
                 },
                 body: JSON.stringify({ roles }),
             })
-            if (!response.ok) {
-                throw new Error(`Error setting user roles: ${response.status}`)
-            }
+            const payload = await this.#validateResponse(response, 'Error setting user roles')
 
             if (this.collaborators[userId]) {
                 this.collaborators[userId].roles = roles
             }
-            return response
+            return payload ?? response
         } catch (error) {
             userMessage(error.message)
+            throw error
         }
     }
 
@@ -252,13 +287,12 @@ export default class Project {
                 body: JSON.stringify({ newOwnerId: userId })
             })
 
-            if (!response.ok) {
-                throw new Error("Failed to update roles")
-            }
-            return response
+            const payload = await this.#validateResponse(response, 'Failed to update roles')
+            return payload ?? response
         } catch (error) {
             console.error("Error updating roles:", error)
             eventDispatcher.dispatch('tpen-alert', { message: "Failed to update roles. Please try again." })
+            throw error
         }
     }
 
