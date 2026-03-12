@@ -98,7 +98,7 @@ Out of scope:
 **Responsibilities**:
 - Render tool activation buttons
 - Launch quicktype, magnifier, page tool, etc.
-- Dispatch splitscreen-toggle events
+- Host tpen-splitscreen-tool, which dispatches splitscreen-toggle events
 - Filter tools by permission and configuration
 
 **Key features**:
