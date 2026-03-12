@@ -47,7 +47,7 @@ Out of scope:
 - Keyboard shortcuts for navigation
 - Column-aware line ordering
 
-**Permissions**: Requires LINE TEXT or LINE CONTENT view access
+**Permissions**: Requires ANY CONTENT view access
 
 **Reference**: [components/transcription-block/index.js](../transcription-block/index.js)
 
@@ -167,8 +167,28 @@ Primary workspace events:
 | `tpen-transcription-previous-line` | transcription-block | Interface | none | Navigate to previous line |
 | `tpen-transcription-next-line` | transcription-block | Interface | none | Navigate to next line |
 | `tpen-active-line-updated` | Interface | transcription-block | line data | Line has changed, update UI |
-| `splitscreen-toggle` | workspace-tools | Interface | `{ selectedTool }` | Activate split-screen tool |
+| `splitscreen-toggle` | splitscreen-tool (child of workspace-tools) | Interface | `{ selectedTool }` | Activate split-screen tool |
 | `canvas-change` | line-image | Document | `{ canvasId, canvas? }` | Canvas has changed |
+
+### Save Lifecycle Events
+
+Dispatched by `transcription-block` via `TPEN.eventDispatcher`:
+
+| Event | Detail | Purpose |
+|-------|--------|---------|
+| `tpen-transcription-line-dirty` | `{ index }` | Line has unsaved changes |
+| `tpen-transcription-line-clean` | `{ index }` | Line changes saved or reverted |
+| `tpen-transcription-line-save-scheduled` | `{ index }` | Debounced save queued |
+| `tpen-transcription-line-save-start` | `{ index }` | API save request in flight |
+| `tpen-transcription-line-save-success` | `{ index, text }` | Line saved successfully |
+| `tpen-transcription-line-save-fail` | `{ index, error }` | Line save failed |
+| `tpen-transcription-drafts-recovered` | `{ count }` | Drafts loaded from localStorage |
+
+Consumed by `transcription-block` from external sources:
+
+| Event | Source | Purpose |
+|-------|--------|---------|
+| `tpen-transcription-flush-all` | External | Request immediate save of all dirty lines |
 
 ## Data Ownership
 
@@ -254,6 +274,20 @@ lineImage.canvas = canvasId
 lineImage.line = annotationObject
 ```
 
+### PostMessage-Based (External Tools)
+
+Used by `transcription-block` to communicate with iframe tools and external callers:
+
+```javascript
+// Receiving from external tool (window.message)
+// Supported message types:
+// { type: 'RETURN_LINE_ID', lineId } — navigate to specific line
+// { type: 'UPDATE_LINE_TEXT', lineIndex, text } — update a line's transcription text
+window.addEventListener('message', (event) => { /* handled internally */ })
+```
+
+This channel allows iframe tools (e.g., legacy TPEN 2.8 tools) to read and update transcription state without direct JavaScript access to TPEN internals.
+
 ## Performance Considerations
 
 1. **Autosave Debouncing**
@@ -273,13 +307,16 @@ lineImage.line = annotationObject
 
 4. **Draft Storage**
    - localStorage used for persistence
-   - Storage key based on project + page + user
+   - Storage key format: `tpen-drafts:{projectID}:{pageID}:{userID}`
    - Drafts cleared after successful save
 
 ## Accessibility
 
 1. **Keyboard Navigation**
-   - Arrow keys or Tab for previous/next line
+   - **Tab** / **Enter** → next line; **Shift+Tab** / **Shift+Enter** → previous line
+   - **Enter** also splits text at cursor position and moves remainder to the next line
+   - **Ctrl+Home** → first line; **Ctrl+End** → last line
+   - **Ctrl+0–9** / **Ctrl+Shift+0–9** → QuickType character insertion
    - Focus management between input and buttons
    - Escape key to dismiss tools/overlays
 
