@@ -17,10 +17,10 @@ flowchart TD
     C --> C3[Canvas selector]
     C --> C4[Line indicator]
 
-    D --> D1[tpen-line-image]
+    D --> D1["#imgTop (focused line image)"]
     D --> D2[tpen-transcription-block]
     D --> D3[tpen-workspace-tools]
-    D --> D4[tpen-image-fragment]
+    D --> D4["#imgBottom (remaining canvas)"]
 ```
 
 ## Data Ownership Diagram
@@ -54,8 +54,10 @@ flowchart TD
     W[tpen-workspace-tools] -- splitscreen-toggle --> S
     W -- tools-dismiss --> S
 
-    S -- tpen-active-line-updated --> H[tpen-project-header]
-    S -- tpen-transcription-next-line / previous-line --> H
+    T[tpen-transcription-block] -- tpen-transcription-next-line / previous-line --> S
+    T -- tpen-transcription-next-line / previous-line --> H[tpen-project-header]
+
+    S -- tpen-active-line-updated --> H
     H -- URL pageID updates --> U[Browser URL]
 ```
 

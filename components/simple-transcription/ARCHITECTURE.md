@@ -16,10 +16,10 @@ Top-level composition:
 
 1. tpen-simple-transcription
 2. tpen-project-header
-3. tpen-line-image
-4. tpen-transcription-block
-5. tpen-workspace-tools
-6. tpen-image-fragment
+3. tpen-transcription-block
+4. tpen-workspace-tools
+
+**Note**: `tpen-line-image` and `tpen-image-fragment` are used by `tpen-transcription-interface` (`interfaces/transcription/index.js`), not by `tpen-simple-transcription`. This component handles image display inline via raw `<img>` elements and the `adjustImages()` method.
 
 Header composition:
 
@@ -32,10 +32,10 @@ Header composition:
 
 Workspace composition:
 
-1. focused line image viewport
-2. transcription input workspace
-3. workspace tools launcher/controls
-4. remaining image fragment panel
+1. focused line image viewport (`#imgTop` — raw `<img>` with custom zoom/pan via `adjustImages()`)
+2. transcription input workspace (`tpen-transcription-block`)
+3. workspace tools launcher/controls (`tpen-workspace-tools`)
+4. remaining image fragment panel (`#imgBottom` — raw `<img>` showing the rest of the canvas)
 
 ## Visual Regions
 
@@ -55,7 +55,7 @@ The table below defines ownership for key state.
 | --- | --- | --- | --- |
 | Active project graph (layers/pages/columns) | TPEN.activeProject | header, selectors, interface shell | project load/update flows |
 | Current page selection | URL query pageID and TPEN.screen.pageInQuery | header, interface, selectors | header canvas selector, page navigation |
-| Active line index | TPEN.activeLineIndex | header line indicator, interface, tools | line navigation events |
+| Active line index | TPEN.activeLineIndex | header line indicator, interface, tools | tpen-transcription-block (`moveToLine()`), column selector |
 | Interface UI mode (split-screen/tool selection) | tpen-simple-transcription local state | interface shell and tool pane | splitscreen events and UI interactions |
 | Annotation page items for column ordering | component-local cached page object | column selector, transcription logic | vault fetch + ordering utility |
 
@@ -86,9 +86,16 @@ The table below defines ownership for key state.
 ### Workspace Components
 
 - tpen-transcription-block handles line transcription interactions.
-- tpen-line-image and tpen-image-fragment handle image display logic.
+- Image display (`#imgTop`, `#imgBottom`) is handled directly by tpen-simple-transcription via `adjustImages()`, `highlightActiveLine()`, and `resetImagePositions()`.
 - tpen-workspace-tools handles tool launch and workspace actions.
 - These components should not own global routing.
+
+### Transcription Block (tpen-transcription-block)
+
+- Owns line input rendering and text editing.
+- Primary mutator of `TPEN.activeLineIndex` via `moveToLine()`.
+- Emits line navigation events (`tpen-transcription-previous-line`, `tpen-transcription-next-line`) via `TPEN.eventDispatcher`.
+- Does not manage image positioning or split-screen state.
 
 ## Event Contracts (Core)
 
