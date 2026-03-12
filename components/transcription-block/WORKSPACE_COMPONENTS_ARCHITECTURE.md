@@ -43,7 +43,7 @@ Out of scope:
 **Key features**:
 - Draft persistence across sessions
 - Baseline tracking for unsaved changes indicator
-- Debounced save (configurable delay)
+- Debounced save with fixed 2s delay
 - Keyboard shortcuts for navigation
 - Column-aware line ordering
 
