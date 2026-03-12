@@ -83,12 +83,20 @@ Tools are defined in `TPEN.activeProject.tools` array with this structure:
   toolName: "dictionary",        // Unique identifier
   label: "Dictionary",            // Display name
   location: "pane",               // Type: "pane" | "sidebar" | "drawer" | "dialog"
+  url: "https://example.com/tool.js", // Optional: URL for module script or iframe src
   custom: {
     enabled: true,                // Optional: defaults to true if omitted
+    tagName: "tpen-dictionary",   // Optional: custom element tag name (requires url)
     // Tool-specific configuration
   }
 }
 ```
+
+The rendering path is determined by these two properties:
+
+1. If `custom.tagName` AND `url` → load `url` as a module script, then render `<tagName>`
+2. If `url` AND no `tagName` AND `location === 'pane'` → render as `<iframe src="url">`
+3. Otherwise → fallback message
 
 **Filtering rules**:
 - Tools with `custom.enabled === false` are excluded
@@ -123,17 +131,16 @@ Primary components:
 ### Activation
 
 1. User selects tool from splitscreen dropdown or clicks toolbar button
-2. Component dispatches `splitscreen-toggle` event with `{ selectedTool: toolName }`
-3. Interface shell (tpen-simple-transcription) receives event
-4. Interface updates state and toggles split-screen layout
-5. Tool-specific show event dispatched: `tpen-${toolName}-show`
+2. `tpen-splitscreen-tool` dispatches `splitscreen-toggle` DOM event (bubbles) with `{ selectedTool: toolName }`
+3. `tpen-splitscreen-tool` dispatches `tpen-${previousTool}-hide` (if switching) and `tpen-${toolName}-show` via `TPEN.eventDispatcher` — these happen synchronously in the same handler as step 2
+4. Interface shell (`tpen-simple-transcription`) receives the bubbled `splitscreen-toggle` event
+5. Interface updates state, toggles split-screen layout, and loads tool content
 
 ### Dismissal
 
-1. User clicks close button or presses Escape key
-2. Interface dispatches `tools-dismiss` event
-3. Interface shell collapses split-screen layout
-4. Tool-specific hide event dispatched: `tpen-${toolName}-hide`
+1. User clicks close button, presses Escape key, or an external component dispatches `tools-dismiss` via `TPEN.eventDispatcher`
+2. Interface shell calls `closeSplitscreen()` directly — sets `isSplitscreenActive = false` and collapses layout
+3. **Note**: No `tpen-{toolName}-hide` event is dispatched on panel close (only on tool switch). Tools that need cleanup on dismiss should listen for the `tools-dismiss` eventDispatcher event.
 
 ### Tool Switching
 
@@ -147,10 +154,10 @@ Primary events:
 
 | Event | Direction | Detail | Purpose |
 |-------|-----------|--------|---------|
-| `splitscreen-toggle` | Tool → Interface | `{ selectedTool: string }` | Activate/switch split-screen tool |
-| `tools-dismiss` | Interface → Tools | none | Close split-screen panel |
-| `tpen-{toolName}-show` | Interface → Tool | none | Notify tool it's visible |
-| `tpen-{toolName}-hide` | Interface → Tool | none | Notify tool it's hidden |
+| `splitscreen-toggle` | Selector → Interface (DOM, bubbles) | `{ selectedTool: string }` | Activate/switch split-screen tool |
+| `tools-dismiss` | External → Interface (eventDispatcher) | none | Request interface to close split-screen panel |
+| `tpen-{toolName}-show` | Selector → Tool (eventDispatcher) | none | Notify tool it’s visible (on tool switch) |
+| `tpen-{toolName}-hide` | Selector → Tool (eventDispatcher) | none | Notify previous tool it’s hidden (on tool switch only) |
 
 ## Data Ownership
 
@@ -187,13 +194,15 @@ Primary events:
 
 ### iframe Tools (TPEN 2.8 Pattern)
 
-Legacy iframe tools are split-pane tools with URL-based communication:
+Legacy iframe tools are split-pane tools using bidirectional `postMessage` communication:
 
-- Tool URL can receive query parameters for context (project ID, page ID, line ID)
-- Tool cannot directly access TPEN JavaScript objects
-- Communication is one-way: interface → tool via URL
+- Interface → Tool: sends `MANIFEST_CANVAS_ANNOTATIONPAGE_ANNOTATION`, `CANVASES`, `CURRENT_LINE_INDEX`, and `SELECT_ANNOTATION` messages on load and line changes
+- Tool → Interface: sends `CURRENT_LINE_INDEX`, `RETURN_LINE_ID`, `SELECT_ANNOTATION`, and `NAVIGATE_TO_LINE` messages to request line navigation
+- Origin validation is enforced for incoming messages
 
-**Migration path**: Consider replacing with native components that can use TPEN.eventDispatcher for bidirectional communication.
+See the workspace components architecture for the full postMessage protocol.
+
+**Migration path**: Consider replacing with native components that can use TPEN.eventDispatcher for direct communication.
 
 ### Page Options Pattern
 
@@ -225,6 +234,10 @@ Potential improvements tracked separately:
 3. Multi-tool layouts (multiple tools visible simultaneously)
 4. Tool keyboard shortcut customization
 5. Tool marketplace or registry system
+
+## Integration Points
+
+**Note**: The splitscreen patterns documented here are implemented in both `tpen-simple-transcription` (`components/simple-transcription/index.js`) and the standalone transcription interface (`interfaces/transcription/index.js`). Both follow the same event contracts and lifecycle.
 
 ## Related Documentation
 
