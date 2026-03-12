@@ -57,7 +57,6 @@ flowchart TD
     T[tpen-transcription-block] -- tpen-transcription-next-line / previous-line --> S
     T -- tpen-transcription-next-line / previous-line --> H[tpen-project-header]
 
-    S -- tpen-active-line-updated --> H
     H -- URL pageID updates --> U[Browser URL]
 ```
 
