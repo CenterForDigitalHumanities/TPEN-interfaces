@@ -830,7 +830,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     const tagName = tool.custom?.tagName
     if (tagName && tool.url) {
       if (customElements.get(tagName)) {
-        rightPane.innerHTML = `<${tagName}></${tagName}>`
+        rightPane.replaceChildren(document.createElement(tagName))
         return
       }
 
@@ -844,10 +844,13 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       script.src = tool.url
       script.id = scriptId
       script.onload = () => {
-        rightPane.innerHTML = `<${tagName}></${tagName}>`
+        rightPane.replaceChildren(document.createElement(tagName))
       }
       script.onerror = () => {
-        rightPane.innerHTML = `<p>Failed to load tool: ${tagName}</p>`
+        rightPane.replaceChildren()
+        const message = document.createElement('p')
+        message.textContent = `Failed to load tool: ${tagName ?? 'unknown tool'}`
+        rightPane.appendChild(message)
       }
       document.head.appendChild(script)
       return
@@ -922,7 +925,10 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     }
 
     // Fallback message for tools that don't have proper configuration
-    rightPane.innerHTML = `<p>${tool.label ?? tool.custom?.tagName ?? 'Tool'} - functionality coming soon...</p>`
+    rightPane.replaceChildren()
+    const message = document.createElement('p')
+    message.textContent = `${tool.label ?? tool.custom?.tagName ?? 'Tool'} - functionality coming soon...`
+    rightPane.appendChild(message)
     this.checkMagnifierVisibility?.()
   }
 

@@ -308,7 +308,11 @@
         }
 
         function showError(message) {
-            errorContainer.innerHTML = `<div class="error">${message}</div>`
+            errorContainer.innerHTML = ''
+            const errorMessage = document.createElement('div')
+            errorMessage.className = 'error'
+            errorMessage.textContent = message ?? 'An unknown error occurred'
+            errorContainer.appendChild(errorMessage)
             setTimeout(() => {
                 errorContainer.innerHTML = ''
             }, 5000)
