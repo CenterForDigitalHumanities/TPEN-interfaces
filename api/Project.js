@@ -152,14 +152,10 @@ export default class Project {
                 method: "POST",
                 body: JSON.stringify({ email, roles }),
             })
-            if (!response.ok) {
-                const errorData = await response.json()
-                throw new Error(errorData.message || `Failed to invite collaborator: ${response.statusText}`)
-            }
-
-            return await response.json()
+            const payload = await this.#validateResponse(response, 'Failed to invite collaborator')
+            return payload ?? response
         } catch (error) {
-            userMessage(error.message)
+            throw error
         }
     }
 
@@ -179,7 +175,6 @@ export default class Project {
             delete this.collaborators[userId]
             return payload ?? response
         } catch (error) {
-            userMessage(error.message)
             throw error
         }
     }
@@ -202,7 +197,6 @@ export default class Project {
             }
             return payload ?? response
         } catch (error) {
-            userMessage(error.message)
             throw error
         }
     }
@@ -225,7 +219,6 @@ export default class Project {
             }
             return payload ?? response
         } catch (error) {
-            userMessage(error.message)
             throw error
         }
     }
@@ -247,7 +240,6 @@ export default class Project {
             }
             return payload ?? response
         } catch (error) {
-            userMessage(error.message)
             throw error
         }
     }
@@ -270,7 +262,6 @@ export default class Project {
             }
             return payload ?? response
         } catch (error) {
-            userMessage(error.message)
             throw error
         }
     }
@@ -290,8 +281,6 @@ export default class Project {
             const payload = await this.#validateResponse(response, 'Failed to update roles')
             return payload ?? response
         } catch (error) {
-            console.error("Error updating roles:", error)
-            eventDispatcher.dispatch('tpen-alert', { message: "Failed to update roles. Please try again." })
             throw error
         }
     }
