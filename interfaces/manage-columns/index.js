@@ -305,7 +305,11 @@ class TpenManageColumns extends HTMLElement {
 
     connectedCallback() {
         TPEN.attachAuthentication(this)
-        localStorage.removeItem('annotationsState')
+        if (!TPEN.screen.projectInQuery) {
+            this.showError("No project id provided")
+            return
+        }
+        localStorage.removeItem(`annotationsState:${TPEN.screen.projectInQuery}`)
         if (!TPEN.screen.pageInQuery) {
             this.showError("No page id provided")
             return
@@ -403,7 +407,7 @@ class TpenManageColumns extends HTMLElement {
                 }))
             })
             this.totalIds = annotations.filter(anno => !assignedAnnotationIds.some(a => a.lineId === anno.lineId)).map(a => a.lineId)
-            localStorage.setItem('annotationsState', JSON.stringify({
+            localStorage.setItem(`annotationsState:${TPEN.screen.projectInQuery}`, JSON.stringify({
                 remainingIDs: this.totalIds,
                 selectedIDs: []
             }))
@@ -526,7 +530,7 @@ class TpenManageColumns extends HTMLElement {
         this.totalIds = this.cachedAnnotations
             .filter(anno => !assignedAnnotationIds.some(a => a.lineId === anno.lineId))
             .map(a => a.lineId)
-        localStorage.setItem('annotationsState', JSON.stringify({
+        localStorage.setItem(`annotationsState:${TPEN.screen.projectInQuery}`, JSON.stringify({
             remainingIDs: this.totalIds,
             selectedIDs: []
         }))
@@ -927,7 +931,7 @@ class TpenManageColumns extends HTMLElement {
     }
 
     restoreAnnotationState() {
-        const saved = localStorage.getItem('annotationsState')
+        const saved = localStorage.getItem(`annotationsState:${TPEN.screen.projectInQuery}`)
         if (!saved) return
         const { selectedIDs = [] } = JSON.parse(saved)
         const boxes = Array.from(this.shadowRoot.querySelectorAll('.overlayBox'))
@@ -1023,7 +1027,7 @@ class TpenManageColumns extends HTMLElement {
         const selectedIDs = this.selectedBoxes.map(b => b.dataset.lineId)
         const remainingIDs = this.totalIds.filter(id => !this.selectedBoxes.some(b => b.dataset.lineId === id))
         try {
-            localStorage.setItem('annotationsState', JSON.stringify({ remainingIDs, selectedIDs }))
+            localStorage.setItem(`annotationsState:${TPEN.screen.projectInQuery}`, JSON.stringify({ remainingIDs, selectedIDs }))
         } catch (e) {
             // localStorage may be unavailable (e.g., private mode, quota exceeded)
             // Silent fail as this is just a convenience feature
