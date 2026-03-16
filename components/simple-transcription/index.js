@@ -830,7 +830,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     const tagName = tool.custom?.tagName
     if (tagName && tool.url) {
       if (customElements.get(tagName)) {
-        rightPane.innerHTML = `<${tagName}></${tagName}>`
+        rightPane.replaceChildren(document.createElement(tagName))
         return
       }
 
@@ -844,7 +844,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       script.src = tool.url
       script.id = scriptId
       script.onload = () => {
-        rightPane.innerHTML = `<${tagName}></${tagName}>`
+        rightPane.replaceChildren(document.createElement(tagName))
       }
       script.onerror = () => {
         rightPane.replaceChildren()
