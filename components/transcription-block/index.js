@@ -307,7 +307,8 @@ export default class TranscriptionBlock extends HTMLElement {
     buildStorageKey() {
         const projectID = TPEN.activeProject?.id ?? TPEN.activeProject?._id ?? 'unknownProject'
         const pageID = TPEN.screen?.pageInQuery ?? 'unknownPage'
-        return `tpen-drafts:${projectID}:${pageID}`
+        const userID = TPEN.currentUser?._id ?? 'unknownUser'
+        return `tpen-drafts:${projectID}:${pageID}:${userID}`
     }
 
     async loadDraftsFromStorage() {

@@ -28,6 +28,7 @@ class QuickTypeEditorDialog extends HTMLElement {
 
     connectedCallback() {
         this.render()
+        this.cleanup.onEvent(eventDispatcher, 'tools-dismiss', () => this.closeNow())
     }
 
     disconnectedCallback() {
@@ -36,6 +37,7 @@ class QuickTypeEditorDialog extends HTMLElement {
             clearTimeout(this.#closeAnimationTimeout)
             this.#closeAnimationTimeout = null
         }
+        this.closeNow()
         this.dialogCleanup.run()
         this.cleanup.run()
     }
@@ -74,6 +76,20 @@ class QuickTypeEditorDialog extends HTMLElement {
             this.#closeAnimationTimeout = null
             overlay?.close?.()
         }, 300)
+    }
+
+    closeNow() {
+        const overlay = this.shadowRoot.querySelector('.dialog-overlay')
+        const container = this.shadowRoot.querySelector('.dialog-container')
+
+        if (this.#closeAnimationTimeout) {
+            clearTimeout(this.#closeAnimationTimeout)
+            this.#closeAnimationTimeout = null
+        }
+
+        overlay?.classList?.remove('show')
+        container?.classList?.remove('show')
+        overlay?.close?.()
     }
 
     addEventListeners() {
@@ -402,6 +418,7 @@ class QuickTypeEditorDialog extends HTMLElement {
                 max-width: 100vw;
                 height: 100vh;
                 max-height: 100vh;
+                pointer-events: none;
             }
 
             .dialog-overlay::backdrop {
@@ -409,6 +426,7 @@ class QuickTypeEditorDialog extends HTMLElement {
             }
 
             .dialog-overlay.show {
+                pointer-events: auto;
                 background: rgba(0, 0, 0, 0.6);
                 backdrop-filter: blur(2px);
             }
