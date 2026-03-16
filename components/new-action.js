@@ -94,7 +94,8 @@ class NewAction extends HTMLElement {
     }
 
     TPEN2ImportHandler = async () => {
-        const userToken = localStorage.getItem("userToken")
+        const userToken = TPEN.getAuthorization()
+        if (!userToken) return TPEN.login()
         let tokenDomain
         let isProdTPEN
     

@@ -369,7 +369,7 @@ export default class TranscriptionInterface extends HTMLElement {
     if (tagName && tool.url) {
       // Dynamically load the script if not already loaded
       if (customElements.get(tagName)) {
-        rightPane.innerHTML = `<${tagName}></${tagName}>`
+        rightPane.replaceChildren(document.createElement(tagName))
         return
       }
       const scriptId = `tool-script-${tool.toolName}`
@@ -382,10 +382,13 @@ export default class TranscriptionInterface extends HTMLElement {
       script.src = tool.url
       script.id = scriptId
       script.onload = () => {
-        rightPane.innerHTML = `<${tagName}></${tagName}>`
+        rightPane.replaceChildren(document.createElement(tagName))
       }
       script.onerror = () => {
-        rightPane.innerHTML = `<p>Failed to load tool: ${tagName}</p>`
+        rightPane.replaceChildren()
+        const message = document.createElement('p')
+        message.textContent = `Failed to load tool: ${tagName ?? 'unknown tool'}`
+        rightPane.appendChild(message)
       }
       document.head.appendChild(script)
       return
@@ -448,7 +451,10 @@ export default class TranscriptionInterface extends HTMLElement {
       return
     }
 
-    rightPane.innerHTML = `<p>${tool.label ?? tool.custom?.tagName ?? 'Tool'} - functionality coming soon...</p>`
+    rightPane.replaceChildren()
+    const message = document.createElement('p')
+    message.textContent = `${tool.label ?? tool.custom?.tagName ?? 'Tool'} - functionality coming soon...`
+    rightPane.appendChild(message)
     this.checkMagnifierVisibility()
   }
 
