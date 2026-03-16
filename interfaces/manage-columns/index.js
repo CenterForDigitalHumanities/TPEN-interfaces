@@ -895,12 +895,23 @@ class TpenManageColumns extends HTMLElement {
         return { imgUrl, imgWidth, imgHeight }
     }
 
-    showError(message) { 
-        this.container.innerHTML = `<div class="error-message"><strong>Error:</strong> ${message}</div>` 
+    showError(message) {
+        this.container.replaceChildren()
+        const wrapper = document.createElement('div')
+        wrapper.className = 'error-message'
+        const strong = document.createElement('strong')
+        strong.textContent = 'Error:'
+        const textNode = document.createTextNode(` ${message ?? ''}`)
+        wrapper.append(strong, textNode)
+        this.container.appendChild(wrapper)
     }
 
-    showLoading(message = "Loading...") { 
-        this.container.innerHTML = `<div class="loading">${message}</div>` 
+    showLoading(message = 'Loading...') {
+        this.container.replaceChildren()
+        const wrapper = document.createElement('div')
+        wrapper.className = 'loading'
+        wrapper.textContent = message ?? 'Loading...'
+        this.container.appendChild(wrapper)
     }
 
     async renderImage(imgUrl) {
