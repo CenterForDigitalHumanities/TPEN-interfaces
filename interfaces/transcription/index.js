@@ -451,7 +451,10 @@ export default class TranscriptionInterface extends HTMLElement {
       return
     }
 
-    rightPane.innerHTML = `<p>${tool.label ?? tool.custom?.tagName ?? 'Tool'} - functionality coming soon...</p>`
+    rightPane.replaceChildren()
+    const message = document.createElement('p')
+    message.textContent = `${tool.label ?? tool.custom?.tagName ?? 'Tool'} - functionality coming soon...`
+    rightPane.appendChild(message)
     this.checkMagnifierVisibility()
   }
 

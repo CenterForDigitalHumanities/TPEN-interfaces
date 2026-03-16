@@ -925,7 +925,10 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     }
 
     // Fallback message for tools that don't have proper configuration
-    rightPane.innerHTML = `<p>${tool.label ?? tool.custom?.tagName ?? 'Tool'} - functionality coming soon...</p>`
+    rightPane.replaceChildren()
+    const message = document.createElement('p')
+    message.textContent = `${tool.label ?? tool.custom?.tagName ?? 'Tool'} - functionality coming soon...`
+    rightPane.appendChild(message)
     this.checkMagnifierVisibility?.()
   }
 
