@@ -62,9 +62,11 @@ class Tpen {
         eventDispatcher.on("tpen-project-loaded", ev => this.activeProject = ev.detail)
 
         // Centralized token expiration UX: notify user and redirect to login
+        let expirationTimeout = null
         eventDispatcher.on('token-expiration', () => {
+            if (expirationTimeout) return
             eventDispatcher.dispatch('tpen-toast', { status: 'error', message: 'Your session has expired. Redirecting to login...' })
-            setTimeout(() => this.login(), 4000)
+            expirationTimeout = setTimeout(() => this.login(), 4000)
         })
 
         if (this.screen.projectInQuery) {
