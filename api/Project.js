@@ -23,8 +23,46 @@ import { userMessage } from "../components/iiif-tools/index.js"
 
 export default class Project {
 
-    #authentication
     #isLoaded
+
+    // We eventually want this caught and managed better upstream, but we might get 200 responses here that do not represent success (#478).
+    async #validateResponse(response, fallbackMessage) {
+        const contentType = response?.headers?.get?.('content-type') ?? ''
+        let payload = null
+
+        if (contentType.includes('application/json')) {
+            payload = await response.json().catch(() => null)
+        } else {
+            const text = await response.text().catch(() => '')
+            if (text) {
+                try {
+                    payload = JSON.parse(text)
+                } catch {
+                    payload = { message: text }
+                }
+            }
+        }
+
+        if (!response.ok) {
+            const errorMessage = payload?.message ?? payload?.error ?? payload?.errorResponse?.errmsg ?? `${fallbackMessage}: ${response.status}`
+            throw new Error(errorMessage)
+        }
+
+        const hasSemanticError = Boolean(
+            payload?.error ||
+            payload?.errorResponse ||
+            payload?.ok === false ||
+            payload?.success === false ||
+            (typeof payload?.status === 'number' && payload.status >= 400)
+        )
+
+        if (hasSemanticError) {
+            const semanticMessage = payload?.message ?? payload?.error?.message ?? payload?.errorResponse?.errmsg ?? payload?.error ?? fallbackMessage
+            throw new Error(semanticMessage)
+        }
+
+        return payload
+    }
 
     constructor(_id) {
         if (typeof _id !== "string") {
@@ -103,163 +141,119 @@ export default class Project {
     }
 
     async addMember(email, roles = undefined) {
-        try {
-            const AUTH_TOKEN = TPEN.getAuthorization() ?? TPEN.login()
-            const response = await fetch(`${TPEN.servicesURL}/project/${this._id}/invite-member`, {
-                headers: {
-                    Authorization: `Bearer ${AUTH_TOKEN}`,
-                    'Content-Type': 'application/json',
-                },
-                method: "POST",
-                body: JSON.stringify({ email, roles }),
-            })
-            if (!response.ok) {
-                const errorData = await response.json()
-                throw new Error(errorData.message || `Failed to invite collaborator: ${response.statusText}`)
-            }
-
-            return await response.json()
-        } catch (error) {
-            userMessage(error.message)
-        }
+        const AUTH_TOKEN = TPEN.getAuthorization() ?? TPEN.login()
+        const response = await fetch(`${TPEN.servicesURL}/project/${this._id}/invite-member`, {
+            headers: {
+                Authorization: `Bearer ${AUTH_TOKEN}`,
+                'Content-Type': 'application/json',
+            },
+            method: "POST",
+            body: JSON.stringify({ email, roles }),
+        })
+        const payload = await this.#validateResponse(response, 'Failed to invite collaborator')
+        return payload ?? response
     }
 
     async removeMember(userId) {
-        try {
-            const token = TPEN.getAuthorization() ?? TPEN.login()
-            const response = await fetch(`${TPEN.servicesURL}/project/${this._id}/remove-member`, {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ userId }),
-            })
-            if (!response.ok) {
-                throw new Error(`Error removing member: ${response.status}`)
-            }
+        const token = TPEN.getAuthorization() ?? TPEN.login()
+        const response = await fetch(`${TPEN.servicesURL}/project/${this._id}/remove-member`, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ userId }),
+        })
+        const payload = await this.#validateResponse(response, 'Error removing member')
 
-            delete this.collaborators[userId]
-            return await response
-        } catch (error) {
-            userMessage(error.message)
-        }
+        delete this.collaborators[userId]
+        return payload ?? response
     }
 
     async makeLeader(userId) {
-        try {
-            const token = TPEN.getAuthorization() ?? TPEN.login()
-            const response = await fetch(`${TPEN.servicesURL}/project/${this._id}/collaborator/${userId}/addRoles`, {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(["LEADER"]),
-            })
-            if (!response.ok) {
-                throw new Error(`Error promoting user to LEADER: ${response.status}`)
-            }
+        const token = TPEN.getAuthorization() ?? TPEN.login()
+        const response = await fetch(`${TPEN.servicesURL}/project/${this._id}/collaborator/${userId}/addRoles`, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(["LEADER"]),
+        })
+        const payload = await this.#validateResponse(response, 'Error promoting user to LEADER')
 
-            if (this.collaborators[userId] && !this.collaborators[userId].roles.includes("LEADER")) {
-                this.collaborators[userId].roles.push("LEADER")
-            }
-            return response
-        } catch (error) {
-            userMessage(error.message)
+        if (this.collaborators[userId] && !this.collaborators[userId].roles.includes("LEADER")) {
+            this.collaborators[userId].roles.push("LEADER")
         }
+        return payload ?? response
     }
 
     async demoteLeader(userId) {
-        try {
-            const token = TPEN.getAuthorization() ?? TPEN.login()
-            const response = await fetch(`${TPEN.servicesURL}/project/${this._id}/collaborator/${userId}/removeRoles`, {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(["LEADER"]),
-            })
-            if (!response.ok) {
-                throw new Error(`Error removing LEADER role: ${response.status}`)
-            }
+        const token = TPEN.getAuthorization() ?? TPEN.login()
+        const response = await fetch(`${TPEN.servicesURL}/project/${this._id}/collaborator/${userId}/removeRoles`, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(["LEADER"]),
+        })
+        const payload = await this.#validateResponse(response, 'Error removing LEADER role')
 
-            if (this.collaborators[userId]) {
-                this.collaborators[userId].roles = this.collaborators[userId].roles.filter(role => role !== "LEADER")
-            }
-            return response
-        } catch (error) {
-            userMessage(error.message)
+        if (this.collaborators[userId]) {
+            this.collaborators[userId].roles = this.collaborators[userId].roles.filter(role => role !== "LEADER")
         }
+        return payload ?? response
     }
 
     async setToViewer(userId) {
-        try {
-            const token = TPEN.getAuthorization() ?? TPEN.login()
-            const response = await fetch(`${TPEN.servicesURL}/project/${this._id}/collaborator/${userId}/setRoles`, {
-                method: "PUT",
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(["VIEWER"]),
-            })
-            if (!response.ok) {
-                throw new Error(`Error revoking write access: ${response.status}`)
-            }
-            if (this.collaborators[userId]) {
-                this.collaborators[userId].roles = ["VIEWER"]
-            }            return response
-        } catch (error) {
-            userMessage(error.message)
+        const token = TPEN.getAuthorization() ?? TPEN.login()
+        const response = await fetch(`${TPEN.servicesURL}/project/${this._id}/collaborator/${userId}/setRoles`, {
+            method: "PUT",
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(["VIEWER"]),
+        })
+        const payload = await this.#validateResponse(response, 'Error revoking write access')
+        if (this.collaborators[userId]) {
+            this.collaborators[userId].roles = ["VIEWER"]
         }
+        return payload ?? response
     }
 
     async cherryPickRoles(userId, roles) {
-        try {
-            const token = TPEN.getAuthorization() ?? TPEN.login()
-            const response = await fetch(`${TPEN.servicesURL}/project/${this._id}/collaborator/${userId}/setRoles`, {
-                method: "PUT",
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ roles }),
-            })
-            if (!response.ok) {
-                throw new Error(`Error setting user roles: ${response.status}`)
-            }
+        const token = TPEN.getAuthorization() ?? TPEN.login()
+        const response = await fetch(`${TPEN.servicesURL}/project/${this._id}/collaborator/${userId}/setRoles`, {
+            method: "PUT",
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ roles }),
+        })
+        const payload = await this.#validateResponse(response, 'Error setting user roles')
 
-            if (this.collaborators[userId]) {
-                this.collaborators[userId].roles = roles
-            }
-            return response
-        } catch (error) {
-            userMessage(error.message)
+        if (this.collaborators[userId]) {
+            this.collaborators[userId].roles = roles
         }
+        return payload ?? response
     }
 
     async transferOwnership(userId) {
-        try {
-            const token = TPEN.getAuthorization() ?? TPEN.login()
-            const response = await fetch(`${TPEN.servicesURL}/project/${this._id}/switch/owner`, {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ newOwnerId: userId })
-            })
+        const token = TPEN.getAuthorization() ?? TPEN.login()
+        const response = await fetch(`${TPEN.servicesURL}/project/${this._id}/switch/owner`, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ newOwnerId: userId })
+        })
 
-            if (!response.ok) {
-                throw new Error("Failed to update roles")
-            }
-            return response
-        } catch (error) {
-            console.error("Error updating roles:", error)
-            eventDispatcher.dispatch('tpen-alert', { message: "Failed to update roles. Please try again." })
-        }
+        const payload = await this.#validateResponse(response, 'Failed to update roles')
+        return payload ?? response
     }
 
     setMetadata(metadata) {
@@ -297,77 +291,6 @@ export default class Project {
     removeTool(toolID) {
         this.tools = this.tools.filter(tool => tool._id !== toolID)
         return this.save()
-    }
-
-    async inviteCollaborator(email, roles) {
-        return fetch(`${TPEN.servicesURL}/project/${this._id}/invite-member`, {
-            method: "POST",
-            headers: new Headers({
-                Authorization: `Bearer ${this.#authentication}`,
-                "Content-Type": "application/json"
-            }),
-            body: JSON.stringify({ email, roles })
-        }).catch(err => Promise.reject(err))
-    }
-
-    async removeCollaborator(userID) {
-        // userID is the _id (Hex String) of the user to remove from the project
-        if (!this.collaborators?.[userID]) {
-            return Promise.reject(new Error("User not found in collaborators list"))
-        }
-        return fetch(`${TPEN.servicesURL}/project/${this._id}/remove-member`, {
-            method: "POST",
-            headers: new Headers({
-                Authorization: `Bearer ${this.#authentication}`,
-                "Content-Type": "application/json"
-            }),
-            body: JSON.stringify({ userID })
-        }).catch(err => Promise.reject(err))
-    }
-
-    async addCollaboratorRole(userID, roles) {
-        // role is a string value of the role to add to the user
-        if (!this.collaborators?.[userID]) {
-            return Promise.reject(new Error("User not found in collaborators list"))
-        }
-        return fetch(`${TPEN.servicesURL}/project/${this._id}/collaborator/${userID}/addRoles`, {
-            method: "POST",
-            headers: new Headers({
-                Authorization: `Bearer ${this.#authentication}`,
-                "Content-Type": "application/json"
-            }),
-            body: JSON.stringify(roles)
-        }).catch(err => Promise.reject(err))
-    }
-
-    async removeCollaboratorRole(userID, roles) {
-        // role is a string value of the role to remove from the user
-        if (!this.collaborators?.[userID]) {
-            return Promise.reject(new Error("User not found in collaborators list"))
-        }
-        return fetch(`${TPEN.servicesURL}/project/${this._id}/collaborator/${userID}/removeRoles`, {
-            method: "POST",
-            headers: new Headers({
-                Authorization: `Bearer ${this.#authentication}`,
-                "Content-Type": "application/json"
-            }),
-            body: JSON.stringify(roles)
-        }).catch(err => Promise.reject(err))
-    }
-
-    async setCollaboratorRoles(userID, roles) {
-        // role is a string value of the role to set for the user
-        if (!this.collaborators?.[userID]) {
-            return Promise.reject(new Error("User not found in collaborators list"))
-        }
-        return fetch(`${TPEN.servicesURL}/project/${this._id}/collaborator/${userID}/setRoles`, {
-            method: "PUT",
-            headers: new Headers({
-                Authorization: `Bearer ${this.#authentication}`,
-                "Content-Type": "application/json"
-            }),
-            body: JSON.stringify(roles)
-        }).catch(err => Promise.reject(err))
     }
 
     async storeInterfacesCustomization(customizations, replace = false) {
