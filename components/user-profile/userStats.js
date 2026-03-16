@@ -21,6 +21,8 @@ class UserStats extends HTMLElement {
     _projects = null
     /** @type {boolean} Flag to prevent double rendering */
     _isRendering = false
+    /** @type {boolean} Flag to trigger re-render after current render completes */
+    _pendingUpdate = false
 
     constructor() {
         super()
@@ -42,12 +44,23 @@ class UserStats extends HTMLElement {
     /**
      * Renders only when both profile and projects are available.
      * Guards against double rendering when both callbacks fire quickly.
+     * Stores a pending update flag if a re-render is requested while rendering is in progress.
      */
     renderIfReady() {
-        if (this._profile && this._projects && !this._isRendering) {
-            this._isRendering = true
-            this.loadAndRender(this._profile, this._projects)
-                .finally(() => { this._isRendering = false })
+        if (this._profile && this._projects) {
+            if (!this._isRendering) {
+                this._isRendering = true
+                this.loadAndRender(this._profile, this._projects)
+                    .finally(() => {
+                        this._isRendering = false
+                        if (this._pendingUpdate) {
+                            this._pendingUpdate = false
+                            this.renderIfReady()
+                        }
+                    })
+            } else {
+                this._pendingUpdate = true
+            }
         }
     }
 
@@ -74,7 +87,7 @@ class UserStats extends HTMLElement {
         }
 
         const profileMap = {
-            nameText: publicProfile.displayName.toUpperCase(),
+            nameText: publicProfile.displayName?.toUpperCase() ?? '',
             orchidIdText: publicProfile.orchidId,
             nsfIdText: publicProfile.nsfId,
             institutionalIdText: publicProfile.institutionalId,

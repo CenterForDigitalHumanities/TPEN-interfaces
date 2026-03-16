@@ -49,7 +49,7 @@ class UserProfile extends HTMLElement {
         }
 
         const profileMap = {
-            nameText: publicProfile.displayName.toUpperCase(),
+            nameText: publicProfile.displayName?.toUpperCase() ?? '',
             emailText: profile.email,
             orchidIdText: publicProfile.orchidId,
             nsfIdText: publicProfile.nsfId,

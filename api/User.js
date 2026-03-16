@@ -32,7 +32,7 @@ export default class User {
       .then((data) => {
         Object.assign(this, data)
         this.displayName = data.profile?.displayName ?? data.name ?? "Anonymous"
-        if (data._sub) {
+        if (this.#isTheAuthenticatedUser()) {
           eventDispatcher.dispatch("tpen-user-loaded", this)
         }
       })
