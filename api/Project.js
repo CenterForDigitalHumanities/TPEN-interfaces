@@ -293,7 +293,6 @@ export default class Project {
         return this.save()
     }
 
-
     async storeInterfacesCustomization(customizations, replace = false) {
         if (!this.#isLoaded) {
             throw new Error("Project must be loaded before storing interface customizations")
