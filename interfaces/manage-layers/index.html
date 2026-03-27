@@ -12,7 +12,7 @@ permalink: /project/manage/layers
     <title>Manage Layers and Pages</title>
     <!-- Inject environment before modules -->
     <script>
-        window.TPEN_ENV = window.TPEN_ENV || (document.querySelector('meta[name="tpen-env"]')?.content || 'dev')
+        globalThis.TPEN_ENV = window.TPEN_ENV ??= (document.querySelector('meta[name="tpen-env"]')?.content ?? 'dev')
     </script>
     <script src="/config.env.js"></script>
     <script type="module" src="../../components/gui/site/index.js"></script>

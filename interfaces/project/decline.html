@@ -13,7 +13,7 @@ permalink: /project/decline
     <meta name="tpen-env" content="prod">
     <!-- Inject environment before modules -->
     <script>
-        window.TPEN_ENV = window.TPEN_ENV || (document.querySelector('meta[name=\"tpen-env\"]')?.content || 'dev')
+        globalThis.TPEN_ENV = window.TPEN_ENV ??= (document.querySelector('meta[name="tpen-env"]')?.content ?? 'dev')
     </script>
     <script src="/config.env.js"></script>
     <script src="../../components/decline-project/index.js" type="module"></script>
