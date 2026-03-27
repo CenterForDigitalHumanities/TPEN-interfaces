@@ -4,7 +4,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="tpen-env" content="prod">
     <title>About TPEN</title>
+    <!-- Inject environment before modules -->
+    <script>
+        globalThis.TPEN_ENV = window.TPEN_ENV ??= (document.querySelector('meta[name="tpen-env"]')?.content ?? 'dev')
+    </script>
+    <script src="/config.env.js"></script>
     <script type="module" src="components/gui/site/index.js"></script>
     <script type="module" src="components/gui/card/Card.js"></script>
 
@@ -15,11 +21,12 @@
         <h2>TPEN 3.0</h2>
         <p>
             TPEN 3.0 is a web-based application designed to assist in the transcription of historical documents.
-            It provides a user-friendly interface for transcribing, annotating, and analyzing texts, making it 
+            It provides a user-friendly interface for transcribing, annotating, and analyzing texts, making it
             an invaluable tool for historians, archivists, and researchers.
         </p>
         <p>
-            <a href="https://three.t-pen.org/about/" target="_blank" rel="noopener noreferrer">Learn more at the TPEN3 home site!</a>
+            <a href="https://three.t-pen.org/about/" target="_blank" rel="noopener noreferrer">Learn more at the TPEN3
+                home site!</a>
         </p>
     </tpen-page>
 </body>
