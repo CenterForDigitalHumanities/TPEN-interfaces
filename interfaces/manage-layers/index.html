@@ -8,7 +8,13 @@ permalink: /project/manage/layers
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="tpen-env" content="prod">
     <title>Manage Layers and Pages</title>
+    <!-- Inject environment before modules -->
+    <script>
+        window.TPEN_ENV = window.TPEN_ENV || (document.querySelector('meta[name="tpen-env"]')?.content || 'dev')
+    </script>
+    <script src="/config.env.js"></script>
     <script type="module" src="../../components/gui/site/index.js"></script>
     <script type="module" src="../../components/gui/card/Card.js"></script>
     <script type="module" src="../../components/manage-layers/index.js"></script>
