@@ -10,6 +10,12 @@ permalink: /project/metadata
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manage Project Metadata</title>
+    <meta name="tpen-env" content="prod">
+    <!-- Inject environment before modules -->
+    <script>
+        window.TPEN_ENV = window.TPEN_ENV || (document.querySelector('meta[name=\"tpen-env\"]')?.content || 'dev')
+    </script>
+    <script src="/config.env.js"></script>
     <script type="module" src="/api/TPEN.js"></script>
     <script type="module" src="/components/gui/site/index.js"></script>
     <script type="module" src="/components/update-metadata/index.js"></script>
@@ -30,12 +36,14 @@ permalink: /project/metadata
             text-decoration: none;
             font: inherit;
         }
+
         #projectManagementBtn:hover,
         #projectManagementBtn:focus-visible {
             background-color: var(--primary-light);
             outline: 2px solid var(--primary-color);
             outline-offset: 2px;
         }
+
         #projectManagementBtn span {
             position: relative;
             left: -10px;
@@ -75,7 +83,8 @@ permalink: /project/metadata
                     </div>
                 </div>
             </div>
-            <p slot="body" class="permission-msg" style="display: none;">You don't have permission to create, edit, or delete Metadata</p>
+            <p slot="body" class="permission-msg" style="display: none;">You don't have permission to create, edit, or
+                delete Metadata</p>
         </tpen-card>
         <a id="projectManagementBtn"><span aria-hidden="true">↪</span> Go to Project Management</a>
     </tpen-page>
@@ -104,11 +113,11 @@ permalink: /project/metadata
             const hasEditAccess = CheckPermissions.checkEditAccess('PROJECT', scope.toUpperCase())
             const hasDeleteAccess = CheckPermissions.checkDeleteAccess('PROJECT', scope.toUpperCase())
             const hasCreateAccess = CheckPermissions.checkCreateAccess('PROJECT', scope.toUpperCase())
-            
+
             if (hasEditAccess) {
                 divMetadata.style.display = 'inline-block'
                 permissionMsg.style.display = 'none'
-                
+
                 const deleteButtons = document.querySelectorAll('.remove-field-btn')
                 deleteButtons.forEach(button => {
                     if (hasDeleteAccess) {
@@ -117,7 +126,7 @@ permalink: /project/metadata
                         button.remove()
                     }
                 })
-                
+
                 const addButton = document.querySelector('#add-field-btn')
                 if (addButton) {
                     if (hasCreateAccess) {

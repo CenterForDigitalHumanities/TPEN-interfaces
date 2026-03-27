@@ -7,9 +7,21 @@ permalink: /project/options
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manage Project Options</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="tpen-env" content="prod">
+        <!-- Inject environment before modules -->
+        <script>
+            window.TPEN_ENV = window.TPEN_ENV || (document.querySelector('meta[name="tpen-env"]')?.content || 'dev')
+        </script>
+        <script src="/config.env.js"></script>
+        <title>Manage Project Options</title>
+    <meta name="tpen-env" content="prod">
+    <!-- Inject environment before modules -->
+    <script>
+        window.TPEN_ENV = window.TPEN_ENV || (document.querySelector('meta[name=\"tpen-env\"]')?.content || 'dev')
+    </script>
+    <script src="/config.env.js"></script>
     <script type="module" src="/api/TPEN.js"></script>
     <script type="module" src="/components/gui/site/index.js"></script>
     <script type="module" src="/components/project-options/index.js"></script>
@@ -17,7 +29,7 @@ permalink: /project/options
     <style>
         #projectManagementBtn {
             position: absolute;
-            top:  5.1em;
+            top: 5.1em;
             display: none;
             background-color: var(--primary-color);
             padding: 10px 20px;
@@ -32,16 +44,16 @@ permalink: /project/options
 
         #projectManagementBtn:hover,
         #projectManagementBtn:focus-visible {
-          background-color: var(--primary-light);
-          outline: 2px solid var(--primary-color);
-          outline-offset: 2px;
+            background-color: var(--primary-light);
+            outline: 2px solid var(--primary-color);
+            outline-offset: 2px;
         }
 
         #projectManagementBtn span {
-          position: relative;
-          left: -10px;
-          display: inline-block;
-          transform: rotate(180deg);
+            position: relative;
+            left: -10px;
+            display: inline-block;
+            transform: rotate(180deg);
         }
     </style>
 </head>
@@ -50,11 +62,11 @@ permalink: /project/options
     <tpen-page class="grid">
         <tpen-card>
             <h2 slot="header">Project Options</h2>
-            <tpen-project-options slot="body">  </tpen-project-options>
+            <tpen-project-options slot="body"> </tpen-project-options>
         </tpen-card>
         <tpen-card>
             <h2 slot="header">Project Configuration</h2>
-            <tpen-project-customization slot="body">  </tpen-project-customization>
+            <tpen-project-customization slot="body"> </tpen-project-customization>
         </tpen-card>
         <a id="projectManagementBtn"><span aria-hidden="true">↪</span> Go to Project Management</a>
     </tpen-page>
@@ -73,7 +85,7 @@ permalink: /project/options
             }
         }
     })
-    
+
 </script>
 
 </html>

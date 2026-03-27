@@ -10,6 +10,12 @@ permalink: /project/quick-guide
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TPEN3 Project Guide</title>
+    <meta name="tpen-env" content="prod">
+    <!-- Inject environment before modules -->
+    <script>
+        window.TPEN_ENV = window.TPEN_ENV || (document.querySelector('meta[name=\"tpen-env\"]')?.content || 'dev')
+    </script>
+    <script src="/config.env.js"></script>
     <link rel="stylesheet" href="/interfaces/project/quick-guide.css">
     <script src="/api/TPEN.js" type="module"></script>
     <script src="/components/gui/site/index.js" type="module"></script>
@@ -24,9 +30,12 @@ permalink: /project/quick-guide
             <div class="middle-panel">
                 <div class="left-panel">
                     <h1>Step by Step Guide to Create a New Project</h1>
-                    <p>Welcome to the TPEN project creation guide! This document will help you navigate through the process of creating a new project in TPEN.</p>
+                    <p>Welcome to the TPEN project creation guide! This document will help you navigate through the
+                        process of creating a new project in TPEN.</p>
                     <!-- Original source: https://www.lucidchart.com/blog/project-management-communication-plan -->
-                    <img class="guide-image" src="https://corporate-assets.lucid.co/chart/844cb535-aa32-432b-9f86-67ec4af0ef5c.png" alt="Communication Plan Diagram"/>
+                    <img class="guide-image"
+                        src="https://corporate-assets.lucid.co/chart/844cb535-aa32-432b-9f86-67ec4af0ef5c.png"
+                        alt="Communication Plan Diagram" />
                 </div>
                 <div class="right-panel">
                     <ol>
@@ -35,7 +44,8 @@ permalink: /project/quick-guide
                             <div class="project-card">
                                 <!-- Icon source: https://www.flaticon.com/free-icons/project by Freepik -->
                                 <img class="guide-icon" src="../../assets/images/project.png" alt="Project Types" />
-                                <p>Decide whether you want to create a new project from a valid resolved internet image, copy an existing one, import a IIIF manifest, or import a T-PEN 2.8 project.</p>
+                                <p>Decide whether you want to create a new project from a valid resolved internet image,
+                                    copy an existing one, import a IIIF manifest, or import a T-PEN 2.8 project.</p>
                             </div>
                         </li>
                         <hr />
@@ -43,8 +53,11 @@ permalink: /project/quick-guide
                             <h2>Mandatory Requirement :</h2>
                             <div class="project-card">
                                 <!-- Icon source: https://www.flaticon.com/free-icons/required by Freepik -->
-                                <img class="guide-icon" src="../../assets/images/required.png" alt="Mandatory Requirement" />
-                                <p>Ensure you have a resolving image URL from a valid source. If not try to find one and upload it to sources like GitHub, Dropbox, or Google Drive to obtain a valid URL.</p>
+                                <img class="guide-icon" src="../../assets/images/required.png"
+                                    alt="Mandatory Requirement" />
+                                <p>Ensure you have a resolving image URL from a valid source. If not try to find one and
+                                    upload it to sources like GitHub, Dropbox, or Google Drive to obtain a valid URL.
+                                </p>
                             </div>
                         </li>
                         <hr />
@@ -62,7 +75,8 @@ permalink: /project/quick-guide
                             <div class="project-card">
                                 <!-- Icon source: https://www.flaticon.com/free-icons/complete by Freepik -->
                                 <img class="guide-icon" src="../../assets/images/complete.png" alt="Complete Project" />
-                                <p>Add collaborators, assign roles, set permissions, add QuickType shortcuts and required configurations to complete your project.</p>
+                                <p>Add collaborators, assign roles, set permissions, add QuickType shortcuts and
+                                    required configurations to complete your project.</p>
                             </div>
                         </li>
                         <hr />
@@ -70,7 +84,8 @@ permalink: /project/quick-guide
                             <h2>Save and Start Transcribing :</h2>
                             <div class="project-card">
                                 <!-- Icon source: https://www.flaticon.com/free-icons/power-button by Freepik -->
-                                <img class="guide-icon" src="../../assets/images/start-button.png" alt="Start Transcribing" />
+                                <img class="guide-icon" src="../../assets/images/start-button.png"
+                                    alt="Start Transcribing" />
                                 <p>Once your project is set up, you can start transcribing your documents.</p>
                             </div>
                         </li>

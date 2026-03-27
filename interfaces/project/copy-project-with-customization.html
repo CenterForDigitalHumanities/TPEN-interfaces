@@ -10,6 +10,12 @@ permalink: /project/copy-project-options
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Copy a Project</title>
+    <meta name="tpen-env" content="prod">
+    <!-- Inject environment before modules -->
+    <script>
+        window.TPEN_ENV = window.TPEN_ENV || (document.querySelector('meta[name=\"tpen-env\"]')?.content || 'dev')
+    </script>
+    <script src="/config.env.js"></script>
     <script src="/components/copy-project-with-customization/index.js" type="module"></script>
     <script src="/api/TPEN.js" type="module"></script>
     <script src="/components/gui/site/index.js" type="module"></script>
@@ -20,9 +26,11 @@ permalink: /project/copy-project-options
     <tpen-page>
         <tpen-fixed-explanatory-guide heading="Steps to Copy a Project with Customizations">
             <li>Select the project you want to copy.</li>
-            <li>Choose the specific elements to include (e.g., metadata, group members, QuickType shortcuts, tools, and layers).</li>
+            <li>Choose the specific elements to include (e.g., metadata, group members, QuickType shortcuts, tools, and
+                layers).</li>
             <li>Optionally, select which members from the original project to include in the new one.</li>
-            <li>Decide how each layer should be copied: with annotations, without annotations, or excluded entirely. <strong>(By default, no layers are selected.)</strong></li>
+            <li>Decide how each layer should be copied: with annotations, without annotations, or excluded entirely.
+                <strong>(By default, no layers are selected.)</strong></li>
             <li>Click <strong>"Copy Project"</strong> to create the new project with your chosen settings.</li>
             <li>Click <strong>"Manage"</strong> to start working on it.</li>
         </tpen-fixed-explanatory-guide>

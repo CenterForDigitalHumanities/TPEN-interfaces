@@ -10,6 +10,12 @@ permalink: /project/create
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create a Project</title>
+    <meta name="tpen-env" content="prod">
+    <!-- Inject environment before modules -->
+    <script>
+        window.TPEN_ENV = window.TPEN_ENV || (document.querySelector('meta[name=\"tpen-env\"]')?.content || 'dev')
+    </script>
+    <script src="/config.env.js"></script>
     <script type="module" src="/components/gui/site/index.js"></script>
     <script type="module" src="/components/gui/card/Card.js"></script>
 </head>
@@ -43,7 +49,8 @@ permalink: /project/create
         </tpen-card>
         <tpen-card>
             <span slot="icon">
-                <object data="/assets/icons/IIIF-logo-colored-text.svg" type="image/svg+xml" style="height:1.3em; vertical-align:middle;">iiif</object>
+                <object data="/assets/icons/IIIF-logo-colored-text.svg" type="image/svg+xml"
+                    style="height:1.3em; vertical-align:middle;">iiif</object>
             </span>
             <h2 slot="header">Import IIIF Manifest</h2>
             <span slot="body">Start a project from a IIIF resource.</span>
@@ -63,12 +70,12 @@ permalink: /project/create
 </body>
 <script type="module">
     import TPEN from "/api/TPEN.js"
-    document.getElementById("link-tpen-2.8").addEventListener("click", async(event) => {
+    document.getElementById("link-tpen-2.8").addEventListener("click", async (event) => {
         event.preventDefault()
         const userToken = localStorage.getItem("userToken")
         let tokenDomain
         let isProdTPEN
-    
+
         if (TPEN.TPEN28URL.includes("t-pen.org")) {
             tokenDomain = "t-pen.org"
             isProdTPEN = true
@@ -77,13 +84,13 @@ permalink: /project/create
         if (TPEN.TPEN28URL.includes("localhost")) {
             tokenDomain = "localhost"
         }
-    
+
         let cookieString = `userToken=${userToken}; domain=${tokenDomain}; path=/; SameSite=Strict;`
-    
+
         if (isProdTPEN) {
             cookieString += " Secure;"
         }
-    
+
         document.cookie = cookieString
         await fetch(`${TPEN.servicesURL}/project/deletecookie`, {
             method: "GET",
@@ -95,4 +102,5 @@ permalink: /project/create
         window.location.href = `${TPEN.TPEN28URL}/TPEN/login.jsp?redirect_uri=${redirectUri}`
     })
 </script>
+
 </html>

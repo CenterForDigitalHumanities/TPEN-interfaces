@@ -5,9 +5,16 @@ permalink: /project/view-transcription
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8" />
     <title>View Transcription</title>
+    <meta name="tpen-env" content="prod">
+    <!-- Inject environment before modules -->
+    <script>
+        window.TPEN_ENV = window.TPEN_ENV || (document.querySelector('meta[name=\"tpen-env\"]')?.content || 'dev')
+    </script>
+    <script src="/config.env.js"></script>
     <meta property="og:title" content="View Transcription">
     <meta property="og:description" content="Explore my transcription and annotation work using TPEN3.">
     <meta property="og:image" content="https://app.t-pen.org/assets/logo/logo-350w.png">
@@ -19,6 +26,7 @@ permalink: /project/view-transcription
             height: 100vh;
             overflow: hidden;
         }
+
         body {
             height: 100vh;
             min-height: unset;
@@ -29,6 +37,7 @@ permalink: /project/view-transcription
             flex-direction: column;
             overflow: hidden;
         }
+
         .page-content {
             flex: 1;
             min-height: 0;
@@ -37,6 +46,7 @@ permalink: /project/view-transcription
             display: flex !important;
             flex-direction: column !important;
         }
+
         tpen-footer {
             flex-shrink: 0;
         }
@@ -46,6 +56,7 @@ permalink: /project/view-transcription
     <script src="https://cdnjs.cloudflare.com/ajax/libs/openseadragon/4.1.1/openseadragon.min.js"></script>
     <script type="module" src="/components/read-only-transcribe/index.js"></script>
 </head>
+
 <body>
     <tpen-header></tpen-header>
     <div class="page-content">
@@ -53,4 +64,5 @@ permalink: /project/view-transcription
     </div>
     <tpen-footer></tpen-footer>
 </body>
+
 </html>

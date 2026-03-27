@@ -5,46 +5,58 @@ permalink: /annotator
 
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Line Parser</title>
-    <script type="module" src="../../components/annotorious-annotator/line-parser.js"></script>
-    <script type="module" src="../../components/feedback-button/index.js"></script>
-    <script type="module" src="../../components/gui/site/Header.js"></script>
-    <script type="module" src="../../components/gui/site/index.js"></script>
-    <script type="module" src="../../components/explanatory-guide/fixedGuideComponent.js"></script>
-    <link href="../../components/gui/site/index.css" rel="stylesheet" type="text/css" />
-    <style>
-      body {
-        max-height: 100vh;
-        min-height:  90vh;
-        margin: 0px;
-        padding:  0px;
-      }
-      tpen-header {
-        position:  relative;
-        display:  block;
-        height:  4em;
-      }
-      tpen-line-parser {
-        display: block;
-        position:  relative;
-        margin: 0px;
-        padding:  0px;
-      }
-      :focus-visible {
-        outline: none !important;
-        border: none !important;
-      }
-    </style>
-  </head>
-  <body>
-    <tpen-header></tpen-header>
-    <!-- <tpen-fixed-explanatory-guide heading="Line Parser Guide">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Line Parser</title>
+  <meta name="tpen-env" content="prod">
+  <!-- Inject environment before modules -->
+  <script>
+    window.TPEN_ENV = window.TPEN_ENV || (document.querySelector('meta[name=\"tpen-env\"]')?.content || 'dev')
+  </script>
+  <script src="/config.env.js"></script>
+  <script type="module" src="../../components/annotorious-annotator/line-parser.js"></script>
+  <script type="module" src="../../components/feedback-button/index.js"></script>
+  <script type="module" src="../../components/gui/site/Header.js"></script>
+  <script type="module" src="../../components/gui/site/index.js"></script>
+  <script type="module" src="../../components/explanatory-guide/fixedGuideComponent.js"></script>
+  <link href="../../components/gui/site/index.css" rel="stylesheet" type="text/css" />
+  <style>
+    body {
+      max-height: 100vh;
+      min-height: 90vh;
+      margin: 0px;
+      padding: 0px;
+    }
+
+    tpen-header {
+      position: relative;
+      display: block;
+      height: 4em;
+    }
+
+    tpen-line-parser {
+      display: block;
+      position: relative;
+      margin: 0px;
+      padding: 0px;
+    }
+
+    :focus-visible {
+      outline: none !important;
+      border: none !important;
+    }
+  </style>
+</head>
+
+<body>
+  <tpen-header></tpen-header>
+  <!-- <tpen-fixed-explanatory-guide heading="Line Parser Guide">
       Add guide info
     </tpen-fixed-explanatory-guide> -->
-    <tpen-line-parser></tpen-line-parser>
-    <tpen-feedback-button></tpen-feedback-button>
-  </body>
+  <tpen-line-parser></tpen-line-parser>
+  <tpen-feedback-button></tpen-feedback-button>
+</body>
+
 </html>

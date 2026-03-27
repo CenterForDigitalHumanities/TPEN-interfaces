@@ -1,6 +1,6 @@
 ---
 redirect_from:
-    - /simple-transcription
+- /simple-transcription
 permalink: /transcribe-simple
 ---
 
@@ -15,6 +15,12 @@ permalink: /transcribe-simple
     <script type="module" src="/components/layer-selector/index.js"></script>
     <script type="module" src="/components/feedback-button/index.js"></script>
     <title>Simple Transcription Interface</title>
+    <meta name="tpen-env" content="prod">
+    <!-- Inject environment before modules -->
+    <script>
+        window.TPEN_ENV = window.TPEN_ENV || (document.querySelector('meta[name=\"tpen-env\"]')?.content || 'dev')
+    </script>
+    <script src="/config.env.js"></script>
     <style>
         .no-margin-transcription {
             margin: 0;

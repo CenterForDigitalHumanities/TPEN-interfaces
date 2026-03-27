@@ -10,6 +10,12 @@ permalink: /project/manifest-builder
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manifest Builder</title>
+    <meta name="tpen-env" content="prod">
+    <!-- Inject environment before modules -->
+    <script>
+        window.TPEN_ENV = window.TPEN_ENV || (document.querySelector('meta[name=\"tpen-env\"]')?.content || 'dev')
+    </script>
+    <script src="/config.env.js"></script>
     <script src="/api/TPEN.js" type="module"></script>
     <script src="/components/gui/site/index.js" type="module"></script>
 </head>

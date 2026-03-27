@@ -10,6 +10,12 @@ permalink: /project/copy-project
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Copy a Project</title>
+    <meta name="tpen-env" content="prod">
+    <!-- Inject environment before modules -->
+    <script>
+        window.TPEN_ENV = window.TPEN_ENV || (document.querySelector('meta[name=\"tpen-env\"]')?.content || 'dev')
+    </script>
+    <script src="/config.env.js"></script>
     <script src="/components/copy-existing-project/index.js" type="module"></script>
     <script src="/api/TPEN.js" type="module"></script>
     <script src="/components/gui/site/index.js" type="module"></script>
@@ -23,8 +29,9 @@ permalink: /project/copy-project
             <li>Click <strong>"Copy Project"</strong> to create the duplicate.</li>
             <li>Click <strong>"Manage"</strong> to start working on it.</li>
         </tpen-fixed-explanatory-guide>
-        <p> 
-            This will copy <i>everything</i> from the selected project.  If you want to specify exactly what to copy <a href="copy-project-options">use the more detailed version here</a>.
+        <p>
+            This will copy <i>everything</i> from the selected project. If you want to specify exactly what to copy <a
+                href="copy-project-options">use the more detailed version here</a>.
         </p>
         <tpen-copy-existing-project></tpen-copy-existing-project>
     </tpen-page>
