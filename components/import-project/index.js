@@ -33,6 +33,17 @@ class ProjectImporter extends HTMLElement {
             gap: 10px;
             max-width: 400px;
           }
+          .hint {
+            margin: 0;
+            color: #4a4a4a;
+            font-size: 0.95rem;
+            line-height: 1.4;
+          }
+          .hint code {
+            background: #f1f1f1;
+            padding: 2px 4px;
+            border-radius: 4px;
+          }
           input, button {
             padding: 10px;
             font-size: 1rem;
@@ -76,6 +87,7 @@ class ProjectImporter extends HTMLElement {
         </style>
         <div class="importer-container">
         <h3>Create Project from Manifest URL</h3>
+          <p class="hint">Tip: this page supports direct links like <code>/project/import?manifest=https://example.com/manifest.json</code>.</p>
           <label for="url">Manifest URL:</label>
           <input type="url" id="url" placeholder="Enter manifest URL..." />
           <button id="submit">Import Project</button>
@@ -95,8 +107,34 @@ class ProjectImporter extends HTMLElement {
     this.feedback = this.shadowRoot.querySelector('#feedback')
     this.projectInfoContainer = this.shadowRoot.querySelector('#project-info-container')
 
+    this.#prefillManifestFromQuery()
+
     const importHandler = this.handleImport.bind(this)
     this.cleanup.onElement(this.submitButton, 'click', importHandler)
+  }
+
+  /**
+   * Prefill the manifest URL input from inbound query params.
+   * Supports links like /project/import?manifest=https://example.com/manifest.json
+   */
+  #prefillManifestFromQuery() {
+    const params = new URLSearchParams(window.location.search)
+    const manifestValues = params.getAll('manifest').map(value => value?.trim()).filter(Boolean)
+
+    if (manifestValues.length === 0) {
+      return
+    }
+
+    this.urlInput.value = manifestValues[0]
+
+    if (manifestValues.length > 1) {
+      this.feedback.textContent = `Received ${manifestValues.length} manifest values. Using the first one in the form.`
+      this.feedback.className = 'loading'
+      return
+    }
+
+    this.feedback.textContent = 'Manifest URL loaded from link. Review it and click Import Project when ready.'
+    this.feedback.className = 'loading'
   }
   setLoadingState(isLoading) {
     if (isLoading) {
