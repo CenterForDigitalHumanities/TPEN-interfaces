@@ -8,6 +8,10 @@ import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 class ProjectImporter extends HTMLElement {
   /** @type {CleanupRegistry} Registry for cleanup handlers */
   cleanup = new CleanupRegistry()
+  /** @type {string[]} Ordered list of manifest URLs provided via query params */
+  #manifestQueue = []
+  /** @type {number} Current position in the manifest queue */
+  #manifestIndex = 0
 
   constructor() {
     super()
@@ -32,6 +36,17 @@ class ProjectImporter extends HTMLElement {
             flex-direction: column;
             gap: 10px;
             max-width: 400px;
+          }
+          .hint {
+            margin: 0;
+            color: #4a4a4a;
+            font-size: 0.95rem;
+            line-height: 1.4;
+          }
+          .hint code {
+            background: #f1f1f1;
+            padding: 2px 4px;
+            border-radius: 4px;
           }
           input, button {
             padding: 10px;
@@ -76,6 +91,7 @@ class ProjectImporter extends HTMLElement {
         </style>
         <div class="importer-container">
         <h3>Create Project from Manifest URL</h3>
+          <p class="hint">Tip: this page supports direct links like <code>/project/import?manifest=https://example.com/manifest.json</code>.</p>
           <label for="url">Manifest URL:</label>
           <input type="url" id="url" placeholder="Enter manifest URL..." />
           <button id="submit">Import Project</button>
@@ -95,8 +111,49 @@ class ProjectImporter extends HTMLElement {
     this.feedback = this.shadowRoot.querySelector('#feedback')
     this.projectInfoContainer = this.shadowRoot.querySelector('#project-info-container')
 
+    this.#prefillManifestFromQuery()
+
     const importHandler = this.handleImport.bind(this)
     this.cleanup.onElement(this.submitButton, 'click', importHandler)
+  }
+
+  /**
+   * Prefill the manifest URL input from inbound query params.
+   * Supports links like /project/import?manifest=https://example.com/manifest.json
+   * When multiple manifest values are provided, stores them as a queue and
+   * prompts the user to submit repeatedly to iterate through the list.
+   */
+  #prefillManifestFromQuery() {
+    const params = new URLSearchParams(window.location.search)
+    this.#manifestQueue = params.getAll('manifest').map(value => value?.trim()).filter(Boolean)
+
+    if (this.#manifestQueue.length === 0) return
+
+    this.#manifestIndex = 0
+    this.urlInput.value = this.#manifestQueue[0]
+
+    this.feedback.className = 'loading'
+    if (this.#manifestQueue.length > 1) {
+      this.feedback.textContent = `Manifest 1 of ${this.#manifestQueue.length} loaded. Submit to import, then submit again to iterate through your list.`
+    } else {
+      this.feedback.textContent = 'Manifest URL loaded from link. Review it and click Import Project when ready.'
+    }
+  }
+
+  /**
+   * Advances to the next manifest in the queue after a successful or failed import.
+   * Loads the next URL into the input and appends a progress note to the current feedback.
+   */
+  #advanceQueue() {
+    const nextIndex = this.#manifestIndex + 1
+    if (nextIndex >= this.#manifestQueue.length) return
+
+    this.#manifestIndex = nextIndex
+    this.urlInput.value = this.#manifestQueue[nextIndex]
+
+    const progressNote = document.createElement('small')
+    progressNote.textContent = ` — Manifest ${nextIndex + 1} of ${this.#manifestQueue.length} ready. Submit again to continue.`
+    this.feedback.appendChild(progressNote)
   }
   setLoadingState(isLoading) {
     if (isLoading) {
@@ -104,7 +161,6 @@ class ProjectImporter extends HTMLElement {
       this.feedback.className = 'loading'
       this.submitButton.disabled = true
     } else {
-      this.feedback.textContent = ''
       this.submitButton.disabled = false
     }
   }
@@ -150,6 +206,7 @@ class ProjectImporter extends HTMLElement {
       this.feedback.className = 'error'
     } finally {
       this.setLoadingState(false)
+      this.#advanceQueue()
     }
   }
 
