@@ -822,15 +822,43 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       ?? null
   }
 
+  #getProjectManifestUri() {
+    const manifest = TPEN.activeProject?.manifest
+    return Array.isArray(manifest) ? manifest[0] ?? null : manifest ?? null
+  }
+
+  #getCanvasManifestUri() {
+    const partOf = this.#canvas?.partOf
+
+    if (Array.isArray(partOf) && partOf.length > 0) {
+      const manifestRef = partOf.find(item => {
+        const type = (item?.type ?? item?.['@type'] ?? '').toString().toLowerCase()
+        return type.includes('manifest')
+      }) ?? partOf[0]
+
+      return manifestRef?.id ?? manifestRef?.['@id'] ?? manifestRef ?? this.#getProjectManifestUri()
+    }
+
+    if (partOf) {
+      return partOf?.id ?? partOf?.['@id'] ?? partOf
+    }
+
+    return this.#getProjectManifestUri()
+  }
+
   #buildTPENContext() {
     const currentPageId = TPEN.screen?.pageInQuery
     const projectPage = TPEN.activeProject?.layers
       ?.flatMap(layer => layer.pages || [])
       .find(p => p.id.split('/').pop() === currentPageId)
+    const manifestUri = this.#getCanvasManifestUri()
 
     return {
       type: 'TPEN_CONTEXT',
       projectId: TPEN.activeProject?.id ?? TPEN.activeProject?._id ?? TPEN.screen?.projectInQuery ?? null,
+      manifest: manifestUri,
+      manifestUri,
+      canvasManifestUri: manifestUri,
       pageId: this.fetchCurrentPageId() ?? this.#page?.id ?? currentPageId ?? null,
       canvasId: this.#getCanvasId(),
       imageUrl: this.#getCanvasImageUrl(),
@@ -922,7 +950,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
         iframe.contentWindow?.postMessage(
           {
             type: "MANIFEST_CANVAS_ANNOTATIONPAGE_ANNOTATION",
-            manifest: TPEN.activeProject?.manifest?.[0] ?? '',
+            manifest: this.#getCanvasManifestUri() ?? '',
             canvas: this.#getCanvasId(),
             annotationPage: this.fetchCurrentPageId() ?? this.#page?.id ?? '',
             annotation: TPEN.activeLineIndex >= 0 ? this.#getCurrentLineId() : null,
