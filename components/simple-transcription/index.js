@@ -876,6 +876,31 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     this.#postToTool(this.#buildTPENContext(), targetWindow)
   }
 
+  #sendIdTokenToTool(targetWindow = this.#activeToolIframe?.contentWindow) {
+    const idToken = TPEN.getAuthorization()
+
+    if (!idToken) {
+      TPEN.login()
+      return
+    }
+
+    const tool = this.getToolByName(this.state.activeTool)
+    const toolLabel = tool?.label ?? tool?.custom?.tagName ?? 'Tool'
+
+    this.#postToTool(
+      {
+        type: 'TPEN_ID_TOKEN',
+        idToken
+      },
+      targetWindow
+    )
+
+    TPEN.eventDispatcher.dispatch('tpen-toast', {
+      message: `Authorized ${toolLabel} to act on your behalf`,
+      status: 'info'
+    })
+  }
+
   loadRightPaneContent() {
     const rightPane = this.shadowRoot.querySelector('.tools')
     let tool = this.getToolByName(this.state.activeTool)
@@ -1015,6 +1040,11 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
 
     if (event.data?.type === 'REQUEST_TPEN_CONTEXT') {
       this.#sendTPENContextToTool(event.source)
+      return
+    }
+
+    if (event.data?.type === 'REQUEST_ID_TOKEN' || event.data?.type === 'REQUEST_TPEN_ID_TOKEN') {
+      this.#sendIdTokenToTool(event.source)
       return
     }
     
