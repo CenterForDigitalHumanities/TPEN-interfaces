@@ -18,6 +18,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
   #page
   #canvas
   #activeLine = null
+  #activeToolIframe = null
   #imgTopOriginalHeight = 0
   #imgTopOriginalWidth = 0
   #imgBottomPositionRatio = 1
@@ -806,6 +807,47 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     })) ?? []
   }
 
+  #getCurrentLineId() {
+    return this.#page?.items?.[TPEN.activeLineIndex]?.id ?? null
+  }
+
+  #getCanvasId() {
+    return this.#canvas?.id ?? this.#canvas?.['@id'] ?? this.#canvas ?? ''
+  }
+
+  #getCanvasImageUrl() {
+    return this.#canvas?.items?.[0]?.items?.[0]?.body?.id
+      ?? this.#canvas?.images?.[0]?.resource?.['@id']
+      ?? this.#canvas?.images?.[0]?.resource?.id
+      ?? null
+  }
+
+  #buildTPENContext() {
+    const currentPageId = TPEN.screen?.pageInQuery
+    const projectPage = TPEN.activeProject?.layers
+      ?.flatMap(layer => layer.pages || [])
+      .find(p => p.id.split('/').pop() === currentPageId)
+
+    return {
+      type: 'TPEN_CONTEXT',
+      projectId: TPEN.activeProject?.id ?? TPEN.activeProject?._id ?? TPEN.screen?.projectInQuery ?? null,
+      pageId: this.fetchCurrentPageId() ?? this.#page?.id ?? currentPageId ?? null,
+      canvasId: this.#getCanvasId(),
+      imageUrl: this.#getCanvasImageUrl(),
+      currentLineId: this.#getCurrentLineId(),
+      columns: projectPage?.columns || []
+    }
+  }
+
+  #postToTool(message, targetWindow = this.#activeToolIframe?.contentWindow) {
+    if (!this._iframeOrigin || !targetWindow) return
+    targetWindow.postMessage(message, this._iframeOrigin)
+  }
+
+  #sendTPENContextToTool(targetWindow = this.#activeToolIframe?.contentWindow) {
+    this.#postToTool(this.#buildTPENContext(), targetWindow)
+  }
+
   loadRightPaneContent() {
     const rightPane = this.shadowRoot.querySelector('.tools')
     let tool = this.getToolByName(this.state.activeTool)
@@ -858,6 +900,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
 
     if (tool.url && !tagName && tool.location === 'pane') {
       const iframe = document.createElement('iframe')
+      this.#activeToolIframe = iframe
       iframe.id = tool.toolName
       iframe.style.width = '100%'
       iframe.style.height = '100%'
@@ -872,14 +915,17 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
         const projectPage = TPEN.activeProject?.layers
           ?.flatMap(layer => layer.pages || [])
           .find(p => p.id.split('/').pop() === currentPageId)
+
+        // New consolidated context payload for pane tools.
+        this.#sendTPENContextToTool(iframe.contentWindow)
         
         iframe.contentWindow?.postMessage(
           {
             type: "MANIFEST_CANVAS_ANNOTATIONPAGE_ANNOTATION",
             manifest: TPEN.activeProject?.manifest?.[0] ?? '',
-            canvas: this.#canvas?.id ?? this.#canvas?.['@id'] ?? this.#canvas ?? '',
+            canvas: this.#getCanvasId(),
             annotationPage: this.fetchCurrentPageId() ?? this.#page?.id ?? '',
-            annotation: TPEN.activeLineIndex >= 0 ? this.#page?.items?.[TPEN.activeLineIndex]?.id ?? null : null,
+            annotation: TPEN.activeLineIndex >= 0 ? this.#getCurrentLineId() : null,
             columns: projectPage?.columns || []
           },
           this._iframeOrigin
@@ -896,7 +942,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
         iframe.contentWindow?.postMessage(
           {
             type: "CURRENT_LINE_INDEX",
-            lineId: this.#page?.items?.[TPEN.activeLineIndex]?.id ?? null
+            lineId: this.#getCurrentLineId()
           },
           this._iframeOrigin
         )
@@ -906,7 +952,8 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       this.#cleanupToolLineListeners()
 
       const sendLineSelection = () => {
-        const activeLineId = this.#page?.items?.[TPEN.activeLineIndex]?.id ?? null
+        const activeLineId = this.#getCurrentLineId()
+        this.#sendTPENContextToTool(iframe.contentWindow)
         iframe.contentWindow?.postMessage(
           { type: "SELECT_ANNOTATION", lineId: activeLineId },
           this._iframeOrigin
@@ -933,10 +980,15 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
   }
 
   #handleToolMessages(event) {
-        // Validate message origin if iframe origin is set
-        if (this._iframeOrigin && event.origin !== this._iframeOrigin) {
-          return
-        }
+    // Validate message origin if iframe origin is set
+    if (this._iframeOrigin && event.origin !== this._iframeOrigin) {
+      return
+    }
+
+    if (event.data?.type === 'REQUEST_TPEN_CONTEXT') {
+      this.#sendTPENContextToTool(event.source)
+      return
+    }
     
     // Handle incoming messages from tools
     const lineId = event.data?.lineId ?? event.data?.lineid ?? event.data?.annotation // handle different casing and properties
