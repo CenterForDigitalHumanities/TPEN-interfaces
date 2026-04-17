@@ -402,6 +402,19 @@ export default class TranscriptionInterface extends HTMLElement {
         this._iframeOrigin = new URL(tool.url).origin
       
       iframe.addEventListener('load', () => {
+        // Forward auth to TPEN-Prompts only; other tools do not receive the token.
+        if (tool.toolName === 'tpen-prompts') {
+          iframe.contentWindow?.postMessage(
+            {
+              type: "AUTH_TOKEN",
+              token: TPEN.getAuthorization?.() ?? null,
+              projectID: TPEN.screen?.projectInQuery ?? null,
+              pageID: TPEN.screen?.pageInQuery ?? null
+            },
+            this._iframeOrigin
+          )
+        }
+
         iframe.contentWindow?.postMessage(
           {
             type: "MANIFEST_CANVAS_ANNOTATIONPAGE_ANNOTATION",

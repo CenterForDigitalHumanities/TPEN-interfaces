@@ -872,7 +872,19 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
         const projectPage = TPEN.activeProject?.layers
           ?.flatMap(layer => layer.pages || [])
           .find(p => p.id.split('/').pop() === currentPageId)
-        
+
+        if (tool.toolName === 'tpen-prompts') {
+          iframe.contentWindow?.postMessage(
+            {
+              type: "AUTH_TOKEN",
+              token: this.userToken ?? null,
+              projectID: TPEN.screen?.projectInQuery ?? null,
+              pageID: currentPageId ?? null
+            },
+            this._iframeOrigin
+          )
+        }
+
         iframe.contentWindow?.postMessage(
           {
             type: "MANIFEST_CANVAS_ANNOTATIONPAGE_ANNOTATION",
