@@ -873,6 +873,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
           ?.flatMap(layer => layer.pages || [])
           .find(p => p.id.split('/').pop() === currentPageId)
 
+        // Forward auth to TPEN-Prompts only; other tools do not receive the token.
         if (tool.toolName === 'tpen-prompts') {
           iframe.contentWindow?.postMessage(
             {

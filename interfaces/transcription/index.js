@@ -407,7 +407,7 @@ export default class TranscriptionInterface extends HTMLElement {
           iframe.contentWindow?.postMessage(
             {
               type: "AUTH_TOKEN",
-              token: TPEN.getAuthorization?.() ?? null,
+              token: this.userToken ?? null,
               projectID: TPEN.screen?.projectInQuery ?? null,
               pageID: TPEN.screen?.pageInQuery ?? null
             },
