@@ -981,9 +981,10 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
             this._iframeOrigin
           )
         }
-
-        // New consolidated context payload for pane tools.
-        // this.#sendTPENContextToTool(iframe.contentWindow)
+        else {
+          // New consolidated context payload for pane tools.
+          this.#sendTPENContextToTool(iframe.contentWindow)
+        }
 
         iframe.contentWindow?.postMessage(
           {
