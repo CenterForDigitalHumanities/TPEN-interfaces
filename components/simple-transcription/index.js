@@ -856,7 +856,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     return {
       type: 'TPEN_CONTEXT',
       projectId: TPEN.activeProject?.id ?? TPEN.activeProject?._id ?? TPEN.screen?.projectInQuery ?? null,
-      projectLabel: TPEN.activeProject?.label ?? TPEN.activeProject?.title ?? null,
+      projectLabel: TPEN.activeProject?.label ?? null,
       manifest: manifestUri,
       manifestUri,
       canvasManifestUri: manifestUri,
