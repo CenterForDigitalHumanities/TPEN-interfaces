@@ -785,11 +785,28 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     return this.#page?.items?.[TPEN.activeLineIndex]?.id ?? null
   }
 
-  #buildTPENContext() {
+  /**
+   * Resolve each item in `page.items` to a full Annotation via the vault.
+   * Vault fetches for AnnotationPages return children as bare `{id, type}`
+   * refs — downstream tools need hydrated targets/selectors/bodies. Returns
+   * a shallow copy of the page with the items array replaced; errors on
+   * individual items fall back to the original ref so partial hydration
+   * still produces a usable payload.
+   */
+  async #hydratePageItems(page) {
+    if (!Array.isArray(page?.items) || page.items.length === 0) return page
+    const results = await Promise.allSettled(
+      page.items.map(item => vault.get(item, 'annotation'))
+    )
+    const items = results.map((r, i) => r.status === 'fulfilled' ? r.value : page.items[i])
+    return { ...page, items }
+  }
+
+  async #buildTPENContext() {
     return {
       type: 'TPEN_CONTEXT',
       project: TPEN.activeProject ?? null,
-      page: this.#page ?? null,
+      page: await this.#hydratePageItems(this.#page),
       canvas: this.#canvas ?? null,
       currentLineId: this.#getCurrentLineId()
     }
@@ -800,8 +817,8 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     targetWindow.postMessage(message, this._iframeOrigin)
   }
 
-  #sendTPENContextToTool(targetWindow = this.#activeToolIframe?.contentWindow) {
-    this.#postToTool(this.#buildTPENContext(), targetWindow)
+  async #sendTPENContextToTool(targetWindow = this.#activeToolIframe?.contentWindow) {
+    this.#postToTool(await this.#buildTPENContext(), targetWindow)
   }
 
   #sendIdTokenToTool(targetWindow = this.#activeToolIframe?.contentWindow) {
