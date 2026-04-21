@@ -856,11 +856,15 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     return {
       type: 'TPEN_CONTEXT',
       projectId: TPEN.activeProject?.id ?? TPEN.activeProject?._id ?? TPEN.screen?.projectInQuery ?? null,
+      projectLabel: TPEN.activeProject?.label ?? null,
       manifest: manifestUri,
       manifestUri,
       canvasManifestUri: manifestUri,
       pageId: this.fetchCurrentPageId() ?? this.#page?.id ?? currentPageId ?? null,
+      pageLabel: projectPage?.label ?? this.#page?.label ?? null,
       canvasId: this.#getCanvasId(),
+      canvasWidth: this.#canvas?.width ?? null,
+      canvasHeight: this.#canvas?.height ?? null,
       imageUrl: this.#getCanvasImageUrl(),
       currentLineId: this.#getCurrentLineId(),
       columns: projectPage?.columns || []
@@ -969,9 +973,8 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
           ?.flatMap(layer => layer.pages || [])
           .find(p => p.id.split('/').pop() === currentPageId)
 
-        // New consolidated context payload for pane tools.
         this.#sendTPENContextToTool(iframe.contentWindow)
-        
+
         iframe.contentWindow?.postMessage(
           {
             type: "MANIFEST_CANVAS_ANNOTATIONPAGE_ANNOTATION",
