@@ -811,72 +811,26 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     return this.#page?.items?.[TPEN.activeLineIndex]?.id ?? null
   }
 
-  #getCanvasId() {
-    return this.#canvas?.id ?? this.#canvas?.['@id'] ?? this.#canvas ?? ''
-  }
-
-  #getCanvasImageUrl() {
-    return this.#canvas?.items?.[0]?.items?.[0]?.body?.id
-      ?? this.#canvas?.images?.[0]?.resource?.['@id']
-      ?? this.#canvas?.images?.[0]?.resource?.id
-      ?? null
-  }
-
-  #getProjectManifestUri() {
-    const manifest = TPEN.activeProject?.manifest
-    return Array.isArray(manifest) ? manifest[0] ?? null : manifest ?? null
-  }
-
-  #getCanvasManifestUri() {
-    const partOf = this.#canvas?.partOf
-
-    if (Array.isArray(partOf) && partOf.length > 0) {
-      const manifestRef = partOf.find(item => {
-        const type = (item?.type ?? item?.['@type'] ?? '').toString().toLowerCase()
-        return type.includes('manifest')
-      }) ?? partOf[0]
-
-      return manifestRef?.id ?? manifestRef?.['@id'] ?? manifestRef ?? this.#getProjectManifestUri()
-    }
-
-    if (partOf) {
-      return partOf?.id ?? partOf?.['@id'] ?? partOf
-    }
-
-    return this.#getProjectManifestUri()
-  }
-
   #buildTPENContext() {
-    const currentPageId = TPEN.screen?.pageInQuery
-    const projectPage = TPEN.activeProject?.layers
-      ?.flatMap(layer => layer.pages || [])
-      .find(p => p.id.split('/').pop() === currentPageId)
-    const manifestUri = this.#getCanvasManifestUri()
-
     return {
       type: 'TPEN_CONTEXT',
-      projectId: TPEN.activeProject?.id ?? TPEN.activeProject?._id ?? TPEN.screen?.projectInQuery ?? null,
-      manifest: manifestUri,
-      manifestUri,
-      canvasManifestUri: manifestUri,
-      pageId: this.fetchCurrentPageId() ?? this.#page?.id ?? currentPageId ?? null,
-      canvasId: this.#getCanvasId(),
-      imageUrl: this.#getCanvasImageUrl(),
-      currentLineId: this.#getCurrentLineId(),
-      columns: projectPage?.columns || []
+      project: TPEN.activeProject ?? null,
+      page: this.#page ?? null,
+      canvas: this.#canvas ?? null,
+      currentLineId: this.#getCurrentLineId()
     }
   }
 
-  #postToTool(message, targetWindow = this.#activeToolIframe?.contentWindow) {
-    if (!this._iframeOrigin || !targetWindow) return
-    targetWindow.postMessage(message, this._iframeOrigin)
+  #postToTool(message, targetWindow = this.#activeToolIframe?.contentWindow, targetOrigin = this._iframeOrigin) {
+    if (!targetOrigin || !targetWindow) return
+    targetWindow.postMessage(message, targetOrigin)
   }
 
-  #sendTPENContextToTool(targetWindow = this.#activeToolIframe?.contentWindow) {
-    this.#postToTool(this.#buildTPENContext(), targetWindow)
+  #sendTPENContextToTool(targetWindow = this.#activeToolIframe?.contentWindow, targetOrigin = this._iframeOrigin) {
+    this.#postToTool(this.#buildTPENContext(), targetWindow, targetOrigin)
   }
 
-  #sendIdTokenToTool(targetWindow = this.#activeToolIframe?.contentWindow) {
+  #sendIdTokenToTool(targetWindow = this.#activeToolIframe?.contentWindow, targetOrigin = this._iframeOrigin) {
     const idToken = TPEN.getAuthorization()
 
     if (!idToken) {
@@ -892,7 +846,8 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
         type: 'TPEN_ID_TOKEN',
         idToken
       },
-      targetWindow
+      targetWindow,
+      targetOrigin
     )
 
     TPEN.eventDispatcher.dispatch('tpen-toast', {
@@ -958,57 +913,20 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       iframe.style.width = '100%'
       iframe.style.height = '100%'
       iframe.style.border = 'none'
-      
+
   // Extract and store iframe origin for secure postMessage
   this._iframeOrigin = new URL(tool.url).origin
 
       iframe.addEventListener('load', () => {
-        // Get the current page configuration for columns
-        const currentPageId = TPEN.screen?.pageInQuery
-        const projectPage = TPEN.activeProject?.layers
-          ?.flatMap(layer => layer.pages || [])
-          .find(p => p.id.split('/').pop() === currentPageId)
-
-        // New consolidated context payload for pane tools.
         this.#sendTPENContextToTool(iframe.contentWindow)
-        
-        iframe.contentWindow?.postMessage(
-          {
-            type: "MANIFEST_CANVAS_ANNOTATIONPAGE_ANNOTATION",
-            manifest: this.#getCanvasManifestUri() ?? '',
-            canvas: this.#getCanvasId(),
-            annotationPage: this.fetchCurrentPageId() ?? this.#page?.id ?? '',
-            annotation: TPEN.activeLineIndex >= 0 ? this.#getCurrentLineId() : null,
-            columns: projectPage?.columns || []
-          },
-          this._iframeOrigin
-        )
-
-        iframe.contentWindow?.postMessage(
-          {
-            type: "CANVASES",
-            canvases: this.fetchCanvasesFromCurrentLayer()
-          },
-          this._iframeOrigin
-        )
-
-        iframe.contentWindow?.postMessage(
-          {
-            type: "CURRENT_LINE_INDEX",
-            lineId: this.#getCurrentLineId()
-          },
-          this._iframeOrigin
-        )
       })
 
       // Clean up old listeners before adding new ones
       this.#cleanupToolLineListeners()
 
       const sendLineSelection = () => {
-        const activeLineId = this.#getCurrentLineId()
-        this.#sendTPENContextToTool(iframe.contentWindow)
         iframe.contentWindow?.postMessage(
-          { type: "SELECT_ANNOTATION", lineId: activeLineId },
+          { type: 'UPDATE_CURRENT_LINE', currentLineId: this.#getCurrentLineId() },
           this._iframeOrigin
         )
       }
@@ -1038,13 +956,8 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       return
     }
 
-    if (event.data?.type === 'REQUEST_TPEN_CONTEXT') {
-      this.#sendTPENContextToTool(event.source)
-      return
-    }
-
-    if (event.data?.type === 'REQUEST_ID_TOKEN' || event.data?.type === 'REQUEST_TPEN_ID_TOKEN') {
-      this.#sendIdTokenToTool(event.source)
+    if (event.data?.type === 'REQUEST_TPEN_ID_TOKEN') {
+      this.#sendIdTokenToTool(event.source, event.origin)
       return
     }
     
