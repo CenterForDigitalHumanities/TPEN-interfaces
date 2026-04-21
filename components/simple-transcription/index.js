@@ -788,25 +788,6 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     return TPEN.activeProject?.tools?.find(tool => tool.toolName === toolName)
   }
 
-  fetchCurrentPageId() {
-    for (const layer of TPEN.activeProject?.layers) {
-      const page = layer.pages.find(
-        p => p.id.split('/').pop() === TPEN.screen.pageInQuery
-      )
-      if (page) return page.id
-    }
-  }
-
-  fetchCanvasesFromCurrentLayer() {
-    const currentLayer = TPEN.activeProject?.layers.find(layer =>
-      layer.pages.some(page => page.id.split('/').pop() === TPEN.screen.pageInQuery)
-    )
-    return currentLayer?.pages.flatMap(page => ({
-      id: page.target,
-      label: page.label
-    })) ?? []
-  }
-
   #getCurrentLineId() {
     return this.#page?.items?.[TPEN.activeLineIndex]?.id ?? null
   }
@@ -913,8 +894,8 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       iframe.style.height = '100%'
       iframe.style.border = 'none'
 
-  // Extract and store iframe origin for secure postMessage
-  this._iframeOrigin = new URL(tool.url).origin
+      // Extract and store iframe origin for secure postMessage
+      this._iframeOrigin = new URL(tool.url).origin
 
       iframe.addEventListener('load', () => {
         this.#sendTPENContextToTool(iframe.contentWindow)
