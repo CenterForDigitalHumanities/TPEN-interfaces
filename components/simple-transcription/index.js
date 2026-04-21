@@ -23,13 +23,14 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
   #imgTopOriginalWidth = 0
   #imgBottomPositionRatio = 1
   #imgTopPositionRatio = 1
-  #toolLineListeners = null
   /** @type {number|null} Timeout ID for drawer transition callbacks */
   #drawerTimeoutId = null
   /** @type {CleanupRegistry} Registry for cleanup handlers */
   cleanup = new CleanupRegistry()
   /** @type {CleanupRegistry} Registry for render-specific handlers */
   renderCleanup = new CleanupRegistry()
+  /** @type {CleanupRegistry} Registry scoped to the currently-loaded tool iframe */
+  #toolCleanup = new CleanupRegistry()
   /** @type {Function|null} Unsubscribe function for project ready listener */
   _unsubProject = null
   _iframeOrigin = null
@@ -86,17 +87,9 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       clearTimeout(this.#drawerTimeoutId)
       this.#drawerTimeoutId = null
     }
-    this.#cleanupToolLineListeners()
+    this.#toolCleanup.run()
     this.renderCleanup.run()
     this.cleanup.run()
-  }
-
-  #cleanupToolLineListeners() {
-    if (this.#toolLineListeners) {
-      TPEN.eventDispatcher.off('tpen-transcription-previous-line', this.#toolLineListeners)
-      TPEN.eventDispatcher.off('tpen-transcription-next-line', this.#toolLineListeners)
-      this.#toolLineListeners = null
-    }
   }
 
   disableTransitions() {
@@ -837,6 +830,10 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
   }
 
   loadRightPaneContent() {
+    // Tear down any listeners/subscriptions tied to the previously-loaded tool
+    // before wiring up the new one. Covers every branch below, not just `pane`.
+    this.#toolCleanup.run()
+
     const rightPane = this.shadowRoot.querySelector('.tools')
     let tool = this.getToolByName(this.state.activeTool)
     
@@ -901,9 +898,6 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
         this.#sendTPENContextToTool(iframe.contentWindow)
       })
 
-      // Clean up old listeners before adding new ones
-      this.#cleanupToolLineListeners()
-
       const sendLineSelection = () => {
         iframe.contentWindow?.postMessage(
           { type: 'UPDATE_CURRENT_LINE', currentLineId: this.#getCurrentLineId() },
@@ -911,10 +905,8 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
         )
       }
 
-      // Store the listener reference so we can clean it up later
-      this.#toolLineListeners = sendLineSelection
-      TPEN.eventDispatcher.on('tpen-transcription-previous-line', sendLineSelection)
-      TPEN.eventDispatcher.on('tpen-transcription-next-line', sendLineSelection)
+      this.#toolCleanup.onEvent(TPEN.eventDispatcher, 'tpen-transcription-previous-line', sendLineSelection)
+      this.#toolCleanup.onEvent(TPEN.eventDispatcher, 'tpen-transcription-next-line', sendLineSelection)
 
       iframe.src = tool.url
       rightPane.innerHTML = ''
