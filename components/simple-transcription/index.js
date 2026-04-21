@@ -821,16 +821,16 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     }
   }
 
-  #postToTool(message, targetWindow = this.#activeToolIframe?.contentWindow, targetOrigin = this._iframeOrigin) {
-    if (!targetOrigin || !targetWindow) return
-    targetWindow.postMessage(message, targetOrigin)
+  #postToTool(message, targetWindow = this.#activeToolIframe?.contentWindow) {
+    if (!this._iframeOrigin || !targetWindow) return
+    targetWindow.postMessage(message, this._iframeOrigin)
   }
 
-  #sendTPENContextToTool(targetWindow = this.#activeToolIframe?.contentWindow, targetOrigin = this._iframeOrigin) {
-    this.#postToTool(this.#buildTPENContext(), targetWindow, targetOrigin)
+  #sendTPENContextToTool(targetWindow = this.#activeToolIframe?.contentWindow) {
+    this.#postToTool(this.#buildTPENContext(), targetWindow)
   }
 
-  #sendIdTokenToTool(targetWindow = this.#activeToolIframe?.contentWindow, targetOrigin = this._iframeOrigin) {
+  #sendIdTokenToTool(targetWindow = this.#activeToolIframe?.contentWindow) {
     const idToken = TPEN.getAuthorization()
 
     if (!idToken) {
@@ -846,8 +846,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
         type: 'TPEN_ID_TOKEN',
         idToken
       },
-      targetWindow,
-      targetOrigin
+      targetWindow
     )
 
     TPEN.eventDispatcher.dispatch('tpen-toast', {
@@ -957,7 +956,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     }
 
     if (event.data?.type === 'REQUEST_TPEN_ID_TOKEN') {
-      this.#sendIdTokenToTool(event.source, event.origin)
+      this.#sendIdTokenToTool(event.source)
       return
     }
     
