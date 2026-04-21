@@ -55,13 +55,14 @@ The system supports four distinct tool presentation modes:
 
 ### 3. Drawer Tools
 
-**Visual behavior**: Floating tray that slides over content, dismissible without losing context.
+**Visual behavior**: Content-attached drawer (e.g., from bottom or side) that slides over part of the workspace while keeping the underlying context visible.
 
-**Use cases**: Magnifier, inspector, temporary overlays.
+**Use cases**: Page-level tools that need temporary, dismissible space without a full split-screen (e.g., navigation aids, page metadata, inline helpers).
 
 **Current implementation**:
-- [components/magnifier-tool/index.js](../magnifier-tool/index.js)
-- Activated via specific tool buttons or shortcuts
+- Implemented by `tpen-page-tool`, which opens/closes a `.drawer` element
+- Dispatches `drawer-opened` / `drawer-closed` events for coordination with the host interface
+- Activated via page-level toolbar controls or equivalent triggers
 - Does not use split-screen layout
 
 ### 4. Dialog Tools
@@ -117,12 +118,12 @@ Primary components:
    - Dispatches splitscreen-toggle event on selection
    - Reference: [components/splitscreen-tool/index.js](../splitscreen-tool/index.js)
 
-3. **tpen-magnifier-tool** - Drawer-style image magnification overlay
+3. **tpen-magnifier-tool** - Image magnification overlay
    - Activated via toolbar button
-   - Dismissible via Escape key or close button
+   - Dismissible via Escape key or by toggling the magnifier button in the workspace toolbar
    - Reference: [components/magnifier-tool/index.js](../magnifier-tool/index.js)
 
-4. **Individual tool implementations** (e.g., tpen-page-tool, tpen-quicktype-tool)
+4. **Individual tool implementations** (e.g., tpen-page-tool (drawer-style), tpen-quicktype-tool)
    - Each tool is responsible for its own rendering and behavior
    - Reference: [components/page-tool/index.js](../page-tool/index.js)
 
