@@ -856,8 +856,11 @@ class TpenManageColumns extends HTMLElement {
     }
 
     parseXYWH(target) {
-        const xywh = target.replace("xywh=pixel:", "").split(",").map(Number)
-        return { x: xywh[0], y: xywh[1], w: xywh[2], h: xywh[3] }
+        const raw = typeof target === "string" ? target : target?.selector?.value ?? ""
+        const match = raw.match(/xywh=(?:pixel:|percent:)?([^,]+),([^,]+),([^,]+),([^,]+)/)
+        if (!match) return { x: 0, y: 0, w: 0, h: 0 }
+        const [, x, y, w, h] = match.map(Number)
+        return { x, y, w, h }
     }
 
     async fetchPageViewerData(pageID = null) {
