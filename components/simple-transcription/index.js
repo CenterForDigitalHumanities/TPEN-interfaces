@@ -756,7 +756,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     const overlayHeight = scaledH * zoom
 
     this.highlightActiveLine(imgTop, overlayLeft, overlayTop, overlayWidth, overlayHeight)
-    this.#maybeUpgradeImageResolution(overlayWidth * zoom)
+    this.#maybeUpgradeImageResolution(overlayWidth)
   }
 
   /**
