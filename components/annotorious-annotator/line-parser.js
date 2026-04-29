@@ -105,6 +105,11 @@ class AnnotoriousAnnotator extends HTMLElement {
 
   // Initialize HTML after loading in a TPEN3 Project
   render() {
+    // Show the project label in the site header so users can distinguish between
+    // multiple projects sharing the same Manifest while annotating.
+    if (TPEN.activeProject?.label) {
+      TPEN.eventDispatcher.dispatch('tpen-gui-title', TPEN.activeProject.label)
+    }
     // Check that user can create AND update selectors on lines (required for the annotator)
     if (!(CheckPermissions.checkEditAccess("LINE", "SELECTOR") && CheckPermissions.checkCreateAccess("LINE", "SELECTOR"))) {
       this.shadowRoot.innerHTML = "You do not have the proper project permissions to use this interface."
