@@ -518,7 +518,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       // Resolve the canvas ID from page metadata so the image loads even when
       // the page has zero line annotations. Prefer the AnnotationPage's own
       // target, fall back to the project layer's page target, and only use
-      // the first line's target as a last resort for legacy data.
+      // the first line's target as a last resort.
       let canvasID = this.#extractCanvasID(fetchedPage.target)
         ?? this.#extractCanvasID(projectPage?.target)
 
