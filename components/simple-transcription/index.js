@@ -923,6 +923,18 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
   }
 
   /**
+   * Build the `canvases` payload consumed by the legacy `CANVASES` message
+   * (Compare-Pages, etc.). Mirrors `interfaces/transcription/index.js#fetchCanvasesFromCurrentLayer`
+   * so legacy tools keep receiving the same shape they used to.
+   */
+  #fetchCanvasesFromCurrentLayer() {
+    const currentLayer = TPEN.activeProject?.layers?.find(
+      layer => layer.pages?.some(page => page.id?.split('/').pop() === TPEN.screen?.pageInQuery)
+    )
+    return currentLayer?.pages?.flatMap(page => ({ id: page.target, label: page.label })) ?? []
+  }
+
+  /**
    * Resolve each item in `page.items` to a full Annotation via the vault.
    * Vault fetches for AnnotationPages return children as bare `{id, type}`
    * refs — downstream tools need hydrated targets/selectors/bodies. Returns
@@ -1050,11 +1062,47 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
 
       iframe.addEventListener('load', () => {
         this.#sendTPENContextToTool(iframe.contentWindow)
+        // Legacy protocol — keeps pre-TPEN_CONTEXT tools working alongside
+        // TPEN_CONTEXT consumers. Mirrors the payloads sent by
+        // `interfaces/transcription/index.js` on iframe load. Each tool
+        // ignores types it doesn't speak.
+        // - MANIFEST_CANVAS_ANNOTATIONPAGE_ANNOTATION: Page-Viewer, Preview-Transcription
+        // - CANVASES: Compare-Pages
+        // - CURRENT_LINE_INDEX: Line-Breaking
+        iframe.contentWindow?.postMessage(
+          {
+            type: 'MANIFEST_CANVAS_ANNOTATIONPAGE_ANNOTATION',
+            manifest: TPEN.activeProject?.manifest?.[0] ?? '',
+            canvas: this.#canvas?.id ?? this.#canvas?.['@id'] ?? '',
+            annotationPage: this.#page?.id ?? '',
+            annotation: TPEN.activeLineIndex >= 0
+              ? this.#page?.items?.[TPEN.activeLineIndex]?.id ?? null
+              : null,
+            columns: TPEN.activeProject?.layers
+              ?.flatMap(layer => layer.pages || [])
+              .find(p => p.id?.split('/').pop() === TPEN.screen?.pageInQuery)?.columns || []
+          },
+          this._iframeOrigin
+        )
+        iframe.contentWindow?.postMessage(
+          { type: 'CANVASES', canvases: this.#fetchCanvasesFromCurrentLayer() },
+          this._iframeOrigin
+        )
+        iframe.contentWindow?.postMessage(
+          { type: 'CURRENT_LINE_INDEX', lineId: this.#getCurrentLineId() },
+          this._iframeOrigin
+        )
       })
 
       const sendLineSelection = () => {
+        const currentLineId = this.#getCurrentLineId()
         iframe.contentWindow?.postMessage(
-          { type: 'UPDATE_CURRENT_LINE', currentLineId: this.#getCurrentLineId() },
+          { type: 'UPDATE_CURRENT_LINE', currentLineId },
+          this._iframeOrigin
+        )
+        // Legacy line-nav update for Line-Breaking and similar tools.
+        iframe.contentWindow?.postMessage(
+          { type: 'CURRENT_LINE_INDEX', lineId: currentLineId },
           this._iframeOrigin
         )
       }
