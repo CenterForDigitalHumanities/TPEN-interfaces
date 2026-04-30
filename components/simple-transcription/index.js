@@ -1061,50 +1061,33 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       this._iframeOrigin = new URL(tool.url).origin
 
       iframe.addEventListener('load', () => {
-        this.#sendTPENContextToTool(iframe.contentWindow)
-        // Legacy protocol — keeps pre-TPEN_CONTEXT tools working alongside
-        // TPEN_CONTEXT consumers. Mirrors the payloads sent by
-        // `interfaces/transcription/index.js` on iframe load. Each tool
-        // ignores types it doesn't speak.
+        const target = iframe.contentWindow
+        this.#sendTPENContextToTool(target)
+        // - TPEN_CONTEXT: TPEN Prompts
         // - MANIFEST_CANVAS_ANNOTATIONPAGE_ANNOTATION: Page-Viewer, Preview-Transcription
         // - CANVASES: Compare-Pages
         // - CURRENT_LINE_INDEX: Line-Breaking
-        iframe.contentWindow?.postMessage(
-          {
-            type: 'MANIFEST_CANVAS_ANNOTATIONPAGE_ANNOTATION',
-            manifest: TPEN.activeProject?.manifest?.[0] ?? '',
-            canvas: this.#canvas?.id ?? this.#canvas?.['@id'] ?? '',
-            annotationPage: this.#page?.id ?? '',
-            annotation: TPEN.activeLineIndex >= 0
-              ? this.#page?.items?.[TPEN.activeLineIndex]?.id ?? null
-              : null,
-            columns: TPEN.activeProject?.layers
-              ?.flatMap(layer => layer.pages || [])
-              .find(p => p.id?.split('/').pop() === TPEN.screen?.pageInQuery)?.columns || []
-          },
-          this._iframeOrigin
-        )
-        iframe.contentWindow?.postMessage(
-          { type: 'CANVASES', canvases: this.#fetchCanvasesFromCurrentLayer() },
-          this._iframeOrigin
-        )
-        iframe.contentWindow?.postMessage(
-          { type: 'CURRENT_LINE_INDEX', lineId: this.#getCurrentLineId() },
-          this._iframeOrigin
-        )
+        this.#postToTool({
+          type: 'MANIFEST_CANVAS_ANNOTATIONPAGE_ANNOTATION',
+          manifest: TPEN.activeProject?.manifest?.[0] ?? '',
+          canvas: this.#canvas?.id ?? this.#canvas?.['@id'] ?? '',
+          annotationPage: this.#page?.id ?? '',
+          annotation: TPEN.activeLineIndex >= 0
+            ? this.#page?.items?.[TPEN.activeLineIndex]?.id ?? null
+            : null,
+          columns: TPEN.activeProject?.layers
+            ?.flatMap(layer => layer.pages || [])
+            .find(p => p.id?.split('/').pop() === TPEN.screen?.pageInQuery)?.columns || []
+        }, target)
+        this.#postToTool({ type: 'CANVASES', canvases: this.#fetchCanvasesFromCurrentLayer() }, target)
+        this.#postToTool({ type: 'CURRENT_LINE_INDEX', lineId: this.#getCurrentLineId() }, target)
       })
 
       const sendLineSelection = () => {
         const currentLineId = this.#getCurrentLineId()
-        iframe.contentWindow?.postMessage(
-          { type: 'UPDATE_CURRENT_LINE', currentLineId },
-          this._iframeOrigin
-        )
+        this.#postToTool({ type: 'UPDATE_CURRENT_LINE', currentLineId })
         // Legacy line-nav update for Line-Breaking and similar tools.
-        iframe.contentWindow?.postMessage(
-          { type: 'CURRENT_LINE_INDEX', lineId: currentLineId },
-          this._iframeOrigin
-        )
+        this.#postToTool({ type: 'CURRENT_LINE_INDEX', lineId: currentLineId })
       }
 
       this.#toolCleanup.onEvent(TPEN.eventDispatcher, 'tpen-transcription-previous-line', sendLineSelection)
