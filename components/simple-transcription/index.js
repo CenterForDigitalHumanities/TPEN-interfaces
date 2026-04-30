@@ -922,7 +922,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     return this.#page?.items?.[TPEN.activeLineIndex]?.id ?? null
   }
 
-/**
+  /**
    * Resolve each item in `page.items` to a full Annotation via the vault.
    * Vault fetches for AnnotationPages return children as bare `{id, type}`
    * refs — downstream tools need hydrated targets/selectors/bodies. Returns
@@ -952,6 +952,10 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
   #postToTool(message, targetWindow = this.#activeToolIframe?.contentWindow) {
     if (!this._iframeOrigin || !targetWindow) return
     targetWindow.postMessage(message, this._iframeOrigin)
+  }
+
+  async #sendTPENContextToTool(targetWindow = this.#activeToolIframe?.contentWindow) {
+    this.#postToTool(await this.#buildTPENContext(), targetWindow)
   }
 
   #sendIdTokenToTool(targetWindow = this.#activeToolIframe?.contentWindow) {
@@ -1046,7 +1050,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
 
       iframe.addEventListener('load', () => {
         const target = iframe.contentWindow
-        this.#postToTool(await this.#buildTPENContext(), targetWindow)
+        this.#sendTPENContextToTool(target)
 
         this.#postToTool({
           type: 'MANIFEST_CANVAS_ANNOTATIONPAGE_ANNOTATION',
