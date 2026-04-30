@@ -1049,19 +1049,40 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       this._iframeOrigin = new URL(tool.url).origin
 
       iframe.addEventListener('load', () => {
-        this.#sendTPENContextToTool(iframe.contentWindow)
+        const target = iframe.contentWindow
+        this.#sendTPENContextToTool(target)
+
+        this.#postToTool({
+          type: 'MANIFEST_CANVAS_ANNOTATIONPAGE_ANNOTATION',
+          manifest: TPEN.activeProject?.manifest?.[0] ?? '',
+          canvas: this.#canvas?.id ?? this.#canvas?.['@id'] ?? '',
+          annotationPage: this.#page?.id ?? '',
+          annotation: TPEN.activeLineIndex >= 0
+            ? this.#page?.items?.[TPEN.activeLineIndex]?.id ?? null
+            : null,
+          columns: TPEN.activeProject?.layers
+            ?.flatMap(layer => layer.pages || [])
+            .find(p => p.id?.split('/').pop() === TPEN.screen?.pageInQuery)?.columns || []
+        }, target)
+
+        this.#postToTool({
+          type: 'CANVASES',
+          canvases: TPEN.activeProject?.layers
+            ?.find(layer => layer.pages?.some(p => p.id?.split('/').pop() === TPEN.screen?.pageInQuery))
+            ?.pages?.flatMap(p => ({ id: p.target, label: p.label })) ?? []
+        }, target)
+
+        this.#postToTool({ type: 'CURRENT_LINE_INDEX', lineId: this.#getCurrentLineId() }, target)
       })
 
       const sendLineSelection = () => {
-        iframe.contentWindow?.postMessage(
-          { type: 'UPDATE_CURRENT_LINE', currentLineId: this.#getCurrentLineId() },
-          this._iframeOrigin
-        )
-      }
+        const currentLineId = this.#getCurrentLineId()
+        this.#postToTool({ type: 'UPDATE_CURRENT_LINE', currentLineId })
 
+        this.#postToTool({ type: 'CURRENT_LINE_INDEX', lineId: currentLineId })
+      }
       this.#toolCleanup.onEvent(TPEN.eventDispatcher, 'tpen-transcription-previous-line', sendLineSelection)
       this.#toolCleanup.onEvent(TPEN.eventDispatcher, 'tpen-transcription-next-line', sendLineSelection)
-
       iframe.src = tool.url
       rightPane.innerHTML = ''
       rightPane.appendChild(iframe)
