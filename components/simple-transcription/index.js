@@ -954,10 +954,6 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     targetWindow.postMessage(message, this._iframeOrigin)
   }
 
-  async #sendTPENContextToTool(targetWindow = this.#activeToolIframe?.contentWindow) {
-    this.#postToTool(await this.#buildTPENContext(), targetWindow)
-  }
-
   #sendIdTokenToTool(targetWindow = this.#activeToolIframe?.contentWindow) {
     const idToken = TPEN.getAuthorization()
 
@@ -1050,11 +1046,8 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
 
       iframe.addEventListener('load', () => {
         const target = iframe.contentWindow
-        this.#sendTPENContextToTool(target)
-        // - TPEN_CONTEXT: TPEN Prompts
-        // - MANIFEST_CANVAS_ANNOTATIONPAGE_ANNOTATION: Page-Viewer, Preview-Transcription
-        // - CANVASES: Compare-Pages
-        // - CURRENT_LINE_INDEX: Line-Breaking
+        this.#postToTool(await this.#buildTPENContext(), targetWindow)
+
         this.#postToTool({
           type: 'MANIFEST_CANVAS_ANNOTATIONPAGE_ANNOTATION',
           manifest: TPEN.activeProject?.manifest?.[0] ?? '',
@@ -1067,25 +1060,25 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
             ?.flatMap(layer => layer.pages || [])
             .find(p => p.id?.split('/').pop() === TPEN.screen?.pageInQuery)?.columns || []
         }, target)
+
         this.#postToTool({
           type: 'CANVASES',
           canvases: TPEN.activeProject?.layers
             ?.find(layer => layer.pages?.some(p => p.id?.split('/').pop() === TPEN.screen?.pageInQuery))
             ?.pages?.flatMap(p => ({ id: p.target, label: p.label })) ?? []
         }, target)
+
         this.#postToTool({ type: 'CURRENT_LINE_INDEX', lineId: this.#getCurrentLineId() }, target)
       })
 
       const sendLineSelection = () => {
         const currentLineId = this.#getCurrentLineId()
         this.#postToTool({ type: 'UPDATE_CURRENT_LINE', currentLineId })
-        // Legacy line-nav update for Line-Breaking and similar tools.
+
         this.#postToTool({ type: 'CURRENT_LINE_INDEX', lineId: currentLineId })
       }
-
       this.#toolCleanup.onEvent(TPEN.eventDispatcher, 'tpen-transcription-previous-line', sendLineSelection)
       this.#toolCleanup.onEvent(TPEN.eventDispatcher, 'tpen-transcription-next-line', sendLineSelection)
-
       iframe.src = tool.url
       rightPane.innerHTML = ''
       rightPane.appendChild(iframe)
