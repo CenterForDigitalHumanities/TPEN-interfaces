@@ -476,16 +476,26 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
 
   /**
    * Normalize a W3C/IIIF target value to a canvas URI.
-   * Accepts a string URI, `{ source }`, `{ id }`, or `{ "@id" }` shapes and
-   * strips any IIIF media fragment (`#xywh=...`).
-   * @param {string|object|null|undefined} target
+   * Accepts a string URI, `{ source }` (string or SpecificResource object),
+   * `{ id }`, or `{ "@id" }` shapes — including arrays of any of these — and
+   * strips any IIIF media fragment (`#xywh=...`). Returns null for shapes
+   * that do not yield a string URI.
+   * @param {string|object|Array|null|undefined} target
    * @returns {string|null}
    */
   #extractCanvasID(target) {
     if (!target) return null
+    if (Array.isArray(target)) target = target[0]
     let id = null
-    if (typeof target === 'string') id = target
-    else if (typeof target === 'object') id = target.source ?? target.id ?? target['@id'] ?? null
+    if (typeof target === 'string') {
+      id = target
+    } else if (typeof target === 'object') {
+      const source = target.source
+      const fromSource = typeof source === 'string'
+        ? source
+        : source?.id ?? source?.['@id']
+      id = fromSource ?? target.id ?? target['@id'] ?? null
+    }
     if (typeof id !== 'string' || !id) return null
     return id.split('#')[0]
   }
