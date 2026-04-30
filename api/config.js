@@ -22,7 +22,7 @@ export const ACTIVE_ENV = (
 
 export const ENVIRONMENTS = {
   dev: {
-    BASEURL: 'http://localhost:4000',
+    BASEURL: 'https://dev.app.t-pen.org',
     servicesURL: 'https://dev.api.t-pen.org',
     tinyThingsURL: 'https://dev.tiny.t-pen.org',
     staticURL: 'https://dev.static.t-pen.org',
@@ -31,11 +31,11 @@ export const ENVIRONMENTS = {
     TPEN3URL: 'https://three.t-pen.org',
   },
   prod: {
-    BASEURL: 'http://localhost:4000',
-    servicesURL: 'https://dev.api.t-pen.org',
-    tinyThingsURL: 'https://dev.tiny.t-pen.org',
-    staticURL: 'https://dev.static.t-pen.org',
-    RERUMURL: 'https://devstore.rerum.io/v1',
+    BASEURL: 'https://app.t-pen.org',
+    servicesURL: 'https://api.t-pen.org',
+    tinyThingsURL: 'https://tiny.t-pen.org',
+    staticURL: 'https://static.t-pen.org',
+    RERUMURL: 'https://store.rerum.io/v1',
     TPEN28URL: 'https://t-pen.org',
     TPEN3URL: 'https://three.t-pen.org',
   }
