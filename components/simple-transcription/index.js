@@ -474,6 +474,22 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     })
   }
 
+  /**
+   * Normalize a W3C/IIIF target value to a canvas URI.
+   * Accepts a string URI, `{ source }`, `{ id }`, or `{ "@id" }` shapes and
+   * strips any IIIF media fragment (`#xywh=...`).
+   * @param {string|object|null|undefined} target
+   * @returns {string|null}
+   */
+  #extractCanvasID(target) {
+    if (!target) return null
+    let id = null
+    if (typeof target === 'string') id = target
+    else if (typeof target === 'object') id = target.source ?? target.id ?? target['@id'] ?? null
+    if (typeof id !== 'string' || !id) return null
+    return id.split('#')[0]
+  }
+
   async updateTranscriptionImages(pageID) {
     try {
       // Invalidate in-flight upgrade attempts from a previous page/canvas.
@@ -499,23 +515,30 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
         ? { ...fetchedPage, items: orderPageItemsByColumns(projectPage, fetchedPage).orderedItems }
         : fetchedPage
 
-      // Get the first line to extract canvas info
-      let firstLine = this.#page.items?.[0]
-      if (!firstLine) return
+      // Resolve the canvas ID from page metadata so the image loads even when
+      // the page has zero line annotations. Prefer the AnnotationPage's own
+      // target, fall back to the project layer's page target, and only use
+      // the first line's target as a last resort for legacy data.
+      let canvasID = this.#extractCanvasID(fetchedPage.target)
+        ?? this.#extractCanvasID(projectPage?.target)
 
-      // Get the full line annotation
-      firstLine = await vault.get(firstLine, 'annotation')
-      if (!(firstLine?.body)) {
-        firstLine = await vault.get(firstLine, 'annotation', true)
+      if (!canvasID) {
+        let firstLine = this.#page.items?.[0]
+        if (firstLine) {
+          firstLine = await vault.get(firstLine, 'annotation')
+          if (!(firstLine?.body)) {
+            firstLine = await vault.get(firstLine, 'annotation', true)
+          }
+          canvasID = this.#extractCanvasID(firstLine?.target)
+        }
       }
 
-      // Extract canvas ID from the line's target
-      const target = firstLine.target
-      let canvasID = target
-      if (typeof target === 'string') {
-        canvasID = target.split('#')[0]
-      } else if (target?.source) {
-        canvasID = target.source
+      if (!canvasID) {
+        TPEN.eventDispatcher.dispatch("tpen-toast", {
+          message: "Could not determine canvas for this page.",
+          status: "error"
+        })
+        return
       }
 
       let fetchedCanvas = await vault.getWithFallback(canvasID, 'canvas', TPEN.activeProject?.manifest)
