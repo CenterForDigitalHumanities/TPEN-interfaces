@@ -24,6 +24,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
   #currentImageSrc = null
   #attemptedUpgradeSources = new Set()
   #isAttemptingImageUpgrade = false
+  #loadEpoch = 0
   #imgTopOriginalHeight = 0
   #imgTopOriginalWidth = 0
   #imgBottomPositionRatio = 1
@@ -475,6 +476,9 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
 
   async updateTranscriptionImages(pageID) {
     try {
+      // Invalidate in-flight upgrade attempts from a previous page/canvas.
+      this.#loadEpoch += 1
+
       if (!pageID && TPEN.screen?.pageInQuery) {
         pageID = TPEN.screen.pageInQuery
       }
@@ -756,7 +760,10 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     const overlayHeight = scaledH * zoom
 
     this.highlightActiveLine(imgTop, overlayLeft, overlayTop, overlayWidth, overlayHeight)
-    this.#maybeUpgradeImageResolution(overlayWidth)
+    this.#maybeUpgradeImageResolution({
+      lineWidthIIIF: w,
+      lineWidthScreen: overlayWidth
+    })
   }
 
   /**
@@ -796,22 +803,35 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
   }
 
   /**
-   * Attempt a higher-resolution image when overlay display width exceeds source width.
-   * @param {number} viewportWidth
+   * Attempt a higher-resolution image when the active line is under-resolved on screen.
+   * @param {{lineWidthIIIF: number, lineWidthScreen: number}} dimensions
    */
-  async #maybeUpgradeImageResolution(viewportWidth) {
-    if (this.#isAttemptingImageUpgrade || !Number.isFinite(viewportWidth) || viewportWidth <= 0) {
+  async #maybeUpgradeImageResolution(dimensions) {
+    const lineWidthIIIF = dimensions?.lineWidthIIIF
+    const lineWidthScreen = dimensions?.lineWidthScreen
+    if (
+      this.#isAttemptingImageUpgrade
+      || !Number.isFinite(lineWidthIIIF)
+      || lineWidthIIIF <= 0
+      || !Number.isFinite(lineWidthScreen)
+      || lineWidthScreen <= 0
+    ) {
       return
     }
 
     const imgBottom = this.shadowRoot.querySelector('#imgBottom img')
-    if (!imgBottom || !imgBottom.naturalWidth) return
+    if (!imgBottom || !imgBottom.naturalWidth || !this.#imgTopOriginalWidth) return
 
+    const devicePixelRatio = globalThis.devicePixelRatio || 1
     const currentNaturalWidth = imgBottom.naturalWidth
-    if (currentNaturalWidth >= viewportWidth) return
+    const linePixelsAvailable = lineWidthIIIF * (currentNaturalWidth / this.#imgTopOriginalWidth)
+    const linePixelsNeeded = lineWidthScreen * devicePixelRatio
+    if (linePixelsAvailable >= linePixelsNeeded) return
+
+    const naturalWidthNeeded = (linePixelsNeeded * this.#imgTopOriginalWidth) / lineWidthIIIF
 
     const requestedWidth = Math.max(
-      Math.ceil(viewportWidth * 1.25),
+      Math.ceil(naturalWidthNeeded * 1.1),
       Math.ceil(currentNaturalWidth * 1.5),
       Math.ceil(this.#imgTopOriginalWidth || 0)
     )
@@ -824,16 +844,25 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
 
     if (candidates.length === 0) return
 
+    const epoch = this.#loadEpoch
     this.#isAttemptingImageUpgrade = true
     try {
       for (const candidate of candidates) {
+        if (epoch !== this.#loadEpoch) return
+
         if (!candidate || candidate === this.#currentImageSrc || this.#attemptedUpgradeSources.has(candidate)) {
           continue
         }
         this.#attemptedUpgradeSources.add(candidate)
 
         const loaded = await this.#preloadImageSource(candidate)
+        if (epoch !== this.#loadEpoch) return
         if (!loaded || loaded.naturalWidth <= currentNaturalWidth) {
+          continue
+        }
+
+        const upgradedLinePixelsAvailable = lineWidthIIIF * (loaded.naturalWidth / this.#imgTopOriginalWidth)
+        if (upgradedLinePixelsAvailable < linePixelsNeeded) {
           continue
         }
 
