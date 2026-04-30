@@ -922,19 +922,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     return this.#page?.items?.[TPEN.activeLineIndex]?.id ?? null
   }
 
-  /**
-   * Build the `canvases` payload consumed by the legacy `CANVASES` message
-   * (Compare-Pages, etc.). Mirrors `interfaces/transcription/index.js#fetchCanvasesFromCurrentLayer`
-   * so legacy tools keep receiving the same shape they used to.
-   */
-  #fetchCanvasesFromCurrentLayer() {
-    const currentLayer = TPEN.activeProject?.layers?.find(
-      layer => layer.pages?.some(page => page.id?.split('/').pop() === TPEN.screen?.pageInQuery)
-    )
-    return currentLayer?.pages?.flatMap(page => ({ id: page.target, label: page.label })) ?? []
-  }
-
-  /**
+/**
    * Resolve each item in `page.items` to a full Annotation via the vault.
    * Vault fetches for AnnotationPages return children as bare `{id, type}`
    * refs — downstream tools need hydrated targets/selectors/bodies. Returns
@@ -1079,7 +1067,12 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
             ?.flatMap(layer => layer.pages || [])
             .find(p => p.id?.split('/').pop() === TPEN.screen?.pageInQuery)?.columns || []
         }, target)
-        this.#postToTool({ type: 'CANVASES', canvases: this.#fetchCanvasesFromCurrentLayer() }, target)
+        this.#postToTool({
+          type: 'CANVASES',
+          canvases: TPEN.activeProject?.layers
+            ?.find(layer => layer.pages?.some(p => p.id?.split('/').pop() === TPEN.screen?.pageInQuery))
+            ?.pages?.flatMap(p => ({ id: p.target, label: p.label })) ?? []
+        }, target)
         this.#postToTool({ type: 'CURRENT_LINE_INDEX', lineId: this.#getCurrentLineId() }, target)
       })
 
