@@ -8,6 +8,7 @@ import { renderPermissionError } from "../../utilities/renderPermissionError.js"
 import { orderPageItemsByColumns } from "../../utilities/columnOrdering.js"
 import { onProjectReady } from "../../utilities/projectReady.js"
 import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
+import { getHigherResolutionImageCandidates } from '../../utilities/imageUpgradeUrl.js'
 
 /**
  * SimpleTranscriptionInterface - The simplified transcription interface with split-pane image viewer.
@@ -19,6 +20,11 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
   #canvas
   #activeLine = null
   #activeToolIframe = null
+  #imageService = null
+  #currentImageSrc = null
+  #attemptedUpgradeSources = new Set()
+  #isAttemptingImageUpgrade = false
+  #loadEpoch = 0
   #imgTopOriginalHeight = 0
   #imgTopOriginalWidth = 0
   #imgBottomPositionRatio = 1
@@ -470,6 +476,9 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
 
   async updateTranscriptionImages(pageID) {
     try {
+      // Invalidate in-flight upgrade attempts from a previous page/canvas.
+      this.#loadEpoch += 1
+
       if (!pageID && TPEN.screen?.pageInQuery) {
         pageID = TPEN.screen.pageInQuery
       }
@@ -523,7 +532,12 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
 
       // Get the image resource from the canvas
       // Handle both Presentation API v3 (items) and v2 (images) formats
-      const imageResource = fetchedCanvas.items?.[0]?.items?.[0]?.body?.id ?? fetchedCanvas.images?.[0]?.resource?.["@id"] ?? fetchedCanvas.images?.[0]?.resource?.id
+      const paintingBody = fetchedCanvas.items?.[0]?.items?.[0]?.body
+      const imageResource = paintingBody?.id ?? fetchedCanvas.images?.[0]?.resource?.["@id"] ?? fetchedCanvas.images?.[0]?.resource?.id
+      this.#imageService = paintingBody?.service?.[0] ?? paintingBody?.service ?? fetchedCanvas.images?.[0]?.resource?.service?.[0] ?? fetchedCanvas.images?.[0]?.resource?.service ?? null
+      this.#currentImageSrc = imageResource ?? null
+      this.#attemptedUpgradeSources = new Set()
+      this.#isAttemptingImageUpgrade = false
 
       if (!imageResource) {
         TPEN.eventDispatcher.dispatch("tpen-toast", {
@@ -746,6 +760,118 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     const overlayHeight = scaledH * zoom
 
     this.highlightActiveLine(imgTop, overlayLeft, overlayTop, overlayWidth, overlayHeight)
+    this.#maybeUpgradeImageResolution({
+      lineWidthIIIF: w,
+      lineWidthScreen: overlayWidth
+    })
+  }
+
+  /**
+   * Preload an image candidate and return its natural dimensions.
+   * Expected misses resolve to null so upgrade probing stays quiet.
+   * @param {string} src
+   * @returns {Promise<{src: string, naturalWidth: number, naturalHeight: number} | null>}
+   */
+  #preloadImageSource(src) {
+    return new Promise(resolve => {
+      const testImg = new Image()
+      testImg.onload = () => {
+        resolve({
+          src,
+          naturalWidth: testImg.naturalWidth,
+          naturalHeight: testImg.naturalHeight
+        })
+      }
+      testImg.onerror = () => resolve(null)
+      testImg.src = src
+    })
+  }
+
+  /**
+   * Swap both panes to a new source and refresh line positioning once loaded.
+   * @param {string} src
+   */
+  #swapImageSource(src) {
+    const imgTop = this.shadowRoot.querySelector('#imgTop img')
+    const imgBottom = this.shadowRoot.querySelector('#imgBottom img')
+    if (!imgTop || !imgBottom) return
+
+    this.cleanup.onElement(imgTop, 'load', () => this.updateLines(), { once: true })
+    imgTop.src = src
+    imgBottom.src = src
+    this.#currentImageSrc = src
+  }
+
+  /**
+   * Attempt a higher-resolution image when the active line is under-resolved on screen.
+   * @param {{lineWidthIIIF: number, lineWidthScreen: number}} dimensions
+   */
+  async #maybeUpgradeImageResolution(dimensions) {
+    const lineWidthIIIF = dimensions?.lineWidthIIIF
+    const lineWidthScreen = dimensions?.lineWidthScreen
+    if (
+      this.#isAttemptingImageUpgrade
+      || !Number.isFinite(lineWidthIIIF)
+      || lineWidthIIIF <= 0
+      || !Number.isFinite(lineWidthScreen)
+      || lineWidthScreen <= 0
+    ) {
+      return
+    }
+
+    const imgBottom = this.shadowRoot.querySelector('#imgBottom img')
+    if (!imgBottom || !imgBottom.naturalWidth || !this.#imgTopOriginalWidth) return
+
+    const devicePixelRatio = globalThis.devicePixelRatio || 1
+    const currentNaturalWidth = imgBottom.naturalWidth
+    const linePixelsAvailable = lineWidthIIIF * (currentNaturalWidth / this.#imgTopOriginalWidth)
+    const linePixelsNeeded = lineWidthScreen * devicePixelRatio
+    if (linePixelsAvailable >= linePixelsNeeded) return
+
+    const naturalWidthNeeded = (linePixelsNeeded * this.#imgTopOriginalWidth) / lineWidthIIIF
+
+    const requestedWidth = Math.max(
+      Math.ceil(naturalWidthNeeded * 1.1),
+      Math.ceil(currentNaturalWidth * 1.5),
+      Math.ceil(this.#imgTopOriginalWidth || 0)
+    )
+
+    const candidates = getHigherResolutionImageCandidates({
+      imageUrl: this.#currentImageSrc,
+      imageService: this.#imageService,
+      requestedWidth
+    })
+
+    if (candidates.length === 0) return
+
+    const epoch = this.#loadEpoch
+    this.#isAttemptingImageUpgrade = true
+    try {
+      for (const candidate of candidates) {
+        if (epoch !== this.#loadEpoch) return
+
+        if (!candidate || candidate === this.#currentImageSrc || this.#attemptedUpgradeSources.has(candidate)) {
+          continue
+        }
+        this.#attemptedUpgradeSources.add(candidate)
+
+        const loaded = await this.#preloadImageSource(candidate)
+        if (epoch !== this.#loadEpoch) return
+        if (!loaded || loaded.naturalWidth <= currentNaturalWidth) {
+          continue
+        }
+
+        const upgradedLinePixelsAvailable = lineWidthIIIF * (loaded.naturalWidth / this.#imgTopOriginalWidth)
+        if (upgradedLinePixelsAvailable < linePixelsNeeded) {
+          continue
+        }
+
+        this.#swapImageSource(candidate)
+        return
+      }
+    } finally {
+      this.#isAttemptingImageUpgrade = false
+    }
   }
 
   highlightActiveLine(container, leftPx, topPx, widthPx, heightPx) {
