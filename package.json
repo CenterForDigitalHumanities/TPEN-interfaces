@@ -1,0 +1,19 @@
+{
+  "name": "tpen-interfaces",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "description": "Testing harness for TPEN-interfaces (dev-only)",
+  "scripts": {
+    "test": "node --test api/__tests__/**/*.test.js js/__tests__/**/*.test.js utilities/__tests__/**/*.test.js",
+    "test:components": "node --test components/**/__tests__/*.test.js",
+    "test:e2e": "playwright test",
+    "pact:publish": "pact-broker publish pacts/*.json --broker-base-url $PACT_BROKER_BASE_URL --broker-token $PACT_BROKER_TOKEN"
+  },
+  "devDependencies": {
+    "@pact-foundation/pact": "^12.3.0",
+    "@pact-foundation/pact-node": "^10.16.0",
+    "@playwright/test": "^1.44.0",
+    "jsdom": "^24.0.0"
+  }
+}
