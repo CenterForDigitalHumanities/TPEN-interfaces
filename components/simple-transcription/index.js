@@ -847,6 +847,8 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     const epoch = this.#loadEpoch
     this.#isAttemptingImageUpgrade = true
     try {
+      let bestFallback = null
+
       for (const candidate of candidates) {
         if (epoch !== this.#loadEpoch) return
 
@@ -862,11 +864,21 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
         }
 
         const upgradedLinePixelsAvailable = lineWidthIIIF * (loaded.naturalWidth / this.#imgTopOriginalWidth)
-        if (upgradedLinePixelsAvailable < linePixelsNeeded) {
-          continue
+        if (upgradedLinePixelsAvailable >= linePixelsNeeded) {
+          this.#swapImageSource(candidate)
+          return
         }
 
-        this.#swapImageSource(candidate)
+        if (!bestFallback || loaded.naturalWidth > bestFallback.naturalWidth) {
+          bestFallback = {
+            src: candidate,
+            naturalWidth: loaded.naturalWidth
+          }
+        }
+      }
+
+      if (epoch === this.#loadEpoch && bestFallback?.src) {
+        this.#swapImageSource(bestFallback.src)
         return
       }
     } finally {
