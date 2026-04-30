@@ -105,8 +105,6 @@ class AnnotoriousAnnotator extends HTMLElement {
 
   // Initialize HTML after loading in a TPEN3 Project
   render() {
-    // Show the project label in the site header so users can distinguish between
-    // multiple projects sharing the same Manifest while annotating.
     if (TPEN.activeProject?.label) {
       TPEN.eventDispatcher.dispatch('tpen-gui-title', TPEN.activeProject.label)
     }
