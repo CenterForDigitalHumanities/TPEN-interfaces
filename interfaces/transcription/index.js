@@ -7,9 +7,9 @@ import '../../components/line-image/index.js'
 import CheckPermissions from "../../components/check-permissions/checkPermissions.js"
 import { orderPageItemsByColumns } from "../../utilities/columnOrdering.js"
 import { renderPermissionError } from "../../utilities/renderPermissionError.js"
-import '../../components/gui/alert/AlertContainer.js'
 import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 import { onProjectReady } from "../../utilities/projectReady.js"
+import '../../components/no-lines-prompt/index.js'
 
 /**
  * TranscriptionInterface - The standard transcription interface with split-pane tools.
@@ -36,8 +36,6 @@ export default class TranscriptionInterface extends HTMLElement {
       isSplitscreenActive: false,
       activeTool: '',
     }
-    // Track alert state to avoid repeated 'no lines' alerts per page
-    this._noLinesAlertShownForPageId = null
   }
 
   connectedCallback() {
@@ -276,6 +274,10 @@ export default class TranscriptionInterface extends HTMLElement {
 
     // Listen for layer changes from layer-selector
     this.renderCleanup.onEvent(TPEN.eventDispatcher, 'tpen-layer-changed', () => this.updateLines())
+
+    // When a page has no lines the no-lines-prompt component dispatches this event.
+    // Open the right pane so the full canvas is visible.
+    this.renderCleanup.onEvent(TPEN.eventDispatcher, 'tpen-load-full-page-view', () => this.#showFullPageView())
 
     // Listen for column selection changes
     this.renderCleanup.onEvent(TPEN.eventDispatcher, 'tpen-column-selected', (event) => {
@@ -537,39 +539,37 @@ export default class TranscriptionInterface extends HTMLElement {
     })
   }
 
-  showNoLinesAlert() {
-    const alertContainer = document.querySelector('tpen-alert-container')
-    if (!alertContainer) return
-    
-    const projectId = encodeURIComponent(TPEN.screen?.projectInQuery ?? '')
-    const pageId = encodeURIComponent(TPEN.screen?.pageInQuery ?? '')
-    const annotatorUrl = `/annotator?projectID=${projectId}&pageID=${pageId}`
-    
-    const alertElem = document.createElement('tpen-alert')
-    alertElem.innerHTML = `
-      <style>
-        .no-lines-message p:first-child {
-          margin-bottom: 1em;
-        }
-        .alert-link {
-          color: var(--primary-color, #4fc3f7);
-          text-decoration: underline;
-        }
-      </style>
-      <div class="no-lines-message">
-        <p>This page has no line annotations defined.</p>
-        <p>To add lines, visit the <a href="${annotatorUrl}" class="alert-link">column and line interface</a>.</p>
-      </div>
-      <div class="button-container">
-        <button id="no-lines-ok">Got it</button>
-      </div>
-    `
-    
-    alertElem.querySelector('#no-lines-ok').addEventListener('click', () => {
-      alertElem.dismiss()
-    })
+  /**
+   * Replace the left pane with the no-lines prompt component.
+   */
+  #showNoLinesPrompt() {
+    const leftPane = this.shadowRoot.querySelector('.left-pane')
+    if (!leftPane) return
+    leftPane.replaceChildren(document.createElement('tpen-no-lines-prompt'))
+  }
 
-    alertContainer.addCustomAlert(alertElem)
+  /**
+   * Open the right pane (splitscreen) and display the full canvas image so the
+   * user can see the page even though no line annotations are defined yet.
+   */
+  #showFullPageView() {
+    const canvasId = this.#canvas?.id ?? this.#canvas?.['@id']
+    const manifest = TPEN.activeProject?.manifest?.[0]
+    if (!canvasId || !manifest) return
+
+    // Open the splitscreen pane
+    this.state.isSplitscreenActive = true
+    this.toggleSplitscreen()
+
+    // Populate the right pane with a full-canvas line-image viewer
+    const rightPaneTools = this.shadowRoot.querySelector('.tools')
+    if (!rightPaneTools) return
+
+    const lineImage = document.createElement('tpen-line-image')
+    lineImage.style.cssText = 'display:block;width:100%;height:calc(100vh - 56px);'
+    rightPaneTools.replaceChildren(lineImage)
+    lineImage.manifest = manifest
+    lineImage.canvas = canvasId
   }
 
   updateLines() {
@@ -630,23 +630,16 @@ export default class TranscriptionInterface extends HTMLElement {
     this.#page.items = orderedItems
     let thisLine = this.#page.items?.[0]
     
-    // Handle pages with no lines - still load the canvas
+    // Handle pages with no lines - load the canvas and show the no-lines prompt
     if (!thisLine) {
       // Get canvas from page target even when there are no lines
       const { canvasID } = this.setCanvasAndSelector(null, this.#page)
       if (!canvasID) return
-      const canvas = this.#canvas = await vault.get(canvasID, 'canvas')
-      // Show full page when there are no lines
-      const regionValue = `0,0,${canvas?.width ?? 'full'},${(canvas?.height && canvas?.height / 10) ?? 120}`
-      topImage.canvas = canvasID
-      bottomImage.canvas = canvas
-      topImage.setAttribute('region', regionValue)
-      // Show alert once per page to inform user about missing lines
-      const currentPageKey = this.#page?.id ?? pageID ?? TPEN.screen?.pageInQuery
-      if (this._noLinesAlertShownForPageId !== currentPageKey) {
-        this.showNoLinesAlert()
-        this._noLinesAlertShownForPageId = currentPageKey
-      }
+      this.#canvas = await vault.get(canvasID, 'canvas')
+      // Replace the left pane with the instructive no-lines prompt.
+      // The prompt will dispatch 'tpen-load-full-page-view' on connect,
+      // which triggers #showFullPageView() to open the canvas in the right pane.
+      this.#showNoLinesPrompt()
       return
     }
     
@@ -659,8 +652,6 @@ export default class TranscriptionInterface extends HTMLElement {
     if (regionValue) {
       topImage.setAttribute('region', regionValue)
     }
-    // Clear alert state once page has items
-    this._noLinesAlertShownForPageId = null
     const columnSelector = document.querySelector('tpen-transcription-interface')?.shadowRoot?.querySelector('tpen-project-header')?.shadowRoot?.querySelector('tpen-column-selector')
     if (columnSelector && columnSelector.shadowRoot) {
       const activeLineId = thisLine?.id || thisLine?.['@id']
