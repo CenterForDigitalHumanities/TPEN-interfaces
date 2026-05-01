@@ -160,7 +160,7 @@ describe('tpen-no-lines-prompt', () => {
         <div class="no-lines-container">
           <div class="no-lines-message">
             <h2>This page has not been transcribed yet.</h2>
-            <p>No line annotations are defined for this page.</p>
+            <p>No line annotations are defined for this page. Use the options below to get started.</p>
           </div>
           <div class="tools-section">
             <tpen-splitscreen-tool></tpen-splitscreen-tool>
