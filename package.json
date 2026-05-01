@@ -1,6 +1,6 @@
 {
   "name": "tpen-interfaces",
-  "version": "0.1.0",
+  "version": "0.1.1-alpha.0",
   "type": "module",
   "private": true,
   "description": "Testing harness for TPEN-interfaces (dev-only)",

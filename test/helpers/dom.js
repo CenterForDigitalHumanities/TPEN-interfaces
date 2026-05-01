@@ -8,22 +8,29 @@ const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>', {
 })
 
 global.window = dom.window
-Object.assign(global, dom.window)
-global.document = dom.window.document
 
-global.HTMLElement = dom.window.HTMLElement
+// Selectively copy globals needed by TPEN components, skipping read-only getters
+const toPropagate = [
+    'HTMLElement', 'HTMLInputElement', 'HTMLTextAreaElement',
+    'customElements', 'document', 'Event', 'CustomEvent', 'EventTarget',
+    'MutationObserver', 'ResizeObserver', 'IntersectionObserver',
+    'localStorage', 'sessionStorage', 'location'
+    // Note: timers (setTimeout etc.) intentionally omitted — jsdom's versions
+    // cause infinite recursion when assigned to global because they reference window.setTimeout
+]
 
-global.customElements = dom.window.customElements
+for (const key of toPropagate) {
+    const val = dom.window[key]
+    if (val !== undefined && !(key in global && Object.getOwnPropertyDescriptor(globalThis, key)?.writable === false)) {
+        try {
+            global[key] = val
+        } catch {}
+    }
+}
 
-global.navigator = dom.window.navigator
-
-global.localStorage = dom.window.localStorage
-
-global.Event = dom.window.Event
-
-global.CustomEvent = dom.window.CustomEvent
-
-global.EventTarget = dom.window.EventTarget
+try {
+    Object.defineProperty(global, 'navigator', { value: dom.window.navigator, configurable: true, writable: true })
+} catch {}
 
 // Patch requestAnimationFrame for tests
 if (!global.requestAnimationFrame) {
