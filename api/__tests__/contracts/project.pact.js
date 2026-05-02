@@ -5,18 +5,18 @@
  * relies on. The generated pact file is published to PactFlow for the TPEN-Services
  * team to verify against their provider implementation.
  *
- * Run: npm run test:contracts
+ * Run: npm test
  * Publish: npm run pact:publish
  */
 
-import { describe, it, before, after } from 'node:test'
+import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import { PactV3, MatchersV3 } from '@pact-foundation/pact'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import '../../test/helpers/dom.js'
+import '../../../test/helpers/dom.js'
 
-const { like, string, integer, eachLike } = MatchersV3
+const { like, string, eachLike } = MatchersV3
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 

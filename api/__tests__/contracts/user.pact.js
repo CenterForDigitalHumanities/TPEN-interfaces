@@ -5,7 +5,7 @@
  * relies on. The generated pact file is published to PactFlow for the TPEN-Services
  * team to verify against their provider implementation.
  *
- * Run: npm run test:contracts
+ * Run: npm test
  * Publish: npm run pact:publish
  */
 
@@ -14,7 +14,7 @@ import assert from 'node:assert/strict'
 import { PactV3, MatchersV3 } from '@pact-foundation/pact'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import '../../test/helpers/dom.js'
+import '../../../test/helpers/dom.js'
 
 const { like, string } = MatchersV3
 
@@ -39,7 +39,6 @@ TPEN.servicesURL = 'https://placeholder.test' // overridden per-test
 
 // Patch getUserFromToken so User thinks we're always the authenticated user
 const iiifTools = await import('../../../components/iiif-tools/index.js')
-const originalGetUserFromToken = iiifTools.getUserFromToken
 
 const { default: User } = await import('../../User.js')
 
