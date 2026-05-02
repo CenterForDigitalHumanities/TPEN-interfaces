@@ -29,7 +29,6 @@ const provider = new PactV3({
 
 // Patch iiif-tools getUserFromToken to return a stable test user ID
 // (User.js imports it to determine whether to call /my/profile vs /user/:id)
-import { createRequire } from 'node:module'
 const mockUserId = 'test-user-001'
 
 // Import and patch TPEN before User is imported
