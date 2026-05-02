@@ -81,7 +81,7 @@ html {
     background-color: var(--dark);
 }
 
-body {
+body:not(.no-margin-transcription) {
     background-color: var(--light-color);
     color: var(--dark);
     margin: 1.5em;

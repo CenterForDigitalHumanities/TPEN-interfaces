@@ -9,6 +9,7 @@ import { orderPageItemsByColumns } from "../../utilities/columnOrdering.js"
 import { onProjectReady } from "../../utilities/projectReady.js"
 import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 import { getHigherResolutionImageCandidates } from '../../utilities/imageUpgradeUrl.js'
+import '../../components/no-lines-prompt/index.js'
 
 /**
  * SimpleTranscriptionInterface - The simplified transcription interface with split-pane image viewer.
@@ -48,8 +49,6 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       isSplitscreenActive: false,
       activeTool: '',
     }
-    // Track toast state to avoid repeated notifications on empty pages
-    this._noLinesToastShownForPageId = null
   }
 
   connectedCallback() {
@@ -394,6 +393,10 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
 
     this.renderCleanup.onEvent(TPEN.eventDispatcher, 'tools-dismiss', closeSplitscreen)
 
+    // When a page has no lines the no-lines-prompt component dispatches this event.
+    // Open the right pane so the full canvas is visible.
+    this.renderCleanup.onEvent(TPEN.eventDispatcher, 'tpen-load-full-page-view', () => this.#showFullPageView())
+
     // Listen for layer changes from layer-selector
     this.renderCleanup.onEvent(TPEN.eventDispatcher, 'tpen-layer-changed', (event) => {
       if (this.#page?.items?.length > 0) {
@@ -472,6 +475,37 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
         this.enableTransitions()
       }
     })
+  }
+
+  /**
+   * Replace the left pane with the no-lines prompt component.
+   */
+  #showNoLinesPrompt() {
+    const leftPane = this.shadowRoot.querySelector('.left-pane')
+    if (!leftPane) return
+    leftPane.replaceChildren(document.createElement('tpen-no-lines-prompt'))
+  }
+
+  /**
+   * Open the right pane (splitscreen) and display the full canvas image so the
+   * user can see the page even though no line annotations are defined yet.
+   */
+  #showFullPageView() {
+    if (!this.#currentImageSrc) return
+
+    // Open the splitscreen pane
+    this.state.isSplitscreenActive = true
+    this.toggleSplitscreen()
+
+    // Populate the right pane with the full canvas image
+    const rightPaneTools = this.shadowRoot.querySelector('.tools')
+    if (!rightPaneTools) return
+
+    const img = document.createElement('img')
+    img.src = this.#currentImageSrc
+    img.alt = 'Full page view'
+    img.style.cssText = 'width:100%;height:auto;display:block;'
+    rightPaneTools.replaceChildren(img)
   }
 
   /**
@@ -590,6 +624,13 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
         imgTop.src = imageResource
         imgBottom.src = imageResource
       }
+
+      // If the page has no line annotations, replace the left pane with the
+      // instructive no-lines prompt.  The prompt dispatches
+      // 'tpen-load-full-page-view' on connect which opens the full canvas view.
+      if (!Array.isArray(this.#page?.items) || this.#page.items.length === 0) {
+        this.#showNoLinesPrompt()
+      }
     } catch (err) {
       console.error("Failed to load transcription images:", err)
       TPEN.eventDispatcher.dispatch("tpen-toast", {
@@ -610,23 +651,13 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       return
     }
 
-    // Only show the toast when a page is loaded and has zero items
+    // If the page has no line annotations, the no-lines-prompt is shown instead.
+    // Quietly bail here so image positions are reset without redundant messaging.
     if (!Array.isArray(page.items) || page.items.length === 0) {
       this.#activeLine = null
       this.resetImagePositions()
-      // Avoid firing the same toast repeatedly for the same page
-      if (this._noLinesToastShownForPageId !== (page?.id ?? TPEN.screen?.pageInQuery ?? 'unknown')) {
-        TPEN.eventDispatcher.dispatch("tpen-toast", {
-          message: "This page has no line annotations. Visit the annotation interface to add lines.",
-          status: "info"
-        })
-        this._noLinesToastShownForPageId = page?.id ?? TPEN.screen?.pageInQuery ?? 'unknown'
-      }
       return
     }
-
-    // Clear toast state once page has items
-    this._noLinesToastShownForPageId = null
 
     let line = page.items[activeLineIndex]
     if (!line) {
