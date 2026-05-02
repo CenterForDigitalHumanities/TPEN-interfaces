@@ -25,6 +25,8 @@ const provider = new PactV3({
     provider: 'tpen-services',
     dir: path.resolve(__dirname, '../../../pacts'),
     logLevel: 'error'
+})
+
 const mockUserId = 'test-user-001'
 
 function encodeJwtSegment(value) {
