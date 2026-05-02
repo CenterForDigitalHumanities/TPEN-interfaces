@@ -1,9 +1,9 @@
 import { describe, it, beforeEach, afterEach } from 'node:test'
 import assert from 'node:assert/strict'
-import '../../test/helpers/dom.js'
+import '../../../test/helpers/dom.js'
 
 // Stub TPEN and dependencies before the component imports them
-const { default: TPEN } = await import('../../api/TPEN.js')
+const { default: TPEN } = await import('../../../api/TPEN.js')
 TPEN.attachAuthentication = () => {}
 TPEN.getAuthorization = () => 'mock-token'
 TPEN.activeProject = null
