@@ -62,7 +62,7 @@ export default class NoLinesPrompt extends HTMLElement {
           padding: 2rem 1.5rem;
           gap: 1.5rem;
           min-height: 100%;
-          background-color: #f8f4ee;
+          background-color: var(--light-color, #f8f4ee);
         }
 
         .no-lines-message {
@@ -72,13 +72,13 @@ export default class NoLinesPrompt extends HTMLElement {
 
         .no-lines-message h2 {
           font-size: 1.4rem;
-          color: #5a3e2b;
+          color: var(--accent, #5a3e2b);
           margin-bottom: 0.5rem;
         }
 
         .no-lines-message p {
           font-size: 1rem;
-          color: #666;
+          color: var(--text-secondary, #666);
           line-height: 1.5;
         }
 
@@ -95,7 +95,7 @@ export default class NoLinesPrompt extends HTMLElement {
           font-size: 0.85rem;
           font-weight: 700;
           text-transform: uppercase;
-          color: #005a8c;
+          color: var(--interface-primary, #005a8c);
           letter-spacing: 0.05em;
         }
 
@@ -114,9 +114,9 @@ export default class NoLinesPrompt extends HTMLElement {
           max-width: 320px;
           padding: 0.65rem 1.25rem;
           border-radius: 25px;
-          border: 2px solid #005a8c;
-          background-color: white;
-          color: #005a8c;
+          border: 2px solid var(--interface-primary, #005a8c);
+          background-color: var(--white, white);
+          color: var(--interface-primary, #005a8c);
           font-weight: 600;
           font-size: 0.9rem;
           text-align: center;
@@ -128,27 +128,27 @@ export default class NoLinesPrompt extends HTMLElement {
 
         .action-btn:hover:not(:disabled),
         .action-btn:focus:not(:disabled) {
-          background-color: #005a8c;
-          color: white;
+          background-color: var(--interface-primary, #005a8c);
+          color: var(--white, white);
           outline: none;
         }
 
         .action-btn:disabled {
           opacity: 0.45;
           cursor: not-allowed;
-          border-color: #999;
-          color: #999;
+          border-color: var(--text-muted, #999);
+          color: var(--text-muted, #999);
         }
 
         .action-btn.danger {
-          border-color: #b03030;
-          color: #b03030;
+          border-color: var(--error-color, #b03030);
+          color: var(--error-color, #b03030);
         }
 
         .action-btn.danger:hover:not(:disabled),
         .action-btn.danger:focus:not(:disabled) {
-          background-color: #b03030;
-          color: white;
+          background-color: var(--error-color, #b03030);
+          color: var(--white, white);
         }
       </style>
 
@@ -158,16 +158,17 @@ export default class NoLinesPrompt extends HTMLElement {
           <p>No line annotations are defined for this page. Use the options below to get started.</p>
         </div>
 
-        <div class="tools-section">
-          <span class="tools-label">Open a transcription tool</span>
-          <tpen-splitscreen-tool></tpen-splitscreen-tool>
-        </div>
-
         <div class="actions-section">
           <a class="action-btn" href="${annotatorUrl}">Identify Lines and Columns</a>
           <button class="action-btn danger" id="remove-page-btn" type="button">Remove this Page from the Project</button>
           <button class="action-btn" id="import-annotations-btn" type="button" disabled title="Import Annotations — coming soon">Import Annotations</button>
         </div>
+        
+        <div class="tools-section">
+          <span class="tools-label">Open one of your tools</span>
+          <tpen-splitscreen-tool></tpen-splitscreen-tool>
+        </div>
+
       </div>
     `
   }
