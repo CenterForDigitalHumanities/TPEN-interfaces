@@ -10,7 +10,7 @@ This repo uses a layered, Node-native testing harness with zero impact on the Je
 - **E2E tests**: `@playwright/test` (runs against live Jekyll site, with mocked auth)
 
 ## Running Tests
-- `npm test` — all unit + contract tests
+- `npm test` — all unit tests
 - `npm run test:components` — all component tests
 - `npm run test:e2e` — Playwright e2e (requires local `jekyll s` or deployed site)
 - `npm run pact:publish` — Publishes latest pact to PactFlow (CI only)

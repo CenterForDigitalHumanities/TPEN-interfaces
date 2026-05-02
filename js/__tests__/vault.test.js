@@ -8,13 +8,6 @@ TPEN.servicesURL = 'https://api.t-pen.test'
 TPEN.RERUMURL = 'https://store.rerum.test/v1'
 TPEN.screen = { projectInQuery: null, pageInQuery: null, layerInQuery: null }
 
-const { default: vault } = await import('../vault.js').then(m => ({ default: m.vault ?? m.default }))
-    .catch(async () => {
-        // vault exports `vault` as named, not default
-        const mod = await import('../vault.js')
-        return { default: mod.vault ?? Object.values(mod)[0] }
-    })
-
 // We need to reach the Vault class directly for isolated instances in tests
 // Import via dynamic evaluation to get the class constructor
 const vaultModule = await import('../vault.js')

@@ -28,14 +28,15 @@ test.describe('Home page', () => {
         const context = await browser.newContext({ storageState: undefined })
         const page = await context.newPage()
 
-        await page.goto('/interfaces/project/')
-        // After redirect, the URL should no longer be the original protected path
-        // (TPEN calls TPEN.login() which redirects to the auth provider)
-        await page.waitForURL(url => !url.pathname.startsWith('/interfaces/project/'), { timeout: 8000 })
-            .catch(() => {
-                // If no redirect happened, at least verify some auth gate is rendered
-            })
+        try {
+            await page.goto('/interfaces/project/')
+            // After redirect, the URL should no longer be the original protected path
+            // (TPEN calls TPEN.login() which redirects to the auth provider)
+            await page.waitForURL(url => !url.pathname.startsWith('/interfaces/project/'), { timeout: 8000 })
 
-        await context.close()
+            await expect(page.url()).not.toContain('/interfaces/project/')
+        } finally {
+            await context.close()
+        }
     })
 })

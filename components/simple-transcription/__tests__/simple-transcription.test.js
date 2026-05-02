@@ -25,11 +25,11 @@ TPEN.eventDispatcher = {
 }
 
 // Stub CheckPermissions before component import
-const checkPermissionsModule = await import('../../components/check-permissions/checkPermissions.js')
+const checkPermissionsModule = await import('../../check-permissions/checkPermissions.js')
 const CheckPermissions = checkPermissionsModule.default
 CheckPermissions.verify = () => {}
 
-const { default: SimpleTranscription } = await import('../../components/simple-transcription/index.js')
+const { default: SimpleTranscription } = await import('../index.js')
 
 if (!customElements.get('tpen-simple-transcription')) {
     customElements.define('tpen-simple-transcription', SimpleTranscription)
@@ -62,7 +62,6 @@ describe('SimpleTranscriptionInterface', () => {
     })
 
     it('cleans up event listeners on disconnectedCallback', () => {
-        const hadHandlers = TPEN.eventDispatcher._handlers.size > 0
         el.disconnectedCallback()
         // After cleanup the unsubProject reference should remain callable but be a no-op
         assert.doesNotThrow(() => el._unsubProject?.())

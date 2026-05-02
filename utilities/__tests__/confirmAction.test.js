@@ -8,11 +8,12 @@ const { eventDispatcher } = await import('../../api/events.js')
 describe('confirmAction', () => {
     it('dispatches tpen-confirm with the provided message', () => {
         let dispatched = null
-        const off = eventDispatcher.on('tpen-confirm', (ev) => {
+        const capture = (ev) => {
             dispatched = ev.detail
-        })
+        }
+        eventDispatcher.on('tpen-confirm', capture)
         confirmAction('Are you sure?', () => {}, undefined)
-        eventDispatcher.off('tpen-confirm', off)
+        eventDispatcher.off('tpen-confirm', capture)
         assert.equal(dispatched?.message, 'Are you sure?')
     })
 

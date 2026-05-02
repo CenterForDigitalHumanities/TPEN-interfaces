@@ -32,7 +32,7 @@ test.describe('Project interface', () => {
             els.filter(el => el.tagName.toLowerCase().startsWith('tpen-')).length
         )
 
-        // At least the TPEN API script loads and renders something
-        expect(tpenElements).toBeGreaterThanOrEqual(0)
+        // At least one TPEN custom element should render on the page
+        expect(tpenElements).toBeGreaterThan(0)
     })
 })

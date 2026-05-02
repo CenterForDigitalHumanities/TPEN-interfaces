@@ -22,7 +22,7 @@ TPEN.eventDispatcher = {
     }
 }
 
-const { default: FeedbackButton } = await import('../../components/feedback-button/index.js')
+const { default: FeedbackButton } = await import('../index.js')
 
 if (!customElements.get('tpen-feedback-button')) {
     customElements.define('tpen-feedback-button', FeedbackButton)

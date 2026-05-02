@@ -25,24 +25,33 @@ const provider = new PactV3({
     provider: 'tpen-services',
     dir: path.resolve(__dirname, '../../../pacts'),
     logLevel: 'error'
-})
-
-// Patch iiif-tools getUserFromToken to return a stable test user ID
-// (User.js imports it to determine whether to call /my/profile vs /user/:id)
 const mockUserId = 'test-user-001'
+
+function encodeJwtSegment(value) {
+    return Buffer.from(JSON.stringify(value)).toString('base64url')
+}
+
+const testJwt = [
+    encodeJwtSegment({ alg: 'none', typ: 'JWT' }),
+    encodeJwtSegment({
+        sub: mockUserId,
+        _id: mockUserId,
+        userId: mockUserId,
+        agent: mockUserId,
+        user: mockUserId
+    }),
+    ''
+].join('.')
 
 // Import and patch TPEN before User is imported
 const { default: TPEN } = await import('../../TPEN.js')
-TPEN.getAuthorization = () => 'test-bearer-token'
-TPEN.login = () => 'test-bearer-token'
+TPEN.getAuthorization = () => `Bearer ${testJwt}`
+TPEN.login = () => `Bearer ${testJwt}`
 TPEN.servicesURL = 'https://placeholder.test' // overridden per-test
-
-// Patch getUserFromToken so User thinks we're always the authenticated user
-const iiifTools = await import('../../../components/iiif-tools/index.js')
 
 const { default: User } = await import('../../User.js')
 
-const AUTH_HEADER = { Authorization: like('Bearer test-bearer-token') }
+const AUTH_HEADER = { Authorization: like(`Bearer ${testJwt}`) }
 
 describe('User consumer contracts', () => {
     describe('GET /my/profile — getProfile (authenticated user)', () => {
