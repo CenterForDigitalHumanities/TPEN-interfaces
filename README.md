@@ -49,6 +49,34 @@ Add descriptive key-value pairs to a project. This might be used to make a list 
 easier to filter or more discoverable from an external source. On its own, this may not mean
 much but combined with a customized project list page, it could be a powerful tool.
 
+## Versioning and Releases
+
+This repository uses Release Please to automate semantic versioning and release PRs from commits on `main`.
+
+- Workflow: `.github/workflows/release-please.yml`
+- Config: `release-please-config.json`
+- Manifest baseline: `.release-please-manifest.json`
+
+### Commit Message Format
+
+Use Conventional Commits so Release Please can infer the correct version bump.
+
+- `fix:` -> patch bump
+- `feat:` -> minor bump
+- `feat!:` or `BREAKING CHANGE:` -> major bump
+
+Examples:
+
+- `fix(vault): avoid caching resources without an id`
+- `feat(import): support multiple manifest URLs`
+- `feat(api)!: change collaborator role payload shape`
+
+### Notes for This Repo
+
+- Releases are currently configured as alpha prereleases (`x.y.z-alpha.N`).
+- Keep commit subjects short and specific to improve generated changelogs.
+- If a change is user-visible, prefer `feat:` or `fix:` over generic messages like `update`.
+
 ## License
 
 Code: Apache License 2.0 — see [LICENSE](./LICENSE)
