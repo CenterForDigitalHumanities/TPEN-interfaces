@@ -246,8 +246,10 @@ export default class TranscriptionInterface extends HTMLElement {
 
     const closeSplitscreen = () => {
       if (!this.state.isSplitscreenActive) return
+      const activeTool = this.state.activeTool
       this.state.isSplitscreenActive = false
       this.state.activeTool = ''
+      if (activeTool) TPEN.eventDispatcher.dispatch(`tpen-${activeTool}-hide`)
       const toolsPane = this.shadowRoot.querySelector('.tools')
       toolsPane?.replaceChildren()
       this.toggleSplitscreen()

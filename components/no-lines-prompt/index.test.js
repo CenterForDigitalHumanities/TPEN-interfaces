@@ -160,6 +160,9 @@ describe('tpen-no-lines-prompt', () => {
 
     const importAnnotationsBtn = shadow.querySelector('#import-annotations-btn')
     assert.equal(importAnnotationsBtn?.disabled, true)
+
+    const showPageImageBtn = shadow.querySelector('#show-page-image-btn')
+    assert.equal(showPageImageBtn?.hidden, true)
   })
 
   it('Show Page Image button re-dispatches splitscreen-toggle(view-fullpage)', () => {
@@ -178,6 +181,10 @@ describe('tpen-no-lines-prompt', () => {
 
       const button = element.shadowRoot.querySelector('#show-page-image-btn')
       assert.ok(button, 'Expected Show Page Image button to exist')
+      assert.equal(button.hidden, true)
+
+      TPEN.eventDispatcher.dispatch('tpen-view-fullpage-hide')
+      assert.equal(button.hidden, false)
 
       button.click()
 
@@ -226,6 +233,11 @@ describe('tpen-no-lines-prompt', () => {
 
       const button = element.shadowRoot.querySelector('#show-page-image-btn')
       assert.ok(button, 'Expected Show Page Image button to exist')
+      assert.equal(button.hidden, true)
+
+      TPEN.eventDispatcher.dispatch('tpen-view-fullpage-hide')
+      assert.equal(button.hidden, false)
+
       button.click()
 
       assert.equal(hostState.activeTool, 'view-fullpage')

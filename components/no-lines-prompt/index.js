@@ -19,6 +19,8 @@ export default class NoLinesPrompt extends HTMLElement {
   _unsubProject = null
   /** @type {boolean} Whether automatic full-page view has already been requested for this mount */
   _didAutoRequestFullPage = false
+  /** @type {boolean} Whether to show the manual full-page reopen button */
+  _showManualFullPageButton = false
 
   constructor() {
     super()
@@ -27,6 +29,7 @@ export default class NoLinesPrompt extends HTMLElement {
 
   connectedCallback() {
     this._didAutoRequestFullPage = false
+    this._showManualFullPageButton = false
     TPEN.attachAuthentication(this)
     this._unsubProject = onProjectReady(this, this.authgate)
   }
@@ -50,6 +53,7 @@ export default class NoLinesPrompt extends HTMLElement {
     const projectId = encodeURIComponent(TPEN.screen?.projectInQuery ?? "")
     const pageId = encodeURIComponent(TPEN.screen?.pageInQuery ?? "")
     const annotatorUrl = `/annotator?projectID=${projectId}&pageID=${pageId}`
+    const showPageImageAttrs = this._showManualFullPageButton ? '' : ' hidden aria-hidden="true"'
 
     this.shadowRoot.innerHTML = `
       <style>
@@ -166,7 +170,7 @@ export default class NoLinesPrompt extends HTMLElement {
         </div>
 
         <div class="actions-section">
-          <button class="action-btn" id="show-page-image-btn" type="button">Show Page Image</button>
+          <button class="action-btn" id="show-page-image-btn" type="button"${showPageImageAttrs}>Show Page Image</button>
           <a class="action-btn" href="${annotatorUrl}">Identify Lines and Columns</a>
           <button class="action-btn danger" id="remove-page-btn" type="button">Remove this Page from the Project</button>
           <button class="action-btn" id="import-annotations-btn" type="button" disabled title="Import Annotations — coming soon">Import Annotations</button>
@@ -182,6 +186,8 @@ export default class NoLinesPrompt extends HTMLElement {
   }
 
   addEventListeners() {
+    this.cleanup.onEvent(TPEN.eventDispatcher, 'tpen-view-fullpage-hide', () => this.#revealManualFullPageButton())
+
     const showPageImageBtn = this.shadowRoot.querySelector("#show-page-image-btn")
     if (showPageImageBtn) {
       this.cleanup.onElement(showPageImageBtn, "click", () => this.#requestFullPageView())
@@ -195,6 +201,17 @@ export default class NoLinesPrompt extends HTMLElement {
 
   #requestFullPageView() {
     TPEN.eventDispatcher.dispatch("splitscreen-toggle", { selectedTool: "view-fullpage" })
+  }
+
+  #revealManualFullPageButton() {
+    if (this._showManualFullPageButton) return
+    this._showManualFullPageButton = true
+
+    const showPageImageBtn = this.shadowRoot.querySelector('#show-page-image-btn')
+    if (!showPageImageBtn) return
+
+    showPageImageBtn.hidden = false
+    showPageImageBtn.removeAttribute('aria-hidden')
   }
 
   async #removePageFromProject() {
