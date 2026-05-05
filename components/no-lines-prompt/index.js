@@ -137,6 +137,10 @@ export default class NoLinesPrompt extends HTMLElement {
           transition: background-color 0.2s ease, color 0.2s ease;
         }
 
+        .action-btn[hidden] {
+          display: none !important;
+        }
+
         .action-btn:hover:not(:disabled),
         .action-btn:focus:not(:disabled) {
           background-color: var(--interface-primary, #005a8c);
