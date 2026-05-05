@@ -369,6 +369,10 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     const closeSplitscreen = () => {
       if (!this.state.isSplitscreenActive) return
       this.state.isSplitscreenActive = false
+      this.state.activeTool = ''
+      this.#toolCleanup.run()
+      const toolsPane = this.shadowRoot.querySelector('.tools')
+      toolsPane?.replaceChildren()
       this.toggleSplitscreen()
       this.updateLines()
     }
@@ -382,6 +386,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     }
 
     this.renderCleanup.onElement(this.shadowRoot, 'splitscreen-toggle', e => openSplitscreen(e.detail?.selectedTool))
+    this.renderCleanup.onEvent(TPEN.eventDispatcher, 'splitscreen-toggle', e => openSplitscreen(e.detail?.selectedTool))
 
     this.renderCleanup.onElement(this.shadowRoot, 'click', e => {
       if (e.target?.classList.contains('close-button')) closeSplitscreen()
@@ -392,10 +397,6 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     })
 
     this.renderCleanup.onEvent(TPEN.eventDispatcher, 'tools-dismiss', closeSplitscreen)
-
-    // When a page has no lines the no-lines-prompt component dispatches this event.
-    // Open the right pane so the full canvas is visible.
-    this.renderCleanup.onEvent(TPEN.eventDispatcher, 'tpen-load-full-page-view', () => this.#showFullPageView())
 
     // Listen for layer changes from layer-selector
     this.renderCleanup.onEvent(TPEN.eventDispatcher, 'tpen-layer-changed', (event) => {
@@ -484,28 +485,6 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     const leftPane = this.shadowRoot.querySelector('.left-pane')
     if (!leftPane) return
     leftPane.replaceChildren(document.createElement('tpen-no-lines-prompt'))
-  }
-
-  /**
-   * Open the right pane (splitscreen) and display the full canvas image so the
-   * user can see the page even though no line annotations are defined yet.
-   */
-  #showFullPageView() {
-    if (!this.#currentImageSrc) return
-
-    // Open the splitscreen pane
-    this.state.isSplitscreenActive = true
-    this.toggleSplitscreen()
-
-    // Populate the right pane with the full canvas image
-    const rightPaneTools = this.shadowRoot.querySelector('.tools')
-    if (!rightPaneTools) return
-
-    const img = document.createElement('img')
-    img.src = this.#currentImageSrc
-    img.alt = 'Full page view'
-    img.style.cssText = 'width:100%;height:auto;display:block;'
-    rightPaneTools.replaceChildren(img)
   }
 
   /**
@@ -626,8 +605,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       }
 
       // If the page has no line annotations, replace the left pane with the
-      // instructive no-lines prompt.  The prompt dispatches
-      // 'tpen-load-full-page-view' on connect which opens the full canvas view.
+      // instructive no-lines prompt.
       if (!Array.isArray(this.#page?.items) || this.#page.items.length === 0) {
         this.#showNoLinesPrompt()
       }
@@ -1053,6 +1031,25 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     this.#toolCleanup.run()
 
     const rightPane = this.shadowRoot.querySelector('.tools')
+    if (!rightPane) return
+
+    if (this.state.activeTool === 'view-full-page') {
+      if (!this.#currentImageSrc) {
+        rightPane.replaceChildren()
+        const message = document.createElement('p')
+        message.textContent = 'Unable to load full page image.'
+        rightPane.appendChild(message)
+        return
+      }
+
+      const img = document.createElement('img')
+      img.src = this.#currentImageSrc
+      img.alt = 'Full page view'
+      img.style.cssText = 'width:100%;height:auto;display:block;'
+      rightPane.replaceChildren(img)
+      return
+    }
+
     let tool = this.getToolByName(this.state.activeTool)
     
     // If no active tool is selected, use the first available tool

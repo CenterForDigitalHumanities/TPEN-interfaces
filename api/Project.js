@@ -170,6 +170,22 @@ export default class Project {
         return payload ?? response
     }
 
+    async removePage(pageId) {
+        if (!pageId) {
+            throw new Error('Missing page id')
+        }
+        const token = TPEN.getAuthorization() ?? TPEN.login()
+        const response = await fetch(`${TPEN.servicesURL}/project/${this._id}/page/${pageId}`, {
+            method: 'DELETE',
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+        })
+        const payload = await this.#validateResponse(response, 'Failed to remove page from project')
+        return payload ?? response
+    }
+
     async makeLeader(userId) {
         const token = TPEN.getAuthorization() ?? TPEN.login()
         const response = await fetch(`${TPEN.servicesURL}/project/${this._id}/collaborator/${userId}/addRoles`, {

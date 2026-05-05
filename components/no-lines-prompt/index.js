@@ -1,14 +1,15 @@
 import TPEN from "../../api/TPEN.js"
+import Project from "../../api/Project.js"
 import CheckPermissions from "../check-permissions/checkPermissions.js"
 import { onProjectReady } from "../../utilities/projectReady.js"
 import { CleanupRegistry } from "../../utilities/CleanupRegistry.js"
 import { confirmAction } from "../../utilities/confirmAction.js"
-import "../../components/splitscreen-tool/index.js"
+import "../splitscreen-tool/index.js"
 
 /**
  * NoLinesPrompt - Shown in the left pane when a page has no line annotations.
- * Dispatches `tpen-load-full-page-view` via TPEN.eventDispatcher on connect to
- * trigger the transcription interface to open the full canvas view.
+ * Requests `view-full-page` via `splitscreen-toggle` after authgate and from
+ * an explicit action button so users can reopen the image after closing.
  * @element tpen-no-lines-prompt
  */
 export default class NoLinesPrompt extends HTMLElement {
@@ -16,6 +17,8 @@ export default class NoLinesPrompt extends HTMLElement {
   cleanup = new CleanupRegistry()
   /** @type {Function|null} Unsubscribe function for project ready listener */
   _unsubProject = null
+  /** @type {boolean} Whether automatic full-page view has already been requested for this mount */
+  _didAutoRequestFullPage = false
 
   constructor() {
     super()
@@ -23,10 +26,9 @@ export default class NoLinesPrompt extends HTMLElement {
   }
 
   connectedCallback() {
+    this._didAutoRequestFullPage = false
     TPEN.attachAuthentication(this)
     this._unsubProject = onProjectReady(this, this.authgate)
-    // Signal the parent transcription interface to open the full canvas view
-    TPEN.eventDispatcher.dispatch("tpen-load-full-page-view")
   }
 
   disconnectedCallback() {
@@ -37,6 +39,11 @@ export default class NoLinesPrompt extends HTMLElement {
   authgate() {
     this.render()
     this.addEventListeners()
+
+    // Auto-open only once per component mount; users can always reopen via button.
+    if (this._didAutoRequestFullPage) return
+    this._didAutoRequestFullPage = true
+    this.#requestFullPageView()
   }
 
   render() {
@@ -159,6 +166,7 @@ export default class NoLinesPrompt extends HTMLElement {
         </div>
 
         <div class="actions-section">
+          <button class="action-btn" id="show-page-image-btn" type="button">Show Page Image</button>
           <a class="action-btn" href="${annotatorUrl}">Identify Lines and Columns</a>
           <button class="action-btn danger" id="remove-page-btn" type="button">Remove this Page from the Project</button>
           <button class="action-btn" id="import-annotations-btn" type="button" disabled title="Import Annotations — coming soon">Import Annotations</button>
@@ -174,10 +182,19 @@ export default class NoLinesPrompt extends HTMLElement {
   }
 
   addEventListeners() {
+    const showPageImageBtn = this.shadowRoot.querySelector("#show-page-image-btn")
+    if (showPageImageBtn) {
+      this.cleanup.onElement(showPageImageBtn, "click", () => this.#requestFullPageView())
+    }
+
     const removeBtn = this.shadowRoot.querySelector("#remove-page-btn")
     if (removeBtn) {
       this.cleanup.onElement(removeBtn, "click", () => this.#removePageFromProject())
     }
+  }
+
+  #requestFullPageView() {
+    TPEN.eventDispatcher.dispatch("splitscreen-toggle", { selectedTool: "view-full-page" })
   }
 
   async #removePageFromProject() {
@@ -197,25 +214,13 @@ export default class NoLinesPrompt extends HTMLElement {
       "This page will be removed from the project. This action cannot be undone.",
       async () => {
         try {
-          const response = await fetch(`${TPEN.servicesURL}/project/${projectId}/page/${pageId}`, {
-            method: "DELETE",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${TPEN.getAuthorization()}`
-            }
+          const project = new Project(projectId)
+          await project.removePage(pageId)
+          TPEN.eventDispatcher.dispatch("tpen-toast", {
+            status: "info",
+            message: "Page successfully removed from the project."
           })
-          if (response.ok) {
-            TPEN.eventDispatcher.dispatch("tpen-toast", {
-              status: "info",
-              message: "Page successfully removed from the project."
-            })
-            window.location.href = `/project/?projectID=${encodeURIComponent(projectId)}`
-          } else {
-            TPEN.eventDispatcher.dispatch("tpen-toast", {
-              status: "error",
-              message: "Failed to remove the page. Please try again."
-            })
-          }
+          window.location.href = `/project/?projectID=${encodeURIComponent(projectId)}`
         } catch {
           TPEN.eventDispatcher.dispatch("tpen-toast", {
             status: "error",

@@ -247,6 +247,9 @@ export default class TranscriptionInterface extends HTMLElement {
     const closeSplitscreen = () => {
       if (!this.state.isSplitscreenActive) return
       this.state.isSplitscreenActive = false
+      this.state.activeTool = ''
+      const toolsPane = this.shadowRoot.querySelector('.tools')
+      toolsPane?.replaceChildren()
       this.toggleSplitscreen()
       this.checkMagnifierVisibility()
       this.updateLines()
@@ -261,6 +264,7 @@ export default class TranscriptionInterface extends HTMLElement {
     }
 
     this.renderCleanup.onElement(this.shadowRoot, 'splitscreen-toggle', e => openSplitscreen(e.detail?.selectedTool))
+    this.renderCleanup.onEvent(TPEN.eventDispatcher, 'splitscreen-toggle', e => openSplitscreen(e.detail?.selectedTool))
 
     this.renderCleanup.onElement(this.shadowRoot, 'click', e => {
       if (e.target?.classList.contains('close-button')) closeSplitscreen()
@@ -274,10 +278,6 @@ export default class TranscriptionInterface extends HTMLElement {
 
     // Listen for layer changes from layer-selector
     this.renderCleanup.onEvent(TPEN.eventDispatcher, 'tpen-layer-changed', () => this.updateLines())
-
-    // When a page has no lines the no-lines-prompt component dispatches this event.
-    // Open the right pane so the full canvas is visible.
-    this.renderCleanup.onEvent(TPEN.eventDispatcher, 'tpen-load-full-page-view', () => this.#showFullPageView())
 
     // Listen for column selection changes
     this.renderCleanup.onEvent(TPEN.eventDispatcher, 'tpen-column-selected', (event) => {
@@ -349,6 +349,27 @@ export default class TranscriptionInterface extends HTMLElement {
 
   loadRightPaneContent() {
     const rightPane = this.shadowRoot.querySelector('.tools')
+    if (!rightPane) return
+
+    if (this.state.activeTool === 'view-full-page') {
+      const canvasId = this.#canvas?.id ?? this.#canvas?.['@id']
+      const manifest = TPEN.activeProject?.manifest?.[0]
+      if (!canvasId || !manifest) {
+        rightPane.replaceChildren()
+        const message = document.createElement('p')
+        message.textContent = 'Unable to load full page image.'
+        rightPane.appendChild(message)
+        return
+      }
+
+      const lineImage = document.createElement('tpen-line-image')
+      lineImage.style.cssText = 'display:block;width:100%;height:calc(100vh - 56px);'
+      rightPane.replaceChildren(lineImage)
+      lineImage.manifest = manifest
+      lineImage.canvas = canvasId
+      return
+    }
+
     let tool = this.getToolByName(this.state.activeTool)
     
     // If no active tool is selected, use the first available tool
@@ -548,30 +569,6 @@ export default class TranscriptionInterface extends HTMLElement {
     leftPane.replaceChildren(document.createElement('tpen-no-lines-prompt'))
   }
 
-  /**
-   * Open the right pane (splitscreen) and display the full canvas image so the
-   * user can see the page even though no line annotations are defined yet.
-   */
-  #showFullPageView() {
-    const canvasId = this.#canvas?.id ?? this.#canvas?.['@id']
-    const manifest = TPEN.activeProject?.manifest?.[0]
-    if (!canvasId || !manifest) return
-
-    // Open the splitscreen pane
-    this.state.isSplitscreenActive = true
-    this.toggleSplitscreen()
-
-    // Populate the right pane with a full-canvas line-image viewer
-    const rightPaneTools = this.shadowRoot.querySelector('.tools')
-    if (!rightPaneTools) return
-
-    const lineImage = document.createElement('tpen-line-image')
-    lineImage.style.cssText = 'display:block;width:100%;height:calc(100vh - 56px);'
-    rightPaneTools.replaceChildren(lineImage)
-    lineImage.manifest = manifest
-    lineImage.canvas = canvasId
-  }
-
   updateLines() {
     if (TPEN.activeLineIndex < 0 || !this.#page) return
     const topImage = this.shadowRoot.querySelector('#topImage')
@@ -637,8 +634,6 @@ export default class TranscriptionInterface extends HTMLElement {
       if (!canvasID) return
       this.#canvas = await vault.get(canvasID, 'canvas')
       // Replace the left pane with the instructive no-lines prompt.
-      // The prompt will dispatch 'tpen-load-full-page-view' on connect,
-      // which triggers #showFullPageView() to open the canvas in the right pane.
       this.#showNoLinesPrompt()
       return
     }
