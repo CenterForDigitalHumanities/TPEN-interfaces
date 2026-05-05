@@ -351,7 +351,7 @@ export default class TranscriptionInterface extends HTMLElement {
     const rightPane = this.shadowRoot.querySelector('.tools')
     if (!rightPane) return
 
-    if (this.state.activeTool === 'view-full-page') {
+    if (this.state.activeTool === 'view-fullpage') {
       const canvasId = this.#canvas?.id ?? this.#canvas?.['@id']
       const manifest = TPEN.activeProject?.manifest?.[0]
       if (!canvasId || !manifest) {

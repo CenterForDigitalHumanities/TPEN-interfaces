@@ -1033,7 +1033,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     const rightPane = this.shadowRoot.querySelector('.tools')
     if (!rightPane) return
 
-    if (this.state.activeTool === 'view-full-page') {
+    if (this.state.activeTool === 'view-fullpage') {
       if (!this.#currentImageSrc) {
         rightPane.replaceChildren()
         const message = document.createElement('p')

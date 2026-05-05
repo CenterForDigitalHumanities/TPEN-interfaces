@@ -50,7 +50,7 @@ after(() => {
 })
 
 describe('tpen-no-lines-prompt', () => {
-  it('defers splitscreen-toggle(view-full-page) until project-ready', () => {
+  it('defers splitscreen-toggle(view-fullpage) until project-ready', () => {
     const dispatched = []
     const originalDispatch = TPEN.eventDispatcher.dispatch.bind(TPEN.eventDispatcher)
     const originalAttachAuthentication = TPEN.attachAuthentication
@@ -68,9 +68,9 @@ describe('tpen-no-lines-prompt', () => {
       const element = new NoLinesPrompt()
       element.connectedCallback()
       assert.equal(
-        dispatched.some(({ name, detail }) => name === 'splitscreen-toggle' && detail?.selectedTool === 'view-full-page'),
+        dispatched.some(({ name, detail }) => name === 'splitscreen-toggle' && detail?.selectedTool === 'view-fullpage'),
         false,
-        'Expected no view-full-page request before project-ready'
+        'Expected no view-fullpage request before project-ready'
       )
       assert.equal(
         authAttachCount,
@@ -91,9 +91,9 @@ describe('tpen-no-lines-prompt', () => {
       })
 
       const autoOpenDispatches = dispatched.filter(
-        ({ name, detail }) => name === 'splitscreen-toggle' && detail?.selectedTool === 'view-full-page'
+        ({ name, detail }) => name === 'splitscreen-toggle' && detail?.selectedTool === 'view-fullpage'
       )
-      assert.equal(autoOpenDispatches.length, 1, 'Expected exactly one auto view-full-page request per mount')
+      assert.equal(autoOpenDispatches.length, 1, 'Expected exactly one auto view-fullpage request per mount')
       element.disconnectedCallback()
     } finally {
       TPEN.eventDispatcher.dispatch = originalDispatch
@@ -101,7 +101,7 @@ describe('tpen-no-lines-prompt', () => {
     }
   })
 
-  it('authgate renders, wires events, and auto-dispatches splitscreen-toggle(view-full-page) once', () => {
+  it('authgate renders, wires events, and auto-dispatches splitscreen-toggle(view-fullpage) once', () => {
     const dispatched = []
     const originalDispatch = TPEN.eventDispatcher.dispatch.bind(TPEN.eventDispatcher)
     const originalRender = NoLinesPrompt.prototype.render
@@ -129,7 +129,7 @@ describe('tpen-no-lines-prompt', () => {
       assert.equal(renderCount, 2, 'Expected authgate to render on each invocation')
       assert.equal(listenerCount, 2, 'Expected authgate to wire listeners on each invocation')
       const autoOpenDispatches = dispatched.filter(
-        ({ name, detail }) => name === 'splitscreen-toggle' && detail?.selectedTool === 'view-full-page'
+        ({ name, detail }) => name === 'splitscreen-toggle' && detail?.selectedTool === 'view-fullpage'
       )
       assert.equal(autoOpenDispatches.length, 1, 'Expected authgate auto-open dispatch only once')
       element.disconnectedCallback()
@@ -162,7 +162,7 @@ describe('tpen-no-lines-prompt', () => {
     assert.equal(importAnnotationsBtn?.disabled, true)
   })
 
-  it('Show Page Image button re-dispatches splitscreen-toggle(view-full-page)', () => {
+  it('Show Page Image button re-dispatches splitscreen-toggle(view-fullpage)', () => {
     const dispatched = []
     const originalDispatch = TPEN.eventDispatcher.dispatch.bind(TPEN.eventDispatcher)
 
@@ -182,8 +182,8 @@ describe('tpen-no-lines-prompt', () => {
       button.click()
 
       assert.ok(
-        dispatched.some(({ name, detail }) => name === 'splitscreen-toggle' && detail?.selectedTool === 'view-full-page'),
-        'Expected Show Page Image button to dispatch splitscreen-toggle(view-full-page)'
+        dispatched.some(({ name, detail }) => name === 'splitscreen-toggle' && detail?.selectedTool === 'view-fullpage'),
+        'Expected Show Page Image button to dispatch splitscreen-toggle(view-fullpage)'
       )
       element.disconnectedCallback()
     } finally {
@@ -191,7 +191,7 @@ describe('tpen-no-lines-prompt', () => {
     }
   })
 
-  it('recovers after close by re-triggering view-full-page on the same event path', () => {
+  it('recovers after close by re-triggering view-fullpage on the same event path', () => {
     const hostState = {
       activeTool: '',
       isSplitscreenActive: false,
@@ -217,9 +217,9 @@ describe('tpen-no-lines-prompt', () => {
       const element = new NoLinesPrompt()
       element.authgate()
 
-      assert.equal(hostState.activeTool, 'view-full-page')
+      assert.equal(hostState.activeTool, 'view-fullpage')
       assert.equal(hostState.isSplitscreenActive, true)
-      assert.equal(hostTools.textContent, 'tool:view-full-page:open:1')
+      assert.equal(hostTools.textContent, 'tool:view-fullpage:open:1')
 
       closeSplitscreen()
       assert.equal(hostState.isSplitscreenActive, false)
@@ -228,9 +228,9 @@ describe('tpen-no-lines-prompt', () => {
       assert.ok(button, 'Expected Show Page Image button to exist')
       button.click()
 
-      assert.equal(hostState.activeTool, 'view-full-page')
+      assert.equal(hostState.activeTool, 'view-fullpage')
       assert.equal(hostState.isSplitscreenActive, true)
-      assert.equal(hostTools.textContent, 'tool:view-full-page:open:2')
+      assert.equal(hostTools.textContent, 'tool:view-fullpage:open:2')
       element.disconnectedCallback()
     } finally {
       TPEN.eventDispatcher.off('splitscreen-toggle', handleSplitscreenToggle)

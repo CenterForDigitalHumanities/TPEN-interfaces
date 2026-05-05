@@ -8,7 +8,7 @@ import "../splitscreen-tool/index.js"
 
 /**
  * NoLinesPrompt - Shown in the left pane when a page has no line annotations.
- * Requests `view-full-page` via `splitscreen-toggle` after authgate and from
+ * Requests `view-fullpage` via `splitscreen-toggle` after authgate and from
  * an explicit action button so users can reopen the image after closing.
  * @element tpen-no-lines-prompt
  */
@@ -194,7 +194,7 @@ export default class NoLinesPrompt extends HTMLElement {
   }
 
   #requestFullPageView() {
-    TPEN.eventDispatcher.dispatch("splitscreen-toggle", { selectedTool: "view-full-page" })
+    TPEN.eventDispatcher.dispatch("splitscreen-toggle", { selectedTool: "view-fullpage" })
   }
 
   async #removePageFromProject() {
