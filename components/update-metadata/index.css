@@ -19,6 +19,8 @@
     border: none;
     background: transparent;
     padding: 0;
+    width: 65vw;
+    max-width: 65vw;
 }
 
 #metadata-modal[open] {
