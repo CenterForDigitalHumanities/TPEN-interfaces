@@ -379,16 +379,16 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       this.updateLines()
     }
 
-    const openSplitscreen = (selectedTool = '') => {
-      this.state.activeTool = selectedTool
+    const openSplitscreen = ({ selectedTool = '', tool = null } = {}) => {
+      this.state.activeTool = selectedTool ?? tool?.toolName ?? ''
       this.state.isSplitscreenActive = true
       this.toggleSplitscreen()
-      this.loadRightPaneContent()
+      this.loadRightPaneContent(tool)
       this.updateLines()
     }
 
-    this.renderCleanup.onElement(this.shadowRoot, 'splitscreen-toggle', e => openSplitscreen(e.detail?.selectedTool))
-    this.renderCleanup.onEvent(TPEN.eventDispatcher, 'splitscreen-toggle', e => openSplitscreen(e.detail?.selectedTool))
+    this.renderCleanup.onElement(this.shadowRoot, 'splitscreen-toggle', e => openSplitscreen(e.detail))
+    this.renderCleanup.onEvent(TPEN.eventDispatcher, 'splitscreen-toggle', e => openSplitscreen(e.detail))
 
     this.renderCleanup.onElement(this.shadowRoot, 'click', e => {
       if (e.target?.classList.contains('close-button')) closeSplitscreen()
@@ -1027,7 +1027,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     })
   }
 
-  loadRightPaneContent() {
+  loadRightPaneContent(toolOverride = null) {
     // Tear down any listeners/subscriptions tied to the previously-loaded tool
     // before wiring up the new one. Covers every branch below, not just `pane`.
     this.#toolCleanup.run()
@@ -1035,24 +1035,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     const rightPane = this.shadowRoot.querySelector('.tools')
     if (!rightPane) return
 
-    if (this.state.activeTool === 'view-fullpage') {
-      if (!this.#currentImageSrc) {
-        rightPane.replaceChildren()
-        const message = document.createElement('p')
-        message.textContent = 'Unable to load full page image.'
-        rightPane.appendChild(message)
-        return
-      }
-
-      const img = document.createElement('img')
-      img.src = this.#currentImageSrc
-      img.alt = 'Full page view'
-      img.style.cssText = 'width:100%;height:auto;display:block;'
-      rightPane.replaceChildren(img)
-      return
-    }
-
-    let tool = this.getToolByName(this.state.activeTool)
+    let tool = toolOverride ?? this.getToolByName(this.state.activeTool)
     
     // If no active tool is selected, use the first available tool
     if (!tool && TPEN.activeProject?.tools?.length > 0) {
