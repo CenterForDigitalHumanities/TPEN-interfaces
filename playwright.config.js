@@ -24,7 +24,7 @@ export default defineConfig({
     projects: [
         {
             name: 'setup',
-            testMatch: /.*\.setup\.js/
+            testMatch: '**/setup.js'
         },
         {
             name: 'chromium',
