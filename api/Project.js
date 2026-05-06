@@ -175,15 +175,75 @@ export default class Project {
             throw new Error('Missing page id')
         }
         const token = TPEN.getAuthorization() ?? TPEN.login()
-        const response = await fetch(`${TPEN.servicesURL}/project/${this._id}/page/${pageId}`, {
-            method: 'DELETE',
+        const normalizeId = (id) => id?.split?.('/').pop?.() ?? id
+        const currentPageId = normalizeId(pageId)
+
+        const loadedProject = TPEN.activeProject?._id === this._id
+            ? TPEN.activeProject
+            : this
+
+        if (!Array.isArray(loadedProject?.layers) || loadedProject.layers.length === 0) {
+            await this.fetch()
+        }
+
+        const sourceProject = TPEN.activeProject?._id === this._id ? TPEN.activeProject : this
+        const layers = sourceProject?.layers
+        if (!Array.isArray(layers) || layers.length === 0) {
+            throw new Error('Project has no layers to update')
+        }
+
+        const allPages = layers.flatMap(layer => layer.pages || [])
+        const removedIndex = allPages.findIndex(page => normalizeId(page?.id) === currentPageId)
+        if (removedIndex === -1) {
+            throw new Error('Page not found in project layers')
+        }
+
+        const layerIndex = layers.findIndex(layer =>
+            Array.isArray(layer?.pages) && layer.pages.some(page => normalizeId(page?.id) === currentPageId)
+        )
+        if (layerIndex === -1) {
+            throw new Error('Layer containing page was not found')
+        }
+
+        const targetLayer = layers[layerIndex]
+        const targetLayerId = normalizeId(targetLayer?.id)
+        if (!targetLayerId) {
+            throw new Error('Layer id is required to update pages')
+        }
+
+        const remainingLayerPages = (targetLayer.pages || []).filter(page => normalizeId(page?.id) !== currentPageId)
+        const remainingLayerPageIds = remainingLayerPages
+            .map(page => normalizeId(page?.id))
+            .filter(Boolean)
+
+        const response = await fetch(`${TPEN.servicesURL}/project/${this._id}/layer/${targetLayerId}`, {
+            method: 'PUT',
             headers: {
                 Authorization: `Bearer ${token}`,
                 'Content-Type': 'application/json',
             },
+            body: JSON.stringify({
+                pages: remainingLayerPageIds
+            }),
         })
         const payload = await this.#validateResponse(response, 'Failed to remove page from project')
-        return payload ?? response
+
+        layers[layerIndex].pages = remainingLayerPages
+        if (TPEN.activeProject?._id === this._id && TPEN.activeProject !== sourceProject) {
+            TPEN.activeProject.layers = layers
+        }
+
+        const remainingProjectPages = layers.flatMap(layer => layer.pages || [])
+        const fallbackPage = remainingProjectPages[remainingProjectPages.length - 1] ?? null
+        const nextPage = remainingProjectPages[removedIndex] ?? fallbackPage
+
+        const resultPayload = payload && typeof payload === 'object' ? payload : {}
+        return {
+            ...resultPayload,
+            removedPageId: currentPageId,
+            nextPageId: normalizeId(nextPage?.id) ?? null,
+            remainingPageCount: remainingProjectPages.length
+        }
     }
 
     async makeLeader(userId) {

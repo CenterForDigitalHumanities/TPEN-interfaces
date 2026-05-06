@@ -236,11 +236,17 @@ export default class NoLinesPrompt extends HTMLElement {
       async () => {
         try {
           const project = new Project(projectId)
-          await project.removePage(pageId)
+          const result = await project.removePage(pageId)
           TPEN.eventDispatcher.dispatch("tpen-toast", {
             status: "info",
             message: "Page successfully removed from the project."
           })
+          const nextPageId = result?.nextPageId
+          if (nextPageId) {
+            window.location.href = `/transcribe?projectID=${encodeURIComponent(projectId)}&pageID=${encodeURIComponent(nextPageId)}`
+            return
+          }
+
           window.location.href = `/project/?projectID=${encodeURIComponent(projectId)}`
         } catch {
           TPEN.eventDispatcher.dispatch("tpen-toast", {

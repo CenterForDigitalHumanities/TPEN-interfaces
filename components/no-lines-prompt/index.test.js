@@ -5,6 +5,8 @@ import { JSDOM } from 'jsdom'
 let dom
 let TPEN
 let NoLinesPrompt
+let Project
+let CheckPermissions
 
 before(async () => {
   dom = new JSDOM('<!doctype html><html><head></head><body></body></html>', {
@@ -43,6 +45,10 @@ before(async () => {
 
   const componentModule = await import('./index.js')
   NoLinesPrompt = componentModule.default
+  const projectModule = await import('../../api/Project.js')
+  Project = projectModule.default
+  const permissionsModule = await import('../check-permissions/checkPermissions.js')
+  CheckPermissions = permissionsModule.default
 })
 
 after(() => {
@@ -246,6 +252,110 @@ describe('tpen-no-lines-prompt', () => {
       element.disconnectedCallback()
     } finally {
       TPEN.eventDispatcher.off('splitscreen-toggle', handleSplitscreenToggle)
+    }
+  })
+
+  it('navigates to the next transcription page after successful page removal', async () => {
+    const originalDispatch = TPEN.eventDispatcher.dispatch.bind(TPEN.eventDispatcher)
+    const originalRemovePage = Project.prototype.removePage
+    const originalCheckDeleteAccess = CheckPermissions.checkDeleteAccess
+    const originalHref = window.location.href
+    let confirmId = null
+
+    TPEN.activeProject = {
+      _id: 'proj123',
+      tools: []
+    }
+    TPEN.screen = {
+      projectInQuery: 'proj123',
+      pageInQuery: 'page456'
+    }
+
+    TPEN.eventDispatcher.dispatch = (name, detail) => {
+      if (name === 'tpen-confirm') {
+        confirmId = detail?.confirmId ?? null
+      }
+      return originalDispatch(name, detail)
+    }
+    CheckPermissions.checkDeleteAccess = () => true
+    Project.prototype.removePage = async () => ({ nextPageId: 'page789', remainingPageCount: 4 })
+
+    try {
+      const element = new NoLinesPrompt()
+      element.render()
+      element.addEventListeners()
+
+      const removeButton = element.shadowRoot.querySelector('#remove-page-btn')
+      assert.ok(removeButton, 'Expected remove page button to exist')
+      removeButton.click()
+
+      assert.ok(confirmId, 'Expected remove page flow to request confirmation')
+      TPEN.eventDispatcher.dispatch('tpen-confirm-positive', { confirmId })
+      await Promise.resolve()
+
+      assert.equal(
+        window.location.href,
+        'http://localhost/transcribe?projectID=proj123&pageID=page789'
+      )
+
+      element.disconnectedCallback()
+    } finally {
+      TPEN.eventDispatcher.dispatch = originalDispatch
+      Project.prototype.removePage = originalRemovePage
+      CheckPermissions.checkDeleteAccess = originalCheckDeleteAccess
+      window.history.replaceState({}, '', originalHref)
+    }
+  })
+
+  it('navigates to project view when no pages remain after successful page removal', async () => {
+    const originalDispatch = TPEN.eventDispatcher.dispatch.bind(TPEN.eventDispatcher)
+    const originalRemovePage = Project.prototype.removePage
+    const originalCheckDeleteAccess = CheckPermissions.checkDeleteAccess
+    const originalHref = window.location.href
+    let confirmId = null
+
+    TPEN.activeProject = {
+      _id: 'proj123',
+      tools: []
+    }
+    TPEN.screen = {
+      projectInQuery: 'proj123',
+      pageInQuery: 'page456'
+    }
+
+    TPEN.eventDispatcher.dispatch = (name, detail) => {
+      if (name === 'tpen-confirm') {
+        confirmId = detail?.confirmId ?? null
+      }
+      return originalDispatch(name, detail)
+    }
+    CheckPermissions.checkDeleteAccess = () => true
+    Project.prototype.removePage = async () => ({ nextPageId: null, remainingPageCount: 0 })
+
+    try {
+      const element = new NoLinesPrompt()
+      element.render()
+      element.addEventListeners()
+
+      const removeButton = element.shadowRoot.querySelector('#remove-page-btn')
+      assert.ok(removeButton, 'Expected remove page button to exist')
+      removeButton.click()
+
+      assert.ok(confirmId, 'Expected remove page flow to request confirmation')
+      TPEN.eventDispatcher.dispatch('tpen-confirm-positive', { confirmId })
+      await Promise.resolve()
+
+      assert.equal(
+        window.location.href,
+        'http://localhost/project/?projectID=proj123'
+      )
+
+      element.disconnectedCallback()
+    } finally {
+      TPEN.eventDispatcher.dispatch = originalDispatch
+      Project.prototype.removePage = originalRemovePage
+      CheckPermissions.checkDeleteAccess = originalCheckDeleteAccess
+      window.history.replaceState({}, '', originalHref)
     }
   })
 })
