@@ -137,8 +137,8 @@ class InviteMemberElement extends HTMLElement {
 
             const successTimeoutId = setTimeout(() => {
                 this.#pendingTimeouts.delete(successTimeoutId)
-                successMessage.remove()
-            }, 3000)
+                location.reload()
+            }, 1500)
             this.#pendingTimeouts.add(successTimeoutId)
         } catch (error) {
             const errorTimeoutId = setTimeout(() => {
