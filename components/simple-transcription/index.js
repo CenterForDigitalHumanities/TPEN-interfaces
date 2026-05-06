@@ -474,6 +474,32 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     })
   }
 
+  /**
+   * Normalize a W3C/IIIF target value to a canvas URI.
+   * Accepts a string URI, `{ source }` (string or SpecificResource object),
+   * `{ id }`, or `{ "@id" }` shapes — including arrays of any of these — and
+   * strips any IIIF media fragment (`#xywh=...`). Returns null for shapes
+   * that do not yield a string URI.
+   * @param {string|object|Array|null|undefined} target
+   * @returns {string|null}
+   */
+  #extractCanvasID(target) {
+    if (!target) return null
+    if (Array.isArray(target)) target = target[0]
+    let id = null
+    if (typeof target === 'string') {
+      id = target
+    } else if (typeof target === 'object') {
+      const source = target.source
+      const fromSource = typeof source === 'string'
+        ? source
+        : source?.id ?? source?.['@id']
+      id = fromSource ?? target.id ?? target['@id'] ?? null
+    }
+    if (typeof id !== 'string' || !id) return null
+    return id.split('#')[0]
+  }
+
   async updateTranscriptionImages(pageID) {
     try {
       // Invalidate in-flight upgrade attempts from a previous page/canvas.
@@ -499,23 +525,30 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
         ? { ...fetchedPage, items: orderPageItemsByColumns(projectPage, fetchedPage).orderedItems }
         : fetchedPage
 
-      // Get the first line to extract canvas info
-      let firstLine = this.#page.items?.[0]
-      if (!firstLine) return
+      // Resolve the canvas ID from page metadata so the image loads even when
+      // the page has zero line annotations. Prefer the AnnotationPage's own
+      // target, fall back to the project layer's page target, and only use
+      // the first line's target as a last resort.
+      let canvasID = this.#extractCanvasID(fetchedPage.target)
+        ?? this.#extractCanvasID(projectPage?.target)
 
-      // Get the full line annotation
-      firstLine = await vault.get(firstLine, 'annotation')
-      if (!(firstLine?.body)) {
-        firstLine = await vault.get(firstLine, 'annotation', true)
+      if (!canvasID) {
+        let firstLine = this.#page.items?.[0]
+        if (firstLine) {
+          firstLine = await vault.get(firstLine, 'annotation')
+          if (!(firstLine?.body)) {
+            firstLine = await vault.get(firstLine, 'annotation', true)
+          }
+          canvasID = this.#extractCanvasID(firstLine?.target)
+        }
       }
 
-      // Extract canvas ID from the line's target
-      const target = firstLine.target
-      let canvasID = target
-      if (typeof target === 'string') {
-        canvasID = target.split('#')[0]
-      } else if (target?.source) {
-        canvasID = target.source
+      if (!canvasID) {
+        TPEN.eventDispatcher.dispatch("tpen-toast", {
+          message: "Could not determine canvas for this page.",
+          status: "error"
+        })
+        return
       }
 
       let fetchedCanvas = await vault.getWithFallback(canvasID, 'canvas', TPEN.activeProject?.manifest)
@@ -1049,19 +1082,40 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       this._iframeOrigin = new URL(tool.url).origin
 
       iframe.addEventListener('load', () => {
-        this.#sendTPENContextToTool(iframe.contentWindow)
+        const target = iframe.contentWindow
+        this.#sendTPENContextToTool(target)
+
+        this.#postToTool({
+          type: 'MANIFEST_CANVAS_ANNOTATIONPAGE_ANNOTATION',
+          manifest: TPEN.activeProject?.manifest?.[0] ?? '',
+          canvas: this.#canvas?.id ?? this.#canvas?.['@id'] ?? '',
+          annotationPage: this.#page?.id ?? '',
+          annotation: TPEN.activeLineIndex >= 0
+            ? this.#page?.items?.[TPEN.activeLineIndex]?.id ?? null
+            : null,
+          columns: TPEN.activeProject?.layers
+            ?.flatMap(layer => layer.pages || [])
+            .find(p => p.id?.split('/').pop() === TPEN.screen?.pageInQuery)?.columns || []
+        }, target)
+
+        this.#postToTool({
+          type: 'CANVASES',
+          canvases: TPEN.activeProject?.layers
+            ?.find(layer => layer.pages?.some(p => p.id?.split('/').pop() === TPEN.screen?.pageInQuery))
+            ?.pages?.flatMap(p => ({ id: p.target, label: p.label })) ?? []
+        }, target)
+
+        this.#postToTool({ type: 'CURRENT_LINE_INDEX', lineId: this.#getCurrentLineId() }, target)
       })
 
       const sendLineSelection = () => {
-        iframe.contentWindow?.postMessage(
-          { type: 'UPDATE_CURRENT_LINE', currentLineId: this.#getCurrentLineId() },
-          this._iframeOrigin
-        )
-      }
+        const currentLineId = this.#getCurrentLineId()
+        this.#postToTool({ type: 'UPDATE_CURRENT_LINE', currentLineId })
 
+        this.#postToTool({ type: 'CURRENT_LINE_INDEX', lineId: currentLineId })
+      }
       this.#toolCleanup.onEvent(TPEN.eventDispatcher, 'tpen-transcription-previous-line', sendLineSelection)
       this.#toolCleanup.onEvent(TPEN.eventDispatcher, 'tpen-transcription-next-line', sendLineSelection)
-
       iframe.src = tool.url
       rightPane.innerHTML = ''
       rightPane.appendChild(iframe)

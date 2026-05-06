@@ -15,14 +15,12 @@
 }
 
 #metadata-modal {
-    width: 100vw;
-    height: 100vh;
-    max-width: 100vw;
-    max-height: 100vh;
     margin: 0;
     border: none;
     background: transparent;
     padding: 0;
+    width: 65vw;
+    max-width: 65vw;
 }
 
 #metadata-modal[open] {
@@ -37,7 +35,7 @@
 .modal-content {
     padding: 20px;
     border-radius: 8px;
-    width: 70%;
+    width: 100%;
     background-color: #fff;
 }
 
