@@ -257,16 +257,17 @@ export default class TranscriptionInterface extends HTMLElement {
       this.updateLines()
     }
 
-    const openSplitscreen = (selectedTool = '') => {
-      this.state.activeTool = selectedTool
+    const openSplitscreen = ({ selectedTool = '', tool = null } = {}) => {
+      this.state.activeTool = selectedTool || tool?.toolName || ''
       this.state.isSplitscreenActive = true
       this.toggleSplitscreen()
-      this.loadRightPaneContent()
+
+      this.loadRightPaneContent(tool)
       this.updateLines()
     }
 
-    this.renderCleanup.onElement(this.shadowRoot, 'splitscreen-toggle', e => openSplitscreen(e.detail?.selectedTool))
-    this.renderCleanup.onEvent(TPEN.eventDispatcher, 'splitscreen-toggle', e => openSplitscreen(e.detail?.selectedTool))
+    this.renderCleanup.onElement(this.shadowRoot, 'splitscreen-toggle', e => openSplitscreen(e.detail))
+    this.renderCleanup.onEvent(TPEN.eventDispatcher, 'splitscreen-toggle', e => openSplitscreen(e.detail))
 
     this.renderCleanup.onElement(this.shadowRoot, 'click', e => {
       if (e.target?.classList.contains('close-button')) closeSplitscreen()
@@ -349,30 +350,11 @@ export default class TranscriptionInterface extends HTMLElement {
     return canvases ?? []
   }
 
-  loadRightPaneContent() {
+  loadRightPaneContent(toolOverride = null) {
     const rightPane = this.shadowRoot.querySelector('.tools')
     if (!rightPane) return
 
-    if (this.state.activeTool === 'view-fullpage') {
-      const canvasId = this.#canvas?.id ?? this.#canvas?.['@id']
-      const manifest = TPEN.activeProject?.manifest?.[0]
-      if (!canvasId || !manifest) {
-        rightPane.replaceChildren()
-        const message = document.createElement('p')
-        message.textContent = 'Unable to load full page image.'
-        rightPane.appendChild(message)
-        return
-      }
-
-      const lineImage = document.createElement('tpen-line-image')
-      lineImage.style.cssText = 'display:block;width:100%;height:calc(100vh - 56px);'
-      rightPane.replaceChildren(lineImage)
-      lineImage.manifest = manifest
-      lineImage.canvas = canvasId
-      return
-    }
-
-    let tool = this.getToolByName(this.state.activeTool)
+    let tool = toolOverride ?? this.getToolByName(this.state.activeTool)
     
     // If no active tool is selected, use the first available tool
     if (!tool && TPEN.activeProject?.tools?.length > 0) {

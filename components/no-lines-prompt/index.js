@@ -204,7 +204,15 @@ export default class NoLinesPrompt extends HTMLElement {
   }
 
   #requestFullPageView() {
-    TPEN.eventDispatcher.dispatch("splitscreen-toggle", { selectedTool: "view-fullpage" })
+    TPEN.eventDispatcher.dispatch("splitscreen-toggle", {
+      selectedTool: "view-fullpage",
+      tool: {
+        toolName: "view-fullpage",
+        label: "View Full Page",
+        location: "pane",
+        url: "https://centerfordigitalhumanities.github.io/Page-Viewer/"
+      }
+    })
   }
 
   #revealManualFullPageButton() {
