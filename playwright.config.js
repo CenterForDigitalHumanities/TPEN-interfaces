@@ -16,20 +16,22 @@ export default defineConfig({
     },
     use: {
         baseURL: process.env.E2E_BASE_URL ?? 'http://localhost:4000',
-        trace: 'on-first-retry',
-        // Inject a mock JWT into localStorage before each test via storageState
-        storageState: './e2e/fixtures/auth.json'
+        trace: 'on-first-retry'
+        // storageState is intentionally absent here — the setup project must run
+        // without it (the file does not exist yet when setup runs).
     },
     // Named project for setup — runs before other tests to generate auth.json
     projects: [
         {
             name: 'setup',
-            testMatch: '**/setup.js'
+            testMatch: /setup\.js$/
         },
         {
             name: 'chromium',
             use: {
-                browserName: 'chromium'
+                browserName: 'chromium',
+                // Inject the mock JWT written by the setup project into every test context
+                storageState: 'e2e/fixtures/auth.json'
             },
             dependencies: ['setup']
         }
