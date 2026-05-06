@@ -1,15 +1,15 @@
 import TPEN from "../../api/TPEN.js"
-import '../../components/projects/project-header.js'
-import '../../components/workspace-tools/index.js'
-import '../../components/transcription-block/index.js'
+import '../projects/project-header.js'
+import '../workspace-tools/index.js'
+import '../transcription-block/index.js'
 import vault from '../../js/vault.js'
-import '../../components/line-image/index.js'
-import CheckPermissions from "../../components/check-permissions/checkPermissions.js"
+import '../line-image/index.js'
+import CheckPermissions from "../check-permissions/checkPermissions.js"
 import { orderPageItemsByColumns } from "../../utilities/columnOrdering.js"
 import { renderPermissionError } from "../../utilities/renderPermissionError.js"
 import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 import { onProjectReady } from "../../utilities/projectReady.js"
-import '../../components/no-lines-prompt/index.js'
+import '../no-lines-prompt/index.js'
 
 /**
  * TranscriptionInterface - The standard transcription interface with split-pane tools.
