@@ -6,6 +6,14 @@ export default defineConfig({
     timeout: 30_000,
     retries: 1,
     reporter: 'list',
+    webServer: {
+        // Start Jekyll locally; reuse an already-running server in dev so `jekyll s`
+        // doesn't have to be launched twice when iterating.
+        command: 'jekyll serve --no-watch',
+        url: process.env.E2E_BASE_URL ?? 'http://localhost:4000',
+        reuseExistingServer: true,
+        timeout: 60_000
+    },
     use: {
         baseURL: process.env.E2E_BASE_URL ?? 'http://localhost:4000',
         trace: 'on-first-retry',
