@@ -1,4 +1,5 @@
 import './Header.js'
+import './NoAuthHeader.js'
 import './Footer.js'
 
 class TpenPageTemplate extends HTMLElement {
@@ -14,14 +15,23 @@ class TpenPageTemplate extends HTMLElement {
             }
         `
 
-        shadow.innerHTML = `
-        <link rel="stylesheet" href="${window.location.origin + '/components/gui/site/page-layouts.css'}">
-        <tpen-header title="${this.title}"></tpen-header> 
-        <div class="page-content" style="padding: 1em; margin: 0 auto; min-height: 40vh;">
-            <slot></slot>
-        </div>
-        <tpen-footer></tpen-footer>
-        `
+        const stylesheet = document.createElement('link')
+        stylesheet.rel = 'stylesheet'
+        stylesheet.href = `${window.location.origin}/components/gui/site/page-layouts.css`
+
+        const header = this.hasAttribute('no-auth')
+            ? document.createElement('tpen-no-auth-header')
+            : document.createElement('tpen-header')
+        if (this.title) header.setAttribute('title', this.title)
+
+        const pageContent = document.createElement('div')
+        pageContent.className = 'page-content'
+        pageContent.style.cssText = 'padding: 1em; margin: 0 auto; min-height: 40vh;'
+        pageContent.appendChild(document.createElement('slot'))
+
+        const footer = document.createElement('tpen-footer')
+
+        shadow.append(stylesheet, header, pageContent, footer)
         this.prepend(style)
     }
     connectedCallback() {
