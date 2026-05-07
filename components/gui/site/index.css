@@ -89,6 +89,12 @@ body {
     border-radius: 1em;
 }
 
+body.no-margin-transcription {
+    margin: 0;
+    padding: 0;
+    border-radius: 0;
+}
+
 body.fullscreen {
     display: flex;
     justify-content: center;

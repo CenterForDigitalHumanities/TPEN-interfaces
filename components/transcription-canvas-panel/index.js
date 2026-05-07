@@ -1,15 +1,15 @@
 import TPEN from "../../api/TPEN.js"
-import '../../components/projects/project-header.js'
-import '../../components/workspace-tools/index.js'
-import '../../components/transcription-block/index.js'
+import '../projects/project-header.js'
+import '../workspace-tools/index.js'
+import '../transcription-block/index.js'
 import vault from '../../js/vault.js'
-import '../../components/line-image/index.js'
-import CheckPermissions from "../../components/check-permissions/checkPermissions.js"
+import '../line-image/index.js'
+import CheckPermissions from "../check-permissions/checkPermissions.js"
 import { orderPageItemsByColumns } from "../../utilities/columnOrdering.js"
 import { renderPermissionError } from "../../utilities/renderPermissionError.js"
-import '../../components/gui/alert/AlertContainer.js'
 import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 import { onProjectReady } from "../../utilities/projectReady.js"
+import '../no-lines-prompt/index.js'
 
 /**
  * TranscriptionInterface - The standard transcription interface with split-pane tools.
@@ -36,8 +36,6 @@ export default class TranscriptionInterface extends HTMLElement {
       isSplitscreenActive: false,
       activeTool: '',
     }
-    // Track alert state to avoid repeated 'no lines' alerts per page
-    this._noLinesAlertShownForPageId = null
   }
 
   connectedCallback() {
@@ -248,21 +246,28 @@ export default class TranscriptionInterface extends HTMLElement {
 
     const closeSplitscreen = () => {
       if (!this.state.isSplitscreenActive) return
+      const activeTool = this.state.activeTool
       this.state.isSplitscreenActive = false
+      this.state.activeTool = ''
+      if (activeTool) TPEN.eventDispatcher.dispatch(`tpen-${activeTool}-hide`)
+      const toolsPane = this.shadowRoot.querySelector('.tools')
+      toolsPane?.replaceChildren()
       this.toggleSplitscreen()
       this.checkMagnifierVisibility()
       this.updateLines()
     }
 
-    const openSplitscreen = (selectedTool = '') => {
-      this.state.activeTool = selectedTool
+    const openSplitscreen = ({ selectedTool = '', tool = null } = {}) => {
+      this.state.activeTool = selectedTool || tool?.toolName || ''
       this.state.isSplitscreenActive = true
       this.toggleSplitscreen()
-      this.loadRightPaneContent()
+
+      this.loadRightPaneContent(tool)
       this.updateLines()
     }
 
-    this.renderCleanup.onElement(this.shadowRoot, 'splitscreen-toggle', e => openSplitscreen(e.detail?.selectedTool))
+    this.renderCleanup.onElement(this.shadowRoot, 'splitscreen-toggle', e => openSplitscreen(e.detail))
+    this.renderCleanup.onEvent(TPEN.eventDispatcher, 'splitscreen-toggle', e => openSplitscreen(e.detail))
 
     this.renderCleanup.onElement(this.shadowRoot, 'click', e => {
       if (e.target?.classList.contains('close-button')) closeSplitscreen()
@@ -345,9 +350,11 @@ export default class TranscriptionInterface extends HTMLElement {
     return canvases ?? []
   }
 
-  loadRightPaneContent() {
+  loadRightPaneContent(toolOverride = null) {
     const rightPane = this.shadowRoot.querySelector('.tools')
-    let tool = this.getToolByName(this.state.activeTool)
+    if (!rightPane) return
+
+    let tool = toolOverride ?? this.getToolByName(this.state.activeTool)
     
     // If no active tool is selected, use the first available tool
     if (!tool && TPEN.activeProject?.tools?.length > 0) {
@@ -537,39 +544,13 @@ export default class TranscriptionInterface extends HTMLElement {
     })
   }
 
-  showNoLinesAlert() {
-    const alertContainer = document.querySelector('tpen-alert-container')
-    if (!alertContainer) return
-    
-    const projectId = encodeURIComponent(TPEN.screen?.projectInQuery ?? '')
-    const pageId = encodeURIComponent(TPEN.screen?.pageInQuery ?? '')
-    const annotatorUrl = `/annotator?projectID=${projectId}&pageID=${pageId}`
-    
-    const alertElem = document.createElement('tpen-alert')
-    alertElem.innerHTML = `
-      <style>
-        .no-lines-message p:first-child {
-          margin-bottom: 1em;
-        }
-        .alert-link {
-          color: var(--primary-color, #4fc3f7);
-          text-decoration: underline;
-        }
-      </style>
-      <div class="no-lines-message">
-        <p>This page has no line annotations defined.</p>
-        <p>To add lines, visit the <a href="${annotatorUrl}" class="alert-link">column and line interface</a>.</p>
-      </div>
-      <div class="button-container">
-        <button id="no-lines-ok">Got it</button>
-      </div>
-    `
-    
-    alertElem.querySelector('#no-lines-ok').addEventListener('click', () => {
-      alertElem.dismiss()
-    })
-
-    alertContainer.addCustomAlert(alertElem)
+  /**
+   * Replace the left pane with the no-lines prompt component.
+   */
+  #showNoLinesPrompt() {
+    const leftPane = this.shadowRoot.querySelector('.left-pane')
+    if (!leftPane) return
+    leftPane.replaceChildren(document.createElement('tpen-no-lines-prompt'))
   }
 
   updateLines() {
@@ -630,23 +611,14 @@ export default class TranscriptionInterface extends HTMLElement {
     this.#page.items = orderedItems
     let thisLine = this.#page.items?.[0]
     
-    // Handle pages with no lines - still load the canvas
+    // Handle pages with no lines - load the canvas and show the no-lines prompt
     if (!thisLine) {
       // Get canvas from page target even when there are no lines
       const { canvasID } = this.setCanvasAndSelector(null, this.#page)
       if (!canvasID) return
-      const canvas = this.#canvas = await vault.get(canvasID, 'canvas')
-      // Show full page when there are no lines
-      const regionValue = `0,0,${canvas?.width ?? 'full'},${(canvas?.height && canvas?.height / 10) ?? 120}`
-      topImage.canvas = canvasID
-      bottomImage.canvas = canvas
-      topImage.setAttribute('region', regionValue)
-      // Show alert once per page to inform user about missing lines
-      const currentPageKey = this.#page?.id ?? pageID ?? TPEN.screen?.pageInQuery
-      if (this._noLinesAlertShownForPageId !== currentPageKey) {
-        this.showNoLinesAlert()
-        this._noLinesAlertShownForPageId = currentPageKey
-      }
+      this.#canvas = await vault.get(canvasID, 'canvas')
+      // Replace the left pane with the instructive no-lines prompt.
+      this.#showNoLinesPrompt()
       return
     }
     
@@ -659,8 +631,6 @@ export default class TranscriptionInterface extends HTMLElement {
     if (regionValue) {
       topImage.setAttribute('region', regionValue)
     }
-    // Clear alert state once page has items
-    this._noLinesAlertShownForPageId = null
     const columnSelector = document.querySelector('tpen-transcription-interface')?.shadowRoot?.querySelector('tpen-project-header')?.shadowRoot?.querySelector('tpen-column-selector')
     if (columnSelector && columnSelector.shadowRoot) {
       const activeLineId = thisLine?.id || thisLine?.['@id']
