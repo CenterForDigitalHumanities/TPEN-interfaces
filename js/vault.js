@@ -47,7 +47,9 @@ class Vault {
     }
 
     _getId(item) {
-        return this._normalizeId(item?._id ?? item?.id ?? item?.['@id'] ?? item)
+        if (typeof item === 'string') return this._normalizeId(item)
+        const id = item?._id ?? item?.id ?? item?.['@id']
+        return id ? this._normalizeId(id) : null
     }
 
     _cacheKey(itemType, id) {

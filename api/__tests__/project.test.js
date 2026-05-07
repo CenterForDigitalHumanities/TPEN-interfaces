@@ -1,101 +1,15 @@
+
 import { describe, it, beforeEach, afterEach } from 'node:test'
 import assert from 'node:assert/strict'
-
-if (!global.HTMLElement) {
-    global.HTMLElement = class {
-        constructor() {
-            this.shadowRoot = null
-            this.classList = { add() {}, remove() {}, contains() { return false } }
-        }
-
-        attachShadow() {
-            this.shadowRoot = {
-                innerHTML: '',
-                querySelector() {
-                    return null
-                },
-                appendChild() {},
-                replaceChildren() {}
-            }
-            return this.shadowRoot
-        }
-
-        remove() {}
-    }
-}
-
-if (!global.customElements) {
-    global.customElements = {
-        registry: new Map(),
-        define(name, ctor) {
-            this.registry.set(name, ctor)
-        },
-        get(name) {
-            return this.registry.get(name)
-        }
-    }
-}
-
-if (!global.window) {
-    global.window = {
-        location: {
-            search: '',
-            origin: 'http://localhost'
-        }
-    }
-}
-
-if (!global.document) {
-    global.document = {
-        title: 'Test',
-        querySelector() {
-            return null
-        },
-        createElement() {
-            return {
-                classList: {
-                    add() {},
-                    remove() {},
-                    contains() { return false }
-                },
-                style: {},
-                setAttribute() {},
-                appendChild() {},
-                replaceChildren() {},
-                remove() {},
-                querySelector() {
-                    return null
-                },
-                innerHTML: ''
-            }
-        },
-        body: {
-            appendChild() {},
-            after() {}
-        }
-    }
-}
+import '../../test/helpers/dom.js'
+import { TPEN as TPENMock } from '../../test/helpers/tpen-mock.js'
+import { jsonResponse } from '../../test/helpers/fetch-mock.js'
 
 const { default: TPEN } = await import('../TPEN.js')
 const { default: Project } = await import('../Project.js')
 
-function jsonResponse(data, ok = true, status = ok ? 200 : 400) {
-    return {
-        ok,
-        status,
-        headers: {
-            get(name) {
-                return name?.toLowerCase() === 'content-type' ? 'application/json' : null
-            }
-        },
-        async json() {
-            return data
-        },
-        async text() {
-            return JSON.stringify(data)
-        }
-    }
-}
+// Patch TPEN singleton for tests
+Object.assign(TPEN, TPENMock)
 
 describe('Project collaborator mutation integrity', () => {
     const originalFetch = global.fetch
