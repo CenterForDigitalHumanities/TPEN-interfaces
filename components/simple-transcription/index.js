@@ -9,6 +9,7 @@ import { orderPageItemsByColumns } from "../../utilities/columnOrdering.js"
 import { onProjectReady } from "../../utilities/projectReady.js"
 import { CleanupRegistry } from '../../utilities/CleanupRegistry.js'
 import { getHigherResolutionImageCandidates } from '../../utilities/imageUpgradeUrl.js'
+import '../../components/no-lines-prompt/index.js'
 
 /**
  * SimpleTranscriptionInterface - The simplified transcription interface with split-pane image viewer.
@@ -48,8 +49,6 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       isSplitscreenActive: false,
       activeTool: '',
     }
-    // Track toast state to avoid repeated notifications on empty pages
-    this._noLinesToastShownForPageId = null
   }
 
   connectedCallback() {
@@ -369,20 +368,27 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
 
     const closeSplitscreen = () => {
       if (!this.state.isSplitscreenActive) return
+      const activeTool = this.state.activeTool
       this.state.isSplitscreenActive = false
+      this.state.activeTool = ''
+      if (activeTool) TPEN.eventDispatcher.dispatch(`tpen-${activeTool}-hide`)
+      this.#toolCleanup.run()
+      const toolsPane = this.shadowRoot.querySelector('.tools')
+      toolsPane?.replaceChildren()
       this.toggleSplitscreen()
       this.updateLines()
     }
 
-    const openSplitscreen = (selectedTool = '') => {
-      this.state.activeTool = selectedTool
+    const openSplitscreen = ({ selectedTool = '', tool = null } = {}) => {
+      this.state.activeTool = selectedTool ?? tool?.toolName ?? ''
       this.state.isSplitscreenActive = true
       this.toggleSplitscreen()
-      this.loadRightPaneContent()
+      this.loadRightPaneContent(tool)
       this.updateLines()
     }
 
-    this.renderCleanup.onElement(this.shadowRoot, 'splitscreen-toggle', e => openSplitscreen(e.detail?.selectedTool))
+    this.renderCleanup.onElement(this.shadowRoot, 'splitscreen-toggle', e => openSplitscreen(e.detail))
+    this.renderCleanup.onEvent(TPEN.eventDispatcher, 'splitscreen-toggle', e => openSplitscreen(e.detail))
 
     this.renderCleanup.onElement(this.shadowRoot, 'click', e => {
       if (e.target?.classList.contains('close-button')) closeSplitscreen()
@@ -472,6 +478,15 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
         this.enableTransitions()
       }
     })
+  }
+
+  /**
+   * Replace the left pane with the no-lines prompt component.
+   */
+  #showNoLinesPrompt() {
+    const leftPane = this.shadowRoot.querySelector('.left-pane')
+    if (!leftPane) return
+    leftPane.replaceChildren(document.createElement('tpen-no-lines-prompt'))
   }
 
   /**
@@ -590,6 +605,12 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
         imgTop.src = imageResource
         imgBottom.src = imageResource
       }
+
+      // If the page has no line annotations, replace the left pane with the
+      // instructive no-lines prompt.
+      if (!Array.isArray(this.#page?.items) || this.#page.items.length === 0) {
+        this.#showNoLinesPrompt()
+      }
     } catch (err) {
       console.error("Failed to load transcription images:", err)
       TPEN.eventDispatcher.dispatch("tpen-toast", {
@@ -610,23 +631,13 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       return
     }
 
-    // Only show the toast when a page is loaded and has zero items
+    // If the page has no line annotations, the no-lines-prompt is shown instead.
+    // Quietly bail here so image positions are reset without redundant messaging.
     if (!Array.isArray(page.items) || page.items.length === 0) {
       this.#activeLine = null
       this.resetImagePositions()
-      // Avoid firing the same toast repeatedly for the same page
-      if (this._noLinesToastShownForPageId !== (page?.id ?? TPEN.screen?.pageInQuery ?? 'unknown')) {
-        TPEN.eventDispatcher.dispatch("tpen-toast", {
-          message: "This page has no line annotations. Visit the annotation interface to add lines.",
-          status: "info"
-        })
-        this._noLinesToastShownForPageId = page?.id ?? TPEN.screen?.pageInQuery ?? 'unknown'
-      }
       return
     }
-
-    // Clear toast state once page has items
-    this._noLinesToastShownForPageId = null
 
     let line = page.items[activeLineIndex]
     if (!line) {
@@ -1016,13 +1027,15 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     })
   }
 
-  loadRightPaneContent() {
+  loadRightPaneContent(toolOverride = null) {
     // Tear down any listeners/subscriptions tied to the previously-loaded tool
     // before wiring up the new one. Covers every branch below, not just `pane`.
     this.#toolCleanup.run()
 
     const rightPane = this.shadowRoot.querySelector('.tools')
-    let tool = this.getToolByName(this.state.activeTool)
+    if (!rightPane) return
+
+    let tool = toolOverride ?? this.getToolByName(this.state.activeTool)
     
     // If no active tool is selected, use the first available tool
     if (!tool && TPEN.activeProject?.tools?.length > 0) {
