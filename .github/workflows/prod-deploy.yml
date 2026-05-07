@@ -95,12 +95,6 @@ jobs:
       - name: Run unit and contract tests
         run: npm test
 
-      - name: Publish pact to PactFlow
-        env:
-          PACT_BROKER_BASE_URL: ${{ secrets.PACT_BROKER_BASE_URL }}
-          PACT_BROKER_TOKEN: ${{ secrets.PACT_BROKER_TOKEN }}
-        run: npm run pact:publish
-
   deploy:
     needs: [build, test]
     runs-on: ubuntu-latest
