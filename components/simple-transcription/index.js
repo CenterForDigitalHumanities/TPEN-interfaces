@@ -1009,6 +1009,12 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
    * fields and URIs only — tools that need annotation bodies should fetch
    * `annotationPage` directly, and tools that need the fully-hydrated
    * project/page/canvas objects should send `REQUEST_HYDRATED_CONTEXT`.
+   *
+   * Note: each entry in `siblings` is `{ id, label }` where `id` is the
+   * **canvas IRI** for that sibling page (i.e. `page.target`), not the page
+   * IRI itself. This matches Compare-Pages' usage (it fetches the IRI as a
+   * IIIF canvas). Tools that need the page id should derive it from the
+   * canvas IRI or request the hydrated payload.
    */
   #buildTPENContext() {
     const project = TPEN.activeProject ?? null
