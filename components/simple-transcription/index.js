@@ -1198,32 +1198,36 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     const type = event.data?.type
     if (!type) return
 
-    if (type === 'REQUEST_TPEN_ID_TOKEN') {
-      this.#sendIdTokenToTool(event.source)
-      return
-    }
-
-    if (type === 'REQUEST_POPULATED_PROJECT') {
-      this.#postToTool(this.#buildPopulatedProject(), event.source)
-      return
-    }
-
-    if (type === 'REQUEST_POPULATED_PAGE') {
-      this.#postToTool(await this.#buildPopulatedPage(), event.source)
-      return
-    }
-
-    if (type === 'NAVIGATE_TO_LINE') {
-      const lineId = event.data?.lineId
-      if (!lineId) return
-      const lineIndex = this.#page?.items?.findIndex(item => {
-        const itemId = item.id ?? item['@id']
-        return itemId === lineId || itemId?.endsWith?.(`/${lineId}`) || itemId?.split?.('/').pop() === lineId
-      })
-      if (lineIndex !== undefined && lineIndex !== -1) {
-        TPEN.activeLineIndex = lineIndex
-        this.updateLines()
+    try {
+      if (type === 'REQUEST_TPEN_ID_TOKEN') {
+        this.#sendIdTokenToTool(event.source)
+        return
       }
+
+      if (type === 'REQUEST_POPULATED_PROJECT') {
+        this.#postToTool(this.#buildPopulatedProject(), event.source)
+        return
+      }
+
+      if (type === 'REQUEST_POPULATED_PAGE') {
+        this.#postToTool(await this.#buildPopulatedPage(), event.source)
+        return
+      }
+
+      if (type === 'NAVIGATE_TO_LINE') {
+        const lineId = event.data?.lineId
+        if (!lineId) return
+        const lineIndex = this.#page?.items?.findIndex(item => {
+          const itemId = item.id ?? item['@id']
+          return itemId === lineId || itemId?.endsWith?.(`/${lineId}`) || itemId?.split?.('/').pop() === lineId
+        })
+        if (lineIndex !== undefined && lineIndex !== -1) {
+          TPEN.activeLineIndex = lineIndex
+          this.updateLines()
+        }
+      }
+    } catch (err) {
+      console.error(`[simple-transcription] tool message handler threw on type=${type}`, err)
     }
   }
 }
