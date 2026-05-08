@@ -985,7 +985,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
 
   /**
    * Find the layer page entry that matches the active page in the URL. Used
-   * to source the column ordering and the sibling-page list for the lean
+   * to source the column ordering and the canvas list for the lean
    * TPEN_CONTEXT payload.
    */
   #getActiveLayerPage() {
@@ -996,7 +996,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       .find(p => p.id?.split('/').pop() === pageInQuery) ?? null
   }
 
-  #getActiveLayerSiblings() {
+  #getActiveLayerCanvases() {
     const pageInQuery = TPEN.screen?.pageInQuery
     if (!pageInQuery) return []
     const layer = TPEN.activeProject?.layers
@@ -1007,14 +1007,15 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
   /**
    * Lean boot payload sent to every iframe tool on load. Carries identity
    * fields and URIs only — tools that need annotation bodies should fetch
-   * `annotationPage` directly, and tools that need the fully-hydrated
-   * project/page/canvas objects should send `REQUEST_HYDRATED_CONTEXT`.
+   * `annotationPage` directly, and tools that need the fully-populated
+   * project or page should send `REQUEST_POPULATED_PROJECT` /
+   * `REQUEST_POPULATED_PAGE`.
    *
-   * Note: each entry in `siblings` is `{ id, label }` where `id` is the
-   * **canvas IRI** for that sibling page (i.e. `page.target`), not the page
-   * IRI itself. This matches Compare-Pages' usage (it fetches the IRI as a
-   * IIIF canvas). Tools that need the page id should derive it from the
-   * canvas IRI or request the hydrated payload.
+   * Note: each entry in `canvases` is `{ id, label }` where `id` is the
+   * **canvas IRI** for that page (i.e. `page.target`), not the page IRI
+   * itself. This matches Compare-Pages' usage (it fetches the IRI as a IIIF
+   * canvas). Tools that need the page id should derive it from the canvas
+   * IRI or request the populated page.
    */
   #buildTPENContext() {
     const project = TPEN.activeProject ?? null
@@ -1031,21 +1032,32 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       annotationPage: this.#page?.id ?? null,
       currentLineId: this.#getCurrentLineId(),
       columns: layerPage?.columns ?? [],
-      siblings: this.#getActiveLayerSiblings()
+      canvases: this.#getActiveLayerCanvases()
     }
   }
 
   /**
-   * Heavy payload sent only in reply to `REQUEST_HYDRATED_CONTEXT`. Carries
-   * the full active project, the hydrated page (items resolved to full
-   * Annotations via the vault), and the full canvas object. TPEN-Prompts
-   * needs this for prompt-template rendering; most tools should use the
-   * lean `TPEN_CONTEXT` instead.
+   * Reply payload for `REQUEST_POPULATED_PROJECT`. Carries the full active
+   * project (layers, pages, columns, members, …). Lean `TPEN_CONTEXT` only
+   * carries project identity, so tools that need the full graph must ask
+   * for it explicitly.
    */
-  async #buildHydratedTPENContext() {
+  #buildPopulatedProject() {
     return {
-      type: 'TPEN_HYDRATED_CONTEXT',
-      project: TPEN.activeProject ?? null,
+      type: 'TPEN_POPULATED_PROJECT',
+      project: TPEN.activeProject ?? null
+    }
+  }
+
+  /**
+   * Reply payload for `REQUEST_POPULATED_PAGE`. Carries the active page
+   * with items resolved to full Annotations via the vault, the full canvas
+   * object, and the current line id. TPEN-Prompts uses this for
+   * prompt-template rendering.
+   */
+  async #buildPopulatedPage() {
+    return {
+      type: 'TPEN_POPULATED_PAGE',
       page: await this.#hydratePageItems(this.#page),
       canvas: this.#canvas ?? null,
       currentLineId: this.#getCurrentLineId()
@@ -1055,10 +1067,6 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
   #postToTool(message, targetWindow = this.#activeToolIframe?.contentWindow) {
     if (!this._iframeOrigin || !targetWindow) return
     targetWindow.postMessage(message, this._iframeOrigin)
-  }
-
-  #sendTPENContextToTool(targetWindow = this.#activeToolIframe?.contentWindow) {
-    this.#postToTool(this.#buildTPENContext(), targetWindow)
   }
 
   // The TPEN ID token is the most sensitive message in this protocol. It is
@@ -1159,7 +1167,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       this._iframeOrigin = new URL(tool.url).origin
 
       iframe.addEventListener('load', () => {
-        this.#sendTPENContextToTool(iframe.contentWindow)
+        this.#postToTool(this.#buildTPENContext(), iframe.contentWindow)
       })
 
       const sendLineSelection = () => {
@@ -1195,8 +1203,13 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       return
     }
 
-    if (type === 'REQUEST_HYDRATED_CONTEXT') {
-      this.#postToTool(await this.#buildHydratedTPENContext(), event.source)
+    if (type === 'REQUEST_POPULATED_PROJECT') {
+      this.#postToTool(this.#buildPopulatedProject(), event.source)
+      return
+    }
+
+    if (type === 'REQUEST_POPULATED_PAGE') {
+      this.#postToTool(await this.#buildPopulatedPage(), event.source)
       return
     }
 
