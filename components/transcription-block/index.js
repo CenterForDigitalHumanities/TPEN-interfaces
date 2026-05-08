@@ -474,7 +474,9 @@ export default class TranscriptionBlock extends HTMLElement {
     }
 
     moveToLine(index, direction = 'next') {
-        TPEN.activeLineIndex = Math.max(0, Math.min(index, this.#transcriptions.length - 1))
+        const clamped = Math.max(0, Math.min(index, this.#transcriptions.length - 1))
+        if (clamped === TPEN.activeLineIndex) return
+        TPEN.activeLineIndex = clamped
         eventDispatcher.dispatch(
             direction === 'previous' ? 'tpen-transcription-previous-line' : 'tpen-transcription-next-line'
         )
