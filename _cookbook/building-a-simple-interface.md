@@ -1,9 +1,9 @@
 ---
-title: Building a Simple Interface - TPEN Cookbook
-description: The start of anything.
+title: Building a Simple Interface
+description: Learn the foundational patterns for creating TPEN interfaces with authentication and basic API usage.
 author: <cubap@slu.edu>
-layout: default
-tags: [tpen, api, javascript, interface]
+layout: recipe
+tags: [tpen, api, javascript, interface, getting-started]
 ---
 
 ## Use Case
