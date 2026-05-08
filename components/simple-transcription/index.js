@@ -969,10 +969,10 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
   /**
    * Resolve each item in `page.items` to a full Annotation via the vault.
    * Vault fetches for AnnotationPages return children as bare `{id, type}`
-   * refs — downstream tools need hydrated targets/selectors/bodies. Returns
-   * a shallow copy of the page with the items array replaced; errors on
-   * individual items fall back to the original ref so partial hydration
-   * still produces a usable payload.
+   * refs — downstream tools that opt into the hydrated payload need hydrated
+   * targets/selectors/bodies. Returns a shallow copy of the page with the
+   * items array replaced; errors on individual items fall back to the
+   * original ref so partial hydration still produces a usable payload.
    */
   async #hydratePageItems(page) {
     if (!Array.isArray(page?.items) || page.items.length === 0) return page
@@ -983,9 +983,62 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     return { ...page, items }
   }
 
-  async #buildTPENContext() {
+  /**
+   * Find the layer page entry that matches the active page in the URL. Used
+   * to source the column ordering and the sibling-page list for the lean
+   * TPEN_CONTEXT payload.
+   */
+  #getActiveLayerPage() {
+    const pageInQuery = TPEN.screen?.pageInQuery
+    if (!pageInQuery) return null
+    return TPEN.activeProject?.layers
+      ?.flatMap(layer => layer.pages || [])
+      .find(p => p.id?.split('/').pop() === pageInQuery) ?? null
+  }
+
+  #getActiveLayerSiblings() {
+    const pageInQuery = TPEN.screen?.pageInQuery
+    if (!pageInQuery) return []
+    const layer = TPEN.activeProject?.layers
+      ?.find(l => l.pages?.some(p => p.id?.split('/').pop() === pageInQuery))
+    return layer?.pages?.map(p => ({ id: p.target, label: p.label })) ?? []
+  }
+
+  /**
+   * Lean boot payload sent to every iframe tool on load. Carries identity
+   * fields and URIs only — tools that need annotation bodies should fetch
+   * `annotationPage` directly, and tools that need the fully-hydrated
+   * project/page/canvas objects should send `REQUEST_HYDRATED_CONTEXT`.
+   */
+  #buildTPENContext() {
+    const project = TPEN.activeProject ?? null
+    const layerPage = this.#getActiveLayerPage()
     return {
       type: 'TPEN_CONTEXT',
+      project: project ? {
+        id: project._id ?? project.id ?? null,
+        label: project.label ?? null,
+        slug: project.slug ?? null
+      } : null,
+      manifest: project?.manifest?.[0] ?? null,
+      canvas: this.#canvas?.id ?? this.#canvas?.['@id'] ?? null,
+      annotationPage: this.#page?.id ?? null,
+      currentLineId: this.#getCurrentLineId(),
+      columns: layerPage?.columns ?? [],
+      siblings: this.#getActiveLayerSiblings()
+    }
+  }
+
+  /**
+   * Heavy payload sent only in reply to `REQUEST_HYDRATED_CONTEXT`. Carries
+   * the full active project, the hydrated page (items resolved to full
+   * Annotations via the vault), and the full canvas object. TPEN-Prompts
+   * needs this for prompt-template rendering; most tools should use the
+   * lean `TPEN_CONTEXT` instead.
+   */
+  async #buildHydratedTPENContext() {
+    return {
+      type: 'TPEN_HYDRATED_CONTEXT',
       project: TPEN.activeProject ?? null,
       page: await this.#hydratePageItems(this.#page),
       canvas: this.#canvas ?? null,
@@ -998,10 +1051,15 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     targetWindow.postMessage(message, this._iframeOrigin)
   }
 
-  async #sendTPENContextToTool(targetWindow = this.#activeToolIframe?.contentWindow) {
-    this.#postToTool(await this.#buildTPENContext(), targetWindow)
+  #sendTPENContextToTool(targetWindow = this.#activeToolIframe?.contentWindow) {
+    this.#postToTool(this.#buildTPENContext(), targetWindow)
   }
 
+  // The TPEN ID token is the most sensitive message in this protocol. It is
+  // user-gated (only sent in reply to REQUEST_TPEN_ID_TOKEN), posted to the
+  // iframe origin only, and surfaced via a toast so the user always sees the
+  // grant. Do not send it unprompted, broadcast it with targetOrigin '*', or
+  // log it.
   #sendIdTokenToTool(targetWindow = this.#activeToolIframe?.contentWindow) {
     const idToken = TPEN.getAuthorization()
 
@@ -1095,37 +1153,11 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       this._iframeOrigin = new URL(tool.url).origin
 
       iframe.addEventListener('load', () => {
-        const target = iframe.contentWindow
-        this.#sendTPENContextToTool(target)
-
-        this.#postToTool({
-          type: 'MANIFEST_CANVAS_ANNOTATIONPAGE_ANNOTATION',
-          manifest: TPEN.activeProject?.manifest?.[0] ?? '',
-          canvas: this.#canvas?.id ?? this.#canvas?.['@id'] ?? '',
-          annotationPage: this.#page?.id ?? '',
-          annotation: TPEN.activeLineIndex >= 0
-            ? this.#page?.items?.[TPEN.activeLineIndex]?.id ?? null
-            : null,
-          columns: TPEN.activeProject?.layers
-            ?.flatMap(layer => layer.pages || [])
-            .find(p => p.id?.split('/').pop() === TPEN.screen?.pageInQuery)?.columns || []
-        }, target)
-
-        this.#postToTool({
-          type: 'CANVASES',
-          canvases: TPEN.activeProject?.layers
-            ?.find(layer => layer.pages?.some(p => p.id?.split('/').pop() === TPEN.screen?.pageInQuery))
-            ?.pages?.flatMap(p => ({ id: p.target, label: p.label })) ?? []
-        }, target)
-
-        this.#postToTool({ type: 'CURRENT_LINE_INDEX', lineId: this.#getCurrentLineId() }, target)
+        this.#sendTPENContextToTool(iframe.contentWindow)
       })
 
       const sendLineSelection = () => {
-        const currentLineId = this.#getCurrentLineId()
-        this.#postToTool({ type: 'UPDATE_CURRENT_LINE', currentLineId })
-
-        this.#postToTool({ type: 'CURRENT_LINE_INDEX', lineId: currentLineId })
+        this.#postToTool({ type: 'UPDATE_CURRENT_LINE', currentLineId: this.#getCurrentLineId() })
       }
       this.#toolCleanup.onEvent(TPEN.eventDispatcher, 'tpen-transcription-previous-line', sendLineSelection)
       this.#toolCleanup.onEvent(TPEN.eventDispatcher, 'tpen-transcription-next-line', sendLineSelection)
@@ -1143,35 +1175,32 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     this.checkMagnifierVisibility?.()
   }
 
-  #handleToolMessages(event) {
+  async #handleToolMessages(event) {
     // Validate message origin if iframe origin is set
     if (this._iframeOrigin && event.origin !== this._iframeOrigin) {
       return
     }
 
-    if (event.data?.type === 'REQUEST_TPEN_ID_TOKEN') {
+    const type = event.data?.type
+    if (!type) return
+
+    if (type === 'REQUEST_TPEN_ID_TOKEN') {
       this.#sendIdTokenToTool(event.source)
       return
     }
-    
-    // Handle incoming messages from tools
-    const lineId = event.data?.lineId ?? event.data?.lineid ?? event.data?.annotation // handle different casing and properties
 
-    if (!lineId) return
+    if (type === 'REQUEST_HYDRATED_CONTEXT') {
+      this.#postToTool(await this.#buildHydratedTPENContext(), event.source)
+      return
+    }
 
-    // Handle all line navigation message types
-    if (event.data?.type === "CURRENT_LINE_INDEX" || 
-        event.data?.type === "RETURN_LINE_ID" || 
-        event.data?.type === "SELECT_ANNOTATION" ||
-        event.data?.type === "NAVIGATE_TO_LINE") {
-      // Tool is telling us to navigate to a specific line
-      // Line ID might be full URI or just the ID part
+    if (type === 'NAVIGATE_TO_LINE') {
+      const lineId = event.data?.lineId
+      if (!lineId) return
       const lineIndex = this.#page?.items?.findIndex(item => {
         const itemId = item.id ?? item['@id']
-        // Match either full ID or just the last part after the last slash
         return itemId === lineId || itemId?.endsWith?.(`/${lineId}`) || itemId?.split?.('/').pop() === lineId
       })
-      
       if (lineIndex !== undefined && lineIndex !== -1) {
         TPEN.activeLineIndex = lineIndex
         this.updateLines()

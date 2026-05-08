@@ -155,16 +155,11 @@ export default class TranscriptionBlock extends HTMLElement {
             if (typeof index === 'number') this.scheduleLineSave(index)
         })
 
-        // Window message handler for external tool communication
+        // Window message handler for external tool communication. Line
+        // navigation is owned by simple-transcription; this listener only
+        // handles UPDATE_LINE_TEXT (e.g. Line-Breaking, Preview-Transcription
+        // pushing edited line text into the active transcription block).
         this.renderCleanup.onWindow('message', (event) => {
-            if (event.data?.type === "RETURN_LINE_ID") {
-                const lineIndex = this.#page.items.findIndex(item => item.id === event.data.lineId)
-                if (lineIndex !== -1) {
-                    this.moveToLine(lineIndex, 'next')
-                    this.updateTranscriptionUI()
-                }
-            }
-
             if (event.data?.type === "UPDATE_LINE_TEXT") {
                 if (typeof event.data.lineIndex === 'number') {
                     this.shadowRoot.querySelector('.transcription-input').value = event.data.text
