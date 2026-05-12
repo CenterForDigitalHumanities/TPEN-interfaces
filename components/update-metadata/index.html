@@ -40,9 +40,9 @@
   </tpen-page>
     <script type="module">
       import CheckPermissions from '../check-permissions/checkPermissions.js'
-      import TPEN from '../../api/TPEN.js'
+      import { whenProjectReady } from '../../utilities/projectReady.js'
 
-      TPEN.eventDispatcher.on('tpen-project-loaded', () => {
+      whenProjectReady(() => {
         const divMetadata = document.querySelector('.tpen-metadata')
         const permissionMsg = document.querySelector('.permission-msg')
         const scope = divMetadata.getAttribute('tpen-scope')

@@ -26,6 +26,7 @@
 
 import TPEN from '../../api/TPEN.js'
 import { getUserFromToken } from "../../components/iiif-tools/index.js"
+import { whenProjectReady } from "../../utilities/projectReady.js"
 // TODO use these from a central location, such as a Permission Class.
 const ENTITIES = [
     "PROJECT",
@@ -39,7 +40,7 @@ const ENTITIES = [
     "*",
     "ANY"
 ]
-TPEN.eventDispatcher.on("tpen-project-loaded", ev => checkElements(ev.detail))
+whenProjectReady(ev => checkElements(ev.detail))
 
 /**
  * Gather all elements with the tpen-view or tpen-edit attributes.

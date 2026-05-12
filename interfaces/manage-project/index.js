@@ -9,24 +9,13 @@ import "../../components/project-layers/index.js"
 import "../../components/project-tools/index.js"
 import CheckPermissions from "../../components/check-permissions/checkPermissions.js"
 import { confirmAction } from "../../utilities/confirmAction.js"
+import { whenProjectReady } from "../../utilities/projectReady.js"
 
 const container = document.body
 TPEN.attachAuthentication(container)
 
-// [tpen-race C] manage-project/index.js about to register listener.  Issue #541 diagnostic.
-const _alreadyLoaded = !!TPEN.activeProject?._createdAt
-console.log(`%c[tpen-race C]%c manage-project/index.js registering tpen-project-loaded listener; activeProject._createdAt=${_alreadyLoaded ? TPEN.activeProject._createdAt : 'UNSET'} @${performance.now().toFixed(1)}ms`, _alreadyLoaded ? 'color:#cc0000;font-weight:bold' : 'color:#008800;font-weight:bold', 'color:inherit')
-let _mpListenerFired = false
-setTimeout(() => {
-    if (!_mpListenerFired) {
-        console.log(`%c[tpen-race !]%c manage-project/index.js LISTENER NEVER FIRED — race lost @${performance.now().toFixed(1)}ms`, 'color:#fff;background:#cc0000;font-weight:bold;padding:2px 4px', 'color:inherit')
-    }
-}, 4000)
-
 // Single consolidated listener for project loaded event
-TPEN.eventDispatcher.on('tpen-project-loaded', () => {
-    _mpListenerFired = true
-    console.log(`%c[tpen-race D]%c manage-project/index.js listener fired @${performance.now().toFixed(1)}ms`, 'color:#008800;font-weight:bold', 'color:inherit')
+whenProjectReady(() => {
     const projectID = TPEN.screen.projectInQuery
 
     // Set href for navigation links

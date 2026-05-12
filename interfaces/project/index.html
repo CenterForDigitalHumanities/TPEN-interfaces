@@ -90,18 +90,10 @@ permalink: /project
     </tpen-page>
 </body>
 <script type="module">
-    import TPEN from '../../api/TPEN.js'
     import CheckPermissions from '../../components/check-permissions/checkPermissions.js'
     import { whenProjectReady } from '../../utilities/projectReady.js'
 
-    // [tpen-race C] /project inline-script about to register listener.  Issue #541 diagnostic.
-    const _alreadyLoaded = !!TPEN.activeProject?._createdAt
-    console.log(`%c[tpen-race C]%c /project inline-script registering tpen-project-loaded listener; activeProject._createdAt=${_alreadyLoaded ? TPEN.activeProject._createdAt : 'UNSET'} @${performance.now().toFixed(1)}ms`, _alreadyLoaded ? 'color:#cc0000;font-weight:bold' : 'color:#008800;font-weight:bold', 'color:inherit')
-    let _listenerFired = false
-
     whenProjectReady((ev) => {
-        _listenerFired = true
-        console.log(`%c[tpen-race D]%c /project listener fired @${performance.now().toFixed(1)}ms`, 'color:#008800;font-weight:bold', 'color:inherit')
         const goParse = document.getElementById("goParse")
         const goTranscribe = document.getElementById("goTranscribe")
         const leaveProject = document.getElementById("leaveProject")
@@ -127,12 +119,5 @@ permalink: /project
             }
         }
     })
-
-    // [tpen-race !] Detect listener-never-fired (i.e. race lost).  Issue #541 diagnostic.
-    setTimeout(() => {
-        if (!_listenerFired) {
-            console.log(`%c[tpen-race !]%c /project LISTENER NEVER FIRED — race lost (event dispatched before listener registered) @${performance.now().toFixed(1)}ms`, 'color:#fff;background:#cc0000;font-weight:bold;padding:2px 4px', 'color:inherit')
-        }
-    }, 4000)
 </script>
 </html>

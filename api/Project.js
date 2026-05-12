@@ -89,8 +89,6 @@ export default class Project {
 
     async fetch() {
         const AUTH_TOKEN = TPEN.getAuthorization() ?? TPEN.login()
-        // [tpen-race B0] Project.fetch() invoked.  Issue #541 diagnostic.
-        console.log(`%c[tpen-race B0]%c Project.fetch() invoked for ${this._id} @${performance.now().toFixed(1)}ms`, 'color:#0066cc;font-weight:bold', 'color:inherit')
         try {
             return await fetch(`${TPEN.servicesURL}/project/${this._id}`, {
                 method: 'GET',
@@ -108,8 +106,6 @@ export default class Project {
                     Object.assign(this, data)
                     this.interfaces = this.interfaces?.[this.#getInterfacesNamespace()] ?? this.interfaces?.["*"]
                     this.#isLoaded = true
-                    // [tpen-race B] About to dispatch tpen-project-loaded.  Issue #541 diagnostic.
-                    console.log(`%c[tpen-race B]%c dispatching tpen-project-loaded for ${this._id} @${performance.now().toFixed(1)}ms`, 'color:#0066cc;font-weight:bold', 'color:inherit')
                     eventDispatcher.dispatch("tpen-project-loaded", this)
                     return this
                 })

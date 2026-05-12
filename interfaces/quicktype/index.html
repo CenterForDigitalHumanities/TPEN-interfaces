@@ -60,10 +60,10 @@ permalink: /manage/quicktype
 </body>
 
 <script type="module">
-    import TPEN from '../../api/TPEN.js'
     import CheckPermissions from '../../components/check-permissions/checkPermissions.js'
+    import { whenProjectReady } from '../../utilities/projectReady.js'
 
-    TPEN.eventDispatcher.on('tpen-project-loaded', (ev) => {
+    whenProjectReady((ev) => {
         if (CheckPermissions.checkEditAccess('PROJECT')) {
             const goManage = document.getElementById("projectManagementBtn")
             if (goManage) {
@@ -72,7 +72,6 @@ permalink: /manage/quicktype
             }
         }
     })
-    
 </script>
 
 </html>

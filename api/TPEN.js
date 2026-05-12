@@ -70,11 +70,8 @@ class Tpen {
         })
 
         if (this.screen.projectInQuery) {
-            // [tpen-race A] TPEN constructor schedules the project fetch.  Issue #541 diagnostic.
-            console.log(`%c[tpen-race A]%c fetch-scheduled in TPEN ctor; projectInQuery=${this.screen.projectInQuery} @${performance.now().toFixed(1)}ms`, 'color:#e07b00;font-weight:bold', 'color:inherit')
             try {
                 import('./Project.js').then(module => {
-                    console.log(`%c[tpen-race A2]%c Project.js dynamic import resolved; calling fetch() @${performance.now().toFixed(1)}ms`, 'color:#e07b00;font-weight:bold', 'color:inherit')
                     new module.default(this.screen.projectInQuery).fetch()
                 })
             } catch (error) {
