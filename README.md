@@ -84,3 +84,4 @@ Code: Apache License 2.0 — see [LICENSE](./LICENSE)
 Content (documentation, images, transcriptions, and other non-code assets): Creative Commons Attribution 4.0 International — see [LICENSE-CONTENT.md](./LICENSE-CONTENT.md)
 
 If you redistribute or modify this project, please include these license files and preserve copyright notices.
+
