@@ -92,13 +92,14 @@ permalink: /project
 <script type="module">
     import TPEN from '../../api/TPEN.js'
     import CheckPermissions from '../../components/check-permissions/checkPermissions.js'
+    import { whenProjectReady } from '../../utilities/projectReady.js'
 
     // [tpen-race C] /project inline-script about to register listener.  Issue #541 diagnostic.
     const _alreadyLoaded = !!TPEN.activeProject?._createdAt
     console.log(`%c[tpen-race C]%c /project inline-script registering tpen-project-loaded listener; activeProject._createdAt=${_alreadyLoaded ? TPEN.activeProject._createdAt : 'UNSET'} @${performance.now().toFixed(1)}ms`, _alreadyLoaded ? 'color:#cc0000;font-weight:bold' : 'color:#008800;font-weight:bold', 'color:inherit')
     let _listenerFired = false
 
-    TPEN.eventDispatcher.on('tpen-project-loaded', (ev) => {
+    whenProjectReady((ev) => {
         _listenerFired = true
         console.log(`%c[tpen-race D]%c /project listener fired @${performance.now().toFixed(1)}ms`, 'color:#008800;font-weight:bold', 'color:inherit')
         const goParse = document.getElementById("goParse")
