@@ -17,19 +17,22 @@ export const onProjectReady = (ctx, handler, eventName = 'tpen-project-loaded') 
  * blocks that have no element to bind to.  If the project is already loaded when
  * called, the handler is invoked synchronously with a synthetic
  * `{ detail: TPEN.activeProject }` event so existing `ev.detail.*` handler bodies
- * keep working.  Also subscribes for any future `tpen-project-loaded` dispatch.
+ * keep working, and no listener is registered.  Otherwise, subscribes for the
+ * next `tpen-project-loaded` dispatch.  The sync path and the listener are
+ * mutually exclusive — the handler is invoked exactly once for the load.
  * @param {(ev: { detail: any }) => void} handler
  * @param {string} [eventName='tpen-project-loaded']
- * @returns {() => void} unsubscribe
+ * @returns {() => void} unsubscribe (no-op when invoked synchronously)
  */
 export const whenProjectReady = (handler, eventName = 'tpen-project-loaded') => {
   if (typeof handler !== 'function') return () => {}
-  try {
-    if (TPEN.activeProject?._createdAt) {
+  if (TPEN.activeProject?._createdAt) {
+    try {
       handler({ detail: TPEN.activeProject })
+    } catch (err) {
+      console.error('[whenProjectReady] handler threw during sync invocation:', err)
     }
-  } catch (err) {
-    console.error('[whenProjectReady] handler threw during sync invocation:', err)
+    return () => {}
   }
   TPEN.eventDispatcher.on(eventName, handler)
   return () => TPEN.eventDispatcher.off(eventName, handler)

@@ -103,6 +103,14 @@ describe('whenProjectReady', () => {
         assert.doesNotThrow(() => { whenProjectReady(null)?.() })
     })
 
+    it('does not also receive future dispatches after a sync fire', () => {
+        TPEN.activeProject = { _createdAt: Date.now(), _id: 'p1' }
+        let fired = 0
+        whenProjectReady(() => { fired++ })
+        mockDispatcher.dispatch('tpen-project-loaded', { _id: 'p2' })
+        assert.equal(fired, 1)
+    })
+
     it('logs and recovers when sync handler throws', () => {
         TPEN.activeProject = { _createdAt: Date.now(), _id: 'p1' }
         const originalError = console.error
