@@ -1,5 +1,18 @@
 import TPEN from "../api/TPEN.js"
 
+/**
+ * Bind `handler` to `ctx` and invoke it when the active project is ready.
+ * Intended for component lifecycle use where the handler needs a `this`
+ * context (typically a custom element).  If the project is already loaded
+ * when called, the bound handler is invoked synchronously and no listener
+ * is registered.  Otherwise, subscribes for the next `tpen-project-loaded`
+ * dispatch.  The sync path and the listener are mutually exclusive — the
+ * handler is invoked exactly once for the load.
+ * @param {object} ctx - Object to bind the handler to (e.g. a component instance).
+ * @param {(this: object, ev?: { detail: any }) => void} handler
+ * @param {string} [eventName='tpen-project-loaded']
+ * @returns {() => void} unsubscribe (no-op when invoked synchronously or when ctx/handler is missing)
+ */
 export const onProjectReady = (ctx, handler, eventName = 'tpen-project-loaded') => {
   if (!ctx || typeof handler !== 'function') return () => {}
   const bound = handler.bind(ctx)
