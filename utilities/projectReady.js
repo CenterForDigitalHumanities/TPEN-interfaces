@@ -3,11 +3,14 @@ import TPEN from "../api/TPEN.js"
 export const onProjectReady = (ctx, handler, eventName = 'tpen-project-loaded') => {
   if (!ctx || typeof handler !== 'function') return () => {}
   const bound = handler.bind(ctx)
-  try {
-    if (TPEN.activeProject?._createdAt) {
+  if (TPEN.activeProject?._createdAt) {
+    try {
       bound()
+    } catch (err) {
+      console.error('[onProjectReady] handler threw during sync invocation:', err)
     }
-  } catch (_) {}
+    return () => {}
+  }
   TPEN.eventDispatcher.on(eventName, bound)
   return () => TPEN.eventDispatcher.off(eventName, bound)
 }
