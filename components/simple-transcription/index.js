@@ -418,13 +418,16 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
       }
     })
 
-    // Keep #imgTop bounded by whatever space the workspace currently uses (issue #551).
-    // Workspace height changes when tools open/close, so observe it live instead of
-    // using a fixed CSS reserve.
+    // Keep #imgTop bounded by whatever space the workspace currently uses.
+    // Workspace height changes when tools open/close, and .image-container height
+    // can change when the project header grows/shrinks, so observe both live
+    // instead of using a fixed CSS reserve.
     const workspaceEl = this.shadowRoot.querySelector('#transWorkspace')
-    if (workspaceEl && typeof ResizeObserver !== 'undefined') {
+    const containerEl = this.shadowRoot.querySelector('.image-container')
+    if (typeof ResizeObserver !== 'undefined' && (workspaceEl || containerEl)) {
       const observer = new ResizeObserver(() => this.#updateImgTopMaxHeight())
-      observer.observe(workspaceEl)
+      if (workspaceEl) observer.observe(workspaceEl)
+      if (containerEl) observer.observe(containerEl)
       this.renderCleanup.add(() => observer.disconnect())
     }
   }
@@ -442,7 +445,8 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
     const containerHeight = imageContainer.clientHeight || globalThis.innerHeight || 0
     const workspaceHeight = workspace.offsetHeight || 0
     const MIN_BOTTOM_PREVIEW = 40
-    const available = Math.max(containerHeight - workspaceHeight - MIN_BOTTOM_PREVIEW, 120)
+    const MIN_IMGTOP_HEIGHT = 120
+    const available = Math.max(containerHeight - workspaceHeight - MIN_BOTTOM_PREVIEW, MIN_IMGTOP_HEIGHT)
     imgTop.style.maxHeight = `${available}px`
   }
 
