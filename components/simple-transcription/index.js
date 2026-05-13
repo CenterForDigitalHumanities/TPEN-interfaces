@@ -264,7 +264,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
           height: 0px;
           width: 100%;
           overflow: hidden;
-          transition: height 0.5s ease-in-out, max-height 0.2s ease-in-out;
+          transition: height 0.5s ease-in-out;
           background-color: #1a1a1a;
         }
         
