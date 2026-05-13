@@ -40,6 +40,9 @@ const ENTITIES = [
     "*",
     "ANY"
 ]
+// Defer one microtask so any tpen-view/tpen-edit elements added by
+// sibling modules during their own evaluation are present in the DOM
+// before checkElements scans for them.
 queueMicrotask(() => whenProjectReady(ev => checkElements(ev.detail)))
 
 /**

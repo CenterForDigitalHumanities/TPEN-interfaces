@@ -18,10 +18,6 @@ export const onProjectReady = (ctx, handler, eventName = 'tpen-project-loaded') 
  * called, the handler is invoked synchronously with a synthetic
  * `{ detail: TPEN.activeProject }` event so existing `ev.detail.*` handler bodies
  * keep working.  Also subscribes for any future `tpen-project-loaded` dispatch.
- *
- * Closes the race described in issue #541, where the dispatch can complete before
- * an inline-script's `eventDispatcher.on(...)` registration runs.
- *
  * @param {(ev: { detail: any }) => void} handler
  * @param {string} [eventName='tpen-project-loaded']
  * @returns {() => void} unsubscribe
