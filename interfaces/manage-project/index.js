@@ -9,12 +9,13 @@ import "../../components/project-layers/index.js"
 import "../../components/project-tools/index.js"
 import CheckPermissions from "../../components/check-permissions/checkPermissions.js"
 import { confirmAction } from "../../utilities/confirmAction.js"
+import { whenProjectReady } from "../../utilities/projectReady.js"
 
 const container = document.body
 TPEN.attachAuthentication(container)
 
 // Single consolidated listener for project loaded event
-TPEN.eventDispatcher.on('tpen-project-loaded', () => {
+whenProjectReady(() => {
     const projectID = TPEN.screen.projectInQuery
 
     // Set href for navigation links

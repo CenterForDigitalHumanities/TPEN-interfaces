@@ -90,18 +90,18 @@ permalink: /project
     </tpen-page>
 </body>
 <script type="module">
-    import TPEN from '../../api/TPEN.js'
     import CheckPermissions from '../../components/check-permissions/checkPermissions.js'
+    import { whenProjectReady } from '../../utilities/projectReady.js'
 
-    TPEN.eventDispatcher.on('tpen-project-loaded', (ev) => {
+    whenProjectReady((ev) => {
         const goParse = document.getElementById("goParse")
         const goTranscribe = document.getElementById("goTranscribe")
         const leaveProject = document.getElementById("leaveProject")
         if (leaveProject) {
             leaveProject.href = `/project/leave?projectID=${ev.detail._id}`
         }
-        if (goParse && 
-            CheckPermissions.checkEditAccess("LINE", "SELECTOR") && 
+        if (goParse &&
+            CheckPermissions.checkEditAccess("LINE", "SELECTOR") &&
             CheckPermissions.checkCreateAccess("LINE", "SELECTOR")) {
             goParse.setAttribute("href", `/annotator?projectID=${ev.detail._id}`)
             goParse.hidden = false
@@ -119,6 +119,5 @@ permalink: /project
             }
         }
     })
-    
 </script>
 </html>

@@ -81,9 +81,9 @@ permalink: /project/manage
     </tpen-page>
     <script type="module">
         import CheckPermissions from '../../components/check-permissions/checkPermissions.js'
-        import TPEN from '../../api/TPEN.js'
+        import { whenProjectReady } from '../../utilities/projectReady.js'
 
-        TPEN.eventDispatcher.on('tpen-project-loaded', ev => {
+        whenProjectReady(ev => {
             const goParse = document.getElementById("goParse")
             const goTranscribe = document.getElementById("goTranscribe")
             if (goParse 
