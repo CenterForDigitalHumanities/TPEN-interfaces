@@ -17,13 +17,14 @@
 import TPEN from '../../api/TPEN.js'
 import { getUserFromToken } from '../../components/iiif-tools/index.js'
 import { permissionMatch } from "../../components/check-permissions/permission-match.js"
+import { whenProjectReady } from "../../utilities/projectReady.js"
 
 class checkPermissions {
     #project
     #userId
 
     constructor() {
-        TPEN.eventDispatcher.on('tpen-project-loaded', (ev) => {
+        whenProjectReady((ev) => {
             this.#project = ev.detail
             this.#userId = getUserFromToken(TPEN.getAuthorization())
         })

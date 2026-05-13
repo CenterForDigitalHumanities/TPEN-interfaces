@@ -40,7 +40,7 @@ const ENTITIES = [
     "*",
     "ANY"
 ]
-whenProjectReady(ev => checkElements(ev.detail))
+queueMicrotask(() => whenProjectReady(ev => checkElements(ev.detail)))
 
 /**
  * Gather all elements with the tpen-view or tpen-edit attributes.

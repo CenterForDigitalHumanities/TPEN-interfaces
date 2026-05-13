@@ -32,7 +32,9 @@ export const whenProjectReady = (handler, eventName = 'tpen-project-loaded') => 
     if (TPEN.activeProject?._createdAt) {
       handler({ detail: TPEN.activeProject })
     }
-  } catch (_) {}
+  } catch (err) {
+    console.error('[whenProjectReady] handler threw during sync invocation:', err)
+  }
   TPEN.eventDispatcher.on(eventName, handler)
   return () => TPEN.eventDispatcher.off(eventName, handler)
 }
