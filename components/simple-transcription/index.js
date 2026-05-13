@@ -119,6 +119,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
 
   handleResize() {
     // Recalculate image positions on resize
+    this.#updateImgTopMaxHeight()
     if (this.#activeLine) {
       this.adjustImages(this.#activeLine)
     }
@@ -416,6 +417,34 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
         this.updateLines()
       }
     })
+
+    // Keep #imgTop bounded by whatever space the workspace currently uses.
+    // Workspace height changes when tools open/close; .image-container is pinned
+    // at 100vh and only changes on window resize, which handleResize already covers.
+    const workspaceEl = this.shadowRoot.querySelector('#transWorkspace')
+    if (typeof ResizeObserver !== 'undefined' && workspaceEl) {
+      const observer = new ResizeObserver(() => this.#updateImgTopMaxHeight())
+      observer.observe(workspaceEl)
+      this.renderCleanup.add(() => observer.disconnect())
+    }
+  }
+
+  /**
+   * Cap #imgTop's height so a tall line cannot push #transWorkspace off-screen.
+   * Reserves the live-measured workspace height plus a small strip for #imgBottom.
+   */
+  #updateImgTopMaxHeight() {
+    const imgTop = this.shadowRoot.querySelector('#imgTop')
+    const workspace = this.shadowRoot.querySelector('#transWorkspace')
+    const imageContainer = this.shadowRoot.querySelector('.image-container')
+    if (!imgTop || !workspace || !imageContainer) return
+
+    const containerHeight = imageContainer.clientHeight || globalThis.innerHeight || 0
+    const workspaceHeight = workspace.offsetHeight || 0
+    const MIN_BOTTOM_PREVIEW = 40
+    const MIN_IMGTOP_HEIGHT = 120
+    const available = Math.max(containerHeight - workspaceHeight - MIN_BOTTOM_PREVIEW, MIN_IMGTOP_HEIGHT)
+    imgTop.style.maxHeight = `${available}px`
   }
 
   toggleSplitscreen() {
