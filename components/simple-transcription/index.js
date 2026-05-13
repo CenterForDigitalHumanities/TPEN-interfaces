@@ -119,6 +119,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
 
   handleResize() {
     // Recalculate image positions on resize
+    this.#updateImgTopMaxHeight()
     if (this.#activeLine) {
       this.adjustImages(this.#activeLine)
     }
@@ -263,7 +264,7 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
           height: 0px;
           width: 100%;
           overflow: hidden;
-          transition: height 0.5s ease-in-out;
+          transition: height 0.5s ease-in-out, max-height 0.2s ease-in-out;
           background-color: #1a1a1a;
         }
         
@@ -416,6 +417,33 @@ export default class SimpleTranscriptionInterface extends HTMLElement {
         this.updateLines()
       }
     })
+
+    // Keep #imgTop bounded by whatever space the workspace currently uses (issue #551).
+    // Workspace height changes when tools open/close, so observe it live instead of
+    // using a fixed CSS reserve.
+    const workspaceEl = this.shadowRoot.querySelector('#transWorkspace')
+    if (workspaceEl && typeof ResizeObserver !== 'undefined') {
+      const observer = new ResizeObserver(() => this.#updateImgTopMaxHeight())
+      observer.observe(workspaceEl)
+      this.renderCleanup.add(() => observer.disconnect())
+    }
+  }
+
+  /**
+   * Cap #imgTop's height so a tall line cannot push #transWorkspace off-screen.
+   * Reserves the live-measured workspace height plus a small strip for #imgBottom.
+   */
+  #updateImgTopMaxHeight() {
+    const imgTop = this.shadowRoot.querySelector('#imgTop')
+    const workspace = this.shadowRoot.querySelector('#transWorkspace')
+    const imageContainer = this.shadowRoot.querySelector('.image-container')
+    if (!imgTop || !workspace || !imageContainer) return
+
+    const containerHeight = imageContainer.clientHeight || globalThis.innerHeight || 0
+    const workspaceHeight = workspace.offsetHeight || 0
+    const MIN_BOTTOM_PREVIEW = 40
+    const available = Math.max(containerHeight - workspaceHeight - MIN_BOTTOM_PREVIEW, 120)
+    imgTop.style.maxHeight = `${available}px`
   }
 
   toggleSplitscreen() {
